@@ -1,6 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": [],
+  "compilerOptions": {
+    "paths": {
+      "@effect-native/platform-demo": ["./src/index"],
+      "@effect-native/platform-demo/*": ["./src/*"]
+    }
+  },
   "references": [
     { "path": "tsconfig.src.json" },
     { "path": "tsconfig.test.json" }

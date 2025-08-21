@@ -6,7 +6,12 @@
     "outDir": "build/test",
     "tsBuildInfoFile": "tsconfig.test.tsbuildinfo",
     "sourceMap": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    "paths": {
+      "@effect-native/platform-demo": ["./src/index"],
+      "@effect-native/platform-demo/*": ["./src/*"]
+    },
+    "baseUrl": ".."
   },
   "references": [
     { "path": "tsconfig.src.json" },

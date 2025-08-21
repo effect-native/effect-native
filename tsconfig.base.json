@@ -70,7 +70,8 @@
           "@effect/sql-sqlite-wasm",
           "@effect/typeclass",
           "@effect/vitest",
-          "@effect/workflow"
+          "@effect/workflow",
+          "@effect-native/platform-demo"
         ]
       }
     ]
