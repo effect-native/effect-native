@@ -15,8 +15,16 @@ need_nix() {
 install_nix_if_needed() {
   if need_nix; then
     echo "[setup] Nix not found; installing..."
+    # Detect platform for correct Nix installation
+    local platform=""
+    case "$(uname -s)" in
+      Linux*)  platform="linux" ;;
+      Darwin*) platform="macos" ;;
+      *)       echo "Unsupported platform: $(uname -s)"; exit 1 ;;
+    esac
+    
     curl -fsSL https://install.determinate.systems/nix \
-    | sh -s -- install linux --init none --no-confirm \
+    | sh -s -- install "$platform" --init none --no-confirm \
       --extra-conf "sandbox = false" \
       --extra-conf "experimental-features = nix-command flakes"
   else
@@ -34,10 +42,10 @@ ensure_nix_env() {
 }
 
 run_inside_dev_shell() {
-  # Use bash (not sh) to avoid completion-related errors in shell hooks
+  # Use bash with -c for compatibility (avoid -l in minimal containers)
   nix develop -L "$DEV_SHELL" --accept-flake-config \
     --extra-experimental-features "nix-command flakes" \
-    -c bash -lc '
+    -c bash -c '
       set -euo pipefail
       export CI=1  # Force Vitest to run in CI mode (disable watch / interactive UI)
       corepack enable || true
