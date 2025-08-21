@@ -34,19 +34,48 @@ const getErrorReason = (cause: unknown): PlatformError.SystemErrorReason => {
   return "Unknown"
 }
 
+/**
+ * Generate a cryptographically secure random string for temp file/directory names
+ */
+const generateSecureRandom = (): string => {
+  // Use crypto.getRandomValues if available, fallback to Math.random for RN compatibility
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const array = new Uint8Array(16)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+  }
+  // Fallback: multiple Math.random calls for better entropy
+  return Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join('')
+}
+
 const makeFs = (cfg: Config): FileSystem.FileSystem => {
   const baseDir = cfg.base === "cache" ? Paths.cache : Paths.document
 
   const rel = (p: string) => {
-    let s = p.replace(/^file:\/\//, "")
+    let s = p.replace(/^file:\/\//, "").replace(/\\/g, "/")
     s = s.startsWith("/") ? s.slice(1) : s
     const out: string[] = []
+    let upCount = 0
+    
     for (const part of s.split("/")) {
       if (!part || part === ".") continue
       if (part === "..") {
-        if (cfg.restrictToBase) out.pop()
-        else out.push("..")
-      } else out.push(part)
+        if (cfg.restrictToBase) {
+          if (out.length > 0) out.pop()
+        } else {
+          if (out.length > 0) {
+            out.pop()
+          } else {
+            upCount++
+          }
+        }
+      } else {
+        out.push(part)
+      }
+    }
+    
+    if (!cfg.restrictToBase && upCount > 0) {
+      return "../".repeat(upCount) + out.join("/")
     }
     return out.join("/")
   }
@@ -96,7 +125,11 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
         }
 
   let fdCounter = 3
-  const nextFd = () => fdCounter++
+  const nextFd = () => {
+    const current = fdCounter
+    fdCounter = current + 1
+    return current
+  }
 
   const unsupported = <A = never>(op: string, path: string): Effect.Effect<A, PlatformError.PlatformError> =>
     Effect.fail(
@@ -166,7 +199,7 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
       const baseDir = options?.directory ?? "/tmp"
       const d = asDir(baseDir)
       d.create({ intermediates: true })
-      const name = `${prefix}${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const name = `${prefix}${Date.now()}-${generateSecureRandom()}`
       const dirPath = `${baseDir.replace(/\/$/, "")}/${name}`
       const tempDir = asDir(dirPath)
       tempDir.create({ intermediates: false })
@@ -206,7 +239,7 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
       const prefix = options?.prefix ?? "rn-"
       const d = asDir(dir)
       d.create({ intermediates: true })
-      const name = `${prefix}${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`
+      const name = `${prefix}${Date.now()}-${generateSecureRandom()}.tmp`
       const p = `${dir.replace(/\/$/, "")}/${name}`
       const f = asFile(p)
       f.create()

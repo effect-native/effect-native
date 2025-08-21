@@ -25,7 +25,7 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
     ws.binaryType = "arraybuffer"
 
     ws.onopen = () => {
-      Deferred.unsafeDone(openDeferred, Effect.void)
+      Effect.runSync(Deferred.succeed(openDeferred, void 0))
     }
 
     ws.onerror = (error) => {
@@ -46,14 +46,14 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
     ws.onmessage = (event) => {
       const data = event.data
       if (typeof data === "string") {
-        Queue.unsafeOffer(receiveQueue, data)
+        Effect.runSync(Queue.offer(receiveQueue, data))
       } else if (data instanceof ArrayBuffer) {
-        Queue.unsafeOffer(receiveQueue, new Uint8Array(data))
+        Effect.runSync(Queue.offer(receiveQueue, new Uint8Array(data)))
       }
     }
 
     ws.onclose = () => {
-      Queue.unsafeOffer(receiveQueue, Socket.CloseEvent)
+      Effect.runSync(Queue.offer(receiveQueue, Socket.CloseEvent))
     }
 
     yield* Effect.addFinalizer(() =>
