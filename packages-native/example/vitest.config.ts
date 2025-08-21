@@ -1,6 +1,6 @@
-import { defineConfig } from "vite"
-import { vitest } from "../../vitest.shared"
+import { mergeConfig, type ViteUserConfig } from "vitest/config"
+import shared from "../../vitest.shared.js"
 
-export default defineConfig({
-  test: vitest({ coverage: true })
-})
+const config: ViteUserConfig = {}
+
+export default mergeConfig(shared, config)
