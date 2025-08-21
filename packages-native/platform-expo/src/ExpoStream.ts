@@ -2,10 +2,10 @@
  * @since 1.0.0
  */
 import type * as PlatformError from "@effect/platform/Error"
-import * as Effect from "effect/Effect"
-import * as Stream from "effect/Stream"
-import * as Option from "effect/Option"
 import * as Chunk from "effect/Chunk"
+import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
+import * as Stream from "effect/Stream"
 
 /**
  * @since 1.0.0
@@ -19,9 +19,7 @@ export const fromReadableStream = <E = PlatformError.PlatformError>(
     Effect.gen(function*() {
       const reader = stream().getReader()
 
-      yield* Effect.addFinalizer(() =>
-        Effect.promise(() => reader.cancel())
-      )
+      yield* Effect.addFinalizer(() => Effect.promise(() => reader.cancel()))
 
       const read = (): Effect.Effect<void> =>
         Effect.tryPromise({

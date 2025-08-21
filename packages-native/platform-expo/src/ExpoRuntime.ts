@@ -1,11 +1,10 @@
 /**
  * @since 1.0.0
  */
-import * as Runtime from "effect/Runtime"
-import * as FiberSet from "effect/FiberSet"
 import type * as Effect from "effect/Effect"
 import type * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
+import * as Runtime from "effect/Runtime"
 import type * as Scope from "effect/Scope"
 import * as ExpoContext from "./ExpoContext.js"
 

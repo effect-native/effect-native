@@ -45,25 +45,25 @@ type User = typeof User.Type
  * import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient"
  * import * as Effect from "effect/Effect"
  * import * as Layer from "effect/Layer"
- * 
+ *
  * Effect.provide(
  *   HttpClientDemo.basicRequests,
  *   NodeHttpClient.layer
  * ).pipe(Effect.runPromise)
  * ```
  */
-export const basicRequests = Effect.gen(function* () {
+export const basicRequests = Effect.gen(function*() {
   yield* logSection("HTTP Client Basic Requests")
-  
+
   const client = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("GET Request", "Fetching a post")
   const getResponse = yield* client.get("https://jsonplaceholder.typicode.com/posts/1").pipe(
     Effect.flatMap(HttpClientResponse.json),
     Effect.flatMap(Schema.decodeUnknown(Post))
   )
   yield* logResult("Post title", getResponse.title)
-  
+
   yield* logDemo("POST Request", "Creating a new post")
   const newPost = {
     userId: 1,
@@ -77,7 +77,7 @@ export const basicRequests = Effect.gen(function* () {
     Effect.scoped
   )
   yield* logResult("Created post ID", postResponse)
-  
+
   return { getResponse, postResponse }
 })
 
@@ -85,11 +85,11 @@ export const basicRequests = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const headerManipulation = Effect.gen(function* () {
+export const headerManipulation = Effect.gen(function*() {
   yield* logSection("Header Manipulation")
-  
+
   const client = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("Custom Headers", "Adding custom headers to request")
   const response = yield* HttpClientRequest.get("https://httpbin.org/headers").pipe(
     HttpClientRequest.setHeader("X-Custom-Header", "Effect Platform Demo"),
@@ -100,7 +100,7 @@ export const headerManipulation = Effect.gen(function* () {
     Effect.scoped
   )
   yield* logResult("Sent headers", response)
-  
+
   yield* logDemo("Response Headers", "Reading response headers")
   const headResponse = yield* client.head("https://httpbin.org/get").pipe(
     Effect.map((res) => ({
@@ -110,7 +110,7 @@ export const headerManipulation = Effect.gen(function* () {
     }))
   )
   yield* logResult("Response headers", headResponse)
-  
+
   return { customHeaders: response, responseHeaders: headResponse }
 })
 
@@ -118,35 +118,35 @@ export const headerManipulation = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const clientConfiguration = Effect.gen(function* () {
+export const clientConfiguration = Effect.gen(function*() {
   yield* logSection("Client Configuration")
-  
+
   const baseClient = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("Base URL Client", "Client with base URL")
   const apiClient = baseClient.pipe(
     HttpClient.mapRequest(
       HttpClientRequest.prependUrl("https://jsonplaceholder.typicode.com")
     )
   )
-  
+
   const users = yield* apiClient.get("/users").pipe(
     Effect.flatMap(HttpClientResponse.json),
     Effect.flatMap(Schema.decodeUnknown(Schema.Array(User)))
   )
   yield* logResult("Users fetched", `${users.length} users`)
-  
+
   yield* logDemo("Filtered Client", "Client that only accepts 2xx responses")
   const strictClient = apiClient.pipe(
     HttpClient.filterStatusOk
   )
-  
+
   const successResult = yield* strictClient.get("/posts/1").pipe(
     Effect.flatMap(HttpClientResponse.json),
     Effect.either
   )
   yield* logResult("2xx response", successResult._tag === "Right")
-  
+
   yield* logDemo("Retry Client", "Client with automatic retry")
   const retryClient = apiClient.pipe(
     HttpClient.retry({
@@ -154,12 +154,12 @@ export const clientConfiguration = Effect.gen(function* () {
       delay: "100 millis"
     })
   )
-  
+
   const retryResult = yield* retryClient.get("/posts/2").pipe(
     Effect.flatMap(HttpClientResponse.json)
   )
   yield* logResult("Retry successful", retryResult !== null)
-  
+
   return { users, strictClient, retryClient }
 })
 
@@ -167,11 +167,11 @@ export const clientConfiguration = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const streamingResponses = Effect.gen(function* () {
+export const streamingResponses = Effect.gen(function*() {
   yield* logSection("Streaming Responses")
-  
+
   const client = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("Stream Response", "Processing response as stream")
   const streamData = yield* client.get("https://jsonplaceholder.typicode.com/posts").pipe(
     Effect.map((response) => response.stream),
@@ -182,7 +182,7 @@ export const streamingResponses = Effect.gen(function* () {
     Stream.runCollect
   )
   yield* logResult("First 5 lines", streamData.length)
-  
+
   yield* logDemo("Chunked Processing", "Processing large response in chunks")
   const chunkCount = yield* client.get("https://jsonplaceholder.typicode.com/comments").pipe(
     Effect.map((response) => response.stream),
@@ -191,7 +191,7 @@ export const streamingResponses = Effect.gen(function* () {
     Stream.runCount
   )
   yield* logResult("Chunks processed", chunkCount)
-  
+
   return { streamData, chunkCount }
 })
 
@@ -199,11 +199,11 @@ export const streamingResponses = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const errorHandling = Effect.gen(function* () {
+export const errorHandling = Effect.gen(function*() {
   yield* logSection("HTTP Error Handling")
-  
+
   const client = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("404 Error", "Handling not found error")
   const notFoundResult = yield* client.get("https://jsonplaceholder.typicode.com/posts/999999").pipe(
     Effect.flatMap((response) => {
@@ -212,29 +212,23 @@ export const errorHandling = Effect.gen(function* () {
       }
       return HttpClientResponse.json(response)
     }),
-    Effect.catchTag("ResponseError", () => 
-      Effect.succeed("Caught response error")
-    )
+    Effect.catchTag("ResponseError", () => Effect.succeed("Caught response error"))
   )
   yield* logResult("404 handled", notFoundResult)
-  
+
   yield* logDemo("Network Error", "Handling connection failure")
   const networkResult = yield* client.get("http://invalid-domain-that-doesnt-exist.com").pipe(
-    Effect.catchTag("RequestError", (error) =>
-      Effect.succeed(`Network error: ${error.reason}`)
-    )
+    Effect.catchTag("RequestError", (error) => Effect.succeed(`Network error: ${error.reason}`))
   )
   yield* logResult("Network error handled", networkResult)
-  
+
   yield* logDemo("Timeout", "Handling request timeout")
   const timeoutResult = yield* client.get("https://httpbin.org/delay/10").pipe(
     Effect.timeout("1 second"),
-    Effect.catchTag("TimeoutException", () =>
-      Effect.succeed("Request timed out")
-    )
+    Effect.catchTag("TimeoutException", () => Effect.succeed("Request timed out"))
   )
   yield* logResult("Timeout handled", timeoutResult)
-  
+
   return { notFoundResult, networkResult, timeoutResult }
 })
 
@@ -242,25 +236,25 @@ export const errorHandling = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const schemaValidation = Effect.gen(function* () {
+export const schemaValidation = Effect.gen(function*() {
   yield* logSection("Schema Validation")
-  
+
   const client = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("Response Validation", "Validating response with schema")
   const validatedPost = yield* client.get("https://jsonplaceholder.typicode.com/posts/1").pipe(
     Effect.flatMap(HttpClientResponse.schemaBodyJson(Post)),
     Effect.scoped
   )
   yield* logResult("Validated post", validatedPost.title)
-  
+
   yield* logDemo("Request Body Schema", "Sending validated request body")
   const CreatePost = Schema.Struct({
     title: Schema.String,
     body: Schema.String,
     userId: Schema.Number
   })
-  
+
   const schemaBodyRequest = HttpClientRequest.schemaBodyJson(CreatePost)
   const createResult = yield* schemaBodyRequest(
     HttpClientRequest.post("https://jsonplaceholder.typicode.com/posts"),
@@ -271,7 +265,7 @@ export const schemaValidation = Effect.gen(function* () {
     Effect.scoped
   )
   yield* logResult("Created with schema", createResult)
-  
+
   return { validatedPost, createResult }
 })
 
@@ -279,26 +273,22 @@ export const schemaValidation = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const interceptors = Effect.gen(function* () {
+export const interceptors = Effect.gen(function*() {
   yield* logSection("Request/Response Interceptors")
-  
+
   const baseClient = yield* HttpClient.HttpClient
-  
+
   yield* logDemo("Request Interceptor", "Modifying all requests")
   const interceptedClient = baseClient.pipe(
-    HttpClient.mapRequest((request) =>
-      HttpClientRequest.setHeader(request, "X-Intercepted", "true")
-    ),
-    HttpClient.tapRequest((request) =>
-      Console.log("🔍 Request to:", request.url)
-    )
+    HttpClient.mapRequest((request) => HttpClientRequest.setHeader(request, "X-Intercepted", "true")),
+    HttpClient.tapRequest((request) => Console.log("🔍 Request to:", request.url))
   )
-  
+
   const interceptedResponse = yield* interceptedClient.get("https://httpbin.org/headers").pipe(
     Effect.flatMap(HttpClientResponse.json)
   )
   yield* logResult("Intercepted headers", interceptedResponse)
-  
+
   yield* logDemo("Response Interceptor", "Processing all responses")
   const loggingClient = baseClient.pipe(
     HttpClient.mapEffect((response) =>
@@ -307,11 +297,11 @@ export const interceptors = Effect.gen(function* () {
       )
     )
   )
-  
+
   yield* loggingClient.get("https://jsonplaceholder.typicode.com/posts/1").pipe(
     Effect.flatMap(HttpClientResponse.json)
   )
-  
+
   return { interceptedResponse }
 })
 
@@ -319,7 +309,7 @@ export const interceptors = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const runAllDemos = Effect.gen(function* () {
+export const runAllDemos = Effect.gen(function*() {
   yield* withTiming("Basic Requests", basicRequests)
   yield* withTiming("Header Manipulation", headerManipulation)
   yield* withTiming("Client Configuration", clientConfiguration)
@@ -327,6 +317,6 @@ export const runAllDemos = Effect.gen(function* () {
   yield* withTiming("Error Handling", errorHandling)
   yield* withTiming("Schema Validation", schemaValidation)
   yield* withTiming("Interceptors", interceptors)
-  
+
   yield* Console.log("\n✨ All HttpClient demos completed!")
 })

@@ -1,14 +1,16 @@
 import { Cookies, HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import * as ExpoHttpClient from "../src/ExpoHttpClient"
 import { assert, describe, it } from "@effect/vitest"
 import { Chunk, Effect, Layer, Option, Stream } from "effect"
+import * as ExpoHttpClient from "../src/ExpoHttpClient"
 
 // Mock fetch for testing
-const mockFetch = (responses: Record<string, { status?: number; headers?: Record<string, string>; body?: unknown }>) => {
+const mockFetch = (
+  responses: Record<string, { status?: number; headers?: Record<string, string>; body?: unknown }>
+) => {
   const fetch = async (url: string, init?: RequestInit) => {
     const response = responses[url] || { status: 404, body: "Not Found" }
     const headers = new Headers(response.headers || {})
-    
+
     let body: BodyInit | null = null
     if (response.body !== undefined) {
       if (typeof response.body === "string") {
@@ -284,7 +286,7 @@ describe("ExpoHttpClient", () => {
         const formData = new FormData()
         formData.append("field1", "value1")
         formData.append("field2", "value2")
-        
+
         const response = yield* HttpClient.post("http://localhost:8080/form").pipe(
           HttpClientRequest.formDataBody(formData),
           Effect.scoped
@@ -304,16 +306,19 @@ describe("ExpoHttpClient", () => {
     it.effect("with retry", () =>
       Effect.gen(function*() {
         let attempts = 0
-        const mockLayer = Layer.succeed(ExpoHttpClient.Fetch, (async (url: string) => {
-          attempts++
-          if (attempts < 3) {
-            return new Response(null, { status: 503 })
-          }
-          return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" }
-          })
-        }) as typeof globalThis.fetch)
+        const mockLayer = Layer.succeed(
+          ExpoHttpClient.Fetch,
+          (async (url: string) => {
+            attempts++
+            if (attempts < 3) {
+              return new Response(null, { status: 503 })
+            }
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          }) as typeof globalThis.fetch
+        )
 
         const client = HttpClient.retry(
           HttpClient.client.pipe(HttpClient.filterStatusOk),
@@ -321,20 +326,23 @@ describe("ExpoHttpClient", () => {
         )
 
         const response = yield* client.get("http://localhost:8080/retry").pipe(
-          Effect.flatMap(_ => _.json),
+          Effect.flatMap((_) => _.json),
           Effect.scoped
         )
-        
+
         assert.deepStrictEqual(response, { success: true })
         assert.strictEqual(attempts, 3)
       }).pipe(
         Effect.provide(ExpoHttpClient.layer),
-        Effect.provide(Layer.succeed(ExpoHttpClient.Fetch, (async (url: string) => {
-          return new Response(JSON.stringify({ success: true }), {
-            status: 200,
-            headers: { "content-type": "application/json" }
-          })
-        }) as typeof globalThis.fetch))
+        Effect.provide(Layer.succeed(
+          ExpoHttpClient.Fetch,
+          (async (url: string) => {
+            return new Response(JSON.stringify({ success: true }), {
+              status: 200,
+              headers: { "content-type": "application/json" }
+            })
+          }) as typeof globalThis.fetch
+        ))
       ))
 
     it.effect("with timeout", () =>

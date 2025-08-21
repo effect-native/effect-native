@@ -6,7 +6,8 @@
 import { Effect, Layer } from "effect"
 import * as ExpoHttpClient from "../../src/ExpoHttpClient.js"
 import * as ExpoSocket from "../../src/ExpoSocket.js"
-import { MockAsyncStorage, MockSecureStore, MockFileSystem, MockWebSocket } from "../mocks/ExpoMocks.js"
+import type { MockFileSystem, MockSecureStore } from "../mocks/ExpoMocks.js"
+import { MockAsyncStorage, MockWebSocket } from "../mocks/ExpoMocks.js"
 
 /**
  * Create a test runtime with mocked Expo services
@@ -22,7 +23,7 @@ export const makeTestRuntime = <R, E, A>(
     WebSocket?: typeof globalThis.WebSocket
   }
 ) => {
-  const layers: Layer.Layer<any, never, never>[] = []
+  const layers: Array<Layer.Layer<any, never, never>> = []
 
   if (options?.asyncStorage) {
     layers.push(Layer.succeed("AsyncStorage", options.asyncStorage))
@@ -41,7 +42,7 @@ export const makeTestRuntime = <R, E, A>(
   }
 
   const combinedLayer = layers.reduce((acc, layer) => Layer.merge(acc, layer), Layer.empty)
-  
+
   return Effect.provide(effect, combinedLayer)
 }
 
@@ -89,11 +90,11 @@ export const setupTestDirectory = async (
  * Helper for testing streaming operations
  * @since 1.0.0
  */
-export const collectStream = <A>(stream: ReadableStream<A>): Promise<A[]> => {
+export const collectStream = <A>(stream: ReadableStream<A>): Promise<Array<A>> => {
   return new Promise(async (resolve, reject) => {
     const reader = stream.getReader()
-    const chunks: A[] = []
-    
+    const chunks: Array<A> = []
+
     try {
       while (true) {
         const { done, value } = await reader.read()
@@ -114,8 +115,8 @@ export const collectStream = <A>(stream: ReadableStream<A>): Promise<A[]> => {
  * @since 1.0.0
  */
 export class TestWebSocketServer {
-  private connections: MockWebSocket[] = []
-  private messageHandlers: ((data: unknown, ws: MockWebSocket) => void)[] = []
+  private connections: Array<MockWebSocket> = []
+  private messageHandlers: Array<(data: unknown, ws: MockWebSocket) => void> = []
 
   onConnection(ws: MockWebSocket): void {
     this.connections.push(ws)
@@ -126,7 +127,7 @@ export class TestWebSocketServer {
   }
 
   broadcast(data: string | ArrayBuffer | Blob): void {
-    this.connections.forEach(ws => {
+    this.connections.forEach((ws) => {
       if (ws.readyState === MockWebSocket.OPEN) {
         ws.mockReceive(data)
       }
@@ -134,7 +135,7 @@ export class TestWebSocketServer {
   }
 
   closeAll(code?: number, reason?: string): void {
-    this.connections.forEach(ws => ws.close(code, reason))
+    this.connections.forEach((ws) => ws.close(code, reason))
     this.connections = []
   }
 }
@@ -151,7 +152,7 @@ export const createMockResponse = (
   }
 ): Response => {
   const headers = new Headers(options?.headers || {})
-  
+
   let bodyInit: BodyInit | null = null
   if (body !== null && body !== undefined) {
     if (typeof body === "string") {
@@ -227,8 +228,8 @@ export const assertFileExists = async (fs: MockFileSystem, path: string): Promis
 }
 
 export const assertFileContent = async (
-  fs: MockFileSystem, 
-  path: string, 
+  fs: MockFileSystem,
+  path: string,
   expectedContent: string
 ): Promise<void> => {
   const content = await fs.readAsStringAsync(path)
@@ -240,10 +241,10 @@ export const assertFileContent = async (
 export const assertDirectoryContains = async (
   fs: MockFileSystem,
   dirPath: string,
-  expectedFiles: string[]
+  expectedFiles: Array<string>
 ): Promise<void> => {
   const files = await fs.readDirectoryAsync(dirPath)
-  const missing = expectedFiles.filter(f => !files.includes(f))
+  const missing = expectedFiles.filter((f) => !files.includes(f))
   if (missing.length > 0) {
     throw new Error(`Directory ${dirPath} missing files: ${missing.join(", ")}`)
   }

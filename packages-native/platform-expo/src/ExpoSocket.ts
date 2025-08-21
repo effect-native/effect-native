@@ -1,15 +1,15 @@
 /**
  * @since 1.0.0
  */
-import type * as Socket from "@effect/platform/Socket"
 import * as PlatformError from "@effect/platform/Error"
+import type * as Socket from "@effect/platform/Socket"
+import type * as Chunk from "effect/Chunk"
+import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Stream from "effect/Stream"
-import * as Queue from "effect/Queue"
-import * as Scope from "effect/Scope"
-import * as Deferred from "effect/Deferred"
-import * as Chunk from "effect/Chunk"
+import type * as Queue from "effect/Queue"
+import type * as Scope from "effect/Scope"
+import type * as Stream from "effect/Stream"
 
 /**
  * @since 1.0.0
@@ -78,13 +78,11 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
       )
     )
 
-    const write = (chunk: Uint8Array | string | Socket.CloseEvent) =>
-      Queue.offer(sendQueue, chunk)
+    const write = (chunk: Uint8Array | string | Socket.CloseEvent) => Queue.offer(sendQueue, chunk)
 
     const writer: Socket.Socket["writer"] = {
-      write: (chunk: Chunk.Chunk<Uint8Array>) =>
-        Effect.forEach(chunk, (data) => write(data), { discard: true }),
-      
+      write: (chunk: Chunk.Chunk<Uint8Array>) => Effect.forEach(chunk, (data) => write(data), { discard: true }),
+
       writeString: (string: string) => write(string),
 
       end: () => write(Socket.CloseEvent)
@@ -107,7 +105,9 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
  * @since 1.0.0
  * @category constructors
  */
-export const makeNet = (_options?: Socket.NetOptions): Effect.Effect<Socket.Socket, PlatformError.PlatformError, Scope.Scope> =>
+export const makeNet = (
+  _options?: Socket.NetOptions
+): Effect.Effect<Socket.Socket, PlatformError.PlatformError, Scope.Scope> =>
   Effect.fail(
     new PlatformError.BadArgument({
       module: "Socket",

@@ -1,12 +1,12 @@
 /**
  * @since 0.0.1
  */
+import * as HttpMiddleware from "@effect/platform/HttpMiddleware"
 import * as HttpRouter from "@effect/platform/HttpRouter"
 import * as HttpServer from "@effect/platform/HttpServer"
 import * as HttpServerError from "@effect/platform/HttpServerError"
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest"
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse"
-import * as HttpMiddleware from "@effect/platform/HttpMiddleware"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -36,9 +36,9 @@ type Todo = typeof Todo.Type
  * import * as Effect from "effect/Effect"
  * import * as Layer from "effect/Layer"
  * import { createServer } from "node:http"
- * 
+ *
  * const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3000 })
- * 
+ *
  * Effect.provide(
  *   HttpServerDemo.basicRouting,
  *   ServerLive
@@ -47,13 +47,15 @@ type Todo = typeof Todo.Type
  */
 export const basicRouting = HttpRouter.empty.pipe(
   HttpRouter.get("/", HttpServerResponse.text("Welcome to Effect Platform Demo!")),
-  HttpRouter.get("/hello/:name",
-    Effect.gen(function* () {
+  HttpRouter.get(
+    "/hello/:name",
+    Effect.gen(function*() {
       const params = yield* HttpRouter.params
       return HttpServerResponse.json({ message: `Hello, ${params.name}!` })
     })
   ),
-  HttpRouter.post("/echo",
+  HttpRouter.post(
+    "/echo",
     HttpServerRequest.schemaBodyJson(Schema.Unknown).pipe(
       Effect.flatMap((body) => HttpServerResponse.json({ echo: body }))
     )
@@ -66,8 +68,9 @@ export const basicRouting = HttpRouter.empty.pipe(
  * @category demos
  */
 export const middlewareDemo = HttpRouter.empty.pipe(
-  HttpRouter.get("/protected",
-    Effect.gen(function* () {
+  HttpRouter.get(
+    "/protected",
+    Effect.gen(function*() {
       const request = yield* HttpServerRequest.HttpServerRequest
       const authHeader = request.headers["authorization"]
       if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -79,10 +82,9 @@ export const middlewareDemo = HttpRouter.empty.pipe(
       return HttpServerResponse.text("Unauthorized", { status: 401 })
     })
   ),
-  HttpRouter.get("/logged",
-    HttpServerResponse.text("This request was logged")
-  ),
-  HttpRouter.get("/cors",
+  HttpRouter.get("/logged", HttpServerResponse.text("This request was logged")),
+  HttpRouter.get(
+    "/cors",
     HttpServerResponse.json({ cors: "enabled" }, {
       headers: {
         "Access-Control-Allow-Origin": "https://example.com",
@@ -98,7 +100,8 @@ export const middlewareDemo = HttpRouter.empty.pipe(
  * @category demos
  */
 export const streamingDemo = HttpRouter.empty.pipe(
-  HttpRouter.get("/stream/numbers",
+  HttpRouter.get(
+    "/stream/numbers",
     HttpServerResponse.stream(
       Stream.range(1, 10).pipe(
         Stream.map((n) => `Number: ${n}\n`),
@@ -109,16 +112,15 @@ export const streamingDemo = HttpRouter.empty.pipe(
       )
     )
   ),
-  HttpRouter.get("/stream/events",
+  HttpRouter.get(
+    "/stream/events",
     HttpServerResponse.stream(
       Stream.range(1, 5).pipe(
         Stream.map((n) => ({
           event: "message",
           data: { count: n, timestamp: new Date().toISOString() }
         })),
-        Stream.map((event) => 
-          `event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`
-        ),
+        Stream.map((event) => `event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`),
         Stream.encodeText,
         Stream.schedule(Schedule.spaced("1 second"))
       ),
@@ -132,24 +134,17 @@ export const streamingDemo = HttpRouter.empty.pipe(
  * @category demos
  */
 export const errorHandlingDemo = HttpRouter.empty.pipe(
-  HttpRouter.get("/error/not-found",
-    HttpServerResponse.empty({ status: 404 })
-  ),
-  HttpRouter.get("/error/bad-request",
-    HttpServerResponse.text("Invalid request parameters", { status: 400 })
-  ),
-  HttpRouter.get("/error/internal",
-    HttpServerResponse.text("Something went wrong", { status: 500 })
-  ),
-  HttpRouter.get("/error/custom",
-    HttpServerResponse.text("I'm a teapot", { status: 418 })
-  ),
-  HttpRouter.get("/error/handled",
+  HttpRouter.get("/error/not-found", HttpServerResponse.empty({ status: 404 })),
+  HttpRouter.get("/error/bad-request", HttpServerResponse.text("Invalid request parameters", { status: 400 })),
+  HttpRouter.get("/error/internal", HttpServerResponse.text("Something went wrong", { status: 500 })),
+  HttpRouter.get("/error/custom", HttpServerResponse.text("I'm a teapot", { status: 418 })),
+  HttpRouter.get(
+    "/error/handled",
     Effect.fail(new Error("Unhandled error")).pipe(
       Effect.catchAll((error) =>
-        HttpServerResponse.json({ 
-          error: "handled", 
-          message: String(error) 
+        HttpServerResponse.json({
+          error: "handled",
+          message: String(error)
         }, { status: 500 })
       )
     )
@@ -161,9 +156,10 @@ export const errorHandlingDemo = HttpRouter.empty.pipe(
  * @category demos
  */
 export const fileUploadDemo = HttpRouter.empty.pipe(
-  HttpRouter.post("/upload/json",
+  HttpRouter.post(
+    "/upload/json",
     HttpServerRequest.schemaBodyJson(Todo).pipe(
-      Effect.flatMap((todo) => 
+      Effect.flatMap((todo) =>
         HttpServerResponse.json({
           received: todo,
           processed: true
@@ -171,7 +167,8 @@ export const fileUploadDemo = HttpRouter.empty.pipe(
       )
     )
   ),
-  HttpRouter.post("/upload/form",
+  HttpRouter.post(
+    "/upload/form",
     HttpServerRequest.schemaBodyForm(
       Schema.Struct({
         name: Schema.String,
@@ -185,8 +182,9 @@ export const fileUploadDemo = HttpRouter.empty.pipe(
       )
     )
   ),
-  HttpRouter.post("/upload/multipart",
-    Effect.gen(function* () {
+  HttpRouter.post(
+    "/upload/multipart",
+    Effect.gen(function*() {
       const request = yield* HttpServerRequest.HttpServerRequest
       const parts = yield* request.multipart
       return HttpServerResponse.json({
@@ -205,14 +203,19 @@ export const fileUploadDemo = HttpRouter.empty.pipe(
  * @category demos
  */
 export const routerComposition = HttpRouter.empty.pipe(
-  HttpRouter.mount("/api/v1", 
+  HttpRouter.mount(
+    "/api/v1",
     HttpRouter.empty.pipe(
-      HttpRouter.get("/users", HttpServerResponse.json([
-        { id: 1, name: "Alice" },
-        { id: 2, name: "Bob" }
-      ])),
-      HttpRouter.get("/users/:id",
-        Effect.gen(function* () {
+      HttpRouter.get(
+        "/users",
+        HttpServerResponse.json([
+          { id: 1, name: "Alice" },
+          { id: 2, name: "Bob" }
+        ])
+      ),
+      HttpRouter.get(
+        "/users/:id",
+        Effect.gen(function*() {
           const params = yield* HttpRouter.params
           const id = Number(params.id)
           return HttpServerResponse.json({ id, name: `User ${id}` })
@@ -220,7 +223,8 @@ export const routerComposition = HttpRouter.empty.pipe(
       )
     )
   ),
-  HttpRouter.mount("/health",
+  HttpRouter.mount(
+    "/health",
     HttpRouter.empty.pipe(
       HttpRouter.get("/", HttpServerResponse.json({ status: "healthy" })),
       HttpRouter.get("/ready", HttpServerResponse.json({ ready: true })),
@@ -234,7 +238,8 @@ export const routerComposition = HttpRouter.empty.pipe(
  * @category demos
  */
 export const cookiesAndHeaders = HttpRouter.empty.pipe(
-  HttpRouter.get("/cookies/set",
+  HttpRouter.get(
+    "/cookies/set",
     Effect.map(
       HttpServerResponse.json({ message: "Cookie set" }),
       HttpServerResponse.setCookie("demo", "value", {
@@ -245,14 +250,16 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
       })
     )
   ),
-  HttpRouter.get("/cookies/read",
-    Effect.gen(function* () {
+  HttpRouter.get(
+    "/cookies/read",
+    Effect.gen(function*() {
       const request = yield* HttpServerRequest.HttpServerRequest
       const cookies = request.cookies
       return HttpServerResponse.json({ cookies })
     })
   ),
-  HttpRouter.get("/headers/custom",
+  HttpRouter.get(
+    "/headers/custom",
     Effect.map(
       HttpServerResponse.json({ message: "Custom headers" }),
       (response) =>
@@ -262,8 +269,9 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
         )
     )
   ),
-  HttpRouter.get("/headers/read",
-    Effect.gen(function* () {
+  HttpRouter.get(
+    "/headers/read",
+    Effect.gen(function*() {
       const request = yield* HttpServerRequest.HttpServerRequest
       const headers = request.headers
       return HttpServerResponse.json({
@@ -280,8 +288,9 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
  * @category demos
  */
 export const websocketUpgrade = HttpRouter.empty.pipe(
-  HttpRouter.get("/ws",
-    Effect.gen(function* () {
+  HttpRouter.get(
+    "/ws",
+    Effect.gen(function*() {
       yield* logDemo("WebSocket", "Upgrade request received")
       return HttpServerResponse.json({
         message: "WebSocket endpoint - upgrade required",
@@ -295,9 +304,9 @@ export const websocketUpgrade = HttpRouter.empty.pipe(
  * @since 0.0.1
  * @category demos
  */
-export const createDemoApp = Effect.gen(function* () {
+export const createDemoApp = Effect.gen(function*() {
   yield* logSection("HTTP Server Demo App")
-  
+
   const app = HttpRouter.empty.pipe(
     HttpRouter.mount("/", basicRouting),
     HttpRouter.mount("/middleware", middlewareDemo),
@@ -308,7 +317,7 @@ export const createDemoApp = Effect.gen(function* () {
     HttpRouter.mount("/cookies", cookiesAndHeaders),
     HttpRouter.mount("/websocket", websocketUpgrade)
   )
-  
+
   yield* logResult("Routes configured", [
     "GET /",
     "GET /hello/:name",
@@ -321,7 +330,7 @@ export const createDemoApp = Effect.gen(function* () {
     "GET /cookies/set",
     "GET /websocket/ws"
   ])
-  
+
   return HttpServer.serve(app).pipe(
     HttpServer.withLogAddress
   )
@@ -331,7 +340,7 @@ export const createDemoApp = Effect.gen(function* () {
  * @since 0.0.1
  * @category demos
  */
-export const runAllDemos = Effect.gen(function* () {
+export const runAllDemos = Effect.gen(function*() {
   yield* Console.log("\n✨ HTTP Server demos are ready to be served!")
   yield* Console.log("Mount these routers with your platform-specific HTTP server implementation")
 })

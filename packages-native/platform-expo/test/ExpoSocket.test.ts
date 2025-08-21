@@ -1,8 +1,8 @@
 import { Socket } from "@effect/platform"
-import * as ExpoSocket from "../src/ExpoSocket"
 import { assert, describe, expect, it } from "@effect/vitest"
 import { Chunk, Effect, Queue, Stream } from "effect"
 import { WS } from "vitest-websocket-mock"
+import * as ExpoSocket from "../src/ExpoSocket"
 
 describe("ExpoSocket", () => {
   describe("WebSocket", () => {
@@ -21,12 +21,12 @@ describe("ExpoSocket", () => {
       Effect.gen(function*() {
         const server = yield* makeServer
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
-        
+
         // Verify connection is established
         yield* Effect.promise(async () => {
           await server.connected
         })
-        
+
         // Close connection
         server.close()
         const fiber = yield* Effect.fork(socket.run(() => Effect.void))
@@ -42,13 +42,13 @@ describe("ExpoSocket", () => {
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
-        
+
         yield* Effect.gen(function*() {
           const write = yield* socket.writer
           yield* write(new TextEncoder().encode("Hello"))
           yield* write(new TextEncoder().encode("World"))
         }).pipe(Effect.scoped)
-        
+
         yield* Effect.promise(async () => {
           await expect(server).toReceiveMessage(new TextEncoder().encode("Hello"))
           await expect(server).toReceiveMessage(new TextEncoder().encode("World"))
@@ -75,14 +75,14 @@ describe("ExpoSocket", () => {
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
-        
+
         // Send binary data
         const binaryData = new Uint8Array([1, 2, 3, 4, 5])
         yield* Effect.gen(function*() {
           const write = yield* socket.writer
           yield* write(binaryData)
         }).pipe(Effect.scoped)
-        
+
         yield* Effect.promise(async () => {
           await expect(server).toReceiveMessage(binaryData)
         })
@@ -151,10 +151,10 @@ describe("ExpoSocket", () => {
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
-        
+
         // Server closes with error code
         server.close({ code: 1006, reason: "Abnormal closure" })
-        
+
         const exit = yield* fiber.await
         expect(exit._tag).toEqual("Success")
       }).pipe(
@@ -168,15 +168,15 @@ describe("ExpoSocket", () => {
           connectionAttempts++
           return url
         }))
-        
+
         const server = yield* makeServer
-        
+
         yield* Effect.promise(async () => {
           await server.connected
         })
-        
+
         expect(connectionAttempts).toEqual(1)
-        
+
         server.close()
         const fiber = yield* Effect.fork(socket.run(() => Effect.void))
         yield* fiber.await
@@ -190,18 +190,18 @@ describe("ExpoSocket", () => {
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
-        
+
         // Create a large message (1MB)
         const largeData = new Uint8Array(1024 * 1024)
         for (let i = 0; i < largeData.length; i++) {
           largeData[i] = i % 256
         }
-        
+
         yield* Effect.gen(function*() {
           const write = yield* socket.writer
           yield* write(largeData)
         }).pipe(Effect.scoped)
-        
+
         yield* Effect.promise(async () => {
           await expect(server).toReceiveMessage(largeData)
         })
@@ -236,12 +236,12 @@ describe("ExpoSocket", () => {
         const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
-        
+
         yield* Effect.gen(function*() {
           const write = yield* socket.writer
           yield* write(new TextEncoder().encode("Test with Expo layer"))
         }).pipe(Effect.scoped)
-        
+
         yield* Effect.promise(async () => {
           await expect(server).toReceiveMessage(new TextEncoder().encode("Test with Expo layer"))
         })

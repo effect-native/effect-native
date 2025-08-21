@@ -6,7 +6,7 @@ import * as FileSystem from "@effect/platform/FileSystem"
 import { Effect, Layer, Option, Stream } from "effect"
 import { none, some } from "effect/Option"
 import * as ExpoFS from "expo-file-system"
-import { Directory, File, Paths } from "expo-file-system/next"
+import { Directory, File, Paths } from "expo-file-system/build/next"
 
 /**
  * @since 1.0.0
@@ -42,10 +42,10 @@ const generateSecureRandom = (): string => {
   if (typeof crypto !== "undefined" && crypto.getRandomValues) {
     const array = new Uint8Array(16)
     crypto.getRandomValues(array)
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+    return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("")
   }
   // Fallback: multiple Math.random calls for better entropy
-  return Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join('')
+  return Array.from({ length: 4 }, () => Math.random().toString(16).slice(2)).join("")
 }
 
 const makeFs = (cfg: Config): FileSystem.FileSystem => {
@@ -54,9 +54,9 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
   const rel = (p: string) => {
     let s = p.replace(/^file:\/\//, "").replace(/\\/g, "/")
     s = s.startsWith("/") ? s.slice(1) : s
-    const out: string[] = []
+    const out: Array<string> = []
     let upCount = 0
-    
+
     for (const part of s.split("/")) {
       if (!part || part === ".") continue
       if (part === "..") {
@@ -73,7 +73,7 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
         out.push(part)
       }
     }
-    
+
     if (!cfg.restrictToBase && upCount > 0) {
       return "../".repeat(upCount) + out.join("/")
     }
@@ -92,37 +92,37 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
   const infoToStat = (i: ExpoFS.FileInfo): FileSystem.File.Info =>
     !i.exists
       ? {
-          type: i.isDirectory ? "Directory" : "File",
-          mtime: none(),
-          atime: none(),
-          birthtime: none(),
-          dev: 0,
-          ino: none(),
-          mode: 0,
-          nlink: none(),
-          uid: none(),
-          gid: none(),
-          rdev: none(),
-          size: FileSystem.Size(0),
-          blksize: none(),
-          blocks: none()
-        }
+        type: i.isDirectory ? "Directory" : "File",
+        mtime: none(),
+        atime: none(),
+        birthtime: none(),
+        dev: 0,
+        ino: none(),
+        mode: 0,
+        nlink: none(),
+        uid: none(),
+        gid: none(),
+        rdev: none(),
+        size: FileSystem.Size(0),
+        blksize: none(),
+        blocks: none()
+      }
       : {
-          type: i.isDirectory ? "Directory" : "File",
-          mtime: i.modificationTime != null ? some(new Date(i.modificationTime * 1000)) : none(),
-          atime: none(),
-          birthtime: none(),
-          dev: 0,
-          ino: none(),
-          mode: 0,
-          nlink: none(),
-          uid: none(),
-          gid: none(),
-          rdev: none(),
-          size: FileSystem.Size(i.size ?? 0),
-          blksize: none(),
-          blocks: none()
-        }
+        type: i.isDirectory ? "Directory" : "File",
+        mtime: i.modificationTime != null ? some(new Date(i.modificationTime * 1000)) : none(),
+        atime: none(),
+        birthtime: none(),
+        dev: 0,
+        ino: none(),
+        mode: 0,
+        nlink: none(),
+        uid: none(),
+        gid: none(),
+        rdev: none(),
+        size: FileSystem.Size(i.size ?? 0),
+        blksize: none(),
+        blocks: none()
+      }
 
   let fdCounter = 3
   const nextFd = () => {
@@ -442,7 +442,7 @@ const makeFs = (cfg: Config): FileSystem.FileSystem => {
     Effect.tryPromise({
       try: async () => {
         if (opts?.recursive) {
-          const out: string[] = []
+          const out: Array<string> = []
           const root = asDir(path)
           const walk = (d: Directory, prefix = "") => {
             for (const item of d.list()) {

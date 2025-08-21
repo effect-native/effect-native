@@ -1,12 +1,12 @@
-import * as ExpoFileSystem from "../src/ExpoFileSystem"
 import * as Fs from "@effect/platform/FileSystem"
 import { assert, describe, expect, it } from "@effect/vitest"
 import { pipe } from "effect"
 import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
-import * as Stream from "effect/Stream"
 import * as Layer from "effect/Layer"
+import * as Stream from "effect/Stream"
+import * as ExpoFileSystem from "../src/ExpoFileSystem"
 
 const runPromise = <E, A>(self: Effect.Effect<A, E, Fs.FileSystem>) =>
   Effect.runPromise(
@@ -22,7 +22,7 @@ describe("ExpoFileSystem", () => {
         const path = yield* fs.makeTempFile()
         const testData = "lorem ipsum dolar sit amet"
         yield* fs.writeFile(path, new TextEncoder().encode(testData))
-        
+
         const data = yield* fs.readFile(path)
         const text = new TextDecoder().decode(data)
         expect(text).toEqual(testData)
@@ -33,7 +33,7 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
         const testData = "hello world"
-        
+
         yield* fs.writeFile(path, new TextEncoder().encode(testData))
         const data = yield* fs.readFile(path)
         const text = new TextDecoder().decode(data)
@@ -45,7 +45,7 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
         const testData = "hello world with string"
-        
+
         yield* fs.writeFileString(path, testData)
         const text = yield* fs.readFileString(path)
         expect(text).toEqual(testData)
@@ -55,10 +55,10 @@ describe("ExpoFileSystem", () => {
       runPromise(Effect.gen(function*() {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
-        
+
         const exists = yield* fs.exists(path)
         expect(exists).toBe(true)
-        
+
         const notExists = yield* fs.exists("/nonexistent/path/file.txt")
         expect(notExists).toBe(false)
       })))
@@ -67,11 +67,11 @@ describe("ExpoFileSystem", () => {
       runPromise(Effect.gen(function*() {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
-        
+
         yield* fs.writeFileString(path, "test content")
         const existsBefore = yield* fs.exists(path)
         expect(existsBefore).toBe(true)
-        
+
         yield* fs.remove(path)
         const existsAfter = yield* fs.exists(path)
         expect(existsAfter).toBe(false)
@@ -83,19 +83,19 @@ describe("ExpoFileSystem", () => {
         const oldPath = yield* fs.makeTempFile()
         const newPath = oldPath + ".renamed"
         const testData = "rename test"
-        
+
         yield* fs.writeFileString(oldPath, testData)
         yield* fs.rename(oldPath, newPath)
-        
+
         const oldExists = yield* fs.exists(oldPath)
         expect(oldExists).toBe(false)
-        
+
         const newExists = yield* fs.exists(newPath)
         expect(newExists).toBe(true)
-        
+
         const content = yield* fs.readFileString(newPath)
         expect(content).toEqual(testData)
-        
+
         // Cleanup
         yield* fs.remove(newPath)
       })))
@@ -106,19 +106,19 @@ describe("ExpoFileSystem", () => {
         const sourcePath = yield* fs.makeTempFile()
         const destPath = sourcePath + ".copy"
         const testData = "copy test"
-        
+
         yield* fs.writeFileString(sourcePath, testData)
         yield* fs.copy(sourcePath, destPath)
-        
+
         const sourceExists = yield* fs.exists(sourcePath)
         expect(sourceExists).toBe(true)
-        
+
         const destExists = yield* fs.exists(destPath)
         expect(destExists).toBe(true)
-        
+
         const content = yield* fs.readFileString(destPath)
         expect(content).toEqual(testData)
-        
+
         // Cleanup
         yield* fs.remove(destPath)
       })))
@@ -128,10 +128,10 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
         const testData = "stat test content"
-        
+
         yield* fs.writeFileString(path, testData)
         const stat = yield* fs.stat(path)
-        
+
         expect(stat.type).toEqual("File")
         expect(stat.size).toEqual(Fs.Size(testData.length))
       })))
@@ -160,11 +160,11 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const tempDir = yield* fs.makeTempDirectory()
         const newDir = `${tempDir}/testdir`
-        
+
         yield* fs.makeDirectory(newDir)
         const exists = yield* fs.exists(newDir)
         expect(exists).toBe(true)
-        
+
         const stat = yield* fs.stat(newDir)
         expect(stat.type).toEqual("Directory")
       })))
@@ -173,15 +173,15 @@ describe("ExpoFileSystem", () => {
       runPromise(Effect.gen(function*() {
         const fs = yield* Fs.FileSystem
         const tempDir = yield* fs.makeTempDirectory()
-        
+
         // Create test files
         yield* fs.writeFileString(`${tempDir}/file1.txt`, "content1")
         yield* fs.writeFileString(`${tempDir}/file2.txt`, "content2")
         yield* fs.makeDirectory(`${tempDir}/subdir`)
-        
+
         const entries = yield* fs.readDirectory(tempDir)
-        const names = entries.map(e => e[0]).sort()
-        
+        const names = entries.map((e) => e[0]).sort()
+
         expect(names).toContain("file1.txt")
         expect(names).toContain("file2.txt")
         expect(names).toContain("subdir")
@@ -231,18 +231,27 @@ describe("ExpoFileSystem", () => {
             const path = yield* fs.makeTempFileScoped()
             const testContent = "lorem ipsum dolar sit amet"
             yield* fs.writeFileString(path, testContent)
-            
+
             const file = yield* fs.open(path)
 
-            text = yield* pipe(Effect.flatten(file.readAlloc(Fs.Size(5))), Effect.map((_) => new TextDecoder().decode(_)))
+            text = yield* pipe(
+              Effect.flatten(file.readAlloc(Fs.Size(5))),
+              Effect.map((_) => new TextDecoder().decode(_))
+            )
             expect(text).toBe("lorem")
 
             yield* file.seek(Fs.Size(7), "current")
-            text = yield* pipe(Effect.flatten(file.readAlloc(Fs.Size(5))), Effect.map((_) => new TextDecoder().decode(_)))
+            text = yield* pipe(
+              Effect.flatten(file.readAlloc(Fs.Size(5))),
+              Effect.map((_) => new TextDecoder().decode(_))
+            )
             expect(text).toBe("dolar")
 
             yield* file.seek(Fs.Size(1), "current")
-            text = yield* pipe(Effect.flatten(file.readAlloc(Fs.Size(8))), Effect.map((_) => new TextDecoder().decode(_)))
+            text = yield* pipe(
+              Effect.flatten(file.readAlloc(Fs.Size(8))),
+              Effect.map((_) => new TextDecoder().decode(_))
+            )
             expect(text).toBe("sit amet")
 
             yield* file.seek(Fs.Size(0), "start")
@@ -293,16 +302,16 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
         const testData = "streaming test content"
-        
+
         yield* fs.writeFileString(path, testData)
-        
+
         const content = yield* pipe(
           fs.stream(path),
           Stream.map((_) => new TextDecoder().decode(_)),
           Stream.runCollect,
           Effect.map(Chunk.join(""))
         )
-        
+
         expect(content).toEqual(testData)
       })))
 
@@ -311,16 +320,16 @@ describe("ExpoFileSystem", () => {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
         const testData = "lorem ipsum dolar sit amet"
-        
+
         yield* fs.writeFileString(path, testData)
-        
+
         const content = yield* pipe(
           fs.stream(path, { offset: Fs.Size(6), bytesToRead: Fs.Size(5) }),
           Stream.map((_) => new TextDecoder().decode(_)),
           Stream.runCollect,
           Effect.map(Chunk.join(""))
         )
-        
+
         expect(content).toBe("ipsum")
       })))
 
@@ -328,14 +337,14 @@ describe("ExpoFileSystem", () => {
       runPromise(Effect.gen(function*() {
         const fs = yield* Fs.FileSystem
         const path = yield* fs.makeTempFile()
-        
+
         const data = ["hello", " ", "world", " ", "from", " ", "stream"]
         yield* pipe(
           Stream.fromIterable(data),
-          Stream.map(s => new TextEncoder().encode(s)),
+          Stream.map((s) => new TextEncoder().encode(s)),
           Stream.run(fs.sink(path))
         )
-        
+
         const content = yield* fs.readFileString(path)
         expect(content).toEqual("hello world from stream")
       })))

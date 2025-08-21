@@ -1,6 +1,6 @@
-import * as ExpoStream from "../src/ExpoStream"
 import { describe, expect, it } from "@effect/vitest"
 import { Chunk, Effect, Stream } from "effect"
+import * as ExpoStream from "../src/ExpoStream"
 
 describe("ExpoStream", () => {
   describe("Text encoding/decoding", () => {
@@ -13,8 +13,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(input)
-      })
-    )
+      }))
 
     it.effect("handle UTF-8 characters", () =>
       Effect.gen(function*() {
@@ -25,8 +24,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(input)
-      })
-    )
+      }))
 
     it.effect("handle empty strings", () =>
       Effect.gen(function*() {
@@ -37,8 +35,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(input)
-      })
-    )
+      }))
   })
 
   describe("Stream transformations", () => {
@@ -52,8 +49,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(data)
-      })
-    )
+      }))
 
     it.effect("stream concatenation", () =>
       Effect.gen(function*() {
@@ -65,34 +61,31 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["a", "b", "c", "d", "e", "f"])
-      })
-    )
+      }))
 
     it.effect("stream filtering", () =>
       Effect.gen(function*() {
         const data = ["keep1", "skip", "keep2", "skip", "keep3"]
         const result = yield* Stream.fromIterable(data).pipe(
-          Stream.filter(s => s.startsWith("keep")),
+          Stream.filter((s) => s.startsWith("keep")),
           Stream.encodeText,
           Stream.decodeText(),
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["keep1", "keep2", "keep3"])
-      })
-    )
+      }))
 
     it.effect("stream mapping", () =>
       Effect.gen(function*() {
         const data = ["hello", "world"]
         const result = yield* Stream.fromIterable(data).pipe(
-          Stream.map(s => s.toUpperCase()),
+          Stream.map((s) => s.toUpperCase()),
           Stream.encodeText,
           Stream.decodeText(),
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["HELLO", "WORLD"])
-      })
-    )
+      }))
   })
 
   describe("Binary data handling", () => {
@@ -104,13 +97,12 @@ describe("ExpoStream", () => {
           new Uint8Array([7, 8, 9])
         ]
         const result = yield* Stream.fromIterable(chunks).pipe(
-          Stream.mapChunks(Chunk.flatMap(chunk => Chunk.unsafeFromArray(Array.from(chunk)))),
+          Stream.mapChunks(Chunk.flatMap((chunk) => Chunk.unsafeFromArray(Array.from(chunk)))),
           Stream.runCollect
         )
         const flattened = Chunk.toArray(result)
         expect(flattened).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
-      })
-    )
+      }))
 
     it.effect("encode strings to binary", () =>
       Effect.gen(function*() {
@@ -122,8 +114,7 @@ describe("ExpoStream", () => {
         const firstChunk = Chunk.unsafeHead(encoded)
         const decoded = new TextDecoder().decode(firstChunk)
         expect(decoded).toEqual(text)
-      })
-    )
+      }))
 
     it.effect("decode binary to strings", () =>
       Effect.gen(function*() {
@@ -134,25 +125,23 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.unsafeHead(result)).toEqual(text)
-      })
-    )
+      }))
   })
 
   describe("Error handling", () => {
     it.effect("handle stream errors", () =>
       Effect.gen(function*() {
         const result = yield* Stream.make("a", "b", "c").pipe(
-          Stream.mapEffect(s => 
-            s === "b" 
-              ? Effect.fail("Error at b") 
+          Stream.mapEffect((s) =>
+            s === "b"
+              ? Effect.fail("Error at b")
               : Effect.succeed(s)
           ),
           Stream.catchAll(() => Stream.make("error-handled")),
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["a", "error-handled"])
-      })
-    )
+      }))
 
     it.effect("retry on failure", () =>
       Effect.gen(function*() {
@@ -170,16 +159,15 @@ describe("ExpoStream", () => {
         )
         expect(Chunk.toArray(result)).toEqual(["success"])
         expect(attempts).toEqual(3)
-      })
-    )
+      }))
   })
 
   describe("Stream composition", () => {
     it.effect("pipeline multiple transformations", () =>
       Effect.gen(function*() {
         const result = yield* Stream.range(1, 10).pipe(
-          Stream.map(n => n * 2),
-          Stream.filter(n => n > 10),
+          Stream.map((n) => n * 2),
+          Stream.filter((n) => n > 10),
           Stream.take(3),
           Stream.map(String),
           Stream.encodeText,
@@ -187,8 +175,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["12", "14", "16"])
-      })
-    )
+      }))
 
     it.effect("zip streams", () =>
       Effect.gen(function*() {
@@ -199,8 +186,7 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual(["1a", "2b", "3c", "4d", "5e"])
-      })
-    )
+      }))
 
     it.effect("merge streams", () =>
       Effect.gen(function*() {
@@ -211,8 +197,7 @@ describe("ExpoStream", () => {
         )
         const sorted = Chunk.toArray(result).sort((a, b) => a - b)
         expect(sorted).toEqual([1, 2, 3, 4, 5, 6])
-      })
-    )
+      }))
   })
 
   describe("Performance and buffering", () => {
@@ -224,19 +209,17 @@ describe("ExpoStream", () => {
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual([1, 2, 3, 4, 5])
-      })
-    )
+      }))
 
     it.effect("chunked processing", () =>
       Effect.gen(function*() {
         const result = yield* Stream.range(1, 20).pipe(
           Stream.chunked(5),
-          Stream.map(chunk => Chunk.size(chunk)),
+          Stream.map((chunk) => Chunk.size(chunk)),
           Stream.runCollect
         )
         expect(Chunk.toArray(result)).toEqual([5, 5, 5, 5])
-      })
-    )
+      }))
 
     it.effect("throttling", () =>
       Effect.gen(function*() {
@@ -252,8 +235,7 @@ describe("ExpoStream", () => {
         const elapsed = Date.now() - start
         // Should take at least 100ms for 3 items with 50ms throttle
         expect(elapsed).toBeGreaterThanOrEqual(100)
-      })
-    )
+      }))
   })
 
   describe("Integration with Expo", () => {
@@ -261,7 +243,7 @@ describe("ExpoStream", () => {
       Effect.gen(function*() {
         // Simulate an Expo data source
         const mockExpoData = () => Promise.resolve(["expo", "data", "stream"])
-        
+
         const result = yield* Stream.fromAsyncIterable(
           (async function*() {
             const data = await mockExpoData()
@@ -274,28 +256,24 @@ describe("ExpoStream", () => {
           Stream.decodeText(),
           Stream.runCollect
         )
-        
+
         expect(Chunk.toArray(result)).toEqual(["expo", "data", "stream"])
-      })
-    )
+      }))
 
     it.effect("stream to Expo sink", () =>
       Effect.gen(function*() {
-        const collected: string[] = []
+        const collected: Array<string> = []
         const mockExpoSink = (data: string) => {
           collected.push(data)
           return Promise.resolve()
         }
-        
+
         yield* Stream.make("item1", "item2", "item3").pipe(
-          Stream.mapEffect(item => 
-            Effect.promise(() => mockExpoSink(item))
-          ),
+          Stream.mapEffect((item) => Effect.promise(() => mockExpoSink(item))),
           Stream.runDrain
         )
-        
+
         expect(collected).toEqual(["item1", "item2", "item3"])
-      })
-    )
+      }))
   })
 })

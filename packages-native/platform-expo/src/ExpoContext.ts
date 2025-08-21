@@ -16,7 +16,7 @@ import * as ExpoKeyValueStore from "./ExpoKeyValueStore.js"
  */
 export type ExpoContext =
   | FileSystem.FileSystem
-  | HttpClient.HttpClient.Default
+  | HttpClient.HttpClient
   | KeyValueStore.KeyValueStore
 
 /**

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import { describe, expect, it } from "vitest"
 
 describe("Platform Demo", () => {
   it("should load FileSystemDemo module", async () => {
@@ -61,10 +61,10 @@ describe("Platform Demo", () => {
 
   it("should have working DemoHelpers", async () => {
     const { runDemo } = await import("../src/utils/DemoHelpers.js")
-    
+
     const successDemo = Effect.succeed("test value")
     const result = await Effect.runPromise(runDemo("Test Demo", successDemo))
-    
+
     expect(Option.isSome(result)).toBe(true)
     if (Option.isSome(result)) {
       expect(result.value).toBe("test value")
@@ -73,10 +73,10 @@ describe("Platform Demo", () => {
 
   it("should handle demo errors gracefully", async () => {
     const { runDemo } = await import("../src/utils/DemoHelpers.js")
-    
+
     const errorDemo = Effect.fail("test error")
     const result = await Effect.runPromise(runDemo("Error Demo", errorDemo))
-    
+
     expect(Option.isNone(result)).toBe(true)
   })
 })

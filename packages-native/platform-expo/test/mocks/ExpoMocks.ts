@@ -25,20 +25,20 @@ export class MockAsyncStorage {
     this.storage.clear()
   }
 
-  async getAllKeys(): Promise<string[]> {
+  async getAllKeys(): Promise<Array<string>> {
     return Array.from(this.storage.keys())
   }
 
-  async multiGet(keys: string[]): Promise<Array<[string, string | null]>> {
-    return keys.map(key => [key, this.storage.get(key) ?? null])
+  async multiGet(keys: Array<string>): Promise<Array<[string, string | null]>> {
+    return keys.map((key) => [key, this.storage.get(key) ?? null])
   }
 
   async multiSet(keyValuePairs: Array<[string, string]>): Promise<void> {
     keyValuePairs.forEach(([key, value]) => this.storage.set(key, value))
   }
 
-  async multiRemove(keys: string[]): Promise<void> {
-    keys.forEach(key => this.storage.delete(key))
+  async multiRemove(keys: Array<string>): Promise<void> {
+    keys.forEach((key) => this.storage.delete(key))
   }
 }
 
@@ -104,10 +104,10 @@ export class MockFileSystem {
     }
   }
 
-  async readDirectoryAsync(uri: string): Promise<string[]> {
-    const entries: string[] = []
+  async readDirectoryAsync(uri: string): Promise<Array<string>> {
+    const entries: Array<string> = []
     const prefix = uri.endsWith("/") ? uri : uri + "/"
-    
+
     for (const [path] of this.files) {
       if (path.startsWith(prefix) && path !== uri) {
         const relativePath = path.slice(prefix.length)
@@ -117,7 +117,7 @@ export class MockFileSystem {
         }
       }
     }
-    
+
     return [...new Set(entries)]
   }
 
@@ -182,10 +182,10 @@ export class MockWebSocket extends EventTarget {
   onerror: ((event: Event) => void) | null = null
   onmessage: ((event: MessageEvent) => void) | null = null
 
-  constructor(url: string, protocols?: string | string[]) {
+  constructor(url: string, protocols?: string | Array<string>) {
     super()
     this.url = url
-    
+
     // Simulate connection
     setTimeout(() => {
       this.readyState = MockWebSocket.OPEN
@@ -206,7 +206,7 @@ export class MockWebSocket extends EventTarget {
     if (this.readyState === MockWebSocket.CLOSING || this.readyState === MockWebSocket.CLOSED) {
       return
     }
-    
+
     this.readyState = MockWebSocket.CLOSING
     setTimeout(() => {
       this.readyState = MockWebSocket.CLOSED
@@ -244,10 +244,10 @@ export const generateTestJson = (depth: number = 3): unknown => {
   if (depth === 0) {
     return Math.random() > 0.5 ? Math.random() : `string_${Math.random()}`
   }
-  
+
   const obj: Record<string, unknown> = {}
   const numKeys = Math.floor(Math.random() * 5) + 1
-  
+
   for (let i = 0; i < numKeys; i++) {
     const key = `key_${i}`
     if (Math.random() > 0.7) {
@@ -258,6 +258,6 @@ export const generateTestJson = (depth: number = 3): unknown => {
       obj[key] = Math.random() > 0.5 ? Math.random() : `value_${i}`
     }
   }
-  
+
   return obj
 }

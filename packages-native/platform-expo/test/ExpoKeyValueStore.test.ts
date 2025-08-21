@@ -1,5 +1,5 @@
-import * as Kv from "../src/ExpoKeyValueStore"
 import { describe } from "@effect/vitest"
+import * as Kv from "../src/ExpoKeyValueStore"
 // @ts-ignore
 import { testLayer } from "../../../packages/platform/test/KeyValueStore.test.js"
 
