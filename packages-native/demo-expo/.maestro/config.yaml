@@ -1,0 +1,14 @@
+# Maestro workspace config for demo-expo
+env:
+  APP_ID: com.effectnative.demo.expo
+  
+tags:
+  - smoke
+  - navigation
+  - ui
+
+# Optional: define test execution order
+# flows:
+#   - home.yml
+#   - navigation.yml
+#   - explore.yml

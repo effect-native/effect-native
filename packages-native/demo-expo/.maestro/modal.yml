@@ -1,0 +1,38 @@
+appId: ${APP_ID}
+tags:
+  - modal
+  - navigation
+---
+# Test: Modal navigation from home screen
+- launchApp:
+    clearState: true
+
+# Start on home screen
+- assertVisible: "Welcome!"
+
+# Tap on Step 2: Explore link to trigger modal
+- tapOn: "Step 2: Explore"
+
+# Wait for modal or menu to appear
+- waitForAnimationToEnd
+
+# Test if modal/menu actions work
+- tapOn:
+    text: "Action"
+    optional: true  # Might be in a context menu
+
+# Handle potential alert
+- assertVisible:
+    text: "Action pressed"
+    optional: true
+    
+- tapOn:
+    text: "OK"
+    optional: true
+
+# Go back to home
+- pressKey: back
+
+- assertVisible: "Welcome!"
+
+- takeScreenshot: modal_test_complete

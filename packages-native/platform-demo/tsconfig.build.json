@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.src.json",
+  "references": [
+    { "path": "../../packages/effect" },
+    { "path": "../../packages/platform" }
+  ]
+}

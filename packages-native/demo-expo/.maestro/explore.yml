@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - explore
+  - collapsibles
+---
+# Test: Explore screen interactions and collapsible components
+- launchApp:
+    clearState: true
+
+# Navigate to Explore tab
+- tapOn: "Explore"
+
+# Verify initial state
+- assertVisible: "Explore"
+- assertVisible: "This app includes example code to help you get started."
+
+# Test all collapsible sections
+- runFlow: subflows/test_collapsibles.yml
+
+# Scroll to check all content is accessible
+- scrollUntilVisible:
+    element: "Animations"
+    direction: DOWN
+    
+- takeScreenshot: explore_screen_full

@@ -19,6 +19,7 @@
             bun
             corepack
             deno
+            maestro
             nodejs-slim_23
             python3
             yq-go

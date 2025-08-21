@@ -1,0 +1,41 @@
+{
+  "name": "@effect-native/platform-demo",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "MIT",
+  "description": "Portable @effect/platform demonstrations and examples",
+  "homepage": "https://github.com/effect-native/effect",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect.git",
+    "directory": "packages-native/platform-demo"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist"
+  },
+  "scripts": {
+    "codegen": "build-utils prepare-v2",
+    "build": "pnpm codegen && build-utils pack-v2",
+    "circular": "madge --extensions ts --circular --no-color --no-spinner src",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "devDependencies": {
+    "@effect/build-utils": "^0.8.3",
+    "@effect/platform": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "peerDependencies": {
+    "@effect/platform": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/dts/index.d.ts",
+  "sideEffects": []
+}

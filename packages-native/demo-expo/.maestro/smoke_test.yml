@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - smoke
+  - quick
+---
+# Quick smoke test - rootin' tootin' fast check that the app launches
+- launchApp:
+    clearState: true
+
+# App launches successfully
+- assertVisible: "Welcome!"
+
+# Both tabs are visible
+- assertVisible: "Home"
+- assertVisible: "Explore"
+
+# Can navigate to Explore
+- tapOn: "Explore"
+- assertVisible: "This app includes example code"
+
+# Can navigate back to Home
+- tapOn: "Home"
+- assertVisible: "Welcome!"
+
+- takeScreenshot: smoke_test_pass

@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "username": "test_user_1",
+      "email": "test1@example.com"
+    },
+    {
+      "username": "test_user_2",
+      "email": "test2@example.com"
+    }
+  ],
+  "testStrings": {
+    "longText": "This is a very long text string that can be used for testing text input fields and making sure they handle long content appropriately without breaking the UI layout",
+    "specialChars": "Test!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    "emoji": "🎯 🚀 💡 ✨ 🎨"
+  }
+}

@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+tags:
+  - navigation
+  - tabs
+---
+# Test: Tab navigation between Home and Explore screens
+- launchApp:
+    clearState: true
+
+# Start on home screen
+- assertVisible: "Welcome!"
+
+# Navigate to Explore tab
+- tapOn: "Explore"
+
+# Verify we're on the Explore screen
+- assertVisible: "Explore"
+- assertVisible: "This app includes example code to help you get started."
+
+# Expand a collapsible section
+- tapOn: "File-based routing"
+- assertVisible: "app/(tabs)/index.tsx"
+- assertVisible: "Learn more"
+
+# Collapse it
+- tapOn: "File-based routing"
+
+# Try another collapsible
+- tapOn: "Animations"
+- assertVisible: "react-native-reanimated"
+
+# Navigate back to Home tab
+- tapOn: "Home"
+- assertVisible: "Welcome!"
+
+# Take screenshots
+- takeScreenshot: navigation_complete

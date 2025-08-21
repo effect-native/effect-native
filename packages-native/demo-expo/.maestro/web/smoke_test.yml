@@ -1,0 +1,31 @@
+url: ${WEB_URL}
+tags:
+  - web
+  - smoke
+---
+# Rootin' tootin' web smoke test
+- launchApp
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# App launches successfully
+- assertVisible: "Welcome!"
+
+# Both tabs are visible (web might render differently)
+- assertVisible:
+    text: "Home"
+    optional: true  # Tabs might be rendered differently on web
+- assertVisible:
+    text: "Explore"
+    optional: true
+
+# Can navigate to Explore
+- tapOn: "Explore"
+- assertVisible: "This app includes example code"
+
+# Can navigate back to Home
+- tapOn: "Home"
+- assertVisible: "Welcome!"
+
+- takeScreenshot: web_smoke_test_pass

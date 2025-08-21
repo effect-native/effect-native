@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "build/src",
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "sourceMap": true
+  },
+  "references": [
+    { "path": "../../packages/effect" },
+    { "path": "../../packages/platform" }
+  ]
+}

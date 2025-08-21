@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["test/**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "test",
+    "outDir": "build/test",
+    "tsBuildInfoFile": "tsconfig.test.tsbuildinfo",
+    "sourceMap": true,
+    "types": ["vitest/globals"]
+  },
+  "references": [
+    { "path": "tsconfig.src.json" },
+    { "path": "../../packages/effect" },
+    { "path": "../../packages/platform" }
+  ]
+}
