@@ -1,3 +1,6 @@
-import { defineWorkspaceConfig } from "../../vitest.workspace.js"
+import { mergeConfig, type ViteUserConfig } from "vitest/config"
+import shared from "../../vitest.shared.js"
 
-export default defineWorkspaceConfig(__dirname)
+const config: ViteUserConfig = {}
+
+export default mergeConfig(shared, config)

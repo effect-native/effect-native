@@ -3,7 +3,8 @@
   "include": ["test"],
   "compilerOptions": {
     "rootDir": "test",
-    "noEmit": true
+    "outDir": "build/test",
+    "tsBuildInfoFile": "build/test/.tsbuildinfo"
   },
   "references": [
     { "path": "tsconfig.src.json" }
