@@ -5,6 +5,7 @@ import * as Socket from "@effect/platform/Socket"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Queue from "effect/Queue"
+import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import { logDemo, logResult, logSection } from "./utils/DemoHelpers.js"
 
@@ -99,7 +100,7 @@ export const streamingData = Effect.gen(function* () {
   
   const dataStream = Stream.range(1, 10).pipe(
     Stream.map((n) => `Data packet #${n}`),
-    Stream.schedule(Stream.spaced("200 millis"))
+    Stream.schedule(Schedule.spaced("200 millis"))
   )
   
   yield* Stream.runForEach(dataStream, (data) =>

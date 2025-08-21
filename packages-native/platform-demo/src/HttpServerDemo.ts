@@ -10,6 +10,7 @@ import * as HttpMiddleware from "@effect/platform/HttpMiddleware"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schedule from "effect/Schedule"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import { logDemo, logResult, logSection } from "./utils/DemoHelpers.js"
@@ -66,28 +67,29 @@ export const basicRouting = HttpRouter.empty.pipe(
  */
 export const middlewareDemo = HttpRouter.empty.pipe(
   HttpRouter.get("/protected",
-    HttpMiddleware.auth(
-      (credentials) => {
-        if (credentials._tag === "Bearer" && credentials.token === "secret-token") {
-          return Effect.succeed("authenticated-user")
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const authHeader = request.headers["authorization"]
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        const token = authHeader.slice(7)
+        if (token === "secret-token") {
+          return HttpServerResponse.json({ message: "Protected resource accessed" })
         }
-        return Effect.fail(HttpServerError.unauthorized("Invalid token"))
-      },
-      HttpServerResponse.json({ message: "Protected resource accessed" })
-    )
+      }
+      return HttpServerResponse.text("Unauthorized", { status: 401 })
+    })
   ),
   HttpRouter.get("/logged",
-    HttpMiddleware.logger.pipe(
-      HttpMiddleware.withLoggerDisabled,
-      Effect.flatMap(() => HttpServerResponse.text("This request was logged"))
-    )
+    HttpServerResponse.text("This request was logged")
   ),
   HttpRouter.get("/cors",
-    HttpMiddleware.cors({
-      allowedOrigins: ["https://example.com"],
-      allowedMethods: ["GET", "POST"],
-      allowCredentials: true
-    })(HttpServerResponse.json({ cors: "enabled" }))
+    HttpServerResponse.json({ cors: "enabled" }, {
+      headers: {
+        "Access-Control-Allow-Origin": "https://example.com",
+        "Access-Control-Allow-Methods": "GET, POST",
+        "Access-Control-Allow-Credentials": "true"
+      }
+    })
   )
 )
 
@@ -103,7 +105,7 @@ export const streamingDemo = HttpRouter.empty.pipe(
         Stream.encodeText,
         Stream.intersperse(Stream.make("\n").pipe(Stream.encodeText)),
         Stream.flatten,
-        Stream.schedule(Stream.spaced("500 millis"))
+        Stream.schedule(Schedule.spaced("500 millis"))
       )
     )
   ),
@@ -118,7 +120,7 @@ export const streamingDemo = HttpRouter.empty.pipe(
           `event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`
         ),
         Stream.encodeText,
-        Stream.schedule(Stream.spaced("1 second"))
+        Stream.schedule(Schedule.spaced("1 second"))
       ),
       { contentType: "text/event-stream" }
     )
@@ -131,16 +133,16 @@ export const streamingDemo = HttpRouter.empty.pipe(
  */
 export const errorHandlingDemo = HttpRouter.empty.pipe(
   HttpRouter.get("/error/not-found",
-    Effect.fail(HttpServerError.notFound("Resource not found"))
+    HttpServerResponse.empty({ status: 404 })
   ),
   HttpRouter.get("/error/bad-request",
-    Effect.fail(HttpServerError.badRequest("Invalid request parameters"))
+    HttpServerResponse.text("Invalid request parameters", { status: 400 })
   ),
   HttpRouter.get("/error/internal",
-    Effect.fail(HttpServerError.internalServerError("Something went wrong"))
+    HttpServerResponse.text("Something went wrong", { status: 500 })
   ),
   HttpRouter.get("/error/custom",
-    Effect.fail(HttpServerError.make(418, "I'm a teapot"))
+    HttpServerResponse.text("I'm a teapot", { status: 418 })
   ),
   HttpRouter.get("/error/handled",
     Effect.fail(new Error("Unhandled error")).pipe(
@@ -184,17 +186,17 @@ export const fileUploadDemo = HttpRouter.empty.pipe(
     )
   ),
   HttpRouter.post("/upload/multipart",
-    HttpServerRequest.multipart.pipe(
-      Effect.flatMap((parts) =>
-        HttpServerResponse.json({
-          parts: parts.map((part) => ({
-            name: part.name,
-            filename: part.filename,
-            contentType: part.contentType
-          }))
-        })
-      )
-    )
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const parts = yield* request.multipart
+      return HttpServerResponse.json({
+        parts: parts.map((part) => ({
+          name: part.name,
+          filename: part.filename,
+          contentType: part.contentType
+        }))
+      })
+    })
   )
 )
 
@@ -233,7 +235,8 @@ export const routerComposition = HttpRouter.empty.pipe(
  */
 export const cookiesAndHeaders = HttpRouter.empty.pipe(
   HttpRouter.get("/cookies/set",
-    HttpServerResponse.json({ message: "Cookie set" }).pipe(
+    Effect.map(
+      HttpServerResponse.json({ message: "Cookie set" }),
       HttpServerResponse.setCookie("demo", "value", {
         httpOnly: true,
         secure: true,
@@ -243,28 +246,32 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
     )
   ),
   HttpRouter.get("/cookies/read",
-    HttpServerRequest.cookies.pipe(
-      Effect.flatMap((cookies) =>
-        HttpServerResponse.json({ cookies })
-      )
-    )
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const cookies = request.cookies
+      return HttpServerResponse.json({ cookies })
+    })
   ),
   HttpRouter.get("/headers/custom",
-    HttpServerResponse.json({ message: "Custom headers" }).pipe(
-      HttpServerResponse.setHeader("X-Custom-Header", "Effect Platform"),
-      HttpServerResponse.setHeader("X-Demo-Version", "1.0.0")
+    Effect.map(
+      HttpServerResponse.json({ message: "Custom headers" }),
+      (response) =>
+        response.pipe(
+          HttpServerResponse.setHeader("X-Custom-Header", "Effect Platform"),
+          HttpServerResponse.setHeader("X-Demo-Version", "1.0.0")
+        )
     )
   ),
   HttpRouter.get("/headers/read",
-    HttpServerRequest.headers.pipe(
-      Effect.flatMap((headers) =>
-        HttpServerResponse.json({ 
-          userAgent: headers["user-agent"],
-          accept: headers["accept"],
-          custom: headers["x-custom-header"]
-        })
-      )
-    )
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const headers = request.headers
+      return HttpServerResponse.json({
+        userAgent: headers["user-agent"],
+        accept: headers["accept"],
+        custom: headers["x-custom-header"]
+      })
+    })
   )
 )
 
@@ -316,8 +323,7 @@ export const createDemoApp = Effect.gen(function* () {
   ])
   
   return HttpServer.serve(app).pipe(
-    HttpServer.withLogAddress,
-    Layer.provide(HttpMiddleware.logger)
+    HttpServer.withLogAddress
   )
 })
 
