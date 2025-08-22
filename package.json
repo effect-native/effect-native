@@ -92,10 +92,12 @@
       "msgpackr-extract",
       "msw",
       "protobufjs",
+      "sharp",
       "ssh2",
       "workerd"
     ],
     "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
       "better-sqlite3"
     ]
   }
