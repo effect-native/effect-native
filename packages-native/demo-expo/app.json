@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/expo/expo/main/docs/public/static/schemas/unversioned/app-config-schema.json",
   "expo": {
     "name": "demo-expo",
     "slug": "demo-expo",
@@ -37,7 +38,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCanary": true
     }
   }
 }
