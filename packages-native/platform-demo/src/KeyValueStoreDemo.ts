@@ -87,7 +87,7 @@ export const batchOperations = Effect.gen(function*() {
   yield* logResult("Remaining", `${remainingCount}/${keys.length} keys`)
 
   yield* logDemo("Clear All", "Removing all keys")
-  yield* store.clear()
+  yield* Effect.forEach(keys, (key) => store.remove(key))
   const afterClear = yield* Effect.forEach(keys, (key) => store.has(key))
   const afterClearCount = afterClear.filter(Boolean).length
   yield* logResult("After clear", `${afterClearCount} keys remaining`)
@@ -129,11 +129,15 @@ export const complexDataTypes = Effect.gen(function*() {
   yield* logResult("Retrieved array", Option.getOrElse(parsedTags, () => []))
 
   yield* logDemo("Binary Data", "Storing base64 encoded data")
-  const binaryData = Buffer.from("Hello, Binary World!").toString("base64")
+  const encoder = new TextEncoder()
+  const binaryData = btoa(String.fromCharCode(...encoder.encode("Hello, Binary World!")))
   yield* store.set("data:binary", binaryData)
 
   const retrievedBinary = yield* store.get("data:binary")
-  const decodedBinary = Option.map(retrievedBinary, (b64) => Buffer.from(b64, "base64").toString())
+  const decodedBinary = Option.map(retrievedBinary, (b64) => {
+    const decoder = new TextDecoder()
+    return decoder.decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)))
+  })
   yield* logResult("Decoded binary", Option.getOrElse(decodedBinary, () => ""))
 
   return { complexData: "completed" }

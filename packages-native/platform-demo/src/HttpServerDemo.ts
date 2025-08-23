@@ -1,15 +1,13 @@
 /**
  * @since 0.0.1
  */
-import * as HttpMiddleware from "@effect/platform/HttpMiddleware"
 import * as HttpRouter from "@effect/platform/HttpRouter"
 import * as HttpServer from "@effect/platform/HttpServer"
-import * as HttpServerError from "@effect/platform/HttpServerError"
 import * as HttpServerRequest from "@effect/platform/HttpServerRequest"
 import * as HttpServerResponse from "@effect/platform/HttpServerResponse"
 import * as Console from "effect/Console"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Schedule from "effect/Schedule"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
@@ -52,7 +50,7 @@ export const basicRouting = HttpRouter.empty.pipe(
     Effect.gen(function*() {
       const params = yield* HttpRouter.params
       return HttpServerResponse.json({ message: `Hello, ${params.name}!` })
-    })
+    }).pipe(Effect.flatten)
   ),
   HttpRouter.post(
     "/echo",
@@ -80,7 +78,7 @@ export const middlewareDemo = HttpRouter.empty.pipe(
         }
       }
       return HttpServerResponse.text("Unauthorized", { status: 401 })
-    })
+    }).pipe(Effect.flatten)
   ),
   HttpRouter.get("/logged", HttpServerResponse.text("This request was logged")),
   HttpRouter.get(
@@ -104,11 +102,9 @@ export const streamingDemo = HttpRouter.empty.pipe(
     "/stream/numbers",
     HttpServerResponse.stream(
       Stream.range(1, 10).pipe(
-        Stream.map((n) => `Number: ${n}\n`),
+        Stream.map((n) => `Number: ${n}\n\n`),
         Stream.encodeText,
-        Stream.intersperse(Stream.make("\n").pipe(Stream.encodeText)),
-        Stream.flatten,
-        Stream.schedule(Schedule.spaced("500 millis"))
+        Stream.schedule(Schedule.spaced(Duration.millis(500)))
       )
     )
   ),
@@ -187,14 +183,11 @@ export const fileUploadDemo = HttpRouter.empty.pipe(
     Effect.gen(function*() {
       const request = yield* HttpServerRequest.HttpServerRequest
       const parts = yield* request.multipart
-      return HttpServerResponse.json({
-        parts: parts.map((part) => ({
-          name: part.name,
-          filename: part.filename,
-          contentType: part.contentType
-        }))
-      })
-    })
+      const partsInfo = Array.from(parts.parts).map(([name]) => ({
+        name
+      }))
+      return HttpServerResponse.json({ parts: partsInfo })
+    }).pipe(Effect.flatten)
   )
 )
 
@@ -219,7 +212,7 @@ export const routerComposition = HttpRouter.empty.pipe(
           const params = yield* HttpRouter.params
           const id = Number(params.id)
           return HttpServerResponse.json({ id, name: `User ${id}` })
-        })
+        }).pipe(Effect.flatten)
       )
     )
   ),
@@ -240,14 +233,13 @@ export const routerComposition = HttpRouter.empty.pipe(
 export const cookiesAndHeaders = HttpRouter.empty.pipe(
   HttpRouter.get(
     "/cookies/set",
-    Effect.map(
-      HttpServerResponse.json({ message: "Cookie set" }),
-      HttpServerResponse.setCookie("demo", "value", {
+    HttpServerResponse.json({ message: "Cookie set" }).pipe(
+      Effect.map(HttpServerResponse.setCookie("demo", "value", {
         httpOnly: true,
         secure: true,
         sameSite: "strict",
         maxAge: 3600
-      })
+      }))
     )
   ),
   HttpRouter.get(
@@ -256,7 +248,7 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
       const request = yield* HttpServerRequest.HttpServerRequest
       const cookies = request.cookies
       return HttpServerResponse.json({ cookies })
-    })
+    }).pipe(Effect.flatten)
   ),
   HttpRouter.get(
     "/headers/custom",
@@ -279,7 +271,7 @@ export const cookiesAndHeaders = HttpRouter.empty.pipe(
         accept: headers["accept"],
         custom: headers["x-custom-header"]
       })
-    })
+    }).pipe(Effect.flatten)
   )
 )
 
@@ -296,7 +288,7 @@ export const websocketUpgrade = HttpRouter.empty.pipe(
         message: "WebSocket endpoint - upgrade required",
         hint: "Use a WebSocket client to connect"
       })
-    })
+    }).pipe(Effect.flatten)
   )
 )
 

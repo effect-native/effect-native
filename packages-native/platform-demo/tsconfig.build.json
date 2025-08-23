@@ -1,7 +1,13 @@
 {
   "extends": "./tsconfig.src.json",
   "references": [
-    { "path": "../../packages/effect" },
-    { "path": "../../packages/platform" }
-  ]
+    { "path": "../../packages/effect/tsconfig.build.json" },
+    { "path": "../../packages/platform/tsconfig.build.json" }
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/build.tsbuildinfo",
+    "outDir": "build/esm",
+    "declarationDir": "build/dts",
+    "stripInternal": true
+  }
 }

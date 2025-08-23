@@ -4,7 +4,6 @@
 import * as Terminal from "@effect/platform/Terminal"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import { logDemo, logResult, logSection } from "./utils/DemoHelpers.js"

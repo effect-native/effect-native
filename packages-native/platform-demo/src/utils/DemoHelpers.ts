@@ -50,10 +50,10 @@ export const withTiming = <A, E, R>(
  * @since 0.0.1
  * @category utilities
  */
-export const runDemo = <A, E>(
+export const runDemo = <A, E, R>(
   name: string,
-  effect: Effect.Effect<A, E>
-): Effect.Effect<Option.Option<A>, never> =>
+  effect: Effect.Effect<A, E, R>
+): Effect.Effect<Option.Option<A>, never, R> =>
   Effect.gen(function*() {
     yield* logDemo(name, "Starting...")
     const result = yield* Effect.either(effect)

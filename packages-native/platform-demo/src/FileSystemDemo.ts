@@ -99,7 +99,8 @@ export const streamOperations = Effect.gen(function*() {
 
   yield* logDemo("Stream Write", "Writing data via stream")
   const lines = Stream.range(1, 100).pipe(
-    Stream.map((n) => `Line ${n}: This is line number ${n}\n`)
+    Stream.map((n) => `Line ${n}: This is line number ${n}\n`),
+    Stream.encodeText
   )
   yield* Stream.run(lines, fs.sink(largePath))
   yield* logResult("Stream written", largePath)
@@ -177,9 +178,7 @@ export const watchOperations = Effect.gen(function*() {
 
   yield* logDemo("Watch File", "Monitoring file changes")
 
-  const watcher = yield* fs.watch(watchPath)
-
-  const watchStream = Stream.fromAsyncIterable(watcher, (e) => e).pipe(
+  const watchStream = fs.watch(watchPath).pipe(
     Stream.take(3),
     Stream.tap((event) => Console.log("File event:", event))
   )

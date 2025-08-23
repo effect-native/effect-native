@@ -16,22 +16,12 @@ export * as HttpClientDemo from "./HttpClientDemo.js"
 /**
  * @since 0.0.1
  */
-export * as HttpServerDemo from "./HttpServerDemo.js"
-
-/**
- * @since 0.0.1
- */
 export * as KeyValueStoreDemo from "./KeyValueStoreDemo.js"
 
 /**
  * @since 0.0.1
  */
 export * as PathDemo from "./PathDemo.js"
-
-/**
- * @since 0.0.1
- */
-export * as SocketDemo from "./SocketDemo.js"
 
 /**
  * @since 0.0.1

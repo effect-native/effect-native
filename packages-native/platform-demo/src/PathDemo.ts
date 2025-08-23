@@ -101,9 +101,6 @@ export const pathChecks = Effect.gen(function*() {
   yield* logDemo("Path Separator", "Platform-specific separator")
   yield* logResult("Separator", path.sep)
 
-  yield* logDemo("Path Delimiter", "Platform-specific delimiter")
-  yield* logResult("Delimiter", path.delimiter)
-
   yield* logDemo("Format Path", "Building path from parts")
   const formatted = path.format({
     dir: path.join("home", "user"),
@@ -111,7 +108,7 @@ export const pathChecks = Effect.gen(function*() {
   })
   yield* logResult("Formatted", formatted)
 
-  return { separator: path.sep, delimiter: path.delimiter }
+  return { separator: path.sep }
 })
 
 /**
@@ -141,7 +138,7 @@ export const crossPlatform = Effect.gen(function*() {
   yield* logResult("From URL", fromUrl)
 
   yield* logDemo("Path to URL", "Converting to file URL")
-  const toUrl = path.toFileUrl("/home/user/documents/file.txt")
+  const toUrl = yield* path.toFileUrl("/home/user/documents/file.txt")
   yield* logResult("To URL", toUrl.href)
 
   return { platform, normalized }

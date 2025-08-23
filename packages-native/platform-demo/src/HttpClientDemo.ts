@@ -3,11 +3,12 @@
  */
 import * as Headers from "@effect/platform/Headers"
 import * as HttpClient from "@effect/platform/HttpClient"
-import * as HttpClientError from "@effect/platform/HttpClientError"
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest"
 import * as HttpClientResponse from "@effect/platform/HttpClientResponse"
 import * as Console from "effect/Console"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Schedule from "effect/Schedule"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import { logDemo, logResult, logSection, withTiming } from "./utils/DemoHelpers.js"
@@ -59,7 +60,7 @@ export const basicRequests = Effect.gen(function*() {
 
   yield* logDemo("GET Request", "Fetching a post")
   const getResponse = yield* client.get("https://jsonplaceholder.typicode.com/posts/1").pipe(
-    Effect.flatMap(HttpClientResponse.json),
+    Effect.flatMap((response) => response.json),
     Effect.flatMap(Schema.decodeUnknown(Post))
   )
   yield* logResult("Post title", getResponse.title)
@@ -70,10 +71,10 @@ export const basicRequests = Effect.gen(function*() {
     title: "Demo Post",
     body: "This is a demo post from @effect/platform"
   }
-  const postResponse = yield* HttpClientRequest.post("https://jsonplaceholder.typicode.com/posts").pipe(
-    HttpClientRequest.jsonBody(newPost),
-    client.execute,
-    Effect.flatMap(HttpClientResponse.json),
+  const postResponse = yield* Effect.succeed(HttpClientRequest.post("https://jsonplaceholder.typicode.com/posts")).pipe(
+    Effect.flatMap(HttpClientRequest.bodyJson(newPost)),
+    Effect.flatMap(client.execute),
+    Effect.flatMap((response) => response.json),
     Effect.scoped
   )
   yield* logResult("Created post ID", postResponse)
@@ -96,7 +97,7 @@ export const headerManipulation = Effect.gen(function*() {
     HttpClientRequest.setHeader("User-Agent", "effect-platform-demo/1.0"),
     HttpClientRequest.bearerToken("demo-token-123"),
     client.execute,
-    Effect.flatMap(HttpClientResponse.json),
+    Effect.flatMap((response) => response.json),
     Effect.scoped
   )
   yield* logResult("Sent headers", response)
@@ -131,7 +132,7 @@ export const clientConfiguration = Effect.gen(function*() {
   )
 
   const users = yield* apiClient.get("/users").pipe(
-    Effect.flatMap(HttpClientResponse.json),
+    Effect.flatMap((response) => response.json),
     Effect.flatMap(Schema.decodeUnknown(Schema.Array(User)))
   )
   yield* logResult("Users fetched", `${users.length} users`)
@@ -142,7 +143,7 @@ export const clientConfiguration = Effect.gen(function*() {
   )
 
   const successResult = yield* strictClient.get("/posts/1").pipe(
-    Effect.flatMap(HttpClientResponse.json),
+    Effect.flatMap((response) => response.json),
     Effect.either
   )
   yield* logResult("2xx response", successResult._tag === "Right")
@@ -151,12 +152,12 @@ export const clientConfiguration = Effect.gen(function*() {
   const retryClient = apiClient.pipe(
     HttpClient.retry({
       times: 3,
-      delay: "100 millis"
+      schedule: Schedule.spaced(Duration.millis(100))
     })
   )
 
   const retryResult = yield* retryClient.get("/posts/2").pipe(
-    Effect.flatMap(HttpClientResponse.json)
+    Effect.flatMap((response) => response.json)
   )
   yield* logResult("Retry successful", retryResult !== null)
 
@@ -210,7 +211,7 @@ export const errorHandling = Effect.gen(function*() {
       if (response.status === 404) {
         return Effect.succeed("Resource not found")
       }
-      return HttpClientResponse.json(response)
+      return response.json
     }),
     Effect.catchTag("ResponseError", () => Effect.succeed("Caught response error"))
   )
@@ -261,7 +262,7 @@ export const schemaValidation = Effect.gen(function*() {
     { title: "Schema Demo", body: "Validated body", userId: 1 }
   ).pipe(
     Effect.flatMap(client.execute),
-    Effect.flatMap(HttpClientResponse.json),
+    Effect.flatMap((response) => response.json),
     Effect.scoped
   )
   yield* logResult("Created with schema", createResult)
@@ -285,21 +286,21 @@ export const interceptors = Effect.gen(function*() {
   )
 
   const interceptedResponse = yield* interceptedClient.get("https://httpbin.org/headers").pipe(
-    Effect.flatMap(HttpClientResponse.json)
+    Effect.flatMap((response) => response.json)
   )
   yield* logResult("Intercepted headers", interceptedResponse)
 
   yield* logDemo("Response Interceptor", "Processing all responses")
   const loggingClient = baseClient.pipe(
-    HttpClient.mapEffect((response) =>
-      Console.log(`📥 Response status: ${response.status}`).pipe(
-        Effect.as(response)
+    HttpClient.transformResponse((responseEffect) =>
+      Effect.tap(responseEffect, (response) =>
+        Console.log(`📥 Response status: ${response.status}`)
       )
     )
   )
 
   yield* loggingClient.get("https://jsonplaceholder.typicode.com/posts/1").pipe(
-    Effect.flatMap(HttpClientResponse.json)
+    Effect.flatMap((response) => response.json)
   )
 
   return { interceptedResponse }
