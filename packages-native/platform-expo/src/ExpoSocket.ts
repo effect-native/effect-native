@@ -2,14 +2,13 @@
  * @since 1.0.0
  */
 import * as PlatformError from "@effect/platform/Error"
-import type * as Socket from "@effect/platform/Socket"
-import type * as Chunk from "effect/Chunk"
+import * as Socket from "@effect/platform/Socket"
 import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import type * as Queue from "effect/Queue"
+import * as Queue from "effect/Queue"
 import type * as Scope from "effect/Scope"
-import type * as Stream from "effect/Stream"
+import * as Stream from "effect/Stream"
 
 /**
  * @since 1.0.0
@@ -18,7 +17,7 @@ import type * as Stream from "effect/Stream"
 export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, PlatformError.PlatformError, Scope.Scope> =>
   Effect.gen(function*() {
     const sendQueue = yield* Queue.unbounded<Uint8Array | string | Socket.CloseEvent>()
-    const receiveQueue = yield* Queue.unbounded<Uint8Array | string>()
+    const receiveQueue = yield* Queue.unbounded<Uint8Array | string | Socket.CloseEvent>()
     const openDeferred = yield* Deferred.make<void, PlatformError.PlatformError>()
 
     const ws = new WebSocket(url)
@@ -33,7 +32,7 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
         openDeferred,
         Effect.fail(
           new PlatformError.SystemError({
-            module: "Socket",
+            module: "Stream",
             method: "connect",
             reason: "Unknown",
             pathOrDescriptor: url,
@@ -53,7 +52,7 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
     }
 
     ws.onclose = () => {
-      Effect.runSync(Queue.offer(receiveQueue, Socket.CloseEvent))
+      Effect.runSync(Queue.offer(receiveQueue, new Socket.CloseEvent()))
     }
 
     yield* Effect.addFinalizer(() =>
@@ -68,7 +67,7 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
       Stream.fromQueue(sendQueue).pipe(
         Stream.runForEach((data) =>
           Effect.sync(() => {
-            if (data === Socket.CloseEvent) {
+            if (Socket.isCloseEvent(data)) {
               ws.close()
             } else {
               ws.send(data as any)
@@ -80,13 +79,7 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
 
     const write = (chunk: Uint8Array | string | Socket.CloseEvent) => Queue.offer(sendQueue, chunk)
 
-    const writer: Socket.Socket["writer"] = {
-      write: (chunk: Chunk.Chunk<Uint8Array>) => Effect.forEach(chunk, (data) => write(data), { discard: true }),
-
-      writeString: (string: string) => write(string),
-
-      end: () => write(Socket.CloseEvent)
-    }
+    const writer = Effect.succeed((chunk: Uint8Array | string | Socket.CloseEvent) => write(chunk))
 
     const run = <R, E, _>(handler: (_: Uint8Array | string | Socket.CloseEvent) => Effect.Effect<_, E, R>) =>
       Stream.fromQueue(receiveQueue).pipe(
@@ -96,7 +89,19 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
 
     return {
       [Socket.TypeId]: Socket.TypeId,
-      run,
+      run: (handler: (_: Uint8Array) => Effect.Effect<any, any, any> | void) =>
+        run((data) => {
+          if (typeof data === "string") {
+            const result = handler(new TextEncoder().encode(data))
+            return result === undefined ? Effect.void : result
+          } else if (Socket.isCloseEvent(data)) {
+            return Effect.void
+          } else {
+            const result = handler(data)
+            return result === undefined ? Effect.void : result
+          }
+        }),
+      runRaw: run,
       writer
     } as Socket.Socket
   })
@@ -106,11 +111,11 @@ export const makeWebSocket = (url: string): Effect.Effect<Socket.Socket, Platfor
  * @category constructors
  */
 export const makeNet = (
-  _options?: Socket.NetOptions
+  _options?: any
 ): Effect.Effect<Socket.Socket, PlatformError.PlatformError, Scope.Scope> =>
   Effect.fail(
     new PlatformError.BadArgument({
-      module: "Socket",
+      module: "Stream",
       method: "makeNet",
       description: "TCP sockets are not supported in React Native/Expo"
     })

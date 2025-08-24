@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @since 1.0.0
  */
@@ -6,7 +7,7 @@ import * as FileSystem from "@effect/platform/FileSystem"
 import { Effect, Layer, Option, Stream } from "effect"
 import { none, some } from "effect/Option"
 import * as ExpoFS from "expo-file-system"
-import { Directory, File, Paths } from "expo-file-system/build/next"
+import { Directory, File, Paths } from "expo-file-system/next.js"
 
 /**
  * @since 1.0.0

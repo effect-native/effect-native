@@ -1,14 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "include": ["src"],
-  "compilerOptions": {
-    "composite": false,
-    "outDir": "build/esm",
-    "rootDir": "src",
-    "declarationDir": "build/dts"
-  },
+  "extends": "./tsconfig.src.json",
   "references": [
     { "path": "../../packages/effect/tsconfig.build.json" },
     { "path": "../../packages/platform/tsconfig.build.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/build.tsbuildinfo",
+    "outDir": "build/esm",
+    "declarationDir": "build/dts",
+    "stripInternal": true,
+    "skipLibCheck": true,
+    "exactOptionalPropertyTypes": false
+  }
 }

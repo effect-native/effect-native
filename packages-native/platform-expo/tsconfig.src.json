@@ -1,13 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
-  "compilerOptions": {
-    "composite": true,
-    "outDir": "build/src",
-    "rootDir": "src"
-  },
   "references": [
-    { "path": "../../packages/effect" },
-    { "path": "../../packages/platform" }
-  ]
+    { "path": "../../packages/effect/tsconfig.src.json" },
+    { "path": "../../packages/platform/tsconfig.src.json" }
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/src.tsbuildinfo",
+    "rootDir": "src",
+    "outDir": "build/src",
+    "skipLibCheck": true
+  }
 }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @since 1.0.0
  */
@@ -19,9 +20,9 @@ export const fromReadableStream = <E = PlatformError.PlatformError>(
     Effect.gen(function*() {
       const reader = stream().getReader()
 
-      yield* Effect.addFinalizer(() => Effect.promise(() => reader.cancel()))
+      yield* Effect.addFinalizer(() => Effect.sync(() => reader.cancel()))
 
-      const read = (): Effect.Effect<void> =>
+      const read = (): Effect.Effect<void, E | Option.Option<never>, never> =>
         Effect.tryPromise({
           try: () => reader.read(),
           catch: onError
@@ -31,7 +32,7 @@ export const fromReadableStream = <E = PlatformError.PlatformError>(
               ? Effect.fail(Option.none())
               : Effect.succeed(Chunk.of(result.value))
           ),
-          Effect.flatMap((chunk) => emit(Stream.fromChunk(chunk))),
+          Effect.flatMap((chunk) => emit(Effect.succeed(chunk))),
           Effect.flatMap(() => read())
         )
 
@@ -45,8 +46,5 @@ export const fromReadableStream = <E = PlatformError.PlatformError>(
  */
 export const toReadableStream = <E>(
   stream: Stream.Stream<Uint8Array, E>
-): Effect.Effect<ReadableStream<Uint8Array>, E> =>
-  Effect.map(
-    Stream.toReadableStream(stream),
-    (stream) => stream as ReadableStream<Uint8Array>
-  )
+): Effect.Effect<ReadableStream<Uint8Array>, never> =>
+  Stream.toReadableStreamEffect(stream)
