@@ -94,7 +94,7 @@ export const headerManipulation = Effect.gen(function*() {
   yield* logDemo("Custom Headers", "Adding custom headers to request")
   const response = yield* HttpClientRequest.get("https://httpbin.org/headers").pipe(
     HttpClientRequest.setHeader("X-Custom-Header", "Effect Platform Demo"),
-    HttpClientRequest.setHeader("User-Agent", "effect-platform-demo/1.0"),
+    // Avoid User-Agent here to be compatible with browsers / RN
     HttpClientRequest.bearerToken("demo-token-123"),
     client.execute,
     Effect.flatMap((response) => response.json),
@@ -113,6 +113,31 @@ export const headerManipulation = Effect.gen(function*() {
   yield* logResult("Response headers", headResponse)
 
   return { customHeaders: response, responseHeaders: headResponse }
+})
+
+/**
+ * Same as headerManipulation but includes headers typically restricted in
+ * browsers / React Native. Run this on Node.js / server environments only.
+ *
+ * @since 0.0.1
+ * @category demos
+ */
+export const headerManipulationServer = Effect.gen(function*() {
+  yield* logSection("Header Manipulation (Server)")
+
+  const client = yield* HttpClient.HttpClient
+
+  const response = yield* HttpClientRequest.get("https://httpbin.org/headers").pipe(
+    HttpClientRequest.setHeader("X-Custom-Header", "Effect Platform Demo"),
+    HttpClientRequest.setHeader("User-Agent", "effect-platform-demo/1.0"),
+    HttpClientRequest.bearerToken("demo-token-123"),
+    client.execute,
+    Effect.flatMap((response) => response.json),
+    Effect.scoped
+  )
+  yield* logResult("Sent headers (server)", response)
+
+  return { customHeaders: response }
 })
 
 /**

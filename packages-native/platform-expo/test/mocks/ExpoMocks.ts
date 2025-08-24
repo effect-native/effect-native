@@ -210,7 +210,7 @@ export class MockWebSocket extends EventTarget {
     this.readyState = MockWebSocket.CLOSING
     setTimeout(() => {
       this.readyState = MockWebSocket.CLOSED
-      const event = new CloseEvent("close", { code, reason })
+      const event = new CloseEvent("close", { code, reason, wasClean: code === 1000 })
       this.onclose?.(event)
       this.dispatchEvent(event)
     }, 0)

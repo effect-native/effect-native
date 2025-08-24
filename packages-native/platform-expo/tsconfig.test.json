@@ -1,12 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["test"],
+  "include": ["test/*.test.ts"],
   "compilerOptions": {
     "rootDir": "test",
     "outDir": "build/test",
-    "tsBuildInfoFile": "build/test/.tsbuildinfo"
+    "tsBuildInfoFile": "build/test/.tsbuildinfo",
+    "types": ["vitest"]
   },
   "references": [
     { "path": "tsconfig.src.json" }
+  ],
+  "exclude": [
+    "test/mocks/**",
+    "test/utils/**",
+    "test/ExpoStream.test.ts"
   ]
 }

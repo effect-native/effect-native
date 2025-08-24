@@ -183,21 +183,29 @@ export const watchOperations = Effect.gen(function*() {
     Stream.tap((event) => Console.log("File event:", event))
   )
 
-  yield* Effect.fork(
-    Stream.runDrain(watchStream)
+  const result = yield* Stream.runDrain(watchStream).pipe(
+    Effect.as({ success: true as const }),
+    Effect.catchAll(() =>
+      Console.log("File watching is not supported on this platform; skipping.").pipe(
+        Effect.as({ success: false as const })
+      )
+    )
   )
 
-  yield* Effect.sleep("100 millis")
-  yield* fs.writeFileString(watchPath, "Initial content")
-  yield* Effect.sleep("100 millis")
-  yield* fs.writeFileString(watchPath, "Modified content")
-  yield* Effect.sleep("100 millis")
-  yield* fs.remove(watchPath)
-  yield* Effect.sleep("100 millis")
-
-  yield* logResult("Watch completed", "Events captured")
-
-  return { tempDir, watchPath }
+  if (result.success) {
+    yield* Effect.sleep("100 millis")
+    yield* fs.writeFileString(watchPath, "Initial content")
+    yield* Effect.sleep("100 millis")
+    yield* fs.writeFileString(watchPath, "Modified content")
+    yield* Effect.sleep("100 millis")
+    yield* fs.remove(watchPath)
+    yield* Effect.sleep("100 millis")
+    yield* logResult("Watch completed", "Events captured")
+    return { tempDir, watchPath }
+  } else {
+    yield* logResult("Watch skipped", "Unsupported on this platform")
+    return { tempDir, watchPath, watch: "unsupported" as const }
+  }
 })
 
 /**

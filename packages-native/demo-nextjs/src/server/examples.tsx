@@ -1,19 +1,21 @@
 "use server"
 
 export async function runHttpClientDemo() {
-  // Demo would use platform-node HttpClient
-  // but packages need to be built first
+  // Actually run the HttpClient demo on the server using Node layers
+  const [{ Effect }, HttpClientDemo, NodeHttpClient] = await Promise.all([
+    import("effect/Effect"),
+    import("@effect-native/platform-demo/HttpClientDemo"),
+    import("@effect/platform-node/NodeHttpClient")
+  ])
+
+  const result = await Effect.provide(
+    HttpClientDemo.basicRequests,
+    NodeHttpClient.layer
+  ).pipe(Effect.runPromise)
+
   return {
-    message: "Platform demos fixed and building successfully!",
-    demos: [
-      "HttpClientDemo - HTTP client operations",
-      "HttpServerDemo - Server routing and handlers",
-      "FileSystemDemo - File operations",
-      "PathDemo - Path manipulation",
-      "TerminalDemo - Terminal operations",
-      "KeyValueStoreDemo - Key-value storage",
-      "CommandDemo - Command execution"
-    ]
+    message: "Ran HttpClientDemo.basicRequests on the server",
+    result
   }
 }
 

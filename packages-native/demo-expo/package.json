@@ -11,10 +11,12 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@effect-native/platform-expo": "workspace:^",
     "@expo/vector-icons": "^14.1.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
+    "@react-native-async-storage/async-storage": "^1.23.1",
     "expo": "~53.0.22",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",

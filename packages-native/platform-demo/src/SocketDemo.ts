@@ -9,6 +9,11 @@ import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import { logDemo, logResult, logSection } from "./utils/DemoHelpers.js"
 
+// Configurable echo server URL (use env if available), fallback to a public echo endpoint
+const ECHO_URL = (typeof process !== "undefined" && process.env && (process.env as any).ECHO_WS_URL)
+  ? (process.env as any).ECHO_WS_URL as string
+  : "wss://echo.websocket.events"
+
 /**
  * @since 0.0.1
  * @category demos
@@ -30,7 +35,7 @@ export const clientConnection = Effect.gen(function*() {
 
   yield* logDemo("Connect", "Establishing socket connection")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
 
   yield* logResult("Connected", "Socket established")
 
@@ -58,7 +63,7 @@ export const bidirectionalChat = Effect.gen(function*() {
 
   yield* logDemo("Chat Setup", "Creating chat connection")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
 
   const messages = [
     "User: Hello!",
@@ -94,7 +99,7 @@ export const streamingData = Effect.gen(function*() {
 
   yield* logDemo("Stream Setup", "Creating streaming connection")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
 
   yield* logDemo("Send Stream", "Streaming data to server")
 
@@ -132,7 +137,7 @@ export const reconnection = Effect.gen(function*() {
 
   yield* logDemo("Initial Connection", "Establishing connection")
 
-  let socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  let socket = yield* Socket.makeWebSocket(ECHO_URL)
   yield* socket.send("Initial connection")
   const initial = yield* socket.receive
   yield* logResult("Initial response", initial)
@@ -142,7 +147,7 @@ export const reconnection = Effect.gen(function*() {
   yield* Effect.sleep("1 second")
 
   yield* logDemo("Reconnect", "Re-establishing connection")
-  socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  socket = yield* Socket.makeWebSocket(ECHO_URL)
   yield* socket.send("Reconnected!")
   const reconnected = yield* socket.receive
   yield* logResult("Reconnection response", reconnected)
@@ -170,7 +175,7 @@ export const errorHandling = Effect.gen(function*() {
 
   yield* logDemo("Send Error", "Handling send failures")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
   yield* socket.close()
 
   const sendResult = yield* socket.send("This should fail").pipe(
@@ -181,7 +186,7 @@ export const errorHandling = Effect.gen(function*() {
 
   yield* logDemo("Timeout Handling", "Connection with timeout")
 
-  const timeoutResult = yield* Socket.makeWebSocket("ws://echo.websocket.org").pipe(
+  const timeoutResult = yield* Socket.makeWebSocket(ECHO_URL).pipe(
     Effect.timeout("5 seconds"),
     Effect.either
   )
@@ -204,19 +209,29 @@ export const binaryData = Effect.gen(function*() {
 
   yield* logDemo("Binary Setup", "Preparing binary data")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
 
-  const binaryData = new Uint8Array([0x48, 0x65, 0x6C, 0x6C, 0x6F])
-  const base64Data = Buffer.from(binaryData).toString("base64")
+  const data = new Uint8Array([0x48, 0x65, 0x6C, 0x6C, 0x6F]) // "Hello"
+  const toBase64 = (u8: Uint8Array): string =>
+    typeof (globalThis as any).Buffer !== "undefined"
+      ? (globalThis as any).Buffer.from(u8).toString("base64")
+      : btoa(String.fromCharCode(...u8))
+  const fromBase64 = (b64: string): Uint8Array =>
+    typeof (globalThis as any).Buffer !== "undefined"
+      ? new Uint8Array((globalThis as any).Buffer.from(b64, "base64"))
+      : Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
 
-  yield* logDemo("Send Binary", "Transmitting binary data")
+  const base64Data = toBase64(data)
+
+  yield* logDemo("Send Binary", "Transmitting base64-encoded data")
   yield* socket.send(base64Data)
   yield* logResult("Sent binary (base64)", base64Data)
 
   yield* logDemo("Receive Binary", "Getting binary response")
   const received = yield* socket.receive
-  const decodedBinary = Buffer.from(received, "base64")
-  yield* logResult("Received and decoded", decodedBinary.toString())
+  const receivedText = typeof received === "string" ? received : new TextDecoder().decode(received as Uint8Array)
+  const decodedBinary = fromBase64(receivedText)
+  yield* logResult("Received and decoded", new TextDecoder().decode(decodedBinary))
 
   yield* socket.close()
 
@@ -232,7 +247,7 @@ export const multiplexing = Effect.gen(function*() {
 
   yield* logDemo("Multi-Channel", "Simulating multiple channels")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
 
   const channels = {
     chat: { prefix: "CHAT:", color: "\x1b[36m" },
@@ -268,7 +283,7 @@ export const queuedMessages = Effect.gen(function*() {
 
   yield* logDemo("Queue Setup", "Creating message queue")
 
-  const socket = yield* Socket.makeWebSocket("ws://echo.websocket.org")
+  const socket = yield* Socket.makeWebSocket(ECHO_URL)
   const sendQueue = yield* Queue.unbounded<string>()
   const receiveQueue = yield* Queue.unbounded<string>()
 
@@ -322,7 +337,7 @@ export const queuedMessages = Effect.gen(function*() {
  */
 export const runAllDemos = Effect.gen(function*() {
   yield* Console.log("\n⚠️  Socket demos require WebSocket server connection.")
-  yield* Console.log("These demos use ws://echo.websocket.org for testing.")
+  yield* Console.log(`Default echo URL: ${ECHO_URL}`)
   yield* Console.log("\nAvailable demos:")
   yield* Console.log("- clientConnection: Basic WebSocket connection")
   yield* Console.log("- bidirectionalChat: Two-way communication")

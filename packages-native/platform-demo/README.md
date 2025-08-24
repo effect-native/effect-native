@@ -40,11 +40,12 @@ import * as FileSystemDemo from "@effect-native/platform-demo/FileSystemDemo"
 import * as ExpoFileSystem from "@effect-native/platform-expo/ExpoFileSystem"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Path from "@effect/platform/Path"
 
-// Run FileSystem demos with Expo implementation
+// Run FileSystem demos with Expo implementation (Path layer is required)
 Effect.provide(
   FileSystemDemo.runAllDemos,
-  ExpoFileSystem.layerDocument
+  Layer.merge(ExpoFileSystem.layerDocument, Path.layer)
 ).pipe(Effect.runPromise)
 ```
 
