@@ -1,7 +1,7 @@
-import { Cookies, HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { Cookies, HttpClient, HttpClientError, HttpClientRequest } from "@effect/platform"
 import { assert, describe, it } from "@effect/vitest"
-import { Chunk, Effect, Layer, Option, Stream } from "effect"
-import * as ExpoHttpClient from "../src/ExpoHttpClient"
+import { Chunk, Effect, Layer, Stream } from "effect"
+import * as ExpoHttpClient from "../src/ExpoHttpClient.js"
 
 // Mock fetch for testing
 const mockFetch = (
@@ -53,7 +53,7 @@ describe("ExpoHttpClient", () => {
     it.effect("POST request with JSON body", () =>
       Effect.gen(function*() {
         const body = yield* HttpClient.post("http://localhost:8080/api/create").pipe(
-          HttpClientRequest.jsonBody({ name: "test", value: 42 }),
+          HttpClientRequest.bodyJson({ name: "test", value: 42 }),
           Effect.flatMap((_) => _.json),
           Effect.scoped
         )
@@ -71,7 +71,7 @@ describe("ExpoHttpClient", () => {
     it.effect("PUT request", () =>
       Effect.gen(function*() {
         const response = yield* HttpClient.put("http://localhost:8080/api/update/123").pipe(
-          HttpClientRequest.jsonBody({ name: "updated" }),
+          HttpClientRequest.bodyJson({ name: "updated" }),
           Effect.scoped
         )
         assert.strictEqual(response.status, 200)
@@ -228,8 +228,8 @@ describe("ExpoHttpClient", () => {
           Effect.flip,
           Effect.scoped
         )
-        assert(HttpClientError.isResponseError(error))
-        if (HttpClientError.isResponseError(error)) {
+        assert(error instanceof HttpClientError.ResponseError)
+        if (error instanceof HttpClientError.ResponseError) {
           assert.strictEqual(error.response.status, 404)
         }
       }).pipe(
@@ -248,8 +248,8 @@ describe("ExpoHttpClient", () => {
           Effect.flip,
           Effect.scoped
         )
-        assert(HttpClientError.isResponseError(error))
-        if (HttpClientError.isResponseError(error)) {
+        assert(error instanceof HttpClientError.ResponseError)
+        if (error instanceof HttpClientError.ResponseError) {
           assert.strictEqual(error.response.status, 500)
         }
       }).pipe(
@@ -288,7 +288,7 @@ describe("ExpoHttpClient", () => {
         formData.append("field2", "value2")
 
         const response = yield* HttpClient.post("http://localhost:8080/form").pipe(
-          HttpClientRequest.formDataBody(formData),
+          HttpClientRequest.bodyFormData(formData),
           Effect.scoped
         )
         assert.strictEqual(response.status, 200)
@@ -320,10 +320,8 @@ describe("ExpoHttpClient", () => {
           }) as typeof globalThis.fetch
         )
 
-        const client = HttpClient.retry(
-          HttpClient.client.pipe(HttpClient.filterStatusOk),
-          { times: 3 }
-        )
+        const base = yield* HttpClient.HttpClient
+        const client = HttpClient.retry(HttpClient.filterStatusOk(base), { times: 3 })
 
         const response = yield* client.get("http://localhost:8080/retry").pipe(
           Effect.flatMap((_) => _.json),
@@ -347,9 +345,7 @@ describe("ExpoHttpClient", () => {
 
     it.effect("with timeout", () =>
       Effect.gen(function*() {
-        const client = HttpClient.client.pipe(
-          HttpClient.timeout(100)
-        )
+        const client = (yield* HttpClient.HttpClient).pipe(HttpClient.timeout(100))
 
         // This would timeout in a real scenario with a slow server
         const response = yield* client.get("http://localhost:8080/timeout").pipe(

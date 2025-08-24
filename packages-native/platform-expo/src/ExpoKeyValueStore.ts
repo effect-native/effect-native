@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @since 1.0.0
  */
@@ -23,7 +22,7 @@ import * as SecureStore from "expo-secure-store"
  * @category constructors
  */
 export const makeAsyncStorage = (): KeyValueStore.KeyValueStore =>
-  KeyValueStore.make({
+  KeyValueStore.makeStringOnly({
     get: (key: string) =>
       Effect.tryPromise({
         try: async () => {
@@ -39,57 +38,19 @@ export const makeAsyncStorage = (): KeyValueStore.KeyValueStore =>
             cause: error instanceof Error ? error : undefined
           })
       }),
-
-    getUint8Array: (key: string) =>
+    set: (key: string, value: string) =>
       Effect.tryPromise({
-        try: async () => {
-          const value = await AsyncStorage.getItem(key)
-          if (value === null) return Option.none()
-          try {
-            const decoded = Uint8Array.from(atob(value), (c) => c.charCodeAt(0))
-            return Option.some(decoded)
-          } catch {
-            throw new Error("Invalid Base64 data")
-          }
-        },
-        catch: (error) =>
-          new PlatformError.SystemError({
-            module: "KeyValueStore",
-            method: "getUint8Array",
-            reason: error instanceof Error && error.message === "Invalid Base64 data" ? "InvalidData" : "Unknown",
-            pathOrDescriptor: key,
-            cause: error instanceof Error ? error : undefined
-          })
-      }),
-
-    set: (key: string, value: string | Uint8Array): Effect.Effect<void, PlatformError.PlatformError, never> =>
-      Effect.tryPromise({
-        try: async () => {
-          let stringValue: string
-          if (typeof value === "string") {
-            stringValue = value
-          } else {
-            try {
-              stringValue = btoa(String.fromCharCode(...value))
-            } catch {
-              throw new Error("Invalid binary data for Base64 encoding")
-            }
-          }
-          await AsyncStorage.setItem(key, stringValue)
-        },
+        try: () => AsyncStorage.setItem(key, value),
         catch: (error) =>
           new PlatformError.SystemError({
             module: "KeyValueStore",
             method: "set",
-            reason: error instanceof Error && error.message === "Invalid binary data for Base64 encoding"
-              ? "InvalidData"
-              : "Unknown",
+            reason: "Unknown",
             pathOrDescriptor: key,
             cause: error instanceof Error ? error : undefined
           })
       }),
-
-    remove: (key: string): Effect.Effect<void, PlatformError.PlatformError, never> =>
+    remove: (key: string) =>
       Effect.tryPromise({
         try: () => AsyncStorage.removeItem(key),
         catch: (error) =>
@@ -101,7 +62,6 @@ export const makeAsyncStorage = (): KeyValueStore.KeyValueStore =>
             cause: error instanceof Error ? error : undefined
           })
       }),
-
     clear: Effect.tryPromise({
       try: () => AsyncStorage.clear(),
       catch: (error) =>
@@ -113,7 +73,6 @@ export const makeAsyncStorage = (): KeyValueStore.KeyValueStore =>
           cause: error instanceof Error ? error : undefined
         })
     }),
-
     size: Effect.tryPromise({
       try: async () => {
         const keys = await AsyncStorage.getAllKeys()
@@ -229,7 +188,10 @@ export const makeSecureStore = (options: SecureStoreOptions = {}): KeyValueStore
   const get = (key: string): Effect.Effect<Option.Option<string>, PlatformError.PlatformError, never> =>
     Effect.gen(function*() {
       try {
-        const value = yield* Effect.tryPromise(() => SecureStore.getItemAsync(key, storeOptions))
+        const value = yield* Effect.tryPromise({
+          try: () => SecureStore.getItemAsync(key, storeOptions),
+          catch: (error) => createSecureStoreError("get", key, error)
+        })
         if (!value) return Option.none()
 
         // Handle chunked data
@@ -237,7 +199,11 @@ export const makeSecureStore = (options: SecureStoreOptions = {}): KeyValueStore
           const metadata = JSON.parse(value.slice(11))
           const chunks = yield* Effect.all(
             Array.from({ length: metadata.totalChunks }, (_, i) =>
-              Effect.tryPromise(() => SecureStore.getItemAsync(`${key}__chunk__${i}`, storeOptions))),
+              Effect.tryPromise({
+                try: () => SecureStore.getItemAsync(`${key}__chunk__${i}`, storeOptions),
+                catch: (error) => createSecureStoreError("get", key, error)
+              })
+            ),
             { concurrency: 5 }
           )
           return Option.some(chunks.join(""))
@@ -253,99 +219,68 @@ export const makeSecureStore = (options: SecureStoreOptions = {}): KeyValueStore
     Effect.gen(function*() {
       try {
         // Check if chunked
-        const mainValue = yield* Effect.tryPromise(() => SecureStore.getItemAsync(key, storeOptions))
+        const mainValue = yield* Effect.tryPromise({
+          try: () => SecureStore.getItemAsync(key, storeOptions),
+          catch: (error) => createSecureStoreError("get", key, error)
+        })
 
         if (mainValue?.startsWith("__chunked__")) {
           const metadata = JSON.parse(mainValue.slice(11))
           yield* Effect.all(
             Array.from({ length: metadata.totalChunks }, (_, i) =>
-              Effect.tryPromise(() => SecureStore.deleteItemAsync(`${key}__chunk__${i}`, storeOptions))),
+              Effect.tryPromise({
+                try: () => SecureStore.deleteItemAsync(`${key}__chunk__${i}`, storeOptions),
+                catch: (error) => createSecureStoreError("remove", key, error)
+              })
+            ),
             { concurrency: 5 }
           )
         }
 
-        yield* Effect.tryPromise(() =>
-          SecureStore.deleteItemAsync(key, storeOptions)
-        )
+        yield* Effect.tryPromise({
+          try: () => SecureStore.deleteItemAsync(key, storeOptions),
+          catch: (error) => createSecureStoreError("remove", key, error)
+        })
         yield* updateKeyRegistry(registry, key, "remove")
       } catch (error) {
         yield* Effect.fail(createSecureStoreError("remove", key, error))
       }
     })
 
-  return KeyValueStore.make({
-    get,
-
-    getUint8Array: (key: string): Effect.Effect<Option.Option<Uint8Array>, PlatformError.PlatformError, never> =>
-      Effect.gen(function*() {
-        const value = yield* get(key)
-        if (Option.isNone(value)) return Option.none()
-
-        try {
-          const decoded = Uint8Array.from(atob(value.value), (c) => c.charCodeAt(0))
-          return Option.some(decoded)
-        } catch {
-          return yield* Effect.fail(
-            new PlatformError.SystemError({
-              module: "KeyValueStore",
-              method: "getUint8Array",
-              reason: "InvalidData",
-              pathOrDescriptor: key
-            })
+  // Implement string-only storage and derive binary support via makeStringOnly
+  const setString = (key: string, stringValue: string) =>
+    Effect.gen(function*() {
+      try {
+        if (stringValue.length <= maxSize) {
+          yield* Effect.tryPromise({
+            try: () => SecureStore.setItemAsync(key, stringValue, storeOptions),
+            catch: (error) => createSecureStoreError("set", key, error)
+          })
+        } else {
+          const chunks = chunkString(stringValue, maxSize)
+          const metadata = { totalChunks: chunks.length, type: "chunked" }
+          yield* Effect.tryPromise({
+            try: () => SecureStore.setItemAsync(key, `__chunked__${JSON.stringify(metadata)}`, storeOptions),
+            catch: (error) => createSecureStoreError("set", key, error)
+          })
+          yield* Effect.all(
+            chunks.map((chunk, i) => Effect.tryPromise({
+              try: () => SecureStore.setItemAsync(`${key}__chunk__${i}`, chunk, storeOptions),
+              catch: (error) => createSecureStoreError("set", key, error)
+            })),
+            { concurrency: 5 }
           )
         }
-      }),
+        yield* updateKeyRegistry(registry, key, "set")
+      } catch (error) {
+        yield* Effect.fail(createSecureStoreError("set", key, error))
+      }
+    })
 
-    set: (key: string, value: string | Uint8Array): Effect.Effect<void, PlatformError.PlatformError, never> =>
-      Effect.gen(function*() {
-        let stringValue: string
-        if (typeof value === "string") {
-          stringValue = value
-        } else {
-          try {
-            stringValue = btoa(String.fromCharCode(...value))
-          } catch {
-            return yield* Effect.fail(
-              new PlatformError.SystemError({
-                module: "KeyValueStore",
-                method: "set",
-                reason: "InvalidData",
-                pathOrDescriptor: key
-              })
-            )
-          }
-        }
-
-        try {
-          if (stringValue.length <= maxSize) {
-            // Single value storage
-            yield* Effect.tryPromise(() => SecureStore.setItemAsync(key, stringValue, storeOptions))
-          } else {
-            // Chunked storage
-            const chunks = chunkString(stringValue, maxSize)
-            const metadata = { totalChunks: chunks.length, type: "chunked" }
-
-            yield* Effect.tryPromise(() =>
-              SecureStore.setItemAsync(key, `__chunked__${JSON.stringify(metadata)}`, storeOptions)
-            )
-
-            yield* Effect.all(
-              chunks.map((chunk, i) =>
-                Effect.tryPromise(() => SecureStore.setItemAsync(`${key}__chunk__${i}`, chunk, storeOptions))
-              ),
-              { concurrency: 5 }
-            )
-          }
-
-          // Update registry
-          yield* updateKeyRegistry(registry, key, "set")
-        } catch (error) {
-          yield* Effect.fail(createSecureStoreError("set", key, error))
-        }
-      }),
-
+  return KeyValueStore.makeStringOnly({
+    get,
+    set: setString,
     remove,
-
     clear: Effect.gen(function*() {
       const keys = yield* getRegisteredKeys(registry)
       yield* Effect.all(
@@ -354,7 +289,6 @@ export const makeSecureStore = (options: SecureStoreOptions = {}): KeyValueStore
       )
       yield* registry.clear
     }),
-
     size: Effect.gen(function*() {
       const keys = yield* getRegisteredKeys(registry)
       return keys.length

@@ -4,9 +4,8 @@ import { pipe } from "effect"
 import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
-import * as Layer from "effect/Layer"
 import * as Stream from "effect/Stream"
-import * as ExpoFileSystem from "../src/ExpoFileSystem"
+import * as ExpoFileSystem from "../src/ExpoFileSystem.js"
 
 const runPromise = <E, A>(self: Effect.Effect<A, E, Fs.FileSystem>) =>
   Effect.runPromise(

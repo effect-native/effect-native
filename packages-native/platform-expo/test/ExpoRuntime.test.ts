@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect"
 import { describe, expect, it } from "vitest"
-import { ExpoRuntime } from "../src"
+import { ExpoRuntime } from "../src/index.js"
 
 describe("ExpoRuntime", () => {
   it("should export runtime functions", () => {

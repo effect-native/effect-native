@@ -2,7 +2,7 @@ import { Socket } from "@effect/platform"
 import { assert, describe, expect, it } from "@effect/vitest"
 import { Chunk, Effect, Queue, Stream } from "effect"
 import { WS } from "vitest-websocket-mock"
-import * as ExpoSocket from "../src/ExpoSocket"
+import * as ExpoSocket from "../src/ExpoSocket.js"
 
 describe("ExpoSocket", () => {
   describe("WebSocket", () => {
@@ -231,9 +231,9 @@ describe("ExpoSocket", () => {
               ws.close()
               WS.clean()
             })
-        )
+      )
 
-        const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
+      const socket = yield* Socket.makeWebSocket(Effect.succeed(url))
         const messages = yield* Queue.unbounded<Uint8Array>()
         const fiber = yield* Effect.fork(socket.run((_) => messages.offer(_)))
 
@@ -253,7 +253,15 @@ describe("ExpoSocket", () => {
         server.close()
         yield* fiber.await
       }).pipe(
-        Effect.provide(ExpoSocket.layerWebSocket)
+        Effect.provide(ExpoSocket.layerWebSocketConstructor)
       ))
+  })
+
+  describe("closeCodeIsError default", () => {
+    it("treats 1000 and 1006 as clean", () => {
+      expect(Socket.defaultCloseCodeIsError(1000)).toEqual(false)
+      expect(Socket.defaultCloseCodeIsError(1006)).toEqual(false)
+      expect(Socket.defaultCloseCodeIsError(1001)).toEqual(true)
+    })
   })
 })
