@@ -2,10 +2,12 @@
 
 A set of testing utilities for Effect-TS with Bun test runner.
 
+`@effect-native/bun-test` is exactly the same as `@effect/vitest`, but for bun:test
+
 ## Installation
 
 ```bash
-bun add @effect-native/bun-test
+bun add -D @effect-native/bun-test
 ```
 
 ## Usage
