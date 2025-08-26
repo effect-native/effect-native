@@ -30,7 +30,7 @@ export const test = B.test
  * @since 0.1.0
  * @category types
  */
-// export type * from "bun:test"
+export type * from "bun:test"
 
 /**
  * Main namespace containing all BunTest types and interfaces.
