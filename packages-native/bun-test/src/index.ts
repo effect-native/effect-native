@@ -11,10 +11,43 @@ import type * as Scope from "effect/Scope"
 import type * as TestServices from "effect/TestServices"
 import * as internal from "./internal/internal.js"
 
+const {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  jest,
+  mock,
+  setDefaultTimeout,
+  setSystemTime,
+  spyOn,
+  test
+} = B
+
 /**
  * @since 0.1.0
  */
-export * from "bun:test"
+export {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  jest,
+  mock,
+  setDefaultTimeout,
+  setSystemTime,
+  spyOn,
+  test
+}
+
+/**
+ * @since 0.1.0
+ */
+export type * from "bun:test"
 
 /**
  * @since 0.1.0
