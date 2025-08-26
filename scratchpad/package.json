@@ -40,10 +40,6 @@
     "@effect/workflow": "workspace:*",
     "effect": "workspace:*"
   },
-  "devDependencies": {
-    "@effect-native/bun-test": "workspace:^",
-    "@types/bun": "latest"
-  },
   "peerDependencies": {
     "typescript": "^5.0.0"
   }
