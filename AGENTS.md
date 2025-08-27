@@ -170,6 +170,147 @@ The monorepo uses pnpm workspaces with packages organized in:
 - Utilize `TestClock` for time-dependent testing
 - Prefer property-based testing with FastCheck where applicable
 
+#### Idiomatic Effect-TS Testing Patterns
+
+Following patterns from Effect-TS core packages like `@effect/cli` and `@effect/sql`:
+
+1. **Test Services Over Mocks**: Create proper test services with inspection methods
+   ```typescript
+   // GOOD: Test service with inspection capabilities
+   export class TestSqlClient extends Context.Tag("TestSqlClient")<
+     TestSqlClient,
+     SqlClient.SqlClient & {
+       readonly queries: Ref.Ref<ReadonlyArray<ExecutedQuery>>
+       readonly setResponse: <T>(response: T) => Effect.Effect<void>
+     }
+   >() {}
+   
+   // BAD: Complex mock with unnecessary methods
+   const makeFakeSqlClient = (responses) => { /* 5 methods when 1 needed */ }
+   ```
+
+2. **Test Behavior, Not Implementation**: Focus on what the code does, not how
+   ```typescript
+   // GOOD: Test behavior
+   it.scoped("returns the site identifier", () => ...)
+   
+   // BAD: Test implementation details
+   it.scoped("executes site ID query and returns hex string", () => ...)
+   ```
+
+3. **One Behavior Per Test**: Each test should verify a single behavior
+   ```typescript
+   // GOOD: Separate tests for separate behaviors
+   it("returns a hex string", () => ...)
+   it("returns 32 characters", () => ...)
+   
+   // BAD: Multiple assertions testing different things
+   it("everything about getSiteIdHex", () => {
+     assert.strictEqual(result, "ABC...")  // value
+     assert.strictEqual(queries.length, 1) // count
+     assert.strictEqual(queries[0].sql, "SELECT...") // implementation
+     assert.deepStrictEqual(params, []) // more implementation
+   })
+   ```
+
+4. **Minimal Test Doubles**: Only implement what's needed for the test
+   ```typescript
+   // GOOD: Minimal connection that returns expected data
+   const connection = {
+     execute: () => Effect.succeed([{ site_id: "ABC123" }])
+   }
+   
+   // BAD: Implementing executeRaw, executeStream, executeValues when unused
+   ```
+
+5. **Layer Composition for Dependencies**: Use Effect layers properly
+   ```typescript
+   // GOOD: Clean layer composition
+   const TestStack = Layer.mergeAll(
+     TestSqlClient.layer,
+     CrSql.layer
+   )
+   
+   // Test uses the composed stack
+   it.scoped("test", () => 
+     Effect.gen(function* () {
+       const service = yield* CrSql.CrSql
+       // ...
+     }).pipe(Effect.provide(TestStack))
+   )
+   ```
+
+6. **Avoid Testing SQL Strings**: SQL is implementation, not behavior
+   ```typescript
+   // GOOD: Test the result shape and validity
+   assert.match(siteId, /^[A-F0-9]{32}$/)
+   
+   // BAD: Test exact SQL string
+   assert.strictEqual(query, "SELECT hex(crsql_site_id()) AS site_id")
+   ```
+
+#### Example: Proper Effect-TS Test Structure
+
+```typescript
+// Test service definition (like MockConsole in @effect/cli)
+export class TestSqlClient extends Effect.Service<TestSqlClient>()("TestSqlClient", {
+  effect: Effect.gen(function* () {
+    const responses = yield* Ref.make<Map<string, unknown>>(new Map())
+    const queries = yield* Ref.make<Array<ExecutedQuery>>([])
+    
+    const connection = {
+      execute: (sql: string, params: ReadonlyArray<Primitive>) =>
+        Effect.gen(function* () {
+          yield* Ref.update(queries, Array.append({ sql, params }))
+          const responseMap = yield* Ref.get(responses)
+          return responseMap.get(sql) ?? []
+        })
+    }
+    
+    const client = yield* SqlClient.make({
+      acquirer: Effect.succeed(connection),
+      compiler: Statement.makeCompilerSqlite()
+    })
+    
+    return {
+      ...client,
+      setResponse: (sql: string, response: unknown) =>
+        Ref.update(responses, map => map.set(sql, response)),
+      getQueries: Ref.get(queries)
+    }
+  })
+}) {}
+
+// Focused behavior tests
+describe("CrSql", () => {
+  describe("getSiteIdHex", () => {
+    it.scoped("returns a hex string", () =>
+      Effect.gen(function* () {
+        yield* TestSqlClient.setResponse(
+          "SELECT hex(crsql_site_id()) AS site_id",
+          [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }]
+        )
+        const crSql = yield* CrSql.CrSql
+        const siteId = yield* crSql.getSiteIdHex
+        assert.match(siteId, /^[A-F0-9]+$/)
+      }).pipe(Effect.provide(TestStack))
+    )
+    
+    it.scoped("returns 32 characters", () =>
+      Effect.gen(function* () {
+        yield* TestSqlClient.setResponse(
+          "SELECT hex(crsql_site_id()) AS site_id", 
+          [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }]
+        )
+        const crSql = yield* CrSql.CrSql
+        const siteId = yield* crSql.getSiteIdHex
+        assert.strictEqual(siteId.length, 32)
+      }).pipe(Effect.provide(TestStack))
+    )
+  })
+})
+```
+
 ### Build System
 
 - TypeScript project references for incremental compilation
