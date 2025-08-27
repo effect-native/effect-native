@@ -60,10 +60,34 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       `
     }
 
+    // Apply changes to the database
+    const applyChanges = (changes: ReadonlyArray<ChangeRow>) => {
+      return Effect.forEach(changes, (change) =>
+        sql`
+          INSERT INTO crsql_changes ("table", pk, cid, val, col_version, db_version, site_id, cl, seq)
+          VALUES (
+            ${change.table},
+            unhex(${change.pk}),
+            ${change.cid},
+            CASE 
+              WHEN ${change.val_type} = 'null' THEN NULL
+              WHEN ${change.val_type} = 'blob' THEN unhex(${change.val as string})
+              ELSE ${change.val as string}
+            END,
+            CAST(${change.col_version} AS INTEGER),
+            CAST(${change.db_version} AS INTEGER),
+            unhex(${change.site_id}),
+            ${change.cl},
+            ${change.seq}
+          )
+        `, { concurrency: "unbounded" }).pipe(Effect.asVoid)
+    }
+
     return {
       getSiteIdHex,
       getDbVersion,
-      pullChanges
+      pullChanges,
+      applyChanges
     }
   })
 }) {}

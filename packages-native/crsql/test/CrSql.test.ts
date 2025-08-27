@@ -27,6 +27,9 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<unknown>>) =>
             const sinceParam = params?.[0] || "0"
             const key = `crsql_changes:since=${sinceParam}`
             rows = seed[key] || seed["crsql_changes:default"] || []
+          } else if (sql.includes("INSERT INTO crsql_changes")) {
+            // For applyChanges INSERT operations
+            rows = seed["insert_crsql_changes"] || []
           }
 
           return transformRows ? transformRows(rows as any) : rows
@@ -80,7 +83,8 @@ withLayer(
             cl: 2,
             seq: 1
           }
-        ]
+        ],
+        "insert_crsql_changes": []
       })
     )
   )
@@ -133,6 +137,25 @@ withLayer(
           seq: 1
         }
       ])
+    }))
+
+  it.scoped("applies a change to the database", () =>
+    Effect.gen(function*() {
+      const change: CrSql.ChangeRow = {
+        table: "users",
+        pk: "DEADBEEF",
+        cid: "email",
+        val: "alice@example.com",
+        val_type: "text",
+        col_version: "3",
+        db_version: "15",
+        site_id: "C3D4E5F6789012345678ABCDEF90A1B2",
+        cl: 2,
+        seq: 1
+      }
+
+      yield* CrSql.CrSql.applyChanges([change])
+      // Test succeeds if no error is thrown
     }))
 
   // =============================================================================
