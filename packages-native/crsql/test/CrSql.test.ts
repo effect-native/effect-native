@@ -20,13 +20,21 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<unknown>>) =>
           // Pattern-based matching for different query types
           if (sql.includes("crsql_site_id()")) {
             rows = seed["crsql_site_id"] || []
-          } else if (sql.includes("MAX(db_version)")) {
-            rows = seed["max_db_version"] || []
+          } else if (sql.includes("crsql_db_version()")) {
+            rows = seed["db_version"] || []
           } else if (sql.includes("FROM crsql_changes")) {
-            // For pullChanges, differentiate by the 'since' parameter
+            // For pullChanges, differentiate by the 'since' parameter and exclusions
             const sinceParam = params?.[0] || "0"
-            const key = `crsql_changes:since=${sinceParam}`
-            rows = seed[key] || seed["crsql_changes:default"] || []
+
+            if (sql.includes("NOT IN")) {
+              // excludeSites variant
+              const key = `crsql_changes:since=${sinceParam}:excludes`
+              rows = seed[key] || []
+            } else {
+              // normal variant
+              const key = `crsql_changes:since=${sinceParam}`
+              rows = seed[key] || seed["crsql_changes:default"] || []
+            }
           } else if (sql.includes("INSERT INTO crsql_changes")) {
             // For applyChanges INSERT operations
             rows = seed["insert_crsql_changes"] || []
@@ -55,7 +63,7 @@ withLayer(
       makeTestSqlClientLayer({
         // Pattern-based keys for cleaner test setup
         "crsql_site_id": [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }],
-        "max_db_version": [{ version: "42" }],
+        "db_version": [{ version: "42" }],
         "crsql_changes:since=0": [
           {
             table: "users",
@@ -82,6 +90,20 @@ withLayer(
             site_id: "B2C3D4E5F6789012345678ABCDEF90A1",
             cl: 2,
             seq: 1
+          }
+        ],
+        "crsql_changes:since=0:excludes": [
+          {
+            table: "posts",
+            pk: "FEEDFACE",
+            cid: "content",
+            val: "Hello World",
+            val_type: "text",
+            col_version: "1",
+            db_version: "5",
+            site_id: "D4E5F6789012345678ABCDEF90A1B2C3",
+            cl: 1,
+            seq: 2
           }
         ],
         "insert_crsql_changes": []
@@ -156,6 +178,25 @@ withLayer(
 
       yield* CrSql.CrSql.applyChanges([change])
       // Test succeeds if no error is thrown
+    }))
+
+  it.scoped("pulls changes excluding specific sites", () =>
+    Effect.gen(function*() {
+      const changes = yield* CrSql.CrSql.pullChanges("0", ["A1B2C3D4E5F6789012345678ABCDEF90"])
+      assert.deepEqual(changes, [
+        {
+          table: "posts",
+          pk: "FEEDFACE",
+          cid: "content",
+          val: "Hello World",
+          val_type: "text",
+          col_version: "1",
+          db_version: "5",
+          site_id: "D4E5F6789012345678ABCDEF90A1B2C3",
+          cl: 1,
+          seq: 2
+        }
+      ])
     }))
 
   // =============================================================================

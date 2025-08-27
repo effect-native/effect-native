@@ -1,4 +1,5 @@
 import * as SqlClient from "@effect/sql/SqlClient"
+import type * as Statement from "@effect/sql/Statement"
 import * as Effect from "effect/Effect"
 
 // Type for a change row from crsql_changes
@@ -28,59 +29,82 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       Effect.map((rows) => rows[0].site_id)
     )
 
-    // Get database version from crsql_changes table
-    const getDbVersion = sql<{ version: string }>`SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes`
-      .pipe(
-        Effect.map((rows) => rows[0].version)
-      )
+    // Get database version using CR-SQLite function
+    const getDbVersion = sql<{ version: string }>`SELECT CAST(crsql_db_version() AS TEXT) AS version`.pipe(
+      Effect.map((rows) => rows[0].version)
+    )
 
     // Pull changes from the database
-    const pullChanges = (since: string = "0", _excludeSites?: ReadonlyArray<string>) => {
-      // For now, always use the simple query without site exclusion
-      // TODO: Add support for excludeSites parameter
-      return sql<ChangeRow>`
-        SELECT 
-          "table",
-          hex(pk) as pk,
-          cid,
-          CASE 
-            WHEN val IS NULL THEN NULL
-            WHEN typeof(val) = 'blob' THEN hex(val)
-            ELSE val
-          END as val,
-          typeof(val) as val_type,
-          CAST(col_version AS TEXT) as col_version,
-          CAST(db_version AS TEXT) as db_version,
-          hex(site_id) as site_id,
-          cl,
-          seq
-        FROM crsql_changes
-        WHERE db_version > CAST(${since} AS INTEGER)
-        ORDER BY db_version, seq
-      `
+    const pullChanges = (since: string = "0", excludeSites?: ReadonlyArray<string>) => {
+      if (excludeSites && excludeSites.length > 0) {
+        return sql<ChangeRow>`
+          SELECT 
+            "table",
+            hex(pk) as pk,
+            cid,
+            CASE 
+              WHEN val IS NULL THEN NULL
+              WHEN typeof(val) = 'blob' THEN hex(val)
+              ELSE val
+            END as val,
+            typeof(val) as val_type,
+            CAST(col_version AS TEXT) as col_version,
+            CAST(db_version AS TEXT) as db_version,
+            hex(site_id) as site_id,
+            cl,
+            seq
+          FROM crsql_changes
+          WHERE db_version > CAST(${since} AS INTEGER)
+            AND hex(site_id) NOT IN (${sql.in(excludeSites)})
+          ORDER BY db_version, seq
+        `
+      } else {
+        return sql<ChangeRow>`
+          SELECT 
+            "table",
+            hex(pk) as pk,
+            cid,
+            CASE 
+              WHEN val IS NULL THEN NULL
+              WHEN typeof(val) = 'blob' THEN hex(val)
+              ELSE val
+            END as val,
+            typeof(val) as val_type,
+            CAST(col_version AS TEXT) as col_version,
+            CAST(db_version AS TEXT) as db_version,
+            hex(site_id) as site_id,
+            cl,
+            seq
+          FROM crsql_changes
+          WHERE db_version > CAST(${since} AS INTEGER)
+          ORDER BY db_version, seq
+        `
+      }
     }
 
-    // Apply changes to the database
+    // Apply changes to the database in a single transaction
     const applyChanges = (changes: ReadonlyArray<ChangeRow>) => {
-      return Effect.forEach(changes, (change) =>
-        sql`
-          INSERT INTO crsql_changes ("table", pk, cid, val, col_version, db_version, site_id, cl, seq)
-          VALUES (
-            ${change.table},
-            unhex(${change.pk}),
-            ${change.cid},
-            CASE 
-              WHEN ${change.val_type} = 'null' THEN NULL
-              WHEN ${change.val_type} = 'blob' THEN unhex(${change.val as string})
-              ELSE ${change.val as string}
-            END,
-            CAST(${change.col_version} AS INTEGER),
-            CAST(${change.db_version} AS INTEGER),
-            unhex(${change.site_id}),
-            ${change.cl},
-            ${change.seq}
-          )
-        `, { concurrency: "unbounded" }).pipe(Effect.asVoid)
+      return sql.withTransaction(
+        Effect.forEach(changes, (change) =>
+          sql`
+            INSERT INTO crsql_changes ("table", pk, cid, val, col_version, db_version, site_id, cl, seq)
+            VALUES (
+              ${change.table},
+              unhex(${change.pk}),
+              ${change.cid},
+              CASE 
+                WHEN ${change.val_type} = 'null' THEN NULL
+                WHEN ${change.val_type} = 'blob' THEN unhex(${change.val as Statement.Primitive})
+                ELSE ${change.val as Statement.Primitive}
+              END,
+              CAST(${change.col_version} AS INTEGER),
+              CAST(${change.db_version} AS INTEGER),
+              unhex(${change.site_id}),
+              ${change.cl},
+              ${change.seq}
+            )
+          `, { concurrency: "unbounded" })
+      ).pipe(Effect.asVoid)
     }
 
     return {
