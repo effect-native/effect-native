@@ -1,6 +1,20 @@
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as Effect from "effect/Effect"
 
+// Type for a change row from crsql_changes
+export interface ChangeRow {
+  table: string
+  pk: string // hex-encoded primary key
+  cid: string // column id
+  val: unknown // value (can be null, string, number, or hex for blob)
+  val_type: string // typeof(val) from SQLite
+  col_version: string // as TEXT to avoid JS precision issues
+  db_version: string // as TEXT to avoid JS precision issues
+  site_id: string // hex-encoded site id
+  cl: number // causal length
+  seq: number // sequence number
+}
+
 // Service class using Effect.Service pattern
 export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql", {
   accessors: true,
@@ -20,9 +34,36 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
         Effect.map((rows) => rows[0].version)
       )
 
+    // Pull changes from the database
+    const pullChanges = (since: string = "0", _excludeSites?: ReadonlyArray<string>) => {
+      // For now, always use the simple query without site exclusion
+      // TODO: Add support for excludeSites parameter
+      return sql<ChangeRow>`
+        SELECT 
+          "table",
+          hex(pk) as pk,
+          cid,
+          CASE 
+            WHEN val IS NULL THEN NULL
+            WHEN typeof(val) = 'blob' THEN hex(val)
+            ELSE val
+          END as val,
+          typeof(val) as val_type,
+          CAST(col_version AS TEXT) as col_version,
+          CAST(db_version AS TEXT) as db_version,
+          hex(site_id) as site_id,
+          cl,
+          seq
+        FROM crsql_changes
+        WHERE db_version > CAST(${since} AS INTEGER)
+        ORDER BY db_version, seq
+      `
+    }
+
     return {
       getSiteIdHex,
-      getDbVersion
+      getDbVersion,
+      pullChanges
     }
   })
 }) {}
