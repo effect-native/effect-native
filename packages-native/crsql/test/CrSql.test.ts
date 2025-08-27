@@ -74,4 +74,28 @@ describe("CrSqlService", () => {
       assert.deepStrictEqual(fake.queries[0].params, [])
     })
   })
+
+  it.scoped("getDbVersion executes db version query and returns version string", () => {
+    return Effect.gen(function*() {
+      const fake = yield* makeFakeSqlClient({
+        "SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes": [{ version: "42" }]
+      })
+
+      const program = Effect.gen(function*() {
+        const version = yield* CrSql.CrSql.getDbVersion
+        return { version }
+      })
+
+      const crsqlLayer = CrSql.CrSql.Default.pipe(
+        Layer.provide(Layer.succeed(SqlClient.SqlClient, fake.client))
+      )
+
+      const result = yield* Effect.provide(program, crsqlLayer)
+
+      assert.strictEqual(result.version, "42")
+      assert.strictEqual(fake.queries.length, 1)
+      assert.strictEqual(fake.queries[0].sql, "SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes")
+      assert.deepStrictEqual(fake.queries[0].params, [])
+    })
+  })
 })
