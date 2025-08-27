@@ -7,7 +7,7 @@
   "description": "CR-SQLite prepared statements and service for Effect SQL",
   "repository": {
     "type": "git",
-    "url": "https://github.com/effect-native/effect",
+    "url": "https://github.com/effect-native/effect-native",
     "directory": "packages-native/crsql"
   },
   "exports": {
