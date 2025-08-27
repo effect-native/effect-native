@@ -1,4 +1,4 @@
-import * as CrSqlPackage from "@effect-native/crsql"
+import * as CrSql from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
@@ -8,7 +8,7 @@ import { assert, describe, it } from "@effect/vitest"
 import { Effect, Layer, Stream } from "effect"
 
 // Test double: Records queries and returns predetermined responses
-const makeFakeSqlClient = (responses: Record<string, unknown[]>) =>
+const makeFakeSqlClient = (responses: Record<string, Array<unknown>>) =>
   Effect.gen(function*() {
     const queries: Array<{ sql: string; params: ReadonlyArray<Statement.Primitive> }> = []
 
@@ -27,7 +27,7 @@ const makeFakeSqlClient = (responses: Record<string, unknown[]>) =>
           if (!response) throw new Error(`Unexpected query: ${sql}`)
           return response
         }),
-      executeStream: () => Stream.empty as Stream.Stream<any, SqlError>,
+      executeStream: () => Stream.empty as Stream.Stream<unknown, SqlError>,
       executeValues: () =>
         Effect.succeed([]) as Effect.Effect<ReadonlyArray<ReadonlyArray<Statement.Primitive>>, SqlError>,
       executeUnprepared: (sql: string, params: ReadonlyArray<Statement.Primitive>, _transformRows) =>
@@ -57,18 +57,18 @@ describe("CrSqlService", () => {
 
       // Build a test program with the fake SqlClient
       const program = Effect.gen(function*() {
-        const service = yield* CrSqlPackage.CrSql.CrSql
-        return yield* service.getSiteIdHex
+        const siteId = yield* CrSql.CrSql.getSiteIdHex
+        return { siteId }
       })
 
-      // Just-in-time: Provide SqlClient to CrSql.layer when needed
-      const crsqlLayer = CrSqlPackage.CrSql.layer.pipe(
+      // Just-in-time: Provide SqlClient to CrSql layer when needed
+      const crsqlLayer = CrSql.CrSql.Default.pipe(
         Layer.provide(Layer.succeed(SqlClient.SqlClient, fake.client))
       )
 
       const result = yield* Effect.provide(program, crsqlLayer)
 
-      assert.strictEqual(result, "A1B2C3D4E5F6789012345678ABCDEF90")
+      assert.strictEqual(result.siteId, "A1B2C3D4E5F6789012345678ABCDEF90")
       assert.strictEqual(fake.queries.length, 1)
       assert.strictEqual(fake.queries[0].sql, "SELECT hex(crsql_site_id()) AS site_id")
       assert.deepStrictEqual(fake.queries[0].params, [])
