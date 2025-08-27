@@ -15,9 +15,10 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
     )
 
     // Get database version from crsql_changes table
-    const getDbVersion: Effect.Effect<string> = Effect.dieMessage(
-      "@effect-native/crsql: getDbVersion not implemented yet"
-    )
+    const getDbVersion = sql<{ version: string }>`SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes`
+      .pipe(
+        Effect.map((rows) => rows[0].version)
+      )
 
     return {
       getSiteIdHex,
