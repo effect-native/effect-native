@@ -39,7 +39,8 @@ withLayer(
   CrSql.CrSql.Default.pipe(
     Layer.provide(
       makeTestSqlClientLayer({
-        "SELECT hex(crsql_site_id()) AS site_id": [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }]
+        "SELECT hex(crsql_site_id()) AS site_id": [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }],
+        "SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes": [{ version: "42" }]
       })
     )
   )
@@ -48,5 +49,11 @@ withLayer(
     Effect.gen(function*() {
       const siteId = yield* CrSql.CrSql.getSiteIdHex
       assert.strictEqual(siteId, "A1B2C3D4E5F6789012345678ABCDEF90")
+    }))
+
+  it.scoped("returns the database version", () =>
+    Effect.gen(function*() {
+      const version = yield* CrSql.CrSql.getDbVersion
+      assert.strictEqual(version, "42")
     }))
 })
