@@ -7,16 +7,15 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
   // Service implementation will be provided by the scoped effect
   scoped: Effect.gen(function*() {
     // Acquire the SQL client constructor/template
-    const _sql = yield* SqlClient.SqlClient
-    void _sql // Marking as intentionally unused during red phase
+    const sql = yield* SqlClient.SqlClient
 
-    // TODO: build prepared statements here using `_sql` and expose implementation
-    // For the initial red test, we intentionally leave behavior unimplemented
-    const notImplemented = Effect.dieMessage("@effect-native/crsql: getSiteIdHex not implemented yet")
+    // Build prepared statement for getting site ID as hex
+    const getSiteIdHex = sql<{ site_id: string }>`SELECT hex(crsql_site_id()) AS site_id`.pipe(
+      Effect.map((rows) => rows[0].site_id)
+    )
 
     return {
-      // Example API we will implement via prepared statements
-      getSiteIdHex: notImplemented as Effect.Effect<string>
+      getSiteIdHex
     }
   })
 }) {}
