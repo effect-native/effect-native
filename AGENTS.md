@@ -451,9 +451,35 @@ This repository relies on precise, verifiable changes. Agents must follow an evi
 
 ### TDD in This Repo (Red → Green → Refactor)
 
-- Red: add a failing executable spec (`@effect/vitest`, `it.scoped`), using real layers and a fake only at driver edges (e.g., custom `Connection` with `SqlClient.make`).
-- Green: implement the minimal code to satisfy the spec; keep SQL and Effect patterns idiomatic to `@effect/sql`.
-- Refactor: clarify names, extract helpers, and align with Schema contracts; keep the spec implementation‑agnostic where possible.
+#### Critical: What a RED Test Actually Is
+
+A RED test describes **what you WANT the code to do**, not what it currently does wrong:
+
+```typescript
+// ✅ CORRECT RED TEST: Describes desired behavior
+it.scoped("returns the database version", () =>
+  Effect.gen(function*() {
+    const version = yield* CrSql.CrSql.getDbVersion
+    assert.strictEqual(version, "42")  // This WILL fail - that's the point!
+  }))
+
+// ❌ WRONG: Testing that it's broken
+it.scoped("getDbVersion dies with not implemented", () =>
+  Effect.gen(function*() {
+    const exit = yield* Effect.exit(CrSql.CrSql.getDbVersion)
+    assert.ok(exit._tag === "Failure")  // This is NOT TDD!
+  }))
+```
+
+The RED test **fails** because the feature doesn't exist yet, but it **describes the goal**.
+
+#### The TDD Cycle
+
+- **Red**: Write a test for the behavior you WANT. Watch it fail with "not implemented" or wrong result.
+- **Green**: Implement just enough code to make the test pass.
+- **Refactor**: Clean up the code while keeping tests green.
+
+The test should NEVER assert that something is broken - it should assert what correct looks like!
 
 ### Quick Verification Checklist
 
