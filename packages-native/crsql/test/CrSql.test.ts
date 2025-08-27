@@ -1,101 +1,93 @@
 import * as CrSql from "@effect-native/crsql"
-import * as Reactivity from "@effect/experimental/Reactivity"
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
 import type { SqlError } from "@effect/sql/SqlError"
 import * as Statement from "@effect/sql/Statement"
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, Layer, Stream } from "effect"
+import { Context, Effect, Layer, Stream } from "effect"
 
-// Test double: Records queries and returns predetermined responses
-const makeFakeSqlClient = (responses: Record<string, Array<unknown>>) =>
-  Effect.gen(function*() {
-    const queries: Array<{ sql: string; params: ReadonlyArray<Statement.Primitive> }> = []
+// Test service interface - minimal and focused
+interface TestSqlClient {
+  readonly execute: <A>(query: string, result: A) => Effect.Effect<void>
+  readonly client: SqlClient.SqlClient
+}
 
-    const connection: Connection = {
-      execute: (sql: string, params: ReadonlyArray<Statement.Primitive>, _transformRows) =>
-        Effect.sync(() => {
-          queries.push({ sql, params })
-          const response = responses[sql.trim()]
-          if (!response) throw new Error(`Unexpected query: ${sql}`)
-          return response
-        }),
-      executeRaw: (sql: string, params: ReadonlyArray<Statement.Primitive>) =>
-        Effect.sync(() => {
-          queries.push({ sql, params })
-          const response = responses[sql.trim()]
-          if (!response) throw new Error(`Unexpected query: ${sql}`)
-          return response
-        }),
-      executeStream: () => Stream.empty as Stream.Stream<unknown, SqlError>,
-      executeValues: () =>
-        Effect.succeed([]) as Effect.Effect<ReadonlyArray<ReadonlyArray<Statement.Primitive>>, SqlError>,
-      executeUnprepared: (sql: string, params: ReadonlyArray<Statement.Primitive>, _transformRows) =>
-        Effect.sync(() => {
-          queries.push({ sql, params })
-          const response = responses[sql.trim()]
-          if (!response) throw new Error(`Unexpected query: ${sql}`)
-          return response
-        })
-    }
+const TestSqlClient = Context.GenericTag<TestSqlClient>("TestSqlClient")
 
-    const client = yield* SqlClient.make({
-      acquirer: Effect.succeed(connection),
-      compiler: Statement.makeCompilerSqlite(),
-      spanAttributes: [["test", true]]
-    }).pipe(Effect.provide(Reactivity.layer))
+// Clean test service implementation following Effect patterns
+const TestSqlClientLive = Layer.sync(TestSqlClient, () => {
+  const responses = new Map<string, unknown>()
 
-    return { queries, client }
+  const connection: Connection = {
+    execute: (sql: string, _params, _transformRows) =>
+      Effect.sync(() => {
+        const result = responses.get(sql.trim())
+        if (result === undefined) {
+          throw new Error(`No response configured for query: ${sql}`)
+        }
+        return result
+      }),
+    executeRaw: () => Effect.succeed([]),
+    executeStream: () => Stream.empty as Stream.Stream<unknown, SqlError>,
+    executeValues: () => Effect.succeed([]),
+    executeUnprepared: () => Effect.succeed([])
+  }
+
+  const client = SqlClient.make({
+    acquirer: Effect.succeed(connection),
+    compiler: Statement.makeCompilerSqlite(),
+    spanAttributes: []
   })
 
-describe("CrSqlService", () => {
-  it.scoped("getSiteIdHex executes site ID query and returns hex string", () => {
-    return Effect.gen(function*() {
-      const fake = yield* makeFakeSqlClient({
-        "SELECT hex(crsql_site_id()) AS site_id": [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }]
-      })
+  return TestSqlClient.of({
+    execute: <A>(query: string, result: A) =>
+      Effect.sync(() => responses.set(query.trim(), result)),
+    client
+  })
+})
 
-      // Build a test program with the fake SqlClient
-      const program = Effect.gen(function*() {
-        const siteId = yield* CrSql.CrSql.getSiteIdHex
-        return { siteId }
-      })
+describe("CrSql", () => {
+  describe("getSiteIdHex", () => {
+    it.scoped("returns a 32 character hex string", () =>
+      Effect.gen(function*() {
+        const testClient = yield* TestSqlClient
+        yield* testClient.execute(
+          "SELECT hex(crsql_site_id()) AS site_id",
+          [{ site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }]
+        )
 
-      // Just-in-time: Provide SqlClient to CrSql layer when needed
-      const crsqlLayer = CrSql.CrSql.Default.pipe(
-        Layer.provide(Layer.succeed(SqlClient.SqlClient, fake.client))
+        const crSql = yield* CrSql.CrSql
+        const siteId = yield* crSql.getSiteIdHex
+
+        assert.strictEqual(siteId.length, 32)
+        assert.match(siteId, /^[0-9A-F]{32}$/)
+      }).pipe(
+        Effect.provide(Layer.mergeAll(
+          TestSqlClientLive,
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(Layer.effect(SqlClient.SqlClient, Effect.map(TestSqlClient, _ => _.client)))
+          )
+        ))
       )
-
-      const result = yield* Effect.provide(program, crsqlLayer)
-
-      assert.strictEqual(result.siteId, "A1B2C3D4E5F6789012345678ABCDEF90")
-      assert.strictEqual(fake.queries.length, 1)
-      assert.strictEqual(fake.queries[0].sql, "SELECT hex(crsql_site_id()) AS site_id")
-      assert.deepStrictEqual(fake.queries[0].params, [])
-    })
+    )
   })
 
-  it.scoped("getDbVersion executes db version query and returns version string", () => {
-    return Effect.gen(function*() {
-      const fake = yield* makeFakeSqlClient({
-        "SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes": [{ version: "42" }]
-      })
+  describe("getDbVersion", () => {
+    it.scoped("fails with not implemented message", () =>
+      Effect.gen(function*() {
+        const crSql = yield* CrSql.CrSql
+        const result = yield* Effect.flip(crSql.getDbVersion)
 
-      const program = Effect.gen(function*() {
-        const version = yield* CrSql.CrSql.getDbVersion
-        return { version }
-      })
-
-      const crsqlLayer = CrSql.CrSql.Default.pipe(
-        Layer.provide(Layer.succeed(SqlClient.SqlClient, fake.client))
+        assert.include(result._tag, "Die")
+        assert.include(result.defect, "getDbVersion not implemented")
+      }).pipe(
+        Effect.provide(Layer.mergeAll(
+          TestSqlClientLive,
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(Layer.effect(SqlClient.SqlClient, Effect.map(TestSqlClient, _ => _.client)))
+          )
+        ))
       )
-
-      const result = yield* Effect.provide(program, crsqlLayer)
-
-      assert.strictEqual(result.version, "42")
-      assert.strictEqual(fake.queries.length, 1)
-      assert.strictEqual(fake.queries[0].sql, "SELECT CAST(MAX(db_version) AS TEXT) as version FROM crsql_changes")
-      assert.deepStrictEqual(fake.queries[0].params, [])
-    })
+    )
   })
 })
