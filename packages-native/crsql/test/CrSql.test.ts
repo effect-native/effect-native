@@ -340,10 +340,6 @@ withLayer(
   // TRANSACTION MANAGEMENT
   // =============================================================================
 
-  // TODO: Test beginTx starts immediate transaction
-  // Method: beginTx
-  // Test: executes BEGIN IMMEDIATE to start transaction with immediate lock
-  // SQL: BEGIN IMMEDIATE
   // Expected: Transaction started, database locked for writes
 
   // TODO: Test commitTx commits active transaction
@@ -358,38 +354,18 @@ withLayer(
   // SQL: ROLLBACK
   // Expected: Transaction aborted, changes discarded, locks released
 
-  // TODO: Test transaction sequence: begin -> operations -> commit
-  // Method: beginTx, applyChanges, commitTx
-  // Test: atomic sequence of operations within transaction
-  // SQL: BEGIN IMMEDIATE, INSERT statements, COMMIT
   // Expected: All changes committed atomically
 
-  // TODO: Test transaction sequence: begin -> operations -> rollback
-  // Method: beginTx, applyChanges, rollbackTx
-  // Test: atomic rollback of operations within transaction
-  // SQL: BEGIN IMMEDIATE, INSERT statements, ROLLBACK
   // Expected: No changes persisted, clean rollback
 
-  // TODO: Test transaction isolation with concurrent operations
-  // Method: beginTx on multiple connections
-  // Test: IMMEDIATE transactions properly isolate concurrent operations
-  // SQL: Multiple BEGIN IMMEDIATE from different connections
   // Expected: Proper locking behavior, no race conditions
 
   // =============================================================================
   // INTEGRATION SCENARIOS
   // =============================================================================
 
-  // TODO: Test complete sync scenario: pull -> apply -> commit
-  // Method: pullChanges, applyChanges, beginTx, commitTx
-  // Test: end-to-end change synchronization with transaction safety
-  // SQL: Combined operations in proper sequence
   // Expected: Changes properly synchronized with ACID guarantees
 
-  // TODO: Test error recovery: begin -> error -> rollback
-  // Method: beginTx, applyChanges (with error), rollbackTx
-  // Test: proper error handling with transaction cleanup
-  // SQL: BEGIN IMMEDIATE, failed INSERT, ROLLBACK
   // Expected: Clean error recovery, no partial state
 
   // TODO: Test peer version tracking during sync

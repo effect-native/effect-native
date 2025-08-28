@@ -1,5 +1,6 @@
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as Effect from "effect/Effect"
+import * as Errors from "./errors.js"
 import type * as CrSqlSchema from "./schema.js"
 
 // Type for a pre-serialized change row (derived from Schema).
@@ -16,6 +17,17 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
   scoped: Effect.gen(function*() {
     // Acquire the SQL client constructor/template
     const sql = yield* SqlClient.SqlClient
+
+    // Capability checks: verify required SQL functions are available
+    // 1) unhex(): available in SQLite >= 3.41.0
+    yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
+      Effect.catchAll((cause) => Effect.fail(new Errors.UnhexUnavailable({ cause })))
+    )
+
+    // 2) crsql_site_id(): indicates CR-SQLite extension is loaded
+    yield* sql`SELECT hex(crsql_site_id()) as site_id`.pipe(
+      Effect.catchAll((cause) => Effect.fail(new Errors.CrSqliteExtensionMissing({ cause })))
+    )
 
     // Build prepared statement for getting site ID as hex (pre-serialized)
     const getSiteIdHex = Effect.fn("@effect-native/crsql/getSiteIdHex")(function*() {
@@ -117,6 +129,6 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       getDbVersion,
       pullChanges,
       applyChanges
-    }
+    } as const
   })
 }) {}
