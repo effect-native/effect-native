@@ -44,8 +44,8 @@ const execSqliteCr = (dbPath: string, sql: string) =>
  */
 const execSqliteQuery = (dbPath: string, sql: string) =>
   Effect.gen(function*() {
-    // For SELECT queries, use JSON output format
-    const command = Command.make("sqlite-cr", dbPath, "--json", sql)
+    // For SELECT queries, use -json flag
+    const command = Command.make("sqlite-cr", "-json", dbPath, sql)
     const result = yield* Command.string(command)
     
     if (result.trim() === "") {
@@ -64,12 +64,13 @@ describe("SqliteCr CLI Integration", () => {
   it.scoped("should be available in PATH", () =>
     runPromise(Effect.gen(function*() {
       // Test that sqlite-cr command is available
-      const command = Command.make("sqlite-cr", "--version")
+      const command = Command.make("sqlite-cr", "-version")
       const result = yield* Command.string(command)
       
       // Should not be empty and should contain version info
       assert.ok(result.length > 0)
-      assert.ok(result.includes("sqlite-cr"))
+      // Real sqlite-cr shows SQLite version since it's based on SQLite
+      assert.ok(result.includes("3."))
     })))
 
   it.scoped("should create and query database", () =>

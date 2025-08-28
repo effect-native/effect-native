@@ -364,7 +364,7 @@ const executeSqliteCr = (dbPath: string, sql: string) =>
 
 const querySqliteCr = (dbPath: string, sql: string) =>
   Effect.gen(function*() {
-    const command = Command.make("sqlite-cr", dbPath, "--json", sql)
+    const command = Command.make("sqlite-cr", "-json", dbPath, sql)
     const result = yield* Command.string(command)
     return JSON.parse(result.trim())
   })
