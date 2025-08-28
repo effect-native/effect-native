@@ -124,11 +124,38 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       )
     })
 
+    // Set peer version in the tracked peers table
+    const setPeerVersion = Effect.fn("@effect-native/crsql/setPeerVersion")(function*(
+      siteId: CrSqlSchema.SiteIdHex,
+      version: CrSqlSchema.VersionString,
+      seq: number
+    ) {
+      yield* sql`
+        INSERT OR REPLACE INTO crsql_tracked_peers (site_id, version, tag, event, seq)
+        VALUES (unhex(${siteId}), CAST(${version} AS INTEGER), 0, 0, ${seq})
+      `
+    })
+
+    // Get peer version from the tracked peers table
+    const getPeerVersion = Effect.fn("@effect-native/crsql/getPeerVersion")(function*(
+      siteId: CrSqlSchema.SiteIdHex
+    ) {
+      const rows = yield* sql<{
+        version: CrSqlSchema.VersionString
+        seq: number
+      }>`SELECT CAST(version AS TEXT) as version, seq FROM crsql_tracked_peers WHERE site_id = unhex(${siteId})`
+
+      // Return single object if found, null if not found (consistent with integration tests)
+      return rows.length > 0 ? rows[0] : null
+    })
+
     return {
       getSiteIdHex,
       getDbVersion,
       pullChanges,
-      applyChanges
+      applyChanges,
+      setPeerVersion,
+      getPeerVersion
     } as const
   })
 }) {}
