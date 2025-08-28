@@ -12,7 +12,7 @@ import * as Path from "@effect/platform/Path"
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
 import * as Statement from "@effect/sql/Statement"
-import { assert, layer } from "@effect/vitest"
+import { assert, describe, it, layer } from "@effect/vitest"
 import { Effect, Layer, Stream } from "effect"
 import * as Schema from "effect/Schema"
 import * as CrSql from "../src/index.js"
@@ -139,10 +139,10 @@ const TestSqlClientLayer = Layer.scoped(
   Layer.provide(Reactivity.layer)
 )
 
-const TestLayer = CrSql.CrSql.Default.pipe(Layer.provide(TestSqlClientLayer))
+const FreshTestLayer = CrSql.CrSql.Default.pipe(Layer.provide(TestSqlClientLayer))
 
 // Test the real CrSql service with actual CR-SQLite
-layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
+describe("CrSql with Real CR-SQLite", () => {
   it.scoped("gets site ID from real CrSql service", () =>
     Effect.gen(function*() {
       const siteId = yield* CrSql.CrSql.getSiteIdHex
@@ -150,7 +150,7 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
       // Should be a valid 32-char hex string
       assert.strictEqual(siteId.length, 32)
       assert.match(siteId, /^[0-9A-F]{32}$/i)
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("gets database version from real CR-SQLite", () =>
     Effect.gen(function*() {
@@ -158,7 +158,7 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
 
       // Fresh database should have version "0"
       assert.strictEqual(version, "0")
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("pullChanges works with empty database", () =>
     Effect.gen(function*() {
@@ -167,7 +167,7 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
 
       // Should return empty array, not crash
       assert.strictEqual(changes.length, 0)
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("sets and retrieves a new peer version", () =>
     Effect.gen(function*() {
@@ -182,7 +182,7 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
       // Should return what we set
       assert.strictEqual(result?.version, "42")
       assert.strictEqual(result?.seq, 100)
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("updates an existing peer version", () =>
     Effect.gen(function*() {
@@ -198,9 +198,9 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
       const result = yield* CrSql.CrSql.getPeerVersion(siteId)
 
       // Should return the updated values
-      assert.strictEqual(result!.version, "100")
-      assert.strictEqual(result!.seq, 200)
-    }))
+      assert.strictEqual(result?.version, "100")
+      assert.strictEqual(result?.seq, 200)
+    }).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("returns null for unknown peer", () =>
     Effect.gen(function*() {
@@ -209,7 +209,7 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
 
       // Should return null for unknown peer
       assert.strictEqual(result, null)
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)))
 
   it.scoped("handles multiple peers independently", () =>
     Effect.gen(function*() {
@@ -229,5 +229,5 @@ layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
       assert.strictEqual(result1?.seq, 10)
       assert.strictEqual(result2?.version, "200")
       assert.strictEqual(result2?.seq, 20)
-    }))
+    }).pipe(Effect.provide(FreshTestLayer)))
 })
