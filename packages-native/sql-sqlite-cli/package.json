@@ -1,14 +1,13 @@
 {
-  "name": "@effect/sql-sqlite-cr",
+  "name": "@effect-native/sql-sqlite-cli",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "A SQLite-CR (CRDT-enabled SQLite) toolkit for Effect",
-  "homepage": "https://effect.website",
   "repository": {
     "type": "git",
     "url": "https://github.com/effect-native/effect-native.git",
-    "directory": "packages/sql-sqlite-cr"
+    "directory": "packages-native/sql-sqlite-cli"
   },
   "bugs": {
     "url": "https://github.com/effect-native/effect-native/issues"
@@ -24,6 +23,8 @@
     "sql",
     "database",
     "crdt",
+    "crsql",
+    "cr-sqlite",
     "sqlite-cr"
   ],
   "publishConfig": {
