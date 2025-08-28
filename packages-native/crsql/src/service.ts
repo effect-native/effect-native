@@ -68,49 +68,11 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       Effect.catchAll((cause) => Effect.fail(new Errors.CrSqliteExtensionMissing({ cause })))
     )
 
-    /**
-     * Returns this database's CR‑SQLite site identifier as a 16‑byte hex string.
-     *
-     * Conceptually, the site ID is a stable replica identity persisted in the
-     * database file by CR‑SQLite. It is used to:
-     * - Disambiguate the origin of changes during synchronization
-     * - Exclude local changes when pulling from remote peers
-     *
-     * Read via `hex(crsql_site_id())` to match the transport shape.
-     *
-     * @example
-     * import * as CrSql from "@effect-native/crsql"
-     * import { Effect } from "effect"
-     *
-     * const siteId = Effect.gen(function* () {
-     *   return yield* CrSql.CrSql.getSiteIdHex
-     * })
-     *
-     * @since 0.0.0
-     */
     const getSiteIdHex = Effect.fn("@effect-native/crsql/getSiteIdHex")(function*() {
       const rows = yield* sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`
       return rows[0].site_id
     })()
 
-    /**
-     * Returns the current CR‑SQLite database version as a base‑10 string.
-     *
-     * The database version is a monotonically increasing logical clock updated
-     * by CR‑SQLite whenever changes are applied. It is commonly used as a
-     * cursor when exporting changes (e.g. {@link CrSql#pullChanges}). Casting
-     * to TEXT avoids 64‑bit precision issues in JavaScript.
-     *
-     * @example
-     * import * as CrSql from "@effect-native/crsql"
-     * import { Effect } from "effect"
-     *
-     * const version = Effect.gen(function* () {
-     *   return yield* CrSql.CrSql.getDbVersion
-     * })
-     *
-     * @since 0.0.0
-     */
     const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(function*() {
       const rows = yield* sql<
         { version: CrSqlSchema.VersionString }
@@ -118,31 +80,6 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       return rows[0].version
     })()
 
-    /**
-     * Pulls CR‑SQLite change rows newer than a given version, optionally
-     * excluding changes produced by specific sites.
-     *
-     * The result is in the pre‑serialized, wire‑ready shape:
-     * - `pk` and `site_id` are hex strings (`hex(...)`)
-     * - `val` is null, a hex string (when `val_type = 'blob'`), a string, or a
-     *   number depending on SQLite's dynamic type
-     * - `col_version` and `db_version` are bigint values encoded as base‑10 strings
-     * - Results are ordered by `(db_version, seq)` for a deterministic total order
-     *
-     * @param since - lower bound (exclusive) for `db_version` (default "0")
-     * @param excludeSites - optional list of site IDs (hex) to exclude
-     *
-     * @example
-     * import * as CrSql from "@effect-native/crsql"
-     * import { Effect } from "effect"
-     *
-     * const changes = Effect.gen(function* () {
-     *   const since = yield* CrSql.CrSql.getDbVersion
-     *   return yield* CrSql.CrSql.pullChanges(since, ["A1B2C3D4E5F6789012345678ABCDEF90"])
-     * })
-     *
-     * @since 0.0.0
-     */
     const pullChanges = Effect.fn("@effect-native/crsql/pullChanges")(function*(
       since: CrSqlSchema.VersionString = "0",
       excludeSites?: ReadonlyArray<CrSqlSchema.SiteIdHex>
@@ -192,30 +129,6 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       `
     })
 
-    /**
-     * Applies a batch of CR‑SQLite change rows in a single transaction.
-     *
-     * Inverse of {@link CrSql#pullChanges}. Expects the serialized transport
-     * shape and performs decoding in SQL:
-     * - `unhex(?)` converts hex strings to BLOBs for `pk`, `site_id`, and
-     *   `val` when the value type is `blob`
-     * - `CAST(... AS INTEGER)` converts bigint strings into 64‑bit integers
-     *
-     * Notes:
-     * - Wrapped in `SqlClient.withTransaction` for atomicity.
-     * - Idempotency and conflict semantics are provided by CR‑SQLite.
-     *
-     * @param changes - array of pre‑serialized change rows to apply
-     *
-     * @example
-     * import * as CrSql from "@effect-native/crsql"
-     * import { Effect } from "effect"
-     *
-     * const apply = (rows: ReadonlyArray<CrSql.ChangeRow>) =>
-     *   CrSql.CrSql.applyChanges(rows)
-     *
-     * @since 0.0.0
-     */
     const applyChanges = Effect.fn("@effect-native/crsql/applyChanges")(function*(
       changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
     ) {
@@ -246,19 +159,6 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       )
     })
 
-    /**
-     * Sets or updates the tracked version for a peer site in `crsql_tracked_peers`.
-     *
-     * Useful for maintaining per‑peer cursors in a pull/apply protocol. Values
-     * are stored in the database types and projected back as strings when read
-     * (see {@link CrSql#getPeerVersion}).
-     *
-     * @param siteId - peer site identifier (hex, 16 bytes)
-     * @param version - peer database version (base‑10 string)
-     * @param seq - peer sequence number associated with the version
-     *
-     * @since 0.0.0
-     */
     const setPeerVersion = Effect.fn("@effect-native/crsql/setPeerVersion")(function*(
       siteId: CrSqlSchema.SiteIdHex,
       version: CrSqlSchema.VersionString,
@@ -270,17 +170,6 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
       `
     })
 
-    /**
-     * Reads the tracked version for a peer site from `crsql_tracked_peers`.
-     *
-     * Returns `null` when no row exists. The version is returned as a base‑10
-     * string to avoid bigint precision issues; `seq` is a non‑negative integer.
-     *
-     * @param siteId - peer site identifier (hex, 16 bytes)
-     * @returns `{ version: string, seq: number } | null`
-     *
-     * @since 0.0.0
-     */
     const getPeerVersion = Effect.fn("@effect-native/crsql/getPeerVersion")(function*(
       siteId: CrSqlSchema.SiteIdHex
     ) {
@@ -294,12 +183,123 @@ export class CrSql extends Effect.Service<CrSql>()("@effect-native/crsql/CrSql",
     })
 
     return {
+      /**
+       * Returns this database's CR‑SQLite site identifier as a 16‑byte hex string.
+       *
+       * Conceptually, the site ID is a stable replica identity persisted in the
+       * database file by CR‑SQLite. It is used to:
+       * - Disambiguate the origin of changes during synchronization
+       * - Exclude local changes when pulling from remote peers
+       *
+       * Read via `hex(crsql_site_id())` to match the transport shape.
+       *
+       * @example
+       * import * as CrSql from "@effect-native/crsql"
+       * import { Effect } from "effect"
+       *
+       * const siteId = Effect.gen(function* () {
+       *   return yield* CrSql.CrSql.getSiteIdHex
+       * })
+       *
+       * @since 0.0.0
+       */
       getSiteIdHex,
+      /**
+       * Returns the current CR‑SQLite database version as a base‑10 string.
+       *
+       * The database version is a monotonically increasing logical clock updated
+       * by CR‑SQLite whenever changes are applied. It is commonly used as a
+       * cursor when exporting changes (e.g. {@link CrSql#pullChanges}). Casting
+       * to TEXT avoids 64‑bit precision issues in JavaScript.
+       *
+       * @example
+       * import * as CrSql from "@effect-native/crsql"
+       * import { Effect } from "effect"
+       *
+       * const version = Effect.gen(function* () {
+       *   return yield* CrSql.CrSql.getDbVersion
+       * })
+       *
+       * @since 0.0.0
+       */
       getDbVersion,
+      /**
+       * Pulls CR‑SQLite change rows newer than a given version, optionally
+       * excluding changes produced by specific sites.
+       *
+       * The result is in the pre‑serialized, wire‑ready shape:
+       * - `pk` and `site_id` are hex strings (`hex(...)`)
+       * - `val` is null, a hex string (when `val_type = 'blob'`), a string, or a
+       *   number depending on SQLite's dynamic type
+       * - `col_version` and `db_version` are bigint values encoded as base‑10 strings
+       * - Results are ordered by `(db_version, seq)` for a deterministic total order
+       *
+       * @param since - lower bound (exclusive) for `db_version` (default "0")
+       * @param excludeSites - optional list of site IDs (hex) to exclude
+       *
+       * @example
+       * import * as CrSql from "@effect-native/crsql"
+       * import { Effect } from "effect"
+       *
+       * const changes = Effect.gen(function* () {
+       *   const since = yield* CrSql.CrSql.getDbVersion
+       *   return yield* CrSql.CrSql.pullChanges(since, ["A1B2C3D4E5F6789012345678ABCDEF90"])
+       * })
+       *
+       * @since 0.0.0
+       */
       pullChanges,
+      /**
+       * Applies a batch of CR‑SQLite change rows in a single transaction.
+       *
+       * Inverse of {@link CrSql#pullChanges}. Expects the serialized transport
+       * shape and performs decoding in SQL:
+       * - `unhex(?)` converts hex strings to BLOBs for `pk`, `site_id`, and
+       *   `val` when the value type is `blob`
+       * - `CAST(... AS INTEGER)` converts bigint strings into 64‑bit integers
+       *
+       * Notes:
+       * - Wrapped in `SqlClient.withTransaction` for atomicity.
+       * - Idempotency and conflict semantics are provided by CR‑SQLite.
+       *
+       * @param changes - array of pre‑serialized change rows to apply
+       *
+       * @example
+       * import * as CrSql from "@effect-native/crsql"
+       * import { Effect } from "effect"
+       *
+       * const apply = (rows: ReadonlyArray<CrSql.ChangeRow>) =>
+       *   CrSql.CrSql.applyChanges(rows)
+       *
+       * @since 0.0.0
+       */
       applyChanges,
+      /**
+       * Sets or updates the tracked version for a peer site in `crsql_tracked_peers`.
+       *
+       * Useful for maintaining per‑peer cursors in a pull/apply protocol. Values
+       * are stored in the database types and projected back as strings when read
+       * (see {@link CrSql#getPeerVersion}).
+       *
+       * @param siteId - peer site identifier (hex, 16 bytes)
+       * @param version - peer database version (base‑10 string)
+       * @param seq - peer sequence number associated with the version
+       *
+       * @since 0.0.0
+       */
       setPeerVersion,
+      /**
+       * Reads the tracked version for a peer site from `crsql_tracked_peers`.
+       *
+       * Returns `null` when no row exists. The version is returned as a base‑10
+       * string to avoid bigint precision issues; `seq` is a non‑negative integer.
+       *
+       * @param siteId - peer site identifier (hex, 16 bytes)
+       * @returns `{ version: string, seq: number } | null`
+       *
+       * @since 0.0.0
+       */
       getPeerVersion
-    }
+    } as const
   })
 }) {}
