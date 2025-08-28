@@ -3,21 +3,30 @@
  * These tests validate actual CR-SQLite behavior against a real database
  */
 
-import { NodeContext } from "@effect/platform-node"
+import * as NodeContext from "@effect/platform-node/NodeContext"
 import * as Command from "@effect/platform/Command"
 import * as CommandExecutor from "@effect/platform/CommandExecutor"
-import { assert, describe, it } from "@effect/vitest"
+import * as FileSystem from "@effect/platform/FileSystem"
+import * as Path from "@effect/platform/Path"
+import { assert, describe, it, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import * as fs from "node:fs"
+import * as Console from "effect/Console"
+import * as Schema from "effect/Schema"
+import { SiteIdHex } from "../src/schema.js"
+
+const tmpDBPath = Effect.gen(function*() {
+  const fs = yield* FileSystem.FileSystem
+  const tmpDir = yield* fs.makeTempDirectoryScoped()
+  const path = yield* Path.Path
+  return path.join(tmpDir, `crsql-test-${Date.now()}.db`)
+})
 
 // Quick and dirty integration test using sqlite-cr CLI directly
-describe("CrSql Integration Tests", () => {
-  it("validates sqlite-cr CLI with crsql_site_id()", () =>
+layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
+  it.scoped("validates sqlite-cr CLI with crsql_site_id()", () =>
     Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
       const executor = yield* CommandExecutor.CommandExecutor
-
-      // Generate unique temp database path
-      const dbPath = `/tmp/crsql-test-${Date.now()}.db`
 
       // Run sqlite-cr to get site ID
       const command = Command.make(
@@ -29,58 +38,44 @@ describe("CrSql Integration Tests", () => {
         "SELECT hex(crsql_site_id())"
       )
 
-      const result = yield* executor.exitCode(command)
-
-      // Clean up
-      yield* Effect.sync(() => {
-        try {
-          fs.unlinkSync(dbPath)
-        } catch {}
-      })
-
       // If exit code is 0, sqlite-cr and CR-SQLite are working
-      assert.strictEqual(result, 0, "sqlite-cr should execute crsql_site_id() successfully")
-    }).pipe(
-      Effect.provide(NodeContext.layer),
-      Effect.runPromise
-    ))
+      assert.strictEqual(
+        yield* executor.exitCode(command),
+        0,
+        "sqlite-cr should execute crsql_site_id() successfully"
+      )
+    }))
 
-  it("gets a valid site ID from CR-SQLite", () =>
+  it.scoped("gets a valid site ID from CR-SQLite", () =>
     Effect.gen(function*() {
       const executor = yield* CommandExecutor.CommandExecutor
 
       // Generate unique temp database path
-      const dbPath = `/tmp/crsql-test-${Date.now()}.db`
+      const dbPath = yield* tmpDBPath
 
       // Run sqlite-cr to get site ID and capture output
+      // Use -json output mode for easier parsing
       const command = Command.make(
         "nix",
         "run",
         "github:subtleGradient/sqlite-cr",
         "--",
-        "-line",
+        "-json",
         dbPath,
         "SELECT hex(crsql_site_id()) as site_id"
       )
 
       const output = yield* executor.string(command)
 
-      // Clean up
-      yield* Effect.sync(() => {
-        try {
-          fs.unlinkSync(dbPath)
-        } catch {}
-      })
+      // Parse JSON array output from sqlite-cr
+      const jsonSchema = Schema.parseJson(Schema.Array(Schema.Struct({
+        site_id: SiteIdHex
+      })))
 
-      // Parse output (format: "site_id = HEXSTRING")
-      const match = output.match(/site_id = ([0-9A-F]+)/i)
-      assert.ok(match, "Should find site_id in output")
+      const results = yield* Schema.decode(jsonSchema)(output)
+      const siteId = results[0].site_id
 
-      const siteId = match![1]
-      assert.strictEqual(siteId.length, 32, "Site ID should be 32 hex characters")
-      assert.match(siteId, /^[0-9A-F]{32}$/i)
-    }).pipe(
-      Effect.provide(NodeContext.layer),
-      Effect.runPromise
-    ))
+      // Schema has already validated the format, just check the length
+      assert.strictEqual(siteId.length, 32)
+    }))
 })
