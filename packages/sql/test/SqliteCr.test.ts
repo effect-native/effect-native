@@ -254,4 +254,48 @@ describe("SqliteCr CLI Integration", () => {
       const migrations = yield* execSqliteQuery(dbPath, "SELECT name FROM effect_migrations ORDER BY created_at")
       assert.deepStrictEqual(migrations, [{ name: "001_create_users" }])
     })))
+
+  it.scoped("should demonstrate SqlClient integration pattern", () =>
+    runPromise(Effect.gen(function*() {
+      const dbPath = yield* makeTempDb
+      
+      // This test demonstrates how the SqlClient would work once fully integrated
+      // For now, we simulate the SqlClient behavior using the CLI interface
+      
+      // SqlClient would provide this layer:
+      // const SqliteCrLive = SqliteCrClient.layerConfig({ filename: dbPath })
+      
+      // And then you could use it like this:
+      // const program = Effect.gen(function*() {
+      //   const sql = yield* SqlClient.SqlClient
+      //   yield* sql`CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT, content TEXT)`
+      //   yield* sql`INSERT INTO posts (title, content) VALUES ('Hello', 'World')`
+      //   const posts = yield* sql`SELECT * FROM posts`
+      //   return posts
+      // })
+      
+      // For this test, we simulate what the SqlClient would do:
+      yield* execSqliteCr(dbPath, "CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT, content TEXT)")
+      yield* execSqliteCr(dbPath, "INSERT INTO posts (title, content) VALUES ('Hello', 'World')")
+      yield* execSqliteCr(dbPath, "INSERT INTO posts (title, content) VALUES ('Effect', 'is awesome')")
+      
+      const posts = yield* execSqliteQuery(dbPath, "SELECT * FROM posts ORDER BY id")
+      
+      assert.deepStrictEqual(posts, [
+        { id: 1, title: "Hello", content: "World" },
+        { id: 2, title: "Effect", content: "is awesome" }
+      ])
+      
+      // Verify we can also do complex operations that SqlClient supports
+      const count = yield* execSqliteQuery(dbPath, "SELECT COUNT(*) as total FROM posts")
+      assert.deepStrictEqual(count, [{ total: 2 }])
+      
+      // Demonstrate transaction-like behavior
+      yield* execSqliteCr(dbPath, "BEGIN TRANSACTION")
+      yield* execSqliteCr(dbPath, "INSERT INTO posts (title, content) VALUES ('Transaction', 'Test')")
+      yield* execSqliteCr(dbPath, "COMMIT")
+      
+      const finalCount = yield* execSqliteQuery(dbPath, "SELECT COUNT(*) as total FROM posts")
+      assert.deepStrictEqual(finalCount, [{ total: 3 }])
+    })))
 })
