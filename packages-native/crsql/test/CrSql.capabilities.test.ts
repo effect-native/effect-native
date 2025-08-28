@@ -1,4 +1,5 @@
 import * as CrSql from "@effect-native/crsql"
+import * as CrSqlErrors from "@effect-native/crsql/errors"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
@@ -55,7 +56,7 @@ withLayer(Layer.empty)("CrSql capability: unhex missing", (it) => {
       const result = yield* Effect.either(acquire)
       assert.ok(result._tag === "Left")
       if (result._tag === "Left") {
-        assert.ok(result.left instanceof CrSql.CrSqlErrors.UnhexUnavailable)
+        assert.ok(result.left instanceof CrSqlErrors.UnhexUnavailable)
       }
     }))
 })
@@ -78,7 +79,7 @@ withLayer(Layer.empty)("CrSql capability: crsqlite missing", (it) => {
         assert.ok(result._tag === "Left")
         if (result._tag === "Left") {
           assert.ok(
-            result.left instanceof CrSql.CrSqlErrors.CrSqliteExtensionMissing
+            result.left instanceof CrSqlErrors.CrSqliteExtensionMissing
           )
         }
       })

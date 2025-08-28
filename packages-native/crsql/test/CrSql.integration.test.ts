@@ -52,11 +52,10 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
 
   it.scoped("gets a valid site ID from CR-SQLite", () =>
     Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
       const executor = yield* CommandExecutor.CommandExecutor
 
       // Generate unique temp database path
-      const dbPath = yield* tmpDBPath
-
       // Run sqlite-cr to get site ID and capture output
       // Use -json output mode for easier parsing
       const command = Command.make(
@@ -80,79 +79,73 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
 })
 
 // Minimal SqlClient layer using sqlite-cr - just enough to test our CrSql service
-const makeRealSqlClientLayer = (dbPath: string) =>
-  Layer.scoped(
-    SqlClient.SqlClient,
-    Effect.gen(function*() {
-      const executor = yield* CommandExecutor.CommandExecutor
+const TestSqlClientLayer = Layer.scoped(
+  SqlClient.SqlClient,
+  Effect.gen(function*() {
+    const dbPath = yield* tmpDBPath
+    const executor = yield* CommandExecutor.CommandExecutor
 
-      // Minimal Connection implementation - only what we need for testing
-      const connection: Connection = {
-        // Main execute method - handles parameterized queries
-        execute: (sql, params, transformRows) =>
-          Effect.gen(function*() {
-            // Quick and dirty param replacement - good enough for testing
-            let sqlWithParams = sql
-            if (params && params.length > 0) {
-              let paramIndex = 0
-              sqlWithParams = sql.replace(/\?/g, () => {
-                const param = params[paramIndex++]
-                if (param === null || param === undefined) return "NULL"
-                if (typeof param === "string") return `'${param.replace(/'/g, "''")}'`
-                return String(param)
-              })
-            }
+    // Minimal Connection implementation - only what we need for testing
+    const connection: Connection = {
+      // Main execute method - handles parameterized queries
+      execute: (sql, params, transformRows) =>
+        Effect.gen(function*() {
+          // Quick and dirty param replacement - good enough for testing
+          let sqlWithParams = sql
+          if (params && params.length > 0) {
+            let paramIndex = 0
+            sqlWithParams = sql.replace(/\?/g, () => {
+              const param = params[paramIndex++]
+              if (param === null || param === undefined) return "NULL"
+              if (typeof param === "string") return `'${param.replace(/'/g, "''")}'`
+              return String(param)
+            })
+          }
 
-            const command = Command.make(
-              "nix",
-              "run",
-              "github:subtleGradient/sqlite-cr",
-              "--",
-              "-json",
-              dbPath,
-              sqlWithParams
-            )
+          const command = Command.make(
+            "nix",
+            "run",
+            "github:subtleGradient/sqlite-cr",
+            "--",
+            "-json",
+            dbPath,
+            sqlWithParams
+          )
 
-            const output = yield* executor.string(command).pipe(
-              Effect.orDieWith((cause) => new Error(`DEFECT: Failed to execute SQL with sqlite-cr cli tool`, { cause }))
-            )
+          const output = yield* executor.string(command).pipe(
+            Effect.orDieWith((cause) => new Error(`DEFECT: Failed to execute SQL with sqlite-cr cli tool`, { cause }))
+          )
 
-            // Handle empty output from sqlite-cr
-            const rows = output.trim() === "" ? [] : JSON.parse(output)
-            return transformRows ? transformRows(rows) : rows
-          }),
+          // Handle empty output from sqlite-cr
+          const rows = output.trim() === "" ? [] : JSON.parse(output)
+          return transformRows ? transformRows(rows) : rows
+        }),
 
-        // Stub implementations - we don't use these for CrSql testing
-        executeRaw: () => Effect.succeed([]),
-        executeStream: () => Stream.empty,
-        executeValues: () => Effect.succeed([]),
-        executeUnprepared: () => Effect.succeed([])
-      }
+      // Stub implementations - we don't use these for CrSql testing
+      executeRaw: () => Effect.succeed([]),
+      executeStream: () => Stream.empty,
+      executeValues: () => Effect.succeed([]),
+      executeUnprepared: () => Effect.succeed([])
+    }
 
-      return yield* SqlClient.make({
-        acquirer: Effect.succeed(connection),
-        compiler: Statement.makeCompilerSqlite(),
-        spanAttributes: [] // Required for SqlClient
-      }).pipe(Effect.provide(Reactivity.layer))
+    return yield* SqlClient.make({
+      acquirer: Effect.succeed(connection),
+      compiler: Statement.makeCompilerSqlite(),
+      spanAttributes: [] // Required for SqlClient
     })
-  ).pipe(Layer.provide(NodeContext.layer))
+  })
+).pipe(
+  Layer.provide(NodeContext.layer),
+  Layer.provide(Reactivity.layer)
+)
+
+const TestLayer = CrSql.CrSql.Default.pipe(Layer.provide(TestSqlClientLayer))
 
 // Test the real CrSql service with actual CR-SQLite
-layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
+layer(TestLayer)("CrSql with Real CR-SQLite", (it) => {
   it.scoped("gets site ID from real CrSql service", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      // Use real CrSql service with real SqlClient
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
-
-      const siteId = yield* crSql.getSiteIdHex
+      const siteId = yield* CrSql.CrSql.getSiteIdHex
 
       // Should be a valid 32-char hex string
       assert.strictEqual(siteId.length, 32)
@@ -161,18 +154,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
 
   it.scoped("gets database version from real CR-SQLite", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      // Use real CrSql service with real SqlClient
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
-
-      const version = yield* crSql.getDbVersion
+      const version = yield* CrSql.CrSql.getDbVersion
 
       // Fresh database should have version "0"
       assert.strictEqual(version, "0")
@@ -180,130 +162,72 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
 
   it.scoped("pullChanges works with empty database", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
-
       // Pull changes from empty database
-      const changes = yield* crSql.pullChanges("0")
+      const changes = yield* CrSql.CrSql.pullChanges("0")
 
       // Should return empty array, not crash
       assert.strictEqual(changes.length, 0)
     }))
 
-  it.scoped("sets a new peer version", () =>
+  it.scoped("sets and retrieves a new peer version", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
+      const siteId = "A1B2C3D4E5F6789012345678ABCDEF90"
 
       // Set a new peer version
-      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
+      yield* CrSql.CrSql.setPeerVersion(siteId, "42", 100)
 
-      // Should complete without error
-      assert.ok(true)
+      // Get it back
+      const result = yield* CrSql.CrSql.getPeerVersion(siteId)
+
+      // Should return what we set
+      assert.strictEqual(result?.version, "42")
+      assert.strictEqual(result?.seq, 100)
     }))
 
   it.scoped("updates an existing peer version", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
+      const siteId = "A1B2C3D4E5F6789012345678ABCDEF90"
 
       // Set initial version
-      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
+      yield* CrSql.CrSql.setPeerVersion(siteId, "42", 100)
 
       // Update with new version
-      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "100", 200)
+      yield* CrSql.CrSql.setPeerVersion(siteId, "100", 200)
 
-      // Should complete without error
-      assert.ok(true)
+      // Get the updated version
+      const result = yield* CrSql.CrSql.getPeerVersion(siteId)
+
+      // Should return the updated values
+      assert.strictEqual(result!.version, "100")
+      assert.strictEqual(result!.seq, 200)
     }))
 
-  it.scoped("gets a known peer version", () =>
+  it.scoped("returns null for unknown peer", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
-
-      // Set peer version first
-      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
-
-      // Get the version
-      const result = yield* crSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
-
-      // Should return the peer version data
-      assert.strictEqual(result.version, "42")
-      assert.strictEqual(result.seq, 100)
-    }))
-
-  it.scoped("gets an unknown peer version", () =>
-    Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
-
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
-
       // Get version for non-existent peer
-      const result = yield* crSql.getPeerVersion("NONEXISTENTPEERSITE123456789ABCDEF")
+      const result = yield* CrSql.CrSql.getPeerVersion("NONEXISTENTPEERSITE123456789ABCDEF")
 
       // Should return null for unknown peer
       assert.strictEqual(result, null)
     }))
 
-  it.scoped("round-trip peer version tracking", () =>
+  it.scoped("handles multiple peers independently", () =>
     Effect.gen(function*() {
-      const dbPath = yield* tmpDBPath
+      const peer1 = "A1B2C3D4E5F6789012345678ABCDEF90"
+      const peer2 = "B2C3D4E5F6789012345678ABCDEF90A1"
 
-      const crSql = yield* CrSql.CrSql.pipe(
-        Effect.provide(
-          CrSql.CrSql.Default.pipe(
-            Layer.provide(makeRealSqlClientLayer(dbPath))
-          )
-        )
-      )
+      // Set versions for different peers
+      yield* CrSql.CrSql.setPeerVersion(peer1, "100", 10)
+      yield* CrSql.CrSql.setPeerVersion(peer2, "200", 20)
 
-      const siteId = "A1B2C3D4E5F6789012345678ABCDEF90"
-      const version = "123456"
-      const seq = 789
+      // Get them back
+      const result1 = yield* CrSql.CrSql.getPeerVersion(peer1)
+      const result2 = yield* CrSql.CrSql.getPeerVersion(peer2)
 
-      // Set peer version
-      yield* crSql.setPeerVersion(siteId, version, seq)
-
-      // Get it back
-      const result = yield* crSql.getPeerVersion(siteId)
-
-      // Should match what we set
-      assert.strictEqual(result?.version, version)
-      assert.strictEqual(result?.seq, seq)
+      // Each peer should have its own version
+      assert.strictEqual(result1?.version, "100")
+      assert.strictEqual(result1?.seq, 10)
+      assert.strictEqual(result2?.version, "200")
+      assert.strictEqual(result2?.seq, 20)
     }))
 })

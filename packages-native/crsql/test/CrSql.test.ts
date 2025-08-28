@@ -1,6 +1,6 @@
 import * as Reactivity from "@effect/experimental/Reactivity"
-import type * as Connection from "@effect/sql/Connection"
 import * as SqlClient from "@effect/sql/SqlClient"
+import type * as Connection from "@effect/sql/SqlConnection"
 import type * as SqlError from "@effect/sql/SqlError"
 import * as Statement from "@effect/sql/Statement"
 import { layer as withLayer } from "@effect/vitest"
@@ -16,7 +16,11 @@ import * as CrSql from "../src/index.js"
 const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<object>>) =>
   Layer.scopedContext(Effect.gen(function*() {
     const connection: Connection.Connection = {
-      execute: (sql: string, params, transformRows) =>
+      execute: (
+        sql: string,
+        params: ReadonlyArray<any>,
+        transformRows?: (rows: ReadonlyArray<any>) => ReadonlyArray<any>
+      ) =>
         Effect.sync(() => {
           let rows: ReadonlyArray<object> = []
 
