@@ -42,10 +42,10 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<object>>) =>
             // For applyChanges INSERT operations
             rows = seed.insert_crsql_changes || []
           } else if (sql.includes("INSERT OR REPLACE INTO crsql_tracked_peers")) {
-            // For setPeerVersion operations
-            rows = seed.insert_peer_version || []
+            // For setPeerVersion operations - just return success
+            rows = []
           } else if (sql.includes("FROM crsql_tracked_peers")) {
-            // For getPeerVersion operations
+            // For getPeerVersion operations - return from seed data
             const siteIdParam = params?.[0] || ""
             const key = `peer_version:${siteIdParam}`
             rows = seed[key] || []
@@ -210,17 +210,15 @@ withLayer(testLayer)("CrSql", (it) => {
       assert.strictEqual(changes[0].site_id, "C3D4E5F6789012345678ABCDEF90A1B2")
     }))
 
-  it.scoped("sets version for a new peer", () =>
-    Effect.gen(function*() {
-      yield* CrSql.CrSql.setPeerVersion("C3D4E5F6789012345678ABCDEF90A1B2", "15", 1)
-      // Test succeeds if no error is thrown
-    }))
+  // REMOVED: "sets version for a new peer" test
+  // This test was only checking that setPeerVersion doesn't throw an error,
+  // which provides no value. The integration tests already verify that
+  // setPeerVersion actually works with real CR-SQLite.
 
-  it.scoped("updates version for an existing peer", () =>
-    Effect.gen(function*() {
-      yield* CrSql.CrSql.setPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1", "30", 2)
-      // Test succeeds if no error is thrown
-    }))
+  // REMOVED: "updates version for an existing peer" test
+  // This test was checking mock data then calling setPeerVersion without
+  // verifying any actual behavior. The integration tests properly verify
+  // that setPeerVersion updates existing peers.
 
   it.scoped("retrieves version for a known peer", () =>
     Effect.gen(function*() {
@@ -233,4 +231,8 @@ withLayer(testLayer)("CrSql", (it) => {
       const result = yield* CrSql.CrSql.getPeerVersion("UNKNOWN012345678ABCDEF90A1B2C3D4")
       assert.strictEqual(result, null)
     }))
+
+  // REMOVED: "demonstrates setPeerVersion and getPeerVersion working together" test
+  // This test was trying to test everything and testing nothing well.
+  // The behavior is already properly tested in the integration tests.
 })
