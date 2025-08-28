@@ -5,8 +5,6 @@ import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Schema from "effect/Schema"
-import { RunnerAddress } from "./RunnerAddress.js"
 import { ShardingConfig } from "./ShardingConfig.js"
 
 /**
@@ -20,6 +18,24 @@ export class NoRunnersWithCapability extends Data.TaggedError("NoRunnersWithCapa
 
 /**
  * Configuration for a capability-based job submission
+ * 
+ * @example
+ * ```typescript
+ * const jobOptions: JobSubmissionOptions<PhotoJob, PhotoResult> = {
+ *   capabilities: ["camera", "image-processing"],
+ *   job: { 
+ *     location: "warehouse-entrance", 
+ *     timestamp: new Date().toISOString() 
+ *   },
+ *   handler: (job) => 
+ *     Effect.gen(function*() {
+ *       const imageUrl = yield* capturePhoto(job.location)
+ *       const processedUrl = yield* processImage(imageUrl)
+ *       return { success: true, imageUrl: processedUrl }
+ *     })
+ * }
+ * ```
+ * 
  * @since 1.0.0
  * @category models
  */
@@ -31,6 +47,34 @@ export interface JobSubmissionOptions<Job, Result> {
 
 /**
  * JobRunner service for capability-based job routing
+ * 
+ * Allows submitting jobs that can be executed on any runner with the required capabilities.
+ * This is useful for scenarios like:
+ * - Photo capture jobs that need runners with "camera" capability
+ * - ML inference jobs that need runners with "gpu" capability
+ * - File processing jobs that need runners with "storage" capability
+ * 
+ * @example
+ * ```typescript
+ * import { JobRunner } from "@effect/cluster"
+ * import { Effect } from "effect"
+ * 
+ * const result = yield* JobRunner.JobRunner.pipe(
+ *   Effect.flatMap(jobRunner => 
+ *     jobRunner.submitJob({
+ *       capabilities: ["camera"],
+ *       job: { location: "parking-lot", resolution: "1080p" },
+ *       handler: (job) => 
+ *         Effect.succeed({ 
+ *           success: true, 
+ *           imageUrl: `https://cdn.example.com/${job.location}.jpg`,
+ *           processedBy: "camera-runner-1" 
+ *         })
+ *     })
+ *   )
+ * )
+ * ```
+ * 
  * @since 1.0.0
  * @category context
  */

@@ -1,14 +1,13 @@
 import {
   JobRunner,
   MessageStorage,
-  RunnerAddress,
   Runners,
   Sharding,
   ShardingConfig,
   ShardManager,
   ShardStorage
 } from "@effect/cluster"
-import { assert, describe, expect, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect/vitest"
 import {
   Effect,
   Layer,
@@ -108,6 +107,65 @@ describe.concurrent("Capability-based Job Routing", () => {
 
       expect(error._tag).toBe("NoRunnersWithCapability")
       expect(error.requiredCapabilities).toEqual(["quantum-processor"])
+    }).pipe(Effect.provide(TestCapabilityRouting))
+  )
+
+  it.scoped("should handle multiple capability requirements", () =>
+    Effect.gen(function*() {
+      yield* TestClock.adjust(1)
+
+      // Job that requires both "camera" AND "gpu" capabilities
+      const job = {
+        task: "real-time-object-detection",
+        camera: "front-facing",
+        model: "yolo-v8",
+        requestId: "multi-cap-123"
+      }
+
+      const jobRunner = yield* JobRunner.JobRunner
+      const result = yield* jobRunner.submitJob({
+        capabilities: ["camera", "gpu"], // Both capabilities required
+        job: job,
+        handler: (job: any) =>
+          Effect.succeed({
+            success: true,
+            detections: ["person", "car", "bicycle"],
+            processedBy: "camera-gpu-runner",
+            confidence: 0.95
+          })
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.detections).toEqual(["person", "car", "bicycle"])
+      expect(result.processedBy).toContain("camera-gpu-runner")
+    }).pipe(Effect.provide(TestCapabilityRouting))
+  )
+
+  it.scoped("should work with single capability from multiple available", () =>
+    Effect.gen(function*() {
+      yield* TestClock.adjust(1)
+
+      // Job that only needs "gpu" but runner has multiple capabilities
+      const job = {
+        computation: "matrix-multiplication",
+        size: "1024x1024",
+        requestId: "single-from-multi-456"
+      }
+
+      const jobRunner = yield* JobRunner.JobRunner
+      const result = yield* jobRunner.submitJob({
+        capabilities: ["gpu"], // Only needs GPU
+        job: job,
+        handler: (job: any) =>
+          Effect.succeed({
+            result: "computed",
+            flops: 1000000,
+            processedBy: "multi-capability-runner"
+          })
+      })
+
+      expect(result.result).toBe("computed")
+      expect(result.flops).toBe(1000000)
     }).pipe(Effect.provide(TestCapabilityRouting))
   )
 })
