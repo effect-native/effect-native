@@ -114,7 +114,7 @@ const makeRealSqlClientLayer = (dbPath: string) =>
             )
 
             const output = yield* executor.string(command).pipe(
-              Effect.orElseSucceed(() => "[]") // Empty result on error
+              Effect.orDieWith((cause) => new Error(`DEFECT: Failed to execute SQL with sqlite-cr cli tool`, { cause }))
             )
 
             // Handle empty output from sqlite-cr

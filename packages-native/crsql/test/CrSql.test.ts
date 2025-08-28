@@ -10,18 +10,18 @@ import * as Context from "effect/Context"
 
 // Build a SqlClient layer with pattern-based response matching
 // Matches queries based on SQL patterns and parameters rather than exact SQL
-const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<unknown>>) =>
+const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<object>>) =>
   Layer.scopedContext(Effect.gen(function*() {
     const connection: Connection = {
       execute: (sql: string, params, transformRows) =>
         Effect.sync(() => {
-          let rows: ReadonlyArray<unknown> = []
+          let rows: ReadonlyArray<object> = []
 
           // Pattern-based matching for different query types
           if (sql.includes("crsql_site_id()")) {
-            rows = seed["crsql_site_id"] || []
+            rows = seed.crsql_site_id || []
           } else if (sql.includes("crsql_db_version()")) {
-            rows = seed["db_version"] || []
+            rows = seed.db_version || []
           } else if (sql.includes("FROM crsql_changes")) {
             // For pullChanges, differentiate by the 'since' parameter and exclusions
             const sinceParam = params?.[0] || "0"
@@ -37,10 +37,10 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<unknown>>) =>
             }
           } else if (sql.includes("INSERT INTO crsql_changes")) {
             // For applyChanges INSERT operations
-            rows = seed["insert_crsql_changes"] || []
+            rows = seed.insert_crsql_changes || []
           }
 
-          return transformRows ? transformRows(rows as any) : rows
+          return transformRows ? transformRows(rows) : rows
         }),
       executeRaw: () => Effect.succeed([]),
       executeStream: () => Stream.empty as Stream.Stream<unknown, SqlError>,
