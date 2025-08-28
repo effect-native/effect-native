@@ -81,6 +81,11 @@ export * as HttpShardManager from "./HttpShardManager.js"
 /**
  * @since 1.0.0
  */
+export * as JobRunner from "./JobRunner.js"
+
+/**
+ * @since 1.0.0
+ */
 export * as MachineId from "./MachineId.js"
 
 /**
