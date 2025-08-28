@@ -3,20 +3,20 @@
  * These tests validate actual CR-SQLite behavior against a real database
  */
 
+import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeContext from "@effect/platform-node/NodeContext"
 import * as Command from "@effect/platform/Command"
 import * as CommandExecutor from "@effect/platform/CommandExecutor"
 import * as FileSystem from "@effect/platform/FileSystem"
 import * as Path from "@effect/platform/Path"
-import { assert, layer } from "@effect/vitest"
-import { Effect, Layer, Stream } from "effect"
-import * as Schema from "effect/Schema"
-import { SiteIdHex } from "../src/schema.js"
-import * as CrSql from "../src/index.js"
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
 import * as Statement from "@effect/sql/Statement"
-import * as Reactivity from "@effect/experimental/Reactivity"
+import { assert, layer } from "@effect/vitest"
+import { Effect, Layer, Stream } from "effect"
+import * as Schema from "effect/Schema"
+import * as CrSql from "../src/index.js"
+import { SiteIdHex } from "../src/schema.js"
 
 const tmpDBPath = Effect.gen(function*() {
   const fs = yield* FileSystem.FileSystem
@@ -83,14 +83,14 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
 const makeRealSqlClientLayer = (dbPath: string) =>
   Layer.scoped(
     SqlClient.SqlClient,
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const executor = yield* CommandExecutor.CommandExecutor
-      
+
       // Minimal Connection implementation - only what we need for testing
       const connection: Connection = {
         // Main execute method - handles parameterized queries
         execute: (sql, params, transformRows) =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             // Quick and dirty param replacement - good enough for testing
             let sqlWithParams = sql
             if (params && params.length > 0) {
@@ -102,28 +102,33 @@ const makeRealSqlClientLayer = (dbPath: string) =>
                 return String(param)
               })
             }
-            
+
             const command = Command.make(
-              "nix", "run", "github:subtleGradient/sqlite-cr",
-              "--", "-json", dbPath, sqlWithParams
+              "nix",
+              "run",
+              "github:subtleGradient/sqlite-cr",
+              "--",
+              "-json",
+              dbPath,
+              sqlWithParams
             )
-            
+
             const output = yield* executor.string(command).pipe(
               Effect.orElseSucceed(() => "[]") // Empty result on error
             )
-            
+
             // Handle empty output from sqlite-cr
             const rows = output.trim() === "" ? [] : JSON.parse(output)
             return transformRows ? transformRows(rows) : rows
           }),
-        
+
         // Stub implementations - we don't use these for CrSql testing
         executeRaw: () => Effect.succeed([]),
         executeStream: () => Stream.empty,
         executeValues: () => Effect.succeed([]),
         executeUnprepared: () => Effect.succeed([])
       }
-      
+
       return yield* SqlClient.make({
         acquirer: Effect.succeed(connection),
         compiler: Statement.makeCompilerSqlite(),
@@ -135,9 +140,9 @@ const makeRealSqlClientLayer = (dbPath: string) =>
 // Test the real CrSql service with actual CR-SQLite
 layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
   it.scoped("gets site ID from real CrSql service", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
-      
+
       // Use real CrSql service with real SqlClient
       const crSql = yield* CrSql.CrSql.pipe(
         Effect.provide(
@@ -146,19 +151,18 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
           )
         )
       )
-      
+
       const siteId = yield* crSql.getSiteIdHex
-      
+
       // Should be a valid 32-char hex string
       assert.strictEqual(siteId.length, 32)
       assert.match(siteId, /^[0-9A-F]{32}$/i)
-    })
-  )
-  
+    }))
+
   it.scoped("gets database version from real CR-SQLite", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
-      
+
       // Use real CrSql service with real SqlClient
       const crSql = yield* CrSql.CrSql.pipe(
         Effect.provide(
@@ -167,18 +171,17 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
           )
         )
       )
-      
+
       const version = yield* crSql.getDbVersion
-      
+
       // Fresh database should have version "0"
       assert.strictEqual(version, "0")
-    })
-  )
-  
+    }))
+
   it.scoped("pullChanges works with empty database", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
-      
+
       const crSql = yield* CrSql.CrSql.pipe(
         Effect.provide(
           CrSql.CrSql.Default.pipe(
@@ -186,12 +189,11 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
           )
         )
       )
-      
+
       // Pull changes from empty database
       const changes = yield* crSql.pullChanges("0")
-      
+
       // Should return empty array, not crash
       assert.strictEqual(changes.length, 0)
-    })
-  )
+    }))
 })
