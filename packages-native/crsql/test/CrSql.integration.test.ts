@@ -196,4 +196,114 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       // Should return empty array, not crash
       assert.strictEqual(changes.length, 0)
     }))
+
+  it.scoped("sets a new peer version", () =>
+    Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
+
+      const crSql = yield* CrSql.CrSql.pipe(
+        Effect.provide(
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(makeRealSqlClientLayer(dbPath))
+          )
+        )
+      )
+
+      // Set a new peer version
+      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
+
+      // Should complete without error
+      assert.ok(true)
+    }))
+
+  it.scoped("updates an existing peer version", () =>
+    Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
+
+      const crSql = yield* CrSql.CrSql.pipe(
+        Effect.provide(
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(makeRealSqlClientLayer(dbPath))
+          )
+        )
+      )
+
+      // Set initial version
+      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
+
+      // Update with new version
+      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "100", 200)
+
+      // Should complete without error
+      assert.ok(true)
+    }))
+
+  it.scoped("gets a known peer version", () =>
+    Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
+
+      const crSql = yield* CrSql.CrSql.pipe(
+        Effect.provide(
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(makeRealSqlClientLayer(dbPath))
+          )
+        )
+      )
+
+      // Set peer version first
+      yield* crSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 100)
+
+      // Get the version
+      const result = yield* crSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
+
+      // Should return the peer version data
+      assert.strictEqual(result.version, "42")
+      assert.strictEqual(result.seq, 100)
+    }))
+
+  it.scoped("gets an unknown peer version", () =>
+    Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
+
+      const crSql = yield* CrSql.CrSql.pipe(
+        Effect.provide(
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(makeRealSqlClientLayer(dbPath))
+          )
+        )
+      )
+
+      // Get version for non-existent peer
+      const result = yield* crSql.getPeerVersion("NONEXISTENTPEERSITE123456789ABCDEF")
+
+      // Should return null for unknown peer
+      assert.strictEqual(result, null)
+    }))
+
+  it.scoped("round-trip peer version tracking", () =>
+    Effect.gen(function*() {
+      const dbPath = yield* tmpDBPath
+
+      const crSql = yield* CrSql.CrSql.pipe(
+        Effect.provide(
+          CrSql.CrSql.Default.pipe(
+            Layer.provide(makeRealSqlClientLayer(dbPath))
+          )
+        )
+      )
+
+      const siteId = "A1B2C3D4E5F6789012345678ABCDEF90"
+      const version = "123456"
+      const seq = 789
+
+      // Set peer version
+      yield* crSql.setPeerVersion(siteId, version, seq)
+
+      // Get it back
+      const result = yield* crSql.getPeerVersion(siteId)
+
+      // Should match what we set
+      assert.strictEqual(result?.version, version)
+      assert.strictEqual(result?.seq, seq)
+    }))
 })
