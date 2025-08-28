@@ -2,21 +2,36 @@ import * as Fs from "node:fs"
 import * as Path from "node:path"
 
 function packages() {
-  return Fs.readdirSync("packages")
-    .concat(Fs.readdirSync("packages/ai").map((dir) => Path.join("ai", dir)))
+  const packagesInMain = Fs.readdirSync("packages")
+  const packagesInAi = Fs.readdirSync("packages/ai").map((dir) => Path.join("ai", dir))
+  const packagesInNative = Fs.existsSync("packages-native")
+    ? Fs.readdirSync("packages-native").map((dir) => Path.join("../packages-native", dir))
+    : []
+
+  return packagesInMain
+    .concat(packagesInAi)
     .filter((_) => Fs.existsSync(Path.join("packages", _, "docs/modules")))
+    .concat(
+      packagesInNative.filter((_) =>
+        Fs.existsSync(Path.join("packages-native", _.replace("../packages-native/", ""), "docs/modules"))
+      )
+    )
 }
 
 function pkgName(pkg) {
-  const packageJson = Fs.readFileSync(
-    Path.join("packages", pkg, "package.json")
-  )
+  const basePath = pkg.startsWith("../packages-native/")
+    ? Path.join("packages-native", pkg.replace("../packages-native/", ""))
+    : Path.join("packages", pkg)
+  const packageJson = Fs.readFileSync(Path.join(basePath, "package.json"))
   return JSON.parse(packageJson).name
 }
 
 function copyFiles(pkg) {
   const name = pkgName(pkg)
-  const docs = Path.join("packages", pkg, "docs/modules")
+  const basePath = pkg.startsWith("../packages-native/")
+    ? Path.join("packages-native", pkg.replace("../packages-native/", ""))
+    : Path.join("packages", pkg)
+  const docs = Path.join(basePath, "docs/modules")
   const dest = Path.join("docs", pkg)
   const files = Fs.readdirSync(docs, { withFileTypes: true })
 
