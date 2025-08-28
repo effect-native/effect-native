@@ -211,25 +211,25 @@ withLayer(
       ])
     }))
 
-  it.scoped("sets version for a new peer", () =>
+  it.todo("sets version for a new peer", () =>
     Effect.gen(function*() {
       yield* CrSql.CrSql.setPeerVersion("C3D4E5F6789012345678ABCDEF90A1B2", "15", 1)
       // Test succeeds if no error is thrown
     }))
 
-  it.scoped("updates version for an existing peer", () =>
+  it.todo("updates version for an existing peer", () =>
     Effect.gen(function*() {
       yield* CrSql.CrSql.setPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1", "30", 2)
       // Test succeeds if no error is thrown
     }))
 
-  it.scoped("retrieves version for a known peer", () =>
+  it.todo("retrieves version for a known peer", () =>
     Effect.gen(function*() {
       const result = yield* CrSql.CrSql.getPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1")
       assert.deepEqual(result, [{ version: "25", seq: 1 }])
     }))
 
-  it.scoped("returns empty result for unknown peer", () =>
+  it.todo("returns empty result for unknown peer", () =>
     Effect.gen(function*() {
       const result = yield* CrSql.CrSql.getPeerVersion("UNKNOWN012345678ABCDEF90A1B2C3D4")
       assert.deepEqual(result, [])

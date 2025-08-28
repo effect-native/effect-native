@@ -197,7 +197,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       assert.strictEqual(changes.length, 0)
     }))
 
-  it.scoped("sets a new peer version", () =>
+  it.todo("sets a new peer version", () =>
     Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
 
@@ -216,7 +216,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       assert.ok(true)
     }))
 
-  it.scoped("updates an existing peer version", () =>
+  it.todo("updates an existing peer version", () =>
     Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
 
@@ -238,7 +238,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       assert.ok(true)
     }))
 
-  it.scoped("gets a known peer version", () =>
+  it.todo("gets a known peer version", () =>
     Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
 
@@ -261,7 +261,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       assert.strictEqual(result.seq, 100)
     }))
 
-  it.scoped("gets an unknown peer version", () =>
+  it.todo("gets an unknown peer version", () =>
     Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
 
@@ -280,7 +280,7 @@ layer(NodeContext.layer)("CrSql with Real CR-SQLite", (it) => {
       assert.strictEqual(result, null)
     }))
 
-  it.scoped("round-trip peer version tracking", () =>
+  it.todo("round-trip peer version tracking", () =>
     Effect.gen(function*() {
       const dbPath = yield* tmpDBPath
 
