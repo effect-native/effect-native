@@ -1,8 +1,8 @@
 {
   "extends": "./tsconfig.src.json",
   "references": [
-    { "path": "../effect/tsconfig.build.json" },
-    { "path": "../sql/tsconfig.build.json" }
+    { "path": "../../packages/effect/tsconfig.build.json" },
+    { "path": "../../packages/sql/tsconfig.build.json" }
   ],
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/build.tsbuildinfo",

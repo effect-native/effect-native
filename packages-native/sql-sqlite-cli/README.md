@@ -1,4 +1,4 @@
-# @effect/sql-sqlite-cr
+# @effect-native/sql-sqlite-cli
 
 A SQLite-CR (CRDT-enabled SQLite) client for Effect, providing a SqlClient implementation that uses sqlite-cr CLI commands under the hood.
 
@@ -22,7 +22,7 @@ import { CommandExecutor } from "@effect/platform"
 import { NodeCommandExecutor } from "@effect/platform-node"
 import { SqlClient } from "@effect/sql"
 import { Effect, Layer } from "effect"
-import * as SqliteCrClient from "@effect/sql-sqlite-cr"
+import * as SqliteCrClient from "@effect-native/sql-sqlite-cli"
 
 // Create a SqliteCrClient layer
 const SqliteCrLive = SqliteCrClient.layerConfig({
@@ -34,14 +34,14 @@ const SqliteCrLive = SqliteCrClient.layerConfig({
 // Use the client
 const program = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient
-  
+
   // Create a table
   yield* sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)`
-  
+
   // Insert data
   yield* sql`INSERT INTO users (name, age) VALUES ('Alice', 30)`
   yield* sql`INSERT INTO users (name, age) VALUES ('Bob', 25)`
-  
+
   // Query data
   const users = yield* sql`SELECT * FROM users ORDER BY id`
   console.log(users)
@@ -56,7 +56,7 @@ Effect.runPromise(Effect.provide(program, SqliteCrLive))
 ```typescript
 const transferMoney = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient
-  
+
   yield* sql.withTransaction(Effect.gen(function*() {
     yield* sql`UPDATE accounts SET balance = balance - 100 WHERE id = 1`
     yield* sql`UPDATE accounts SET balance = balance + 100 WHERE id = 2`
