@@ -8,9 +8,8 @@ import * as Command from "@effect/platform/Command"
 import * as CommandExecutor from "@effect/platform/CommandExecutor"
 import * as FileSystem from "@effect/platform/FileSystem"
 import * as Path from "@effect/platform/Path"
-import { assert, describe, it, layer } from "@effect/vitest"
+import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import * as Console from "effect/Console"
 import * as Schema from "effect/Schema"
 import { SiteIdHex } from "../src/schema.js"
 
@@ -65,17 +64,12 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
         "SELECT hex(crsql_site_id()) as site_id"
       )
 
-      const output = yield* executor.string(command)
-
-      // Parse JSON array output from sqlite-cr
-      const jsonSchema = Schema.parseJson(Schema.Array(Schema.Struct({
+      const schema = Schema.parseJson(Schema.Array(Schema.Struct({
         site_id: SiteIdHex
       })))
 
-      const results = yield* Schema.decode(jsonSchema)(output)
-      const siteId = results[0].site_id
+      const [{ site_id }] = yield* executor.string(command).pipe(Effect.flatMap(Schema.decode(schema)))
 
-      // Schema has already validated the format, just check the length
-      assert.strictEqual(siteId.length, 32)
+      assert.ok(Schema.is(SiteIdHex)(site_id), "site_id should be valid SiteIdHex")
     }))
 })
