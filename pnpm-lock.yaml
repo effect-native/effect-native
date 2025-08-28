@@ -192,6 +192,7 @@ importers:
       effect:
         specifier: workspace:^
         version: link:../../packages/effect
+    publishDirectory: dist
 
   packages-native/example:
     devDependencies:
