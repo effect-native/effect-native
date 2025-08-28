@@ -145,17 +145,17 @@ withLayer(TestLive)("SqliteCrClient", (it) => {
       yield* Effect.gen(function*() {
         const sql = yield* SqlClient.SqlClient
 
-        // Verify that we got a proper SqlClient
-        assert.ok(typeof sql === "object")
-        assert.ok(typeof sql.withTransaction === "function")
-        assert.ok(typeof sql.reserve === "object")
-
-        // Test basic functionality
+        // Test basic functionality first to ensure it works
         yield* sql`CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)`
         yield* sql`INSERT INTO test (value) VALUES ('hello')`
 
         const results = yield* sql`SELECT * FROM test`
         assert.deepStrictEqual(results, [{ id: 1, value: "hello" }])
+
+        // Verify that we got a proper SqlClient
+        assert.ok(typeof sql === "function", "sql should be a function")
+        assert.ok(typeof sql.withTransaction === "function", "withTransaction should be a function")
+        assert.ok(sql.reserve !== undefined, "reserve should be defined")
       }).pipe(
         Effect.provide(clientLayer)
       )

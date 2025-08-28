@@ -267,12 +267,20 @@ export const make = (
  */
 export const layer = (
   config: Config.Config.Wrap<SqliteCrClientConfig>
-): Layer.Layer<SqliteCrClient, ConfigError, Reactivity.Reactivity | CommandExecutor.CommandExecutor> =>
-  Layer.scoped(
-    SqliteCrClient,
+): Layer.Layer<
+  SqliteCrClient | Client.SqlClient,
+  ConfigError,
+  Reactivity.Reactivity | CommandExecutor.CommandExecutor
+> =>
+  Layer.scopedContext(
     pipe(
       Config.unwrap(config),
-      Effect.flatMap(make)
+      Effect.flatMap(make),
+      Effect.map((client) =>
+        Context.make(SqliteCrClient, client).pipe(
+          Context.add(Client.SqlClient, client)
+        )
+      )
     )
   )
 
@@ -282,5 +290,14 @@ export const layer = (
  */
 export const layerConfig = (
   config: SqliteCrClientConfig
-): Layer.Layer<SqliteCrClient, never, Reactivity.Reactivity | CommandExecutor.CommandExecutor> =>
-  Layer.scoped(SqliteCrClient, make(config))
+): Layer.Layer<SqliteCrClient | Client.SqlClient, never, Reactivity.Reactivity | CommandExecutor.CommandExecutor> =>
+  Layer.scopedContext(
+    pipe(
+      make(config),
+      Effect.map((client) =>
+        Context.make(SqliteCrClient, client).pipe(
+          Context.add(Client.SqlClient, client)
+        )
+      )
+    )
+  )
