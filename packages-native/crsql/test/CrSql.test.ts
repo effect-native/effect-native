@@ -38,6 +38,14 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<object>>) =>
           } else if (sql.includes("INSERT INTO crsql_changes")) {
             // For applyChanges INSERT operations
             rows = seed.insert_crsql_changes || []
+          } else if (sql.includes("INSERT OR REPLACE INTO crsql_tracked_peers")) {
+            // For setPeerVersion operations
+            rows = seed.insert_peer_version || []
+          } else if (sql.includes("FROM crsql_tracked_peers")) {
+            // For getPeerVersion operations
+            const siteIdParam = params?.[0] || ""
+            const key = `peer_version:${siteIdParam}`
+            rows = seed[key] || []
           }
 
           return transformRows ? transformRows(rows) : rows
@@ -106,7 +114,11 @@ withLayer(
             seq: 2
           }
         ],
-        "insert_crsql_changes": []
+        "insert_crsql_changes": [],
+        "insert_peer_version": [],
+        "peer_version:B2C3D4E5F6789012345678ABCDEF90A1": [
+          { version: "25", seq: 1 }
+        ]
       })
     )
   )
@@ -197,6 +209,30 @@ withLayer(
           seq: 2
         }
       ])
+    }))
+
+  it.scoped("sets version for a new peer", () =>
+    Effect.gen(function*() {
+      yield* CrSql.CrSql.setPeerVersion("C3D4E5F6789012345678ABCDEF90A1B2", "15", 1)
+      // Test succeeds if no error is thrown
+    }))
+
+  it.scoped("updates version for an existing peer", () =>
+    Effect.gen(function*() {
+      yield* CrSql.CrSql.setPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1", "30", 2)
+      // Test succeeds if no error is thrown
+    }))
+
+  it.scoped("retrieves version for a known peer", () =>
+    Effect.gen(function*() {
+      const result = yield* CrSql.CrSql.getPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1")
+      assert.deepEqual(result, [{ version: "25", seq: 1 }])
+    }))
+
+  it.scoped("returns empty result for unknown peer", () =>
+    Effect.gen(function*() {
+      const result = yield* CrSql.CrSql.getPeerVersion("UNKNOWN012345678ABCDEF90A1B2C3D4")
+      assert.deepEqual(result, [])
     }))
 
   // =============================================================================
