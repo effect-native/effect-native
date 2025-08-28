@@ -335,3 +335,50 @@ const EnvLive = Layer.mergeAll(SqlLive, MigratorLive).pipe(
 
 pipe(program, Effect.provide(EnvLive), NodeRuntime.runMain)
 ```
+
+## Testing with sqlite-cr
+
+The `@effect/sql` package includes tests for [sqlite-cr](https://github.com/subtleGradient/sqlite-cr), a SQLite variant with CRDT (Conflict-free Replicated Data Type) capabilities. These tests demonstrate how to use external SQL CLI tools with Effect's Command module.
+
+### Running sqlite-cr tests
+
+The sqlite-cr CLI tool is available when using the Nix development shell:
+
+```bash
+nix develop
+pnpm test packages/sql/test/SqliteCr.test.ts
+```
+
+### Example usage with Command module
+
+```ts
+import { Command, FileSystem } from "@effect/platform"
+import { Effect } from "effect"
+
+const executeSqliteCr = (dbPath: string, sql: string) =>
+  Effect.gen(function*() {
+    const command = Command.make("sqlite-cr", dbPath, sql)
+    const result = yield* Command.string(command)
+    return result.trim()
+  })
+
+const querySqliteCr = (dbPath: string, sql: string) =>
+  Effect.gen(function*() {
+    const command = Command.make("sqlite-cr", dbPath, "--json", sql)
+    const result = yield* Command.string(command)
+    return JSON.parse(result.trim())
+  })
+
+// Usage
+const program = Effect.gen(function*() {
+  const fs = yield* FileSystem.FileSystem
+  const tempDir = yield* fs.makeTempDirectoryScoped()
+  const dbPath = `${tempDir}/test.db`
+  
+  yield* executeSqliteCr(dbPath, "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)")
+  yield* executeSqliteCr(dbPath, "INSERT INTO users (name) VALUES ('Alice')")
+  const users = yield* querySqliteCr(dbPath, "SELECT * FROM users")
+  
+  console.log(users) // [{ id: 1, name: "Alice" }]
+})
+```
