@@ -9,12 +9,12 @@
       forAllSystems =
         function:
         nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed (
-          system: function nixpkgs.legacyPackages.${system}
+          system: function nixpkgs.legacyPackages.${system} system
         );
     in
     {
-      formatter = forAllSystems (pkgs: pkgs.alejandra);
-      devShells = forAllSystems (pkgs: {
+      formatter = forAllSystems (pkgs: system: pkgs.alejandra);
+      devShells = forAllSystems (pkgs: system: {
         default = pkgs.mkShell {
           packages = with pkgs; [
             bun
@@ -23,8 +23,7 @@
             nodejs-slim_23
             python3
             yq-go
-            sqlite-cr.packages.${pkgs.system}.default
-          ];
+          ] ++ [ sqlite-cr.packages.${system}.default ];
         };
       });
     };
