@@ -3,6 +3,7 @@
  * These tests validate actual CR-SQLite behavior against a real database
  */
 
+import * as CrSql from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeContext from "@effect/platform-node/NodeContext"
 import * as Command from "@effect/platform/Command"
@@ -15,8 +16,6 @@ import * as Statement from "@effect/sql/Statement"
 import { assert, describe, it, layer } from "@effect/vitest"
 import { Effect, Layer, Stream } from "effect"
 import * as Schema from "effect/Schema"
-import * as CrSql from "../src/index.js"
-import { SiteIdHex } from "../src/schema.js"
 
 const tmpDBPath = Effect.gen(function*() {
   const fs = yield* FileSystem.FileSystem
@@ -69,12 +68,12 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
       )
 
       const schema = Schema.parseJson(Schema.Array(Schema.Struct({
-        site_id: SiteIdHex
+        site_id: CrSql.schema.SiteIdHex
       })))
 
       const [{ site_id }] = yield* executor.string(command).pipe(Effect.flatMap(Schema.decode(schema)))
 
-      assert.ok(Schema.is(SiteIdHex)(site_id), "site_id should be valid SiteIdHex")
+      assert.ok(Schema.is(CrSql.schema.SiteIdHex)(site_id), "site_id should be valid SiteIdHex")
     }))
 })
 
