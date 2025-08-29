@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/bun-test",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "description": "Helpers for testing every Effect with bun:test",
@@ -35,7 +35,7 @@
     "coverage": "bun test --coverage"
   },
   "peerDependencies": {
-    "effect": "workspace:^",
+    "effect": "^3.17.9",
     "@types/bun": "*",
     "bun": "^1.1.0"
   },
