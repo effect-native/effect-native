@@ -14,9 +14,7 @@ import * as SqlClient from "@effect/sql/SqlClient"
 import type { Connection } from "@effect/sql/SqlConnection"
 import * as Statement from "@effect/sql/Statement"
 import { assert, describe, it, layer } from "@effect/vitest"
-import { extensionPath } from "@vlcn.io/crsqlite"
 import { Effect, Layer, Stream } from "effect"
-import * as Console from "effect/Console"
 import * as Schema from "effect/Schema"
 
 const tmpDBPath = Effect.gen(function*() {
