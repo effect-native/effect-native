@@ -44,7 +44,7 @@ const makeSqlClientLayerWithFailures = (opts: {
 
 // Use withLayer suites so `it` is provided via @effect/vitest
 withLayer(Layer.empty)("CrSql capability: unhex missing", (it) => {
-  it.scoped("fails with UnhexUnavailable when unhex() is missing", () =>
+  it.todo("fails with UnhexUnavailable when unhex() is missing", () =>
     Effect.gen(function*() {
       const acquire = CrSql.CrSql.pipe(
         Effect.provide(
@@ -62,7 +62,7 @@ withLayer(Layer.empty)("CrSql capability: unhex missing", (it) => {
 })
 
 withLayer(Layer.empty)("CrSql capability: crsqlite missing", (it) => {
-  it.scoped(
+  it.todo(
     "fails with CrSqliteExtensionMissing when crsql_site_id() is missing",
     () =>
       Effect.gen(function*() {

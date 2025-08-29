@@ -140,7 +140,7 @@ const TestSqlClientLayer = Layer.scoped(
   Layer.provide(Reactivity.layer)
 )
 
-const FreshTestLayer = CrSql.CrSql.Default.pipe(Layer.provide(TestSqlClientLayer))
+const FreshTestLayer = TestSqlClientLayer
 
 // Test the real CrSql service with actual CR-SQLite
 describe("CrSql with Real CR-SQLite", () => {

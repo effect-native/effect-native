@@ -72,91 +72,89 @@ const makeTestSqlClientLayer = (seed: Record<string, ReadonlyArray<object>>) =>
     return Context.make(SqlClient.SqlClient, client)
   }))
 
-const testLayer = CrSql.CrSql.Default.pipe(
-  Layer.provide(makeTestSqlClientLayer({
-    // Core CR-SQLite function mocks
-    "crsql_site_id": [
-      { site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }
-    ],
-    "db_version": [
-      { version: "42" }
-    ],
-    // pullChanges scenarios with different since values
-    "crsql_changes:default": [
-      {
-        table: "todos",
-        pk: "41424344",
-        cid: "content",
-        val: "Buy milk",
-        val_type: "text",
-        col_version: "1",
-        db_version: "1",
-        site_id: "A1B2C3D4E5F6789012345678ABCDEF90",
-        cl: 0,
-        seq: 0
-      }
-    ],
-    "crsql_changes:since=0": [
-      {
-        table: "todos",
-        pk: "41424344",
-        cid: "content",
-        val: "Buy milk",
-        val_type: "text",
-        col_version: "1",
-        db_version: "1",
-        site_id: "A1B2C3D4E5F6789012345678ABCDEF90",
-        cl: 0,
-        seq: 0
-      },
-      {
-        table: "todos",
-        pk: "45464748",
-        cid: "completed",
-        val: 1,
-        val_type: "integer",
-        col_version: "2",
-        db_version: "2",
-        site_id: "B2C3D4E5F6789012345678ABCDEF90A1",
-        cl: 1,
-        seq: 1
-      }
-    ],
-    "crsql_changes:since=5": [
-      {
-        table: "todos",
-        pk: "494A4B4C",
-        cid: "content",
-        val: "Walk dog",
-        val_type: "text",
-        col_version: "6",
-        db_version: "6",
-        site_id: "C3D4E5F6789012345678ABCDEF90A1B2",
-        cl: 2,
-        seq: 2
-      }
-    ],
-    "crsql_changes:since=5:excludes": [
-      {
-        table: "todos",
-        pk: "494A4B4C",
-        cid: "content",
-        val: "Walk dog",
-        val_type: "text",
-        col_version: "6",
-        db_version: "6",
-        site_id: "C3D4E5F6789012345678ABCDEF90A1B2",
-        cl: 2,
-        seq: 2
-      }
-    ],
-    "insert_crsql_changes": [],
-    "insert_peer_version": [],
-    "peer_version:B2C3D4E5F6789012345678ABCDEF90A1": [
-      { version: "25", seq: 1 }
-    ]
-  }))
-)
+const testLayer = makeTestSqlClientLayer({
+  // Core CR-SQLite function mocks
+  "crsql_site_id": [
+    { site_id: "A1B2C3D4E5F6789012345678ABCDEF90" }
+  ],
+  "db_version": [
+    { version: "42" }
+  ],
+  // pullChanges scenarios with different since values
+  "crsql_changes:default": [
+    {
+      table: "todos",
+      pk: "41424344",
+      cid: "content",
+      val: "Buy milk",
+      val_type: "text",
+      col_version: "1",
+      db_version: "1",
+      site_id: "A1B2C3D4E5F6789012345678ABCDEF90",
+      cl: 0,
+      seq: 0
+    }
+  ],
+  "crsql_changes:since=0": [
+    {
+      table: "todos",
+      pk: "41424344",
+      cid: "content",
+      val: "Buy milk",
+      val_type: "text",
+      col_version: "1",
+      db_version: "1",
+      site_id: "A1B2C3D4E5F6789012345678ABCDEF90",
+      cl: 0,
+      seq: 0
+    },
+    {
+      table: "todos",
+      pk: "45464748",
+      cid: "completed",
+      val: 1,
+      val_type: "integer",
+      col_version: "2",
+      db_version: "2",
+      site_id: "B2C3D4E5F6789012345678ABCDEF90A1",
+      cl: 1,
+      seq: 1
+    }
+  ],
+  "crsql_changes:since=5": [
+    {
+      table: "todos",
+      pk: "494A4B4C",
+      cid: "content",
+      val: "Walk dog",
+      val_type: "text",
+      col_version: "6",
+      db_version: "6",
+      site_id: "C3D4E5F6789012345678ABCDEF90A1B2",
+      cl: 2,
+      seq: 2
+    }
+  ],
+  "crsql_changes:since=5:excludes": [
+    {
+      table: "todos",
+      pk: "494A4B4C",
+      cid: "content",
+      val: "Walk dog",
+      val_type: "text",
+      col_version: "6",
+      db_version: "6",
+      site_id: "C3D4E5F6789012345678ABCDEF90A1B2",
+      cl: 2,
+      seq: 2
+    }
+  ],
+  "insert_crsql_changes": [],
+  "insert_peer_version": [],
+  "peer_version:B2C3D4E5F6789012345678ABCDEF90A1": [
+    { version: "25", seq: 1 }
+  ]
+})
 
 withLayer(testLayer)("CrSql", (it) => {
   it.scoped("returns SiteIdHex for this database", () =>
