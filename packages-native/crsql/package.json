@@ -34,16 +34,19 @@
     "coverage": "vitest --coverage"
   },
   "peerDependencies": {
-    "effect": "workspace:^",
-    "@effect/sql": "workspace:^"
+    "@effect/sql": "workspace:^",
+    "effect": "workspace:^"
   },
   "devDependencies": {
-    "effect": "workspace:^",
-    "@effect/sql": "workspace:^",
-    "@effect/vitest": "workspace:^",
-    "@effect/sql-sqlite-node": "workspace:^",
+    "@effect/experimental": "workspace:^",
     "@effect/platform": "workspace:^",
     "@effect/platform-node": "workspace:^",
-    "@effect/experimental": "workspace:^"
+    "@effect/sql": "workspace:^",
+    "@effect/sql-sqlite-node": "workspace:^",
+    "@effect/vitest": "workspace:^",
+    "effect": "workspace:^"
+  },
+  "dependencies": {
+    "@vlcn.io/crsqlite": "^0.16.3"
   }
 }

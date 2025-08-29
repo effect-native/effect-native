@@ -1,18 +1,7 @@
 /**
  * @since 0.0.0
  */
-export {
-  /**
-   * @since 0.0.0
-   * @category models
-   */
-  type ChangeRow,
-  /**
-   * @since 0.0.0
-   * @category service
-   */
-  CrSql
-} from "./service.js"
+export * as CrSql from "./service.js"
 
 /**
  * @since 0.0.0

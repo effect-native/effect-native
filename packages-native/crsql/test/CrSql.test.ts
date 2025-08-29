@@ -191,7 +191,7 @@ withLayer(testLayer)("CrSql", (it) => {
 
   it.scoped("applies a change to the database", () =>
     Effect.gen(function*() {
-      const change: CrSql.ChangeRow = {
+      const change: CrSql.schema.ChangeRowSerialized = {
         table: "todos",
         pk: "51525354",
         cid: "content",
