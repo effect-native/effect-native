@@ -18,8 +18,8 @@ import * as Scope from "effect/Scope"
 import * as TestEnvironment from "effect/TestContext"
 import * as Utils from "effect/Utils"
 
-// Use our package's BunTest types, not Bun's built-ins
-import type { BunTest } from "../index.js"
+// Use our package's BunTest types from a dedicated types module to avoid cycles
+import type { BunTest } from "../types.js"
 
 /**
  * Executes an Effect and returns a Promise that resolves to the result or throws an error.
