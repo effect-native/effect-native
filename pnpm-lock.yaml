@@ -170,6 +170,10 @@ importers:
     publishDirectory: dist
 
   packages-native/crsql:
+    dependencies:
+      '@vlcn.io/crsqlite':
+        specifier: ^0.16.3
+        version: 0.16.3
     devDependencies:
       '@effect/experimental':
         specifier: workspace:^
@@ -3174,6 +3178,9 @@ packages:
     resolution: {integrity: sha512-JXK3lMyZHDrJ/BrJmxSZxe3RYT9oy2juxN4kpdrQ8NL8iibz352lXbcrnqG4WuSoBDwhjgghgvmIpsTv9Be7eA==}
     peerDependencies:
       vitest: 3.2.4
+
+  '@vlcn.io/crsqlite@0.16.3':
+    resolution: {integrity: sha512-1rKylRr2LyW5kwh/a6ZFmvt7kFK+aKLGkz9+O1w9EFVdH11SMUg6MfvxTfoczKCyb3/E5qvdOk2NDW/Zin6OjQ==}
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -9197,6 +9204,8 @@ snapshots:
       vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@22.16.4)(@vitest/browser@3.2.4)(happy-dom@17.6.3)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
     transitivePeerDependencies:
       - supports-color
+
+  '@vlcn.io/crsqlite@0.16.3': {}
 
   abort-controller@3.0.0:
     dependencies:
