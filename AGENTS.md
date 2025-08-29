@@ -1,4 +1,6 @@
-This file provides guidance when working with code in this repository.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Repository Overview
 
@@ -277,3 +279,45 @@ Before committing features:
 - Use `Context.Tag` with proper type constraints
 - Design services to be composable through Layer composition
 - Avoid circular dependencies between services
+
+## Agent Execution Protocol
+
+This repository relies on precise, verifiable changes. Agents must follow an evidence‑first workflow to avoid memory‑based mistakes.
+
+### Evidence‑First Verification
+
+- Always read the source you’re talking about and cite it.
+  - When claiming behavior or implementation, reference the exact file path and a small line range you just inspected.
+  - Prefer `rg -n` or `sed -n 'X,Yn'` to show relevant snippets in messages when helpful.
+- Verify before asserting status. For any package you touch, run:
+  - `pnpm -C <pkg> check` – TypeScript project references compile
+  - `pnpm -C <pkg> test -- --reporter basic` – Tests run; report pass/fail
+  - `pnpm -C <pkg> build` – Build succeeds; artifacts exist in `build/*` and `dist/`
+  - If appropriate, inspect `dist/package.json` exports, main/module/types
+- Use a claim template in messages for important assertions:
+  - What I checked: concise subject
+  - How I checked: command(s) or file path + lines
+  - What I observed: short factual output or snippet
+  - Conclusion: the narrowly supported takeaway
+
+### Procedural Guardrails
+
+- Never rely on recollection of prior state. Reopen files or rerun commands immediately before claiming.
+- Use concise preambles before tool calls to group intent (e.g., “Running tsc + tests for crsql”).
+- For multi‑step work, keep an up‑to‑date plan with exactly one in‑progress step.
+- Prefer minimal, scoped changes aligned with existing patterns; do not refactor unrelated code.
+- When sandbox/network limitations block a command, state that it wasn’t executed and avoid conclusions dependent on it.
+
+### TDD in This Repo (Red → Green → Refactor)
+
+- Red: add a failing executable spec (`@effect/vitest`, `it.scoped`), using real layers and a fake only at driver edges (e.g., custom `Connection` with `SqlClient.make`).
+- Green: implement the minimal code to satisfy the spec; keep SQL and Effect patterns idiomatic to `@effect/sql`.
+- Refactor: clarify names, extract helpers, and align with Schema contracts; keep the spec implementation‑agnostic where possible.
+
+### Quick Verification Checklist
+
+- TypeScript: `pnpm -C <pkg> check` passes
+- Tests: `pnpm -C <pkg> test -- --reporter basic` pass (or red by design in TDD)
+- Build: `pnpm -C <pkg> build` succeeds; `dist/` contains `main/module/types` and valid `exports`
+- Exports: `node -p "require('./dist/package.json').exports"` shape matches repo conventions
+- Service deps: search for required `yield*` (e.g., `SqlClient.SqlClient`) in live layers
