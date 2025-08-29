@@ -45,7 +45,7 @@
     "@effect/docgen": "https://pkg.pr.new/Effect-TS/docgen/@effect/docgen@fd06738",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.23.3",
-    "@effect/vitest": "workspace:^",
+    "@effect/vitest": "latest",
     "@eslint/compat": "^1.2.9",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.26.0",
