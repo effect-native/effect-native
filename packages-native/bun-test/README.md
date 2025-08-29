@@ -2,8 +2,6 @@
 
 Effect testing utilities for Bun's test runner, providing deterministic testing with full control over time, resources, and async operations.
 
-<!-- Test hook protection -->
-
 ## Problem
 
 Testing Effect applications involves challenges with:
