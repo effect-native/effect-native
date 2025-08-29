@@ -37,8 +37,7 @@
   },
   "peerDependencies": {
     "effect": ">=3.0.0",
-    "@types/bun": "*",
-    "bun": "^1.1.0"
+    "@types/bun": "*"
   },
   "devDependencies": {
     "effect": "workspace:^",
