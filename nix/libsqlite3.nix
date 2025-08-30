@@ -5,7 +5,10 @@ let
   lib = pkgs.lib;
   sqlite = pkgs.sqlite.overrideAttrs (old: {
     configureFlags = (old.configureFlags or []) ++ lib.optionals enableLoadExtension [ "--enable-load-extension" ];
-    NIX_CFLAGS_COMPILE = (old.NIX_CFLAGS_COMPILE or "") + (if enableLoadExtension then " -DSQLITE_ENABLE_LOAD_EXTENSION=1" else "");
+    env = (old.env or {}) // {
+      NIX_CFLAGS_COMPILE = (old.env.NIX_CFLAGS_COMPILE or (old.NIX_CFLAGS_COMPILE or ""))
+        + (if enableLoadExtension then " -DSQLITE_ENABLE_LOAD_EXTENSION=1" else "");
+    };
   });
 in pkgs.stdenv.mkDerivation {
   pname = "libsqlite3";
