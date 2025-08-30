@@ -45,3 +45,10 @@ const program = Effect.gen(function* () {
 
 If you'd like musl or Windows support, please open an issue and we'll prioritize it. We actively want to support platforms you care about.
 
+## Versioning
+
+- Package version matches the bundled SQLite version.
+- JS-only or packaging tweaks use a hyphenated suffix without changing SQLite (pre-release semantics):
+  - Examples: `3.50.2-1`, `3.50.2-2`, …
+- Tip: pre-release style version strings don’t satisfy ranges by default; use an exact version or a dist-tag.
+  - Example: `pnpm add @effect-native/libsqlite@3.50.2-2` or maintain a `latest` dist-tag.
