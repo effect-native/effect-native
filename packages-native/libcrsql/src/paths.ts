@@ -39,7 +39,7 @@ export const win_i686 = fileURLToPath(new URL("../lib/win-i686/crsqlite.dll", im
 
 /**
  * Map of platform name to absolute path.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export type Paths = {
   readonly [K in "darwin_aarch64" | "darwin_x86_64" | "linux_aarch64" | "linux_x86_64" | "win_x86_64" | "win_i686"]:

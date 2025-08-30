@@ -112,10 +112,6 @@ export type Platform = _Platform
 
 /**
  * List of supported platforms.
- * @since 0.16.3
- */
-/**
- * List of supported platforms.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const SUPPORTED_PLATFORMS = _SUPPORTED_PLATFORMS
