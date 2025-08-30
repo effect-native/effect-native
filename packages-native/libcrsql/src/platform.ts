@@ -1,12 +1,12 @@
 /**
  * Platform detection and mapping utilities for @effect-native/libcrsql.
- * @since 0.16.3
+ * @since 0.16.300
  */
 // Platform detection and mapping
 
 /**
  * Supported platform-arch identifiers.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export type Platform =
   | "darwin-aarch64"
@@ -18,7 +18,7 @@ export type Platform =
 
 /**
  * List of supported platforms.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const SUPPORTED_PLATFORMS: ReadonlyArray<Platform> = [
   "darwin-aarch64",
@@ -31,14 +31,14 @@ export const SUPPORTED_PLATFORMS: ReadonlyArray<Platform> = [
 
 /**
  * True if the given string is a supported platform.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const isSupportedPlatform = (p: string): p is Platform =>
   (SUPPORTED_PLATFORMS as ReadonlyArray<string>).includes(p)
 
 /**
  * Detect current platform string.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const detectPlatform = (): string => {
   const platform = process.platform
@@ -55,7 +55,7 @@ export const detectPlatform = (): string => {
 
 /**
  * Build relative path to the cr-sqlite binary within the package.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const buildRelativeLibraryPath = (platform: Platform): string => {
   switch (platform) {

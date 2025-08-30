@@ -1,7 +1,7 @@
 /**
  * Effect entrypoint: idiomatic Effect API with TaggedError failures.
  *
- * @since 0.16.3
+ * @since 0.16.300
  */
 import { Brand, Data, Effect } from "effect"
 import * as fs from "node:fs"
@@ -16,7 +16,7 @@ import type { Platform as _Platform } from "./platform.js"
 
 /**
  * Error indicating that a platform-arch combination is not supported.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{
   readonly platform: string
@@ -25,7 +25,7 @@ export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupp
   readonly detectedPlatform: string
 }> {
   /**
-   * @since 0.16.3
+   * @since 0.16.300
    */
   get message() {
     return `Platform "${this.platform}" is not supported. Detected: ${this.detectedPlatform}-${this.detectedArch}. Supported: ${
@@ -36,7 +36,7 @@ export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupp
 
 /**
  * Error indicating that the resolved binary path does not exist.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export class ExtensionNotFoundError extends Data.TaggedError("ExtensionNotFoundError")<{
   readonly path: string
@@ -45,12 +45,12 @@ export class ExtensionNotFoundError extends Data.TaggedError("ExtensionNotFoundE
 
 /**
  * Branded absolute path to the cr-sqlite binary.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export type ExtensionPath = string & Brand.Brand<"ExtensionPath">
 /**
  * Brand constructor for `ExtensionPath`.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const ExtensionPath = Brand.nominal<ExtensionPath>()
 
@@ -61,7 +61,7 @@ export const ExtensionPath = Brand.nominal<ExtensionPath>()
  * - Succeeds with a branded `ExtensionPath` string.
  * - Fails with `PlatformNotSupportedError` or `ExtensionNotFoundError`.
  *
- * @since 0.16.3
+ * @since 0.16.300
  * @example
  * import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
  * import { Effect } from "effect"
@@ -104,7 +104,7 @@ export const getCrSqliteExtensionPath = (
 
 /**
  * Supported platform-arch identifiers.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export type Platform = _Platform
 

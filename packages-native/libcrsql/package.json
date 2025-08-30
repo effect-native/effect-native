@@ -1,9 +1,10 @@
 {
   "name": "@effect-native/libcrsql",
-  "version": "0.16.3",
+  "version": "0.16.300",
   "type": "module",
   "license": "MIT",
   "description": "Absolute paths to cr-sqlite extension binaries for Node.js with optional Effect API",
+  "crsqliteVersion": "0.16.3",
   "homepage": "https://github.com/effect-native/effect-native",
   "repository": {
     "type": "git",

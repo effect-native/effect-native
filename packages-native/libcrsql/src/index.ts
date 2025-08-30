@@ -1,7 +1,7 @@
 /**
  * Root entrypoint: absolute path getters with zero external dependencies.
  *
- * @since 0.16.3
+ * @since 0.16.300
  */
 import * as fs from "node:fs"
 import { fileURLToPath } from "node:url"
@@ -21,7 +21,7 @@ import type { Platform as _Platform } from "./platform.js"
  * - Throws native Error with `code` set to `ERR_PLATFORM_UNSUPPORTED` or
  *   `ERR_EXTENSION_NOT_FOUND`.
  *
- * @since 0.16.3
+ * @since 0.16.300
  * @example
  * import { getCrSqliteExtensionPathSync } from "@effect-native/libcrsql"
  *
@@ -57,7 +57,7 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
  * - Useful for the simplest use cases: just import and load.
  * - Throws on unsupported platform or if the binary is not present.
  *
- * @since 0.16.3
+ * @since 0.16.300
  * @example
  * import { pathToCrSqliteExtension } from "@effect-native/libcrsql"
  * console.log(pathToCrSqliteExtension)
@@ -66,7 +66,7 @@ export const pathToCrSqliteExtension: string = getCrSqliteExtensionPathSync()
 
 /**
  * Supported platform-arch identifiers.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export type Platform = _Platform
 
@@ -75,3 +75,8 @@ export type Platform = _Platform
  * @since 0.16.3
  */
 export const SUPPORTED_PLATFORMS = _SUPPORTED_PLATFORMS
+/**
+ * Bundled upstream cr-sqlite version.
+ * @since 0.16.300
+ */
+export { CRSQLITE_VERSION } from "./version.js"
