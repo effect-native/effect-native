@@ -144,17 +144,20 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
 export const pathToCrSqliteExtension: string = getCrSqliteExtensionPathSync()
 ```
 
-### Static Paths (no side effects)
+### Static Paths (absolute, minimal init)
 
 ```typescript
 // @effect-native/libcrsql/paths
-// Export raw, relative paths as string constants with zero side effects.
-export const darwin_aarch64 = "lib/darwin-aarch64/libcrsqlite.dylib"
-export const darwin_x86_64 = "lib/darwin-x86_64/libcrsqlite.dylib"
-export const linux_aarch64 = "lib/linux-aarch64/libcrsqlite.so"
-export const linux_x86_64 = "lib/linux-x86_64/libcrsqlite.so"
-export const win_x86_64 = "lib/win-x86_64/crsqlite.dll"
-export const win_i686 = "lib/win-i686/crsqlite.dll"
+// Export absolute paths as string constants. These are computed at module init
+// from this file's location. No external dependencies or I/O.
+import { fileURLToPath } from "node:url"
+
+export const darwin_aarch64 = fileURLToPath(new URL("../lib/darwin-aarch64/libcrsqlite.dylib", import.meta.url))
+export const darwin_x86_64 = fileURLToPath(new URL("../lib/darwin-x86_64/libcrsqlite.dylib", import.meta.url))
+export const linux_aarch64 = fileURLToPath(new URL("../lib/linux-aarch64/libcrsqlite.so", import.meta.url))
+export const linux_x86_64 = fileURLToPath(new URL("../lib/linux-x86_64/libcrsqlite.so", import.meta.url))
+export const win_x86_64 = fileURLToPath(new URL("../lib/win-x86_64/crsqlite.dll", import.meta.url))
+export const win_i686 = fileURLToPath(new URL("../lib/win-i686/crsqlite.dll", import.meta.url))
 // Android/iOS not included in this release
 ```
 
