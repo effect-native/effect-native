@@ -16,14 +16,16 @@ The npm version matches the bundled SQLite version (e.g., `3.50.2`). JS‑only f
 
 ```ts
 import { pathToLibSqlite } from "@effect-native/libsqlite"
-db.loadExtension(pathToLibSqlite)
+// IMPORTANT: gotta setCustomSQLite before loading any databases
+Database.setCustomSQLite(pathToLibSqlite)
 ```
 
 ### 2) Power user — static paths, zero logic
 
 ```ts
 import { linux_x86_64 } from "@effect-native/libsqlite/paths"
-db.loadExtension(linux_x86_64)
+// IMPORTANT: gotta setCustomSQLite before loading any databases
+Database.setCustomSQLite(linux_x86_64)
 ```
 
 ### 3) Effect user — idiomatic Effect API
@@ -33,8 +35,11 @@ import { getLibSqlitePath } from "@effect-native/libsqlite/effect"
 import * as Effect from "effect/Effect"
 
 const program = Effect.gen(function* () {
-  const p = yield* getLibSqlitePath
-  return p
+  // IMPORTANT: gotta setCustomSQLite before loading any databases
+  Database.setCustomSQLite(yield* getLibSqlitePath)
+
+  const sql = yield* SqliteClient
+  sql.loadExtension(yield* getPathToCrSqliteExtension)
 })
 ```
 
