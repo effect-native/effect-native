@@ -1,0 +1,79 @@
+#!/usr/bin/env node
+/* eslint-env node */
+/* global process, console */
+import { createHash } from "node:crypto"
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs"
+import path from "node:path"
+import { spawnSync } from "node:child_process"
+
+const ROOT = process.cwd()
+const PKG_LIB = path.join(ROOT, "packages-native", "libsqlite", "lib")
+
+function sha256(file) {
+  const h = createHash("sha256")
+  h.update(readFileSync(file))
+  return h.digest("hex")
+}
+
+function nixpkgsRev() {
+  try {
+    const lock = JSON.parse(readFileSync(path.join(ROOT, "flake.lock"), "utf8"))
+    return lock?.nodes?.nixpkgs?.locked?.rev || null
+  } catch {
+    return null
+  }
+}
+
+function sqliteVersionFromTarget(target) {
+  // Returns version parsed from the store path of a build target
+  try {
+    const out = spawnSync("nix", ["build", ...target, "--print-out-paths"], { encoding: "utf8" })
+    if (out.status !== 0) return null
+    const storePath = out.stdout.trim().split(/\s+/).pop()
+    const base = path.basename(storePath)
+    // patterns: libsqlite3-3.47.2, sqlite-x86_64-unknown-linux-gnu-3.50.2
+    const m = base.match(/-(\d+\.\d+\.\d+)$/)
+    return m ? m[1] : null
+  } catch {
+    return null
+  }
+}
+
+function sqliteVersionFromFile(filePath) {
+  try {
+    const buf = readFileSync(filePath)
+    const text = buf.toString("latin1") // scan as 8-bit text
+    const m = text.match(/3\.(\d+)\.(\d+)/)
+    return m ? `3.${m[1]}.${m[2]}` : null
+  } catch {
+    return null
+  }
+}
+
+const targets = [
+  { platform: "darwin-aarch64", file: "libsqlite3.dylib", eval: [".#packages.aarch64-darwin.libsqlite3"] },
+  { platform: "darwin-x86_64", file: "libsqlite3.dylib", eval: [".#packages.x86_64-darwin.libsqlite3"] },
+  { platform: "linux-x86_64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.gnu64.sqlite.out"] },
+  { platform: "linux-aarch64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"] }
+]
+
+const artifacts = []
+for (const t of targets) {
+  const dir = path.join(PKG_LIB, t.platform)
+  const p = path.join(dir, t.file)
+  if (!existsSync(p)) continue
+  const sum = sha256(p)
+  let version = sqliteVersionFromTarget([t.eval[0]])
+  if (!version) version = sqliteVersionFromFile(p)
+  artifacts.push({ platform: t.platform, filename: t.file, sha256: sum, sqliteVersion: version })
+}
+
+const meta = {
+  nixpkgs: { rev: nixpkgsRev() },
+  builtAt: new Date().toISOString(),
+  artifacts
+}
+
+const outFile = path.join(PKG_LIB, "metadata.json")
+writeFileSync(outFile, JSON.stringify(meta, null, 2))
+console.log(`Wrote ${outFile}`)

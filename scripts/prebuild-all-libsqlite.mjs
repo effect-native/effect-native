@@ -75,4 +75,9 @@ for (const t of targets) {
   }
 }
 
+// refresh metadata
+try {
+  spawnSync("node", ["scripts/generate-lib-metadata.mjs"], { stdio: "inherit" })
+} catch {}
+
 console.log("Done.")

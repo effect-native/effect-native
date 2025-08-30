@@ -1,0 +1,32 @@
+{
+  "nixpkgs": {
+    "rev": "ba0939c506a03c60a765cd7f7c43794816540eec"
+  },
+  "builtAt": "2025-08-30T04:21:30.282Z",
+  "artifacts": [
+    {
+      "platform": "darwin-aarch64",
+      "filename": "libsqlite3.dylib",
+      "sha256": "11c0b6c1c31a0c34d88cc23c9a38a8049f2c154b55ae63f0ec5d5babcfb026f7",
+      "sqliteVersion": "3.47.2"
+    },
+    {
+      "platform": "darwin-x86_64",
+      "filename": "libsqlite3.dylib",
+      "sha256": "2762e7903fcc13606ba92cf44fd6376c3beefa1684e3531ac75611bb31d63e71",
+      "sqliteVersion": "3.47.2"
+    },
+    {
+      "platform": "linux-x86_64",
+      "filename": "libsqlite3.so",
+      "sha256": "97bf78e1c92878dc60794acc97ccec4ecb81775c18eec62da308fe9339713a3c",
+      "sqliteVersion": "3.50.2"
+    },
+    {
+      "platform": "linux-aarch64",
+      "filename": "libsqlite3.so",
+      "sha256": "a3a8a9c495bb610339df036dbcc91e88d66dd2f83cf2a1a05f58918d2bb25983",
+      "sqliteVersion": "3.50.2"
+    }
+  ]
+}

@@ -40,3 +40,7 @@ function copyOut() {
 
 buildWithNix()
 copyOut()
+// refresh metadata
+try {
+  spawnSync("node", ["scripts/generate-lib-metadata.mjs"], { stdio: "inherit" })
+} catch {}
