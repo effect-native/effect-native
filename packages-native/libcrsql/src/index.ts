@@ -11,6 +11,7 @@ import {
   isSupportedPlatform,
   SUPPORTED_PLATFORMS as _SUPPORTED_PLATFORMS
 } from "./platform.js"
+import { CRSQLITE_VERSION as _CRSQLITE_VERSION } from "./version.js"
 
 import type { Platform as _Platform } from "./platform.js"
 
@@ -76,10 +77,9 @@ export type Platform = _Platform
 
 /**
  * List of supported platforms.
- * @since 0.16.3
+ * @since 0.16.300
  */
 export const SUPPORTED_PLATFORMS = _SUPPORTED_PLATFORMS
-import { CRSQLITE_VERSION as _CRSQLITE_VERSION } from "./version.js"
 /**
  * Bundled upstream cr-sqlite version.
  * @since 0.16.300
