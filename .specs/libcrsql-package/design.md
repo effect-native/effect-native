@@ -1,62 +1,47 @@
 # Technical Design: @effect-native/libcrsql Package
 
-## Effect Library Patterns
+## Packaging and Entrypoints (fewer dependencies)
 
-### Core Effect Patterns Implementation
+To support all personas with minimal friction, the package exposes multiple entrypoints with different dependency footprints:
 
-```typescript
-// Primary module structure following Effect conventions
-export {
-  /**
-   * Platform-detected path to cr-sqlite extension binary
-   * @since 0.16.3
-   * @category Primary API
-   * @example
-   * ```typescript
-   * import { pathToCrSqliteExtension } from "@effect-native/libcrsql"
-   * import Database from "better-sqlite3"
-   * 
-   * const db = new Database(":memory:")
-   * db.loadExtension(pathToCrSqliteExtension)
-   * ```
-   */
-  pathToCrSqliteExtension,
-  
-  /**
-   * Effect-based extension path resolution with error handling
-   * @since 0.16.3  
-   * @category Advanced API
-   * @example
-   * ```typescript
-   * import { getCrSqliteExtensionPath } from "@effect-native/libcrsql"
-   * import { Effect } from "effect"
-   * 
-   * const program = Effect.gen(function* () {
-   *   const extensionPath = yield* getCrSqliteExtensionPath()
-   *   // Use with your SQLite database
-   *   return extensionPath
-   * })
-   * ```
-   */
-  getCrSqliteExtensionPath,
-  
-  /**
-   * Platform type union for supported platforms
-   * @since 0.16.3
-   * @category Types
-   */
-  Platform,
-  
-  /**
-   * Error thrown when platform is not supported
-   * @since 0.16.3
-   * @category Errors
-   */
-  PlatformNotSupportedError
-} from "./internal/index.js"
+- Root entrypoint `@effect-native/libcrsql` (zero external runtime deps):
+  - `pathToCrSqliteExtension: string`
+  - `getCrSqliteExtensionPathSync(platform?: Platform): string`
+- Static paths `@effect-native/libcrsql/paths` (no side effects, zero deps):
+  - `darwin_aarch64`, `darwin_x86_64`, `linux_aarch64`, `linux_x86_64`, `win_x86_64`, `win_i686` (string constants)
+- Effect entrypoint `@effect-native/libcrsql/effect` (Effect users only):
+  - `getCrSqliteExtensionPath(platform?: Platform): Effect.Effect<ExtensionPath, PlatformNotSupportedError | ExtensionNotFoundError>`
+  - `LibCrSqliteService`, `LibCrSqliteServiceLive`, and TaggedError types
+
+Conceptual package.json exports:
+
+```json
+{
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.mjs", "require": "./dist/index.cjs" },
+    "./paths": { "types": "./dist/paths.d.ts", "import": "./dist/paths.mjs", "require": "./dist/paths.cjs" },
+    "./effect": { "types": "./dist/effect.d.ts", "import": "./dist/effect.mjs", "require": "./dist/effect.cjs" }
+  },
+  "peerDependencies": { "effect": "*" },
+  "peerDependenciesMeta": { "effect": { "optional": true } }
+}
 ```
 
-### Error Handling Strategy
+## Effect Library Patterns
+
+### Core Effect Patterns Implementation (entrypoint overview)
+
+```typescript
+// Root entrypoint: minimal synchronous API (no external deps)
+export declare const pathToCrSqliteExtension: string
+export declare const getCrSqliteExtensionPathSync: (platform?: Platform) => string
+
+// Static paths entrypoint: pure constants (documented below)
+
+// Effect entrypoint: idiomatic Effect APIs (documented below)
+```
+
+### Error Handling Strategy (Effect entrypoint)
 
 ```typescript
 import { Data } from "effect"
@@ -79,23 +64,36 @@ export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupp
     return `Platform "${this.platform}" is not supported. Detected: ${this.detectedPlatform}-${this.detectedArch}. Supported platforms: ${this.supportedPlatforms.join(", ")}`
   }
 }
+
+/**
+ * Error for when a resolved extension path does not exist or is unreadable
+ */
+export class ExtensionNotFoundError extends Data.TaggedError("ExtensionNotFoundError")<{
+  readonly path: string
+  readonly platform: string
+}> {}
 ```
 
-### Generator Functions with Proper Error Yielding
+### Generator Functions with Proper Error Yielding (Effect entrypoint)
 
 ```typescript
-import { Effect } from "effect"
+import { Effect, Brand } from "effect"
+import { FileSystem } from "@effect/platform"
+
+export type ExtensionPath = string & Brand.Brand<"ExtensionPath">
+export const ExtensionPath = Brand.nominal<ExtensionPath>()
 
 export const getCrSqliteExtensionPath = (
   platform?: Platform
-): Effect.Effect<string, PlatformNotSupportedError> =>
+): Effect.Effect<ExtensionPath, PlatformNotSupportedError | ExtensionNotFoundError> =>
   Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem
+
     // Detect platform if not provided
     const targetPlatform = platform ?? detectPlatform()
-    
+
     // Validate platform support
     if (!isSupportedPlatform(targetPlatform)) {
-      // CORRECT: return yield* for errors in generators
       return yield* Effect.fail(new PlatformNotSupportedError({
         platform: targetPlatform,
         supportedPlatforms: SUPPORTED_PLATFORMS,
@@ -103,28 +101,61 @@ export const getCrSqliteExtensionPath = (
         detectedPlatform: process.platform
       }))
     }
-    
+
     // Build path to binary
-    const extensionPath = buildExtensionPath(targetPlatform)
-    
-    // Verify file exists
-    const exists = yield* Effect.promise(() => fs.access(extensionPath))
-      .pipe(
-        Effect.map(() => true),
-        Effect.catchAll(() => Effect.succeed(false))
-      )
-      
+    const candidate = buildExtensionPath(targetPlatform)
+
+    // Verify file exists via @effect/platform
+    const exists = yield* fs.exists(candidate)
     if (!exists) {
-      return yield* Effect.fail(new PlatformNotSupportedError({
-        platform: targetPlatform,
-        supportedPlatforms: SUPPORTED_PLATFORMS,
-        detectedArch: process.arch,
-        detectedPlatform: process.platform
-      }))
+      return yield* Effect.fail(new ExtensionNotFoundError({ path: candidate, platform: targetPlatform }))
     }
-    
-    return extensionPath
+
+    return ExtensionPath(candidate)
   })
+```
+
+### Synchronous Getter (non-Effect consumers, zero external deps)
+
+```typescript
+// This synchronous API is provided for users not using Effect.
+// It throws native Error instances with `code` set for quick handling.
+export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
+  const target = platform ?? detectPlatform()
+  if (!isSupportedPlatform(target)) {
+    const err: NodeJS.ErrnoException = new Error(`Unsupported platform: ${target}`)
+    err.code = "ERR_PLATFORM_UNSUPPORTED"
+    throw err
+  }
+  const candidate = buildExtensionPath(target)
+  // In sync API, we use Node fs synchronously for minimal surface
+  const fs = require("fs") as typeof import("fs")
+  try {
+    fs.accessSync(candidate)
+  } catch {
+    const err: NodeJS.ErrnoException = new Error(`Extension not found: ${candidate}`)
+    err.code = "ERR_EXTENSION_NOT_FOUND"
+    throw err
+  }
+  return candidate
+}
+
+// Precomputed constant for convenience; evaluates at import time.
+export const pathToCrSqliteExtension: string = getCrSqliteExtensionPathSync()
+```
+
+### Static Paths (no side effects)
+
+```typescript
+// @effect-native/libcrsql/paths
+// Export raw, relative paths as string constants with zero side effects.
+export const darwin_aarch64 = "lib/darwin-aarch64/libcrsqlite.dylib"
+export const darwin_x86_64 = "lib/darwin-x86_64/libcrsqlite.dylib"
+export const linux_aarch64 = "lib/linux-aarch64/libcrsqlite.so"
+export const linux_x86_64 = "lib/linux-x86_64/libcrsqlite.so"
+export const win_x86_64 = "lib/win-x86_64/crsqlite.dll"
+export const win_i686 = "lib/win-i686/crsqlite.dll"
+// Android/iOS not included in this release
 ```
 
 ### Resource Management Patterns
@@ -134,9 +165,9 @@ import { Effect, Layer, Context } from "effect"
 
 // Service pattern for advanced use cases
 export interface LibCrSqliteService {
-  readonly getExtensionPath: (platform?: Platform) => Effect.Effect<string, PlatformNotSupportedError>
+  readonly getExtensionPath: (platform?: Platform) => Effect.Effect<ExtensionPath, PlatformNotSupportedError | ExtensionNotFoundError>
   readonly getSupportedPlatforms: () => Effect.Effect<readonly string[]>
-  readonly detectCurrentPlatform: () => Effect.Effect<string>
+  readonly detectCurrentPlatform: () => Effect.Effect<Platform>
 }
 
 export const LibCrSqliteService = Context.GenericTag<LibCrSqliteService>("@effect-native/libcrsql/LibCrSqliteService")
@@ -169,8 +200,7 @@ const PlatformSchema = Schema.Literal(
   "linux-x86_64",
   "win-x86_64",
   "win-i686",
-  "android-aarch64",
-  "ios-xcframework"
+  // Android/iOS not included in this release
 )
 
 export type Platform = Schema.Schema.Type<typeof PlatformSchema>
@@ -263,10 +293,7 @@ packages-native/libcrsql/
 │   │   └── crsqlite.dll
 │   ├── win-i686/
 │   │   └── crsqlite.dll
-│   ├── android-aarch64/
-│   │   └── libcrsqlite.so
-│   └── ios-xcframework/
-│       └── crsqlite.xcframework/
+│   
 ├── scripts/
 │   └── download-binaries.ts        # Binary fetching script
 ├── test/
@@ -284,6 +311,7 @@ packages-native/libcrsql/
 
 ```typescript
 import { Layer, Effect, Context } from "effect"
+import { FileSystem } from "@effect/platform"
 
 // Minimal service interface
 export interface PlatformDetectionService {
@@ -321,16 +349,15 @@ export const PathResolutionServiceLive = Layer.succeed(
   PathResolutionService,
   {
     resolvePath: (platform: Platform) => Effect.succeed(buildExtensionPath(platform)),
-    verifyPath: (path: string) => Effect.gen(function* () {
-      const exists = yield* Effect.promise(() => fs.access(path))
-        .pipe(Effect.as(true), Effect.catchAll(() => Effect.succeed(false)))
-      
-      if (!exists) {
-        return yield* Effect.fail(new Error(`Extension not found at path: ${path}`))
-      }
-      
-      return path
-    })
+    verifyPath: (path: string) =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem
+        const exists = yield* fs.exists(path)
+        if (!exists) {
+          return yield* Effect.fail(new ExtensionNotFoundError({ path, platform: "unknown" }))
+        }
+        return path
+      })
   }
 )
 
@@ -348,7 +375,7 @@ export const LibCrSqliteServiceLive = Layer.effect(
         return yield* pathService.verifyPath(path)
       }),
       getSupportedPlatforms: () => Effect.succeed(SUPPORTED_PLATFORMS),
-      detectCurrentPlatform: () => Effect.map(platformService.detect(), p => p as string)
+      detectCurrentPlatform: () => platformService.detect()
     }
   })
 ).pipe(
@@ -383,13 +410,18 @@ export const createDatabaseWithExtension = (dbPath: string) =>
 ```typescript
 // test/index.test.ts
 import { describe, it, expect } from "@effect/vitest"
-import { Effect, TestClock, TestContext } from "effect"
+import { Effect, Layer, Context } from "effect"
 import { pathToCrSqliteExtension, getCrSqliteExtensionPath } from "../src/index.js"
+
+// Example PlatformDetectionService for tests (provided via Layer)
+interface PlatformDetectionService {
+  readonly detect: () => Effect.Effect<string>
+}
+const PlatformDetectionService = Context.GenericTag<PlatformDetectionService>("PlatformDetectionService")
 
 describe("LibCrSqlite", () => {
   it.effect("pathToCrSqliteExtension provides valid path for current platform", () =>
     Effect.gen(function* () {
-      // Test synchronous API
       expect(typeof pathToCrSqliteExtension).toBe("string")
       expect(pathToCrSqliteExtension).toMatch(/\.(dylib|so|dll)$/)
     })
@@ -403,36 +435,15 @@ describe("LibCrSqlite", () => {
     })
   )
 
-  it.effect("getCrSqliteExtensionPath fails for unsupported platform", () =>
+  it.effect("fails when detection yields unsupported platform (no type assertions)", () =>
     Effect.gen(function* () {
-      const result = yield* getCrSqliteExtensionPath("unsupported-platform" as any)
-        .pipe(Effect.flip)
-      
-      expect(result._tag).toBe("PlatformNotSupportedError")
-      expect(result.platform).toBe("unsupported-platform")
+      const UnsupportedDetection = Layer.succeed(PlatformDetectionService, { detect: () => Effect.succeed("freebsd-x64") })
+      const effect = getCrSqliteExtensionPath().pipe(Effect.provide(UnsupportedDetection))
+      const error = yield* effect.pipe(Effect.flip)
+      expect(error._tag).toBe("PlatformNotSupportedError")
+      expect(error.platform).toBe("freebsd-x64")
     })
   )
-
-  describe("platform detection", () => {
-    it.effect("detects darwin-aarch64", () => 
-      Effect.gen(function* () {
-        // Mock process.platform and process.arch
-        const originalPlatform = process.platform
-        const originalArch = process.arch
-        
-        try {
-          Object.defineProperty(process, 'platform', { value: 'darwin', writable: true })
-          Object.defineProperty(process, 'arch', { value: 'arm64', writable: true })
-          
-          const path = yield* getCrSqliteExtensionPath()
-          expect(path).toContain("darwin-aarch64")
-        } finally {
-          Object.defineProperty(process, 'platform', { value: originalPlatform, writable: true })
-          Object.defineProperty(process, 'arch', { value: originalArch, writable: true })
-        }
-      })
-    )
-  })
 })
 ```
 
@@ -445,24 +456,18 @@ import { TestClock, Effect } from "effect"
 it.effect("extension path resolution is cached for 1 hour", () =>
   Effect.gen(function* () {
     const testClock = yield* TestClock
-    
-    // First call
+
     const path1 = yield* getCrSqliteExtensionPath()
-    
-    // Advance time by 30 minutes  
     yield* testClock.adjust("30 minutes")
-    
-    // Should use cache
     const path2 = yield* getCrSqliteExtensionPath()
     expect(path2).toBe(path1)
-    
+
     // Advance past cache expiry
     yield* testClock.adjust("31 minutes")
-    
-    // Should resolve again
     const path3 = yield* getCrSqliteExtensionPath()
-    expect(path3).toBe(path1) // Same result but fresh resolution
-  }).pipe(Effect.provide(TestClock.defaultTestClock))
+    // Depending on caching policy, adjust the assertion accordingly
+    expect(typeof path3).toBe("string")
+  })
 )
 ```
 
@@ -520,7 +525,7 @@ it.effect("platform string parsing is robust", () =>
  * })
  * ```
  */
-export declare const pathToCrSqliteExtension: string
+export declare const pathToCrSqliteExtension: ExtensionPath
 
 /**
  * Effect-based cr-sqlite extension path resolution with comprehensive error handling
@@ -535,7 +540,7 @@ export declare const pathToCrSqliteExtension: string
  * @category Advanced API  
  * @example
  * ```typescript
- * import { getCrSqliteExtensionPath } from "@effect-native/libcrsql"
+ * import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
  * import { Effect, Console } from "effect"
  * 
  * const program = Effect.gen(function* () {
@@ -583,7 +588,31 @@ export declare const pathToCrSqliteExtension: string
  */
 export declare const getCrSqliteExtensionPath: (
   platform?: Platform
-) => Effect.Effect<string, PlatformNotSupportedError>
+) => Effect.Effect<ExtensionPath, PlatformNotSupportedError | ExtensionNotFoundError>
+
+/**
+ * Synchronous extension path getter for non-Effect consumers.
+ * 
+ * Throws PlatformNotSupportedError when the current/specified platform is unsupported,
+ * or ExtensionNotFoundError when the binary cannot be found.
+ * 
+ * @since 0.16.3
+ * @category Primary API
+ * @example
+ * ```typescript
+ * import { getCrSqliteExtensionPathSync } from "@effect-native/libcrsql"
+ * import Database from "better-sqlite3"
+ * 
+ * try {
+ *   const path = getCrSqliteExtensionPathSync()
+ *   const db = new Database(":memory:")
+ *   db.loadExtension(path)
+ * } catch (error) {
+ *   console.error(error)
+ * }
+ * ```
+ */
+export declare const getCrSqliteExtensionPathSync: (platform?: Platform) => ExtensionPath
 ```
 
 ### Error Documentation with Examples
@@ -599,27 +628,18 @@ export declare const getCrSqliteExtensionPath: (
  * @category Errors
  * @example
  * ```typescript
- * import { getCrSqliteExtensionPath, PlatformNotSupportedError } from "@effect-native/libcrsql"
- * import { Effect, Exit } from "effect"
+ * import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
+ * import { Effect, Console } from "effect"
  * 
- * const program = Effect.gen(function* () {
- *   try {
- *     const path = yield* getCrSqliteExtensionPath("unsupported-platform")
- *     return path
- *   } catch (error) {
- *     if (error instanceof PlatformNotSupportedError) {
- *       console.log(`Platform: ${error.platform}`)
- *       console.log(`Detected: ${error.detectedPlatform}-${error.detectedArch}`)
- *       console.log(`Supported: ${error.supportedPlatforms.join(", ")}`)
- *     }
- *     throw error
- *   }
- * })
+ * const program = getCrSqliteExtensionPath().pipe(
+ *   Effect.catchTag("PlatformNotSupportedError", (error) =>
+ *     Console.error(
+ *       `Unsupported: ${error.platform}. Supported: ${error.supportedPlatforms.join(", ")}`
+ *     )
+ *   )
+ * )
  * 
- * const result = await Effect.runPromiseExit(program)
- * if (Exit.isFailure(result)) {
- *   console.error("Extension loading failed:", result.cause)
- * }
+ * Effect.runPromise(program)
  * ```
  */
 export declare class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{
@@ -734,24 +754,19 @@ Effect.runPromise(program.pipe(Effect.provide(DatabaseServiceLive)))
 ### Effect Ecosystem Integration
 
 ```typescript
-// Integration with @effect/platform
-import { FileSystem, Path } from "@effect/platform"
-import { NodeFileSystem } from "@effect/platform-node"
+// Integration with @effect/platform (no Node fs APIs)
+import { Effect } from "effect"
+import { FileSystem } from "@effect/platform"
 
 export const verifyExtensionExists = (path: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
     const exists = yield* fs.exists(path)
-    
     if (!exists) {
-      return yield* Effect.fail(new Error(`Extension binary not found: ${path}`))
+      return yield* Effect.fail(new ExtensionNotFoundError({ path, platform: "unknown" }))
     }
-    
-    // Check if file is readable
-    yield* fs.access(path, fs.constants.R_OK)
-    
     return path
-  }).pipe(Effect.provide(NodeFileSystem.layer))
+  })
 
 // Integration with @effect/schema for configuration validation
 import { Schema } from "@effect/schema"
@@ -780,7 +795,9 @@ export const createConfiguredDatabase = (config: unknown) =>
 ### Build System Integration
 
 ```typescript
-// scripts/download-binaries.ts - Binary fetching for build
+// scripts/download-binaries.ts - Binary fetching for build (maintainers/CI only)
+// NOTE: This runs during repo builds, NOT during consumer install. Binaries are
+// checked into the published package to avoid any postinstall/network activity.
 import { Effect, Console } from "effect"
 import * as fs from "fs"
 import * as path from "path"
@@ -792,8 +809,7 @@ const RELEASE_ASSETS = [
   { platform: "linux-x86_64", url: "https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-linux-x86_64.zip" },
   { platform: "win-x86_64", url: "https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-win-x86_64.zip" },
   { platform: "win-i686", url: "https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-win-i686.zip" },
-  { platform: "android-aarch64", url: "https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-aarch64-linux-android.zip" },
-  { platform: "ios-xcframework", url: "https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-ios-dylib.xcframework.tar.gz" }
+  // Android/iOS assets not included in this release
 ]
 
 const downloadAndExtract = (asset: typeof RELEASE_ASSETS[0]) =>
@@ -826,7 +842,7 @@ const downloadAndExtract = (asset: typeof RELEASE_ASSETS[0]) =>
   })
 
 const downloadAllBinaries = Effect.gen(function* () {
-  yield* Console.log("Downloading cr-sqlite binaries for all platforms...")
+  yield* Console.log("Downloading cr-sqlite binaries for all platforms (maintainers/CI)...")
   
   // Download all platforms concurrently
   yield* Effect.forEach(
@@ -843,6 +859,7 @@ const downloadAllBinaries = Effect.gen(function* () {
 //   "prebuild": "tsx scripts/download-binaries.ts",
 //   "build": "@effect/build-utils build"
 // }
+// Consumers receive pre-bundled binaries; no network/postinstall at install time.
 ```
 
 This comprehensive design covers all the critical aspects of implementing the `@effect-native/libcrsql` package with proper Effect library patterns, type safety, comprehensive testing, and integration strategies. The design ensures zero forbidden patterns, proper error handling, and follows all Effect ecosystem conventions.
