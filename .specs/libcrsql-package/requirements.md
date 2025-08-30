@@ -9,7 +9,7 @@
 - **FR1.1.4**: Root export MUST provide `getCrSqliteExtensionPathSync(platform?): string`
 - **FR1.1.5**: Root primary export MUST auto-detect current platform and return correct binary path
 - **FR1.1.6**: Returned path MUST be absolute and point to working cr-sqlite extension binary
-- **FR1.1.7**: Static paths subpath `@effect-native/libcrsql/paths` MUST export per-platform string constants with no side effects
+- **FR1.1.7**: Static paths subpath `@effect-native/libcrsql/paths` MUST export per-platform absolute string constants; module may compute them at import time using Node built-ins (no network or filesystem writes)
 
 ### FR1.2 Platform Detection and Support
 - **FR1.2.1**: MUST support macOS Apple Silicon (darwin-aarch64)
@@ -176,7 +176,7 @@
 - **SC7.2.3**: All 6 supported platforms return working binary paths (macOS arm64/x64, Linux arm64/x64, Windows x64/i686)
 - **SC7.2.4**: SQLite loadExtension() succeeds with returned paths
 - **SC7.2.5**: Unsupported platforms throw clear, actionable errors
- - **SC7.2.6**: `@effect-native/libcrsql/paths` exports static strings with no side effects
+ - **SC7.2.6**: `@effect-native/libcrsql/paths` exports absolute strings with zero external dependencies and no network/FS side effects
  - **SC7.2.7**: Effect entrypoint works when `effect` is installed; root/paths work without it
  - **SC7.2.8**: Each supported platform is personally verified by maintainer before release; unverified platforms are excluded
 
