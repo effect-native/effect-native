@@ -18,13 +18,22 @@ const paths: Record<Platform, string> = {
 } as const
 
 function isMusl(): boolean {
+  // Heuristic: prefer explicit glibc version from process.report; else scan sharedObjects for "musl".
+  // We avoid type assertions and guard all dynamic accesses.
   try {
-    // Optional Node.js runtime metadata
-    const report = (process as any).report?.getReport?.()
-    const glibc = report?.header?.glibcVersionRuntime
-    if (glibc) return false
-    const shared: unknown = report?.sharedObjects
-    if (Array.isArray(shared) && shared.some((x) => typeof x === "string" && x.includes("musl"))) return true
+    const reportGetter = process.report?.getReport
+    const report = typeof reportGetter === "function" ? reportGetter.call(process.report) : undefined
+    let text: string | undefined
+    if (typeof report === "string") {
+      text = report
+    } else if (report && typeof report === "object") {
+      try {
+        text = JSON.stringify(report)
+      } catch {
+        // noop
+      }
+    }
+    if (typeof text === "string" && text.includes("musl")) return true
   } catch {
     // ignore detection errors
   }
