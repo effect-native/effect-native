@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/* global console, process */
+/* global console */
 
 import { spawnSync } from "node:child_process"
-import { existsSync, mkdirSync, readdirSync, copyFileSync } from "node:fs"
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs"
 import path from "node:path"
 
 const targets = [
@@ -76,4 +76,3 @@ for (const t of targets) {
 }
 
 console.log("Done.")
-
