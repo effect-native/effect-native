@@ -56,3 +56,10 @@ console.log(CRSQLITE_VERSION) // "0.16.3"
 ## Performance Note
 
 The module uses a synchronous file existence check (`fs.accessSync`) to ensure the returned path points to a real binary. This runs once per import/use and is acceptable for this package’s contract. If needed, this can be revisited later with memoization.
+## Binary Integrity
+
+Run a local integrity check to verify bundled binaries match the expected SHA256:
+
+```
+pnpm --filter @effect-native/libcrsql run verify
+```
