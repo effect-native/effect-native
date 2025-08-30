@@ -171,8 +171,11 @@ importers:
         version: 3.23.2
     publishDirectory: dist
 
-  packages-native/libsqlite:
+  packages-native/libcrsql:
     dependencies:
+      '@effect/platform':
+        specifier: '*'
+        version: 0.90.6(effect@3.17.9)
       effect:
         specifier: '*'
         version: 3.17.9

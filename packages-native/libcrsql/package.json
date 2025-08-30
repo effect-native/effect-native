@@ -1,0 +1,82 @@
+{
+  "name": "@effect-native/libcrsql",
+  "version": "0.16.3",
+  "type": "module",
+  "license": "MIT",
+  "description": "Absolute paths to cr-sqlite extension binaries for Node.js with optional Effect API",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/libcrsql"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./src/index.ts",
+      "browser": "./src/browser-unsupported.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./paths": {
+      "types": "./src/paths.ts",
+      "browser": "./src/browser-unsupported.ts",
+      "import": "./src/paths.ts",
+      "require": "./src/paths.ts",
+      "default": "./src/paths.ts"
+    },
+    "./effect": {
+      "types": "./src/effect.ts",
+      "browser": "./src/browser-unsupported.ts",
+      "import": "./src/effect.ts",
+      "require": "./src/effect.ts",
+      "default": "./src/effect.ts"
+    },
+    "./internal/*": null
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/libcrsql: skip codegen'",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "peerDependencies": {
+    "effect": "*",
+    "@effect/platform": "*"
+  },
+  "peerDependenciesMeta": {
+    "effect": { "optional": true },
+    "@effect/platform": { "optional": true }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": [
+    "./src/index.ts",
+    "./src/paths.ts",
+    "./src/effect.ts"
+  ],
+  "files": [
+    "build",
+    "dist",
+    "src",
+    "lib",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}
