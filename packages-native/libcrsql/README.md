@@ -39,3 +39,20 @@ Effect.runPromise(program)
 - No network or postinstall scripts. Binaries are bundled in `lib/`.
 - Android and iOS are out of scope for this release.
 - Root and paths entrypoints have zero external runtime dependencies.
+
+## Versioning Policy
+
+- This package embeds the upstream cr-sqlite version into the npm SemVer patch field.
+- Mapping: `<upstream-major>.<upstream-minor>.<upstream-patch>` → npm `<major>.<minor>.<patch>` where `patch = upstreamPatch * 100 + wrapperPatch`.
+  - Example: upstream `0.16.3` → npm `0.16.300` (first wrapper release). Subsequent wrapper patches: `0.16.301`, `0.16.302`, ...
+  - Next upstream `0.16.4` → npm `0.16.400` (then wrapper patches continue).
+- The exact upstream version is exported:
+
+```ts
+import { CRSQLITE_VERSION } from "@effect-native/libcrsql" // or /effect
+console.log(CRSQLITE_VERSION) // "0.16.3"
+```
+
+## Performance Note
+
+The module uses a synchronous file existence check (`fs.accessSync`) to ensure the returned path points to a real binary. This runs once per import/use and is acceptable for this package’s contract. If needed, this can be revisited later with memoization.

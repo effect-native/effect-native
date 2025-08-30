@@ -88,6 +88,8 @@ export const getCrSqliteExtensionPath = (
 
     const exists = yield* Effect.sync(() => {
       try {
+        // Synchronous check is acceptable here since this path is computed
+        // infrequently and typically only once per process.
         fs.accessSync(abs)
         return true
       } catch {

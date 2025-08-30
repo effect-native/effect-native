@@ -69,4 +69,8 @@ export const buildRelativeLibraryPath = (platform: Platform): string => {
     case "win-i686":
       return `lib/${platform}/crsqlite.dll`
   }
+  // Exhaustiveness: if a new Platform variant is added, TypeScript will error
+  // unless it is handled above. This fallback is intentionally unreachable.
+  // eslint-disable-next-line no-unreachable
+  return platform satisfies never
 }

@@ -40,7 +40,11 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
     throw err
   }
   const abs = fileURLToPath(new URL(`../${buildRelativeLibraryPath(target)}`, import.meta.url))
-  // Best-effort existence check without external deps
+  // Best-effort existence check without external deps.
+  // Note: this synchronous check runs once per import/use and ensures the
+  // contract of this package (absolute path to an existing native binary).
+  // If needed, we can memoize this at runtime, but import memoization already
+  // avoids repeated work in typical usage.
   try {
     fs.accessSync(abs)
   } catch {
@@ -75,8 +79,9 @@ export type Platform = _Platform
  * @since 0.16.3
  */
 export const SUPPORTED_PLATFORMS = _SUPPORTED_PLATFORMS
+import { CRSQLITE_VERSION as _CRSQLITE_VERSION } from "./version.js"
 /**
  * Bundled upstream cr-sqlite version.
  * @since 0.16.300
  */
-export { CRSQLITE_VERSION } from "./version.js"
+export const CRSQLITE_VERSION = _CRSQLITE_VERSION
