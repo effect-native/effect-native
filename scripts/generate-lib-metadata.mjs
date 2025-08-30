@@ -52,9 +52,19 @@ function sqliteVersionFromFile(filePath) {
 
 const targets = [
   { platform: "darwin-aarch64", arch: "arm64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
-  { platform: "darwin-x86_64", arch: "x86_64", file: "libsqlite3.dylib", eval: ["nixpkgs#legacyPackages.x86_64-darwin.sqlite.out"] },
+  {
+    platform: "darwin-x86_64",
+    arch: "x86_64",
+    file: "libsqlite3.dylib",
+    eval: ["nixpkgs#legacyPackages.x86_64-darwin.sqlite.out"]
+  },
   { platform: "linux-x86_64", arch: "x86_64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.gnu64.sqlite.out"] },
-  { platform: "linux-aarch64", arch: "aarch64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"] }
+  {
+    platform: "linux-aarch64",
+    arch: "aarch64",
+    file: "libsqlite3.so",
+    eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"]
+  }
 ]
 
 const artifacts = []
