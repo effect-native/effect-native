@@ -26,7 +26,7 @@ This document formalizes the requirements for a universal, version‑pinned SQLi
 - NFR2.3: Deterministic builds; pinned nixpkgs input drives reproducible library outputs.
 - NFR2.4: Minimal install footprint; only required binaries and metadata are included.
 - NFR2.5: ESM‑first package with type definitions; Node.js ≥ 18 and Bun (latest stable) supported.
-- NFR2.6: Clear error messages for unsupported platforms (e.g., musl), including suggested alternatives or next steps.
+- NFR2.6: Clear, friendly error messages for unsupported platforms (e.g., musl), explicitly inviting users to request support if they'd like those platforms supported, and listing currently supported targets to avoid confusion.
 - NFR2.7: Security: no code execution beyond path computation; no environment mutation; no shelling out.
 
 ## TC3 – Technical Constraints
@@ -54,6 +54,7 @@ This document formalizes the requirements for a universal, version‑pinned SQLi
   - DR4.2.2: Include LICENSE/NOTICE files for SQLite and nixpkgs as required.
   - DR4.2.3: Preserve correct file permissions for shared libraries.
 - DR4.3: Type definitions included for all public APIs; `Platform` union type includes only supported values.
+- DR4.3.1: `PlatformNotSupportedError` includes `{ platform: string; help: string }` with a friendly message inviting users to request support ("if you'd like").
 - DR4.4: JSDoc coverage is 100% for public APIs with compilable `@example` blocks.
 - DR4.5: Package includes `README.md` with examples for Node and Bun.
 
@@ -96,6 +97,7 @@ This document formalizes the requirements for a universal, version‑pinned SQLi
 - SC7.2: Unit tests cover environment detection, path resolution, and error conditions (musl and unknown platforms).
 - SC7.3: `/paths` exports are absolute paths and import with zero side effects.
 - SC7.4: Root API returns a valid existing path on all supported platforms; throws a clear error on unsupported ones.
+- SC7.4.1: Error text for unsupported platforms includes an invitation to request support (phrased as "want"/"if you'd like") and lists currently supported platforms.
 - SC7.5: npm package contains only the required files (code, types, `lib/` binaries, metadata, licenses).
 - SC7.6: Release workflow builds and publishes an npm tarball that includes the correct binaries for the declared SQLite version.
 - SC7.7: Documentation includes examples for Node and Bun; Effect examples compile under docgen.
