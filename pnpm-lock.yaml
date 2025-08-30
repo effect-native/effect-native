@@ -181,6 +181,13 @@ importers:
         version: 3.17.9
     publishDirectory: dist
 
+  packages-native/libsqlite:
+    dependencies:
+      effect:
+        specifier: '*'
+        version: 3.17.9
+    publishDirectory: dist
+
   scratchpad:
     dependencies:
       '@effect/ai':
