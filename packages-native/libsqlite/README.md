@@ -47,8 +47,8 @@ If you'd like musl or Windows support, please open an issue and we'll prioritize
 
 ## Versioning
 
-- Package version matches the bundled SQLite version.
-- JS-only or packaging tweaks use a hyphenated suffix without changing SQLite (pre-release semantics):
-  - Examples: `3.50.2-1`, `3.50.2-2`, …
-- Tip: pre-release style version strings don’t satisfy ranges by default; use an exact version or a dist-tag.
-  - Example: `pnpm add @effect-native/libsqlite@3.50.2-2` or maintain a `latest` dist-tag.
+- Embedded scheme: `major.minor` mirrors SQLite; `patch` encodes both SQLite patch and wrapper patch.
+  - `patch = sqlitePatch * 100 + wrapperPatch`
+  - Example: SQLite `3.50.2`, first wrapper → `3.50.200`; next wrapper → `3.50.201`.
+- SemVer behavior: normal `^3.50.0` ranges see wrapper updates within the same SQLite minor.
+- Exact SQLite version is recorded in `lib/metadata.json` and surfaced in docs.

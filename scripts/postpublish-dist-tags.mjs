@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
+/* global console */
 /* global process */
 import { execSync } from "node:child_process"
 import { readFileSync } from "node:fs"
@@ -33,4 +34,3 @@ function main() {
 }
 
 main()
-
