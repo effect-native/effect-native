@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/libsqlite",
-  "version": "0.0.0",
+  "version": "3.50.2-1",
   "type": "module",
   "license": "MIT",
   "description": "Universal, version-pinned libsqlite3 that Just Works — prebuilt via Nix with per-platform paths.",
@@ -17,7 +17,8 @@
     "access": "public",
     "provenance": true,
     "directory": "dist",
-    "linkDirectory": false
+    "linkDirectory": false,
+    "tag": "latest"
   },
   "exports": {
     "./package.json": "./package.json",
