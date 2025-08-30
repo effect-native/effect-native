@@ -5,9 +5,11 @@
 ### FR1.1 Core Package Functionality
 - **FR1.1.1**: Package MUST be published as `@effect-native/libcrsql@0.16.3`
 - **FR1.1.2**: Package MUST include ALL cr-sqlite extension binaries from vlcn-io/cr-sqlite v0.16.3 release
-- **FR1.1.3**: Package MUST provide primary export: `pathToCrSqliteExtension: string`
-- **FR1.1.4**: Primary export MUST automatically detect current platform and return correct binary path
-- **FR1.1.5**: Returned path MUST be absolute and point to working cr-sqlite extension binary
+- **FR1.1.3**: Root export MUST provide `pathToCrSqliteExtension: string`
+- **FR1.1.4**: Root export MUST provide `getCrSqliteExtensionPathSync(platform?): string`
+- **FR1.1.5**: Root primary export MUST auto-detect current platform and return correct binary path
+- **FR1.1.6**: Returned path MUST be absolute and point to working cr-sqlite extension binary
+- **FR1.1.7**: Static paths subpath `@effect-native/libcrsql/paths` MUST export per-platform string constants with no side effects
 
 ### FR1.2 Platform Detection and Support
 - **FR1.2.1**: MUST support macOS Apple Silicon (darwin-aarch64)
@@ -16,13 +18,12 @@
 - **FR1.2.4**: MUST support Linux x86_64 (linux-x86_64)
 - **FR1.2.5**: MUST support Windows x86_64 (win-x86_64)
 - **FR1.2.6**: MUST support Windows i686 (win-i686)
-- **FR1.2.7**: MUST support Android ARM64 (aarch64-linux-android)
-- **FR1.2.8**: MUST support iOS (xcframework bundle)
+- (Removed) Android and iOS support for this release to reduce scope and ensure verified quality
 - **FR1.2.9**: Platform detection MUST use Node.js process.platform and process.arch
 - **FR1.2.10**: MUST throw descriptive error for unsupported platform combinations
 
-### FR1.3 Advanced API
-- **FR1.3.1**: MUST provide Effect-based function: `getCrSqliteExtensionPath`
+### FR1.3 Effect API (optional subpath)
+- **FR1.3.1**: MUST provide Effect-based function in `@effect-native/libcrsql/effect`: `getCrSqliteExtensionPath`
 - **FR1.3.2**: Effect function MUST accept optional platform parameter
 - **FR1.3.3**: Effect function MUST return `Effect<string, PlatformNotSupportedError>`
 - **FR1.3.4**: MUST export Platform union type with all supported platform strings
@@ -102,8 +103,7 @@
 - **DR4.1.4**: MUST include crsqlite-linux-x86_64.zip contents
 - **DR4.1.5**: MUST include crsqlite-win-x86_64.zip contents
 - **DR4.1.6**: MUST include crsqlite-win-i686.zip contents
-- **DR4.1.7**: MUST include crsqlite-aarch64-linux-android.zip contents
-- **DR4.1.8**: MUST include crsqlite-ios-dylib.xcframework.tar.gz contents
+// Android and iOS asset requirements intentionally omitted in this release
 
 ### DR4.2 File Organization Requirements
 - **DR4.2.1**: Binaries MUST be organized in lib/ directory by platform
@@ -140,13 +140,13 @@
 ## DEP6 - Dependencies
 
 ### DEP6.1 Runtime Dependencies
-- **DEP6.1.1**: effect (peer dependency, version from workspace)
-- **DEP6.1.2**: @effect/platform (for platform detection utilities)
-- **DEP6.1.3**: @effect/schema (for data validation and types)
+- **DEP6.1.1**: Root export MUST have zero external runtime dependencies (Node.js only)
+- **DEP6.1.2**: `@effect-native/libcrsql/paths` MUST have zero external runtime dependencies
+- **DEP6.1.3**: `@effect-native/libcrsql/effect` depends on `effect` (peer) and may depend on `@effect/platform` (peer)
 
 ### DEP6.2 Development Dependencies
 - **DEP6.2.1**: @effect/build-utils (for package building)
-- **DEP6.2.2**: @effect/vitest (for testing)
+- **DEP6.2.2**: @effect/vitest (for testing the effect entrypoint)
 - **DEP6.2.3**: @effect/docgen (for documentation generation)
 - **DEP6.2.4**: Standard Effect package development tools
 
@@ -156,7 +156,7 @@
 - **DEP6.3.3**: File system access for binary path resolution
 
 ### DEP6.4 Constraint Dependencies
-- **DEP6.4.1**: MUST NOT depend on any non-Effect libraries at runtime
+- **DEP6.4.1**: Root and paths entrypoints MUST NOT depend on any external libraries at runtime
 - **DEP6.4.2**: MUST NOT require global installations or system dependencies
 - **DEP6.4.3**: MUST NOT depend on network access after installation
 - **DEP6.4.4**: MUST NOT depend on platform-specific Node.js features beyond standard APIs
@@ -173,9 +173,12 @@
 ### SC7.2 Functional Success Criteria
 - **SC7.2.1**: Package installs successfully via `pnpm add @effect-native/libcrsql`
 - **SC7.2.2**: Import `{pathToCrSqliteExtension}` resolves to valid file path
-- **SC7.2.3**: All 8 supported platforms return working binary paths
+- **SC7.2.3**: All 6 supported platforms return working binary paths (macOS arm64/x64, Linux arm64/x64, Windows x64/i686)
 - **SC7.2.4**: SQLite loadExtension() succeeds with returned paths
 - **SC7.2.5**: Unsupported platforms throw clear, actionable errors
+ - **SC7.2.6**: `@effect-native/libcrsql/paths` exports static strings with no side effects
+ - **SC7.2.7**: Effect entrypoint works when `effect` is installed; root/paths work without it
+ - **SC7.2.8**: Each supported platform is personally verified by maintainer before release; unverified platforms are excluded
 
 ### SC7.3 Quality Success Criteria
 - **SC7.3.1**: 100% JSDoc coverage with compilable @example tags
