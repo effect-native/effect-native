@@ -28,6 +28,9 @@ it("library is recognized by the system loader (otool/ldd)", () => {
     const res = spawnSync("ldd", [path], { encoding: "utf8" })
     if (res.error && (res as any).error?.code === "ENOENT") return
     expect(res.status).toBe(0)
-    expect(res.stdout).toContain("libsqlite3")
+    // On Linux, libsqlite3.so is self-contained, so check for expected system dependencies
+    // Based on actual CI output, we expect these system libraries to be present
+    expect(res.stdout).toContain("libc.so")
+    expect(res.stdout).toContain("libz.so")
   }
 })
