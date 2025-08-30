@@ -51,10 +51,10 @@ function sqliteVersionFromFile(filePath) {
 }
 
 const targets = [
-  { platform: "darwin-aarch64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
-  { platform: "darwin-x86_64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
-  { platform: "linux-x86_64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.gnu64.sqlite.out"] },
-  { platform: "linux-aarch64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"] }
+  { platform: "darwin-aarch64", arch: "arm64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
+  { platform: "darwin-x86_64", arch: "x86_64", file: "libsqlite3.dylib", eval: ["nixpkgs#legacyPackages.x86_64-darwin.sqlite.out"] },
+  { platform: "linux-x86_64", arch: "x86_64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.gnu64.sqlite.out"] },
+  { platform: "linux-aarch64", arch: "aarch64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"] }
 ]
 
 const artifacts = []
@@ -65,13 +65,22 @@ for (const t of targets) {
   const sum = sha256(p)
   let version = sqliteVersionFromTarget([t.eval[0]])
   if (!version) version = sqliteVersionFromFile(p)
-  artifacts.push({ platform: t.platform, filename: t.file, sha256: sum, sqliteVersion: version })
+  artifacts.push({ platform: t.platform, arch: t.arch, filename: t.file, sha256: sum, sqliteVersion: version })
 }
 
 const meta = {
   nixpkgs: { rev: nixpkgsRev() },
   builtAt: new Date().toISOString(),
   artifacts
+}
+
+// Assertions: macOS arm64 vs x86_64 should not have identical sha256
+const darwinArm = artifacts.find((a) => a.platform === "darwin-aarch64")
+const darwinX64 = artifacts.find((a) => a.platform === "darwin-x86_64")
+if (darwinArm && darwinX64 && darwinArm.sha256 === darwinX64.sha256) {
+  throw new Error(
+    "darwin-aarch64 and darwin-x86_64 artifacts have identical sha256; expected distinct architecture-specific builds"
+  )
 }
 
 const outFile = path.join(PKG_LIB, "metadata.json")

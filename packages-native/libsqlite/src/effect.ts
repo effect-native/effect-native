@@ -26,7 +26,7 @@ export const LibSqlite = Context.GenericTag<LibSqliteService>("effect-native/Lib
  * Live Layer providing the resolved path.
  * @since 0.0.0
  */
-export const LibSqliteLive = Layer.succeed(LibSqlite, { path: getLibSqlitePathSync() })
+export const LibSqliteLive = Layer.sync(LibSqlite, () => ({ path: getLibSqlitePathSync() }))
 
 /**
  * Effectful accessor to the path, mapping unsupported platforms into a typed error.
