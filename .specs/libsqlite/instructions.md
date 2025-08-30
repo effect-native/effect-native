@@ -24,12 +24,12 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 
 - Provide prebuilt `libsqlite3` binaries for major desktop/server targets:
   - Darwin: `aarch64` (Apple Silicon) and `x86_64`
-  - Linux: `x86_64` and `aarch64` with glibc; musl considered but optional in v1
+  - Linux: `x86_64` and `aarch64` with glibc (musl deferred)
 - Runtime environment detection and path resolution:
-  - Detect OS, architecture, and (on Linux) `glibc` vs `musl` to select the right binary
+  - Detect OS and architecture; on Linux, assume glibc in v1. If musl is detected, the API returns a descriptive error indicating musl support is deferred.
   - Expose a single JS/TS API to return the absolute path to the bundled `libsqlite3`
-- Deep import static paths for power users (no code execution):
-  - e.g. `@effect-native/libsqlite/platform/darwin-arm64`, `.../linux-x64-gnu`, each file exporting a single string constant
+- Static paths subpath for power users (no code execution):
+  - `@effect-native/libsqlite/paths` exporting per-platform absolute strings with no side effects
 - Version mapping:
   - NPM version equals the SQLite version; optional `-N` suffix for JS-only patches
   - Ensure binary artifacts correspond exactly to the declared SQLite version
@@ -49,26 +49,47 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 ## Technical Specifications
 
 - Build source: `nixpkgs-unstable` (via the repo’s existing `flake.nix`) produces `libsqlite3` for each target
-- Binary layout in package (illustrative):
-  - `binaries/darwin-aarch64/libsqlite3.dylib`
-  - `binaries/darwin-x86_64/libsqlite3.dylib`
-  - `binaries/linux-x86_64-gnu/libsqlite3.so`
-  - `binaries/linux-aarch64-gnu/libsqlite3.so`
-  - `binaries/linux-x86_64-musl/libsqlite3.so` (optional)
-  - `binaries/linux-aarch64-musl/libsqlite3.so` (optional)
+- Binary layout in package (illustrative; aligned with libcrsql):
+  - `lib/darwin-aarch64/libsqlite3.dylib`
+  - `lib/darwin-x86_64/libsqlite3.dylib`
+  - `lib/linux-x86_64/libsqlite3.so`
+  - `lib/linux-aarch64/libsqlite3.so`
+  - musl variants deferred to a future release
 - Runtime selection logic:
   - Detect via `process.platform`, `process.arch`, and glibc/musl sniffing (e.g. `process.report.getReport()`, `/lib/libc.musl-` presence, or other portable checks)
-  - Export `resolveLibSqlite3Path(): string` (sync) and `libPath` constant for convenience
-  - Provide static subpath exports that only export a string (no imports/side effects)
+  - Export `getLibSqlitePathSync(): string` and `pathToLibSqlite` constant for convenience
+  - Provide static subpath `@effect-native/libsqlite/paths` that only exports strings (no imports/side effects)
 - Compatibility targets:
   - Node.js ≥ 18, Bun ≥ latest stable
   - ESM-first package with generated `.d.ts`
 - No dynamic fetching at runtime; binaries are bundled in the npm tarball
 
+### Public API Surface (v1)
+- Root (zero runtime deps):
+  - `export const pathToLibSqlite: string` // auto-detected absolute path
+  - `export function getLibSqlitePathSync(platform?: Platform): string`
+- Static paths subpath (string-only exports, no logic): `@effect-native/libsqlite/paths`
+  - `export const darwin_aarch64: string`
+  - `export const darwin_x86_64: string`
+  - `export const linux_x86_64: string`
+  - `export const linux_aarch64: string`
+- Effect subpath (optional, isolated): `@effect-native/libsqlite/effect`
+  - `export const getLibSqlitePath: Effect.Effect<string, PlatformNotSupportedError>`
+  - Tag/Layer that provides `pathToLibSqlite`
+
+### Types and Errors
+- `export type Platform = "darwin-aarch64" | "darwin-x86_64" | "linux-x86_64" | "linux-aarch64"`
+- `export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{ readonly platform: string }>`
+
+### Nix Build Integration
+- Single root `flake.nix` drives builds; expose `packages.${system}.libsqlite3`
+- Derivation implemented in a shared module (e.g., `nix/libsqlite3.nix`) and imported by root flake
+- No per-package flake in v1; consider thin wrapper later if external flake consumption is requested
+
 ## Acceptance Criteria
 
 - Installing `@effect-native/libsqlite@3.50.x` yields a package whose bundled libsqlite3 is exactly SQLite `3.50.x`
-- Calling `resolveLibSqlite3Path()` returns an existing absolute path to the correct binary on:
+- Calling `getLibSqlitePathSync()` returns an existing absolute path to the correct binary on:
   - macOS arm64 and x64
   - Linux x64 glibc and arm64 glibc
 - Example projects (Node and Bun) can successfully `dlopen` a simple test extension using the provided path (documented, not necessarily executed in CI)
@@ -78,6 +99,7 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
   - `dependencies` is empty
   - No install scripts
   - Effect integration isolated behind an optional peer dependency and subpath export
+ - `@effect-native/libsqlite/paths` exports absolute strings with zero side effects
 
 ## Out of Scope (v1)
 
@@ -86,6 +108,7 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 - Automatic selection of system SQLite or fallback; v1 always uses bundled binaries (env opt-out may be considered later)
 - Shipping third-party SQLite extensions; only the core `libsqlite3` is bundled
  - Any `postinstall`-time build/download steps
+ - Linux musl variants
 
 ## Success Metrics
 
