@@ -9,9 +9,16 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 - Versioning: NPM package version matches the SQLite version (e.g., `3.50.2`), with optional JS-only patch suffix `-N` (e.g., `3.50.2-1`) that does not change the bundled SQLite version
 - Example install: `bun add @effect-native/libsqlite@3.50`
 
-## User Story
+## Personas & User Stories
 
-As a developer who needs to load SQLite extensions reliably across machines and CI, I want a universal `libsqlite3` that is version-pinned and known-good, so that I can load extensions without relying on inconsistent or outdated system SQLite installations.
+1) Typical Node.js developer — “Just give me the path”
+- As a Node/Bun developer who doesn’t care about native details, I want a simple API that returns the absolute path to `libsqlite3` as a string, so I can pass it to `dlopen` or my SQLite binding without any extra setup.
+
+2) 31337 power user — “Deep import, zero overhead”
+- As an advanced user who knows the exact platform/arch I need, I want a deep import that exports a static string path to the specific binary without executing any detection logic or importing anything else.
+
+3) Effect‑pilled developer — “Idiomatic Effect integration”
+- As an Effect user, I want an idiomatic Effect service/Layer that provides the resolved path and integrates cleanly with my Effect application without mixing Promise APIs or imperative globals.
 
 ## Core Requirements
 
@@ -21,6 +28,8 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Runtime environment detection and path resolution:
   - Detect OS, architecture, and (on Linux) `glibc` vs `musl` to select the right binary
   - Expose a single JS/TS API to return the absolute path to the bundled `libsqlite3`
+- Deep import static paths for power users (no code execution):
+  - e.g. `@effect-native/libsqlite/platform/darwin-arm64`, `.../linux-x64-gnu`, each file exporting a single string constant
 - Version mapping:
   - NPM version equals the SQLite version; optional `-N` suffix for JS-only patches
   - Ensure binary artifacts correspond exactly to the declared SQLite version
@@ -30,6 +39,12 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Compliance and metadata:
   - Include appropriate licenses/NOTICE for SQLite and nixpkgs artifacts
   - Publishable as ESM; type-checked via repository standards
+  
+### Dependency Minimization
+- Zero runtime dependencies in `dependencies` (hard requirement)
+- No `postinstall` scripts; no dynamic downloads or optional native builds
+- Effect integration provided via optional peer dependency `effect` and isolated subpath export (`@effect-native/libsqlite/effect`) so non-Effect users don’t install or import it
+- Use only Node/Bun built-ins for detection (`process`, `os`); ship small, side‑effect‑free modules
 
 ## Technical Specifications
 
@@ -44,6 +59,7 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Runtime selection logic:
   - Detect via `process.platform`, `process.arch`, and glibc/musl sniffing (e.g. `process.report.getReport()`, `/lib/libc.musl-` presence, or other portable checks)
   - Export `resolveLibSqlite3Path(): string` (sync) and `libPath` constant for convenience
+  - Provide static subpath exports that only export a string (no imports/side effects)
 - Compatibility targets:
   - Node.js ≥ 18, Bun ≥ latest stable
   - ESM-first package with generated `.d.ts`
@@ -58,6 +74,10 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Example projects (Node and Bun) can successfully `dlopen` a simple test extension using the provided path (documented, not necessarily executed in CI)
 - Full repository validations pass: lint, typecheck, docgen, tests, build
 - JSDoc examples compile via `pnpm docgen`
+- Dependency footprint:
+  - `dependencies` is empty
+  - No install scripts
+  - Effect integration isolated behind an optional peer dependency and subpath export
 
 ## Out of Scope (v1)
 
@@ -65,6 +85,7 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Mobile platforms (iOS/Android)
 - Automatic selection of system SQLite or fallback; v1 always uses bundled binaries (env opt-out may be considered later)
 - Shipping third-party SQLite extensions; only the core `libsqlite3` is bundled
+ - Any `postinstall`-time build/download steps
 
 ## Success Metrics
 
@@ -72,6 +93,7 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - ≥ 95% successful environment detection in supported targets (validated via tests and local/CI matrices)
 - Clear mapping of npm version → SQLite version with no mismatches
 - Positive DX (copy-paste example works across Node and Bun)
+- Minimal install size and zero runtime dependencies
 
 ## Future Considerations
 
@@ -88,4 +110,3 @@ As a developer who needs to load SQLite extensions reliably across machines and 
 - Integration tests (where feasible): attempt `dlopen` of the resolved path (skipped in unsupported CI runners)
 - Docgen validation: examples compile and typecheck
 - Repository-wide checks: `pnpm lint`, `pnpm check`, `pnpm build` and targeted `pnpm test`
-
