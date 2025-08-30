@@ -64,14 +64,14 @@ packages-native/libcrsql/
 export declare const pathToCrSqliteExtension: string
 export declare const getCrSqliteExtensionPathSync: (platform?: Platform) => string
 
-// Static paths (no side effects)
+// Static absolute paths (minimal init, zero external deps)
 // import { darwin_aarch64, linux_x86_64, ... } from "@effect-native/libcrsql/paths"
-export declare const darwin_aarch64: string
-export declare const darwin_x86_64: string
-export declare const linux_aarch64: string
-export declare const linux_x86_64: string
-export declare const win_x86_64: string
-export declare const win_i686: string
+export declare const darwin_aarch64: string // absolute
+export declare const darwin_x86_64: string  // absolute
+export declare const linux_aarch64: string  // absolute
+export declare const linux_x86_64: string   // absolute
+export declare const win_x86_64: string     // absolute
+export declare const win_i686: string       // absolute
 
 // Effect API (optional subpath)
 // import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
