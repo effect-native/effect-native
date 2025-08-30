@@ -15,12 +15,6 @@ import {
 import type { Platform as _Platform } from "./platform.js"
 
 /**
- * Return absolute path to cr-sqlite extension binary for the given or detected platform.
- * Throws native Error with `code` set when unsupported or missing.
- *
- * @since 0.16.3
- */
-/**
  * Synchronous absolute path resolution for the cr-sqlite extension binary.
  *
  * - Returns an absolute path string that you can pass to `db.loadExtension()`.
@@ -38,7 +32,9 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
   const target = platform ?? detectPlatform()
   if (!isSupportedPlatform(target)) {
     const err: NodeJS.ErrnoException = new Error(
-      `Unsupported platform: ${target} (supported: ${SUPPORTED_PLATFORMS.join(", ")})`
+      `Platform "${target}" is not supported. Detected: ${process.platform}-${process.arch}. Supported: ${
+        SUPPORTED_PLATFORMS.join(", ")
+      }`
     )
     err.code = "ERR_PLATFORM_UNSUPPORTED"
     throw err
@@ -48,19 +44,13 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
   try {
     fs.accessSync(abs)
   } catch {
-    const err: NodeJS.ErrnoException = new Error(`Extension not found: ${abs}`)
+    const err: NodeJS.ErrnoException = new Error(`Extension binary not found: ${abs}`)
     err.code = "ERR_EXTENSION_NOT_FOUND"
     throw err
   }
   return abs
 }
 
-/**
- * Absolute path for current platform at import time.
- * Throws if unsupported or binary missing.
- *
- * @since 0.16.3
- */
 /**
  * Absolute path to the cr-sqlite binary for the current platform, computed at import time.
  *

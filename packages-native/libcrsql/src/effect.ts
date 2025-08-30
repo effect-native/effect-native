@@ -54,10 +54,7 @@ export type ExtensionPath = string & Brand.Brand<"ExtensionPath">
  */
 export const ExtensionPath = Brand.nominal<ExtensionPath>()
 
-/**
- * Resolve absolute path in an Effect, with rich errors.
- * Uses a best-effort Node fs sync check without depending on @effect/platform.
- */
+// Uses a best-effort Node fs sync check without depending on @effect/platform.
 /**
  * Effect-based absolute path resolution with idiomatic TaggedError failures.
  *
