@@ -1,5 +1,11 @@
 /**
- * Root API: simple, zero-deps exports for resolving the libsqlite3 path.
+ * Root API: simple, zero‑deps exports for resolving the libsqlite3 path.
+ * Resolves the correct `.dylib`/`.so` based on the current OS/arch.
+ *
+ * Notes
+ * - No runtime dependencies; uses `process.platform` / `process.arch` only.
+ * - Musl is not supported in v1; an informative error is thrown with guidance.
+ *
  * @since 0.0.0
  */
 
@@ -43,10 +49,16 @@ function isMusl(): boolean {
 function detect(): Platform {
   const p = process.platform
   const a = process.arch
+  const logDebug = (message: string) => {
+    if (process.env.EFFECT_NATIVE_LIBSQLITE_DEBUG) {
+      console.warn(`[libsqlite] ${message}`)
+    }
+  }
   if (p === "darwin" && a === "arm64") return "darwin-aarch64"
   if (p === "darwin" && a === "x64") return "darwin-x86_64"
   if (p === "linux" && a === "x64") {
     if (isMusl()) {
+      logDebug("musl detected on linux-x64; throwing unsupported error")
       throw new Error(
         [
           "Linux musl detected; v1 supports glibc only.",
@@ -59,6 +71,7 @@ function detect(): Platform {
   }
   if (p === "linux" && a === "arm64") {
     if (isMusl()) {
+      logDebug("musl detected on linux-arm64; throwing unsupported error")
       throw new Error(
         [
           "Linux musl detected; v1 supports glibc only.",
@@ -69,6 +82,7 @@ function detect(): Platform {
     }
     return "linux-aarch64"
   }
+  logDebug(`unsupported platform detected: ${p}-${a}`)
   throw new Error(
     [
       `Unsupported platform: ${p}-${a}.`,
