@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /* eslint-env node */
 /* global process, console */
-import { createHash } from "node:crypto"
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs"
-import path from "node:path"
 import { spawnSync } from "node:child_process"
+import { createHash } from "node:crypto"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import path from "node:path"
 
 const ROOT = process.cwd()
 const PKG_LIB = path.join(ROOT, "packages-native", "libsqlite", "lib")
@@ -51,8 +51,8 @@ function sqliteVersionFromFile(filePath) {
 }
 
 const targets = [
-  { platform: "darwin-aarch64", file: "libsqlite3.dylib", eval: [".#packages.aarch64-darwin.libsqlite3"] },
-  { platform: "darwin-x86_64", file: "libsqlite3.dylib", eval: [".#packages.x86_64-darwin.libsqlite3"] },
+  { platform: "darwin-aarch64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
+  { platform: "darwin-x86_64", file: "libsqlite3.dylib", eval: ["nixpkgs#sqlite.out"] },
   { platform: "linux-x86_64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.gnu64.sqlite.out"] },
   { platform: "linux-aarch64", file: "libsqlite3.so", eval: ["nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out"] }
 ]

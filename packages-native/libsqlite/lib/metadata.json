@@ -2,19 +2,19 @@
   "nixpkgs": {
     "rev": "ba0939c506a03c60a765cd7f7c43794816540eec"
   },
-  "builtAt": "2025-08-30T04:21:30.282Z",
+  "builtAt": "2025-08-30T04:41:17.986Z",
   "artifacts": [
     {
       "platform": "darwin-aarch64",
       "filename": "libsqlite3.dylib",
-      "sha256": "11c0b6c1c31a0c34d88cc23c9a38a8049f2c154b55ae63f0ec5d5babcfb026f7",
-      "sqliteVersion": "3.47.2"
+      "sha256": "9d588804952a6193996a8c7d68ec7e07db8b1635270e8b2299e1f62dd4ec9d60",
+      "sqliteVersion": "3.50.2"
     },
     {
       "platform": "darwin-x86_64",
       "filename": "libsqlite3.dylib",
-      "sha256": "2762e7903fcc13606ba92cf44fd6376c3beefa1684e3531ac75611bb31d63e71",
-      "sqliteVersion": "3.47.2"
+      "sha256": "9d588804952a6193996a8c7d68ec7e07db8b1635270e8b2299e1f62dd4ec9d60",
+      "sqliteVersion": "3.50.2"
     },
     {
       "platform": "linux-x86_64",

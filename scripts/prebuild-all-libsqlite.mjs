@@ -9,13 +9,13 @@ import path from "node:path"
 const targets = [
   {
     id: "darwin-aarch64",
-    build: ["nix", "build", ".#packages.aarch64-darwin.libsqlite3", "--print-out-paths"],
+    build: ["nix", "build", "nixpkgs#sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.dylib$/,
     dest: "packages-native/libsqlite/lib/darwin-aarch64/libsqlite3.dylib"
   },
   {
     id: "darwin-x86_64",
-    build: ["nix", "build", ".#packages.x86_64-darwin.libsqlite3", "--print-out-paths"],
+    build: ["nix", "build", "nixpkgs#sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.dylib$/,
     dest: "packages-native/libsqlite/lib/darwin-x86_64/libsqlite3.dylib"
   },
@@ -75,9 +75,7 @@ for (const t of targets) {
   }
 }
 
-// refresh metadata
-try {
-  spawnSync("node", ["scripts/generate-lib-metadata.mjs"], { stdio: "inherit" })
-} catch {}
+// refresh metadata (best effort)
+spawnSync("node", ["scripts/generate-lib-metadata.mjs"], { stdio: "inherit" })
 
 console.log("Done.")
