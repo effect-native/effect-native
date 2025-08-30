@@ -1,14 +1,24 @@
 # Feature Instructions: @effect-native/libcrsql Package
 
-## Overview and User Story
+## Overview and User Stories
 
-**As a** developer working with SQLite and CRDT synchronization in Effect-based applications  
-**I want** a reliable, simple way to access cr-sqlite extension binaries for all platforms  
-**So that** I can load the cr-sqlite extension into SQLite databases without dealing with broken or abandoned packages
+We support three usage styles to meet developers where they are:
 
-**Problem Statement**: The existing `@vlcn.io/crsqlite` package has been abandoned for 2 years and no longer works, leaving developers without a reliable way to access cr-sqlite extension binaries for their applications.
+1) Typical Node.js developer
+- As a Node.js dev, I just want a working path to the cr-sqlite extension as a string with zero fuss. No Effect, no ceremony, just a path I can pass to `loadExtension()`.
 
-**Solution**: Create a new `@effect-native/libcrsql` package that bundles all cr-sqlite extension binaries from the official vlcn-io/cr-sqlite v0.16.3 release, providing a simple import-based API for accessing platform-specific extension paths.
+2) Power user (manual platform selection)
+- As a power user, I want to import the exact path for a specific platform/arch as a plain string, with zero side effects, without this package importing other modules or executing anything at import time.
+
+3) Fully Effect user
+- As an Effect user, I want an idiomatic, typed Effect API (Layer/Service available) with branded types and proper TaggedError failures so I can compose it in Effects.
+
+**Problem Statement**: The existing `@vlcn.io/crsqlite` package has been abandoned for 2 years and no longer works, leaving developers without a reliable way to access cr-sqlite extension binaries for their applications. Different users also have different expectations: some want dead-simple strings, others want total control, and Effect users want full typed integration.
+
+**Solution**: Create a new `@effect-native/libcrsql` package that bundles all cr-sqlite extension binaries from the official vlcn-io/cr-sqlite v0.16.3 release and offers multi-entrypoint APIs:
+- Root (zero external runtime deps): `pathToCrSqliteExtension` and `getCrSqliteExtensionPathSync()` for simple string paths.
+- Static paths subpath: `@effect-native/libcrsql/paths` exporting per-platform string constants with no side effects.
+- Effect subpath: `@effect-native/libcrsql/effect` exporting idiomatic Effect APIs and services.
 
 ## Core Requirements
 
@@ -26,8 +36,6 @@
 - **FR9**: Linux (x86_64 - linux-x86_64)
 - **FR10**: Windows (x86_64 - win-x86_64)
 - **FR11**: Windows (i686 - win-i686)
-- **FR12**: Android (aarch64-linux-android)
-- **FR13**: iOS (xcframework bundle)
 
 ## Technical Specifications
 
@@ -44,8 +52,7 @@ packages-native/libcrsql/
 │   ├── linux-x86_64/
 │   ├── win-x86_64/
 │   ├── win-i686/
-│   ├── android-aarch64/
-│   └── ios-xcframework/
+│   
 ├── test/
 │   └── index.test.ts
 └── [standard Effect package configs]
@@ -53,10 +60,21 @@ packages-native/libcrsql/
 
 ### API Design
 ```typescript
-// Primary API - platform auto-detection
+// Primary API (root, zero external deps) - platform auto-detection
 export declare const pathToCrSqliteExtension: string
+export declare const getCrSqliteExtensionPathSync: (platform?: Platform) => string
 
-// Advanced API - explicit platform selection
+// Static paths (no side effects)
+// import { darwin_aarch64, linux_x86_64, ... } from "@effect-native/libcrsql/paths"
+export declare const darwin_aarch64: string
+export declare const darwin_x86_64: string
+export declare const linux_aarch64: string
+export declare const linux_x86_64: string
+export declare const win_x86_64: string
+export declare const win_i686: string
+
+// Effect API (optional subpath)
+// import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
 export declare const getCrSqliteExtensionPath: (platform?: Platform) => Effect.Effect<string, PlatformNotSupportedError>
 
 // Platform type definition
@@ -67,8 +85,6 @@ export type Platform =
   | "linux-x86_64"
   | "win-x86_64"
   | "win-i686"
-  | "android-aarch64"
-  | "ios-xcframework"
 
 // Error types
 export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{
@@ -82,8 +98,16 @@ export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupp
 import {pathToCrSqliteExtension} from "@effect-native/libcrsql"
 db.loadExtension(pathToCrSqliteExtension)
 
+// Simple sync API with explicit platform
+import {getCrSqliteExtensionPathSync} from "@effect-native/libcrsql"
+db.loadExtension(getCrSqliteExtensionPathSync("linux-x86_64"))
+
+// Power user: static paths, no side effects
+import { linux_x86_64 } from "@effect-native/libcrsql/paths"
+db.loadExtension(linux_x86_64)
+
 // Effect-based usage with error handling
-import {getCrSqliteExtensionPath} from "@effect-native/libcrsql"
+import {getCrSqliteExtensionPath} from "@effect-native/libcrsql/effect"
 
 const program = Effect.gen(function* () {
   const extensionPath = yield* getCrSqliteExtensionPath()
@@ -99,7 +123,7 @@ const program = Effect.gen(function* () {
 - **AC2**: Import `{pathToCrSqliteExtension}` returns valid file path for current platform
 - **AC3**: Returned path points to working cr-sqlite extension binary
 - **AC4**: Extension loads successfully in SQLite with `loadExtension()`
-- **AC5**: All 8 supported platforms have working binaries included
+- **AC5**: All 6 supported platforms have working binaries included (macOS arm64/x64, Linux arm64/x64, Windows x64/i686)
 
 ### Quality Assurance
 - **AC6**: Package follows Effect library conventions and patterns
