@@ -15,7 +15,7 @@ const targets = [
   },
   {
     id: "darwin-x86_64",
-    build: ["nix", "build", "nixpkgs#sqlite.out", "--print-out-paths"],
+    build: ["nix", "build", "nixpkgs#legacyPackages.x86_64-darwin.sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.dylib$/,
     dest: "packages-native/libsqlite/lib/darwin-x86_64/libsqlite3.dylib"
   },
