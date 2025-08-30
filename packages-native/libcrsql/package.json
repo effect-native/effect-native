@@ -21,27 +21,9 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    ".": {
-      "types": "./src/index.ts",
-      "browser": "./src/browser-unsupported.ts",
-      "import": "./src/index.ts",
-      "require": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
-    "./paths": {
-      "types": "./src/paths.ts",
-      "browser": "./src/browser-unsupported.ts",
-      "import": "./src/paths.ts",
-      "require": "./src/paths.ts",
-      "default": "./src/paths.ts"
-    },
-    "./effect": {
-      "types": "./src/effect.ts",
-      "browser": "./src/browser-unsupported.ts",
-      "import": "./src/effect.ts",
-      "require": "./src/effect.ts",
-      "default": "./src/effect.ts"
-    },
+    ".": "./src/index.ts",
+    "./paths": "./src/paths.ts",
+    "./effect": "./src/effect.ts",
     "./internal/*": null
   },
   "scripts": {

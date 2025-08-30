@@ -28,7 +28,9 @@ export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupp
    * @since 0.16.3
    */
   get message() {
-    return `Platform "${this.platform}" is not supported. Detected: ${this.detectedPlatform}-${this.detectedArch}. Supported: ${this.supportedPlatforms.join(", ")}`
+    return `Platform "${this.platform}" is not supported. Detected: ${this.detectedPlatform}-${this.detectedArch}. Supported: ${
+      this.supportedPlatforms.join(", ")
+    }`
   }
 }
 

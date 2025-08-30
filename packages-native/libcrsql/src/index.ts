@@ -8,8 +8,11 @@ import { fileURLToPath } from "node:url"
 import {
   buildRelativeLibraryPath,
   detectPlatform,
-  isSupportedPlatform
+  isSupportedPlatform,
+  SUPPORTED_PLATFORMS as _SUPPORTED_PLATFORMS
 } from "./platform.js"
+
+import type { Platform as _Platform } from "./platform.js"
 
 /**
  * Return absolute path to cr-sqlite extension binary for the given or detected platform.
@@ -70,9 +73,6 @@ export const getCrSqliteExtensionPathSync = (platform?: Platform): string => {
  * console.log(pathToCrSqliteExtension)
  */
 export const pathToCrSqliteExtension: string = getCrSqliteExtensionPathSync()
-
-import type { Platform as _Platform } from "./platform.js"
-import { SUPPORTED_PLATFORMS as _SUPPORTED_PLATFORMS } from "./platform.js"
 
 /**
  * Supported platform-arch identifiers.
