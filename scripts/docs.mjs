@@ -3,25 +3,25 @@ import * as Path from "node:path"
 
 function packages() {
   const packagesInMain = Fs.readdirSync("packages")
-  const packagesInAi = Fs.readdirSync("packages/ai").map((dir) => ({ 
+  const packagesInAi = Fs.readdirSync("packages/ai").map((dir) => ({
     name: Path.join("ai", dir),
     basePath: Path.join("packages", "ai", dir)
   }))
-  
+
   const packagesInNative = Fs.existsSync("packages-native")
     ? Fs.readdirSync("packages-native").map((dir) => ({
-        name: Path.join("native", dir), // Safe identifier without ../
-        basePath: Path.join("packages-native", dir)
-      }))
+      name: Path.join("native", dir), // Safe identifier without ../
+      basePath: Path.join("packages-native", dir)
+    }))
     : []
 
-  const mainPackages = packagesInMain.map(dir => ({
+  const mainPackages = packagesInMain.map((dir) => ({
     name: dir,
     basePath: Path.join("packages", dir)
   }))
 
   return [...mainPackages, ...packagesInAi, ...packagesInNative]
-    .filter(pkg => Fs.existsSync(Path.join(pkg.basePath, "docs/modules")))
+    .filter((pkg) => Fs.existsSync(Path.join(pkg.basePath, "docs/modules")))
 }
 
 function pkgName(pkg) {
@@ -88,7 +88,7 @@ packages().forEach((pkg, i) => {
     const target = Path.join("docs", pkg.name)
     const resolvedTarget = Path.resolve(target)
     const docsRoot = Path.resolve("docs")
-    
+
     if (!resolvedTarget.startsWith(docsRoot + Path.sep)) {
       throw new Error(`Unsafe deletion target: ${target} resolves outside docs/`)
     }
