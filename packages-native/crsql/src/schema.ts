@@ -1,28 +1,85 @@
+/**
+ * Schema definitions for CR-SQLite change tracking and serialization.
+ *
+ * This module provides Effect Schema definitions for CR-SQLite data structures,
+ * including change rows, tracked peers, and various identifier types used
+ * throughout the CR-SQLite system.
+ *
+ * @since 1.0.0
+ * @example
+ * ```typescript
+ * import * as Schema from "@effect-native/crsql/schema"
+ * import { Schema as S } from "effect"
+ *
+ * // Validate a change row from CR-SQLite
+ * const changeRow = {
+ *   table: "users",
+ *   pk: "1A2B3C4D",
+ *   cid: "name",
+ *   val: "Alice",
+ *   val_type: "text",
+ *   col_version: "1",
+ *   db_version: "1",
+ *   site_id: "A1B2C3D4E5F6789012345678ABCDEF90",
+ *   cl: 0,
+ *   seq: 0
+ * }
+ *
+ * const decoded = S.decodeUnknownSync(Schema.ChangeRowSerialized)(changeRow)
+ * ```
+ */
 import * as S from "effect/Schema"
 
-// Basic hex string (uppercase or lowercase) used for site_id and pk
+/**
+ * Basic hex string pattern (uppercase or lowercase) used for site_id and pk values.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
 
-// SiteId is 16 bytes => 32 hex chars
+/**
+ * Site ID as a 32-character hex string (16 bytes).
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const SiteIdHex = S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/))
+
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type SiteIdHex = S.Schema.Type<typeof SiteIdHex>
 
-// Version is a bigint serialized as a (base-10) string.
-//
-// There are generally two viable approaches for version fields in this codebase:
-// 1) Transport (string) only: keep versions as base-10 strings everywhere (IO boundaries and in code).
-//    - pro: avoids bigint parsing; matches what SQL returns via CAST(... AS TEXT)
-//    - con: consumers must parse to bigint for arithmetic/comparisons
-// 2) Parsed (bigint) in code + string at IO: use S.BigInt to decode a string -> bigint and encode bigint -> string.
-//    - pro: safe arithmetic in code; precise type
-//    - con: requires a transform step at IO boundaries
-//
-// In "Serialized" schemas we stick to strings to faithfully represent what crosses the boundary, then callers can
-// optionally transform to a parsed representation using S.BigInt (see commented example below).
+/**
+ * Version string schema for CR-SQLite version fields.
+ *
+ * Represents a bigint serialized as a base-10 string. There are two viable approaches
+ * for version fields in this codebase:
+ *
+ * 1) Transport (string) only: keep versions as base-10 strings everywhere
+ *    - Pro: avoids bigint parsing; matches SQL CAST(... AS TEXT) output
+ *    - Con: consumers must parse to bigint for arithmetic/comparisons
+ *
+ * 2) Parsed (bigint) in code + string at IO: use S.BigInt transformations
+ *    - Pro: safe arithmetic in code; precise type
+ *    - Con: requires transform step at IO boundaries
+ *
+ * In "Serialized" schemas we use strings to faithfully represent boundary data.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const VersionString = S.String.pipe(
   S.pattern(/^[0-9]+$/),
   S.annotations({ identifier: "BigIntString", description: "bigint encoded as a base-10 string" })
 )
+
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type VersionString = S.Schema.Type<typeof VersionString>
 
 // Example for a parsed variant (not exported):
@@ -31,21 +88,42 @@ export type VersionString = S.Schema.Type<typeof VersionString>
 //   type Version = S.Schema.Type<typeof Version> // bigint in code
 //   type VersionEncoded = S.Schema.Encoded<typeof Version> // string at the boundary
 
-// Column value type from SQLite typeof(): 'null' | 'text' | 'integer' | 'real' | 'blob'
+/**
+ * SQLite column value type from typeof() function.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const SqlValueType = S.Literal("null", "text", "integer", "real", "blob")
 
-// Simple SQL identifier: starts with letter or underscore, followed by letters, digits, or underscores
+/**
+ * Simple SQL identifier pattern.
+ *
+ * Must start with letter or underscore, followed by letters, digits, or underscores.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
 
-// Pre-serialized crsql_changes row for transport (IO boundary shape)
-// - pk: hex string of BLOB pk
-// - val: null | string | number
-//     - if val_type === 'blob' then `val` is a hex string (SQL hex(val))
-//     - if val_type in ('integer', 'real') then `val` is a number
-//     - if val_type === 'text' then `val` is a string
-// - col_version/db_version: string (CAST AS TEXT in SQL) — bigint encoded as base-10 string
-// - site_id: hex string for site identity
-// - cl/seq: non-negative integers
+/**
+ * Pre-serialized crsql_changes row for transport (IO boundary shape).
+ *
+ * Represents a change row as returned by CR-SQLite with all fields serialized
+ * for transport across boundaries:
+ *
+ * - `pk`: hex string of BLOB primary key
+ * - `val`: null | string | number based on val_type:
+ *   - if val_type === 'blob' then `val` is a hex string (SQL hex(val))
+ *   - if val_type in ('integer', 'real') then `val` is a number
+ *   - if val_type === 'text' then `val` is a string
+ * - `col_version`/`db_version`: bigint encoded as base-10 string (CAST AS TEXT in SQL)
+ * - `site_id`: hex string for site identity
+ * - `cl`/`seq`: non-negative integers
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const ChangeRowSerialized = S.Struct({
   table: Identifier.pipe(
     S.annotations({ description: "CRR table name (SQL identifier)" })
@@ -94,18 +172,31 @@ export const ChangeRowSerialized = S.Struct({
   })
 )
 
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type ChangeRowSerialized = S.Schema.Type<typeof ChangeRowSerialized>
 
-// crsql_tracked_peers row (transport shape)
-// - site_id: hex string (16 bytes)
-// - version: string (CAST AS TEXT in SQL) -- bigint as string
-// - seq: number (integer)
-// Pre-serialized tracked peer row for transport (per-peer cursor)
-// - version is bigint as string; seq is non-negative integer
+/**
+ * Pre-serialized crsql_tracked_peers row for transport (per-peer cursor).
+ *
+ * Represents a tracked peer as returned by CR-SQLite with serialized fields:
+ * - `site_id`: hex string (16 bytes)
+ * - `version`: bigint encoded as base-10 string (CAST AS TEXT in SQL)
+ * - `seq`: non-negative integer
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const TrackedPeerSerialized = S.Struct({
   site_id: SiteIdHex,
   version: VersionString,
   seq: S.NonNegativeInt
 })
 
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type TrackedPeerSerialized = S.Schema.Type<typeof TrackedPeerSerialized>

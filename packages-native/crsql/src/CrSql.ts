@@ -1,3 +1,37 @@
+/**
+ * CR-SQLite service for conflict-free replicated database operations.
+ *
+ * This module provides a high-level service interface for working with CR-SQLite
+ * databases, including operations for:
+ * - Getting site identifiers and database versions
+ * - Pulling and applying change sets for synchronization
+ * - Managing peer tracking for distributed replication
+ *
+ * All operations are Effect-based for composable error handling and dependency injection.
+ *
+ * @since 1.0.0
+ * @example
+ * ```typescript
+ * import * as CrSql from "@effect-native/crsql"
+ * import { Effect, Layer } from "effect"
+ * import { SqliteClient } from "@effect/sql-sqlite-node"
+ *
+ * const program = Effect.gen(function* () {
+ *   const siteId = yield* CrSql.getSiteIdHex
+ *   const version = yield* CrSql.getDbVersion
+ *   const changes = yield* CrSql.pullChanges("0")
+ *
+ *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
+ * })
+ *
+ * const SqlLive = SqliteClient.layer({
+ *   filename: "database.db",
+ *   transformQueryNames: Config.literal("camelCase")
+ * })
+ *
+ * Effect.runPromise(program.pipe(Effect.provide(SqlLive)))
+ * ```
+ */
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as Effect from "effect/Effect"
 import * as CrSqlErrors from "./errors.js"
@@ -14,14 +48,17 @@ import type * as CrSqlSchema from "./schema.js"
  * Read via `hex(crsql_site_id())` to match the transport shape.
  *
  * @example
+ * ```typescript
  * import * as CrSql from "@effect-native/crsql"
  * import { Effect } from "effect"
  *
  * const siteId = Effect.gen(function* () {
  *   return yield* CrSql.getSiteIdHex
  * })
+ * ```
  *
- * @since 0.0.0
+ * @since 1.0.0
+ * @category Operations
  */
 export const getSiteIdHex = Effect.fn("@effect-native/crsql/getSiteIdHex")(function*() {
   const sql = yield* SqlClient.SqlClient
@@ -41,14 +78,17 @@ export const getSiteIdHex = Effect.fn("@effect-native/crsql/getSiteIdHex")(funct
  * to TEXT avoids 64‑bit precision issues in JavaScript.
  *
  * @example
+ * ```typescript
  * import * as CrSql from "@effect-native/crsql"
  * import { Effect } from "effect"
  *
  * const version = Effect.gen(function* () {
  *   return yield* CrSql.getDbVersion
  * })
+ * ```
  *
- * @since 0.0.0
+ * @since 1.0.0
+ * @category Operations
  */
 export const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(function*() {
   const sql = yield* SqlClient.SqlClient
@@ -73,6 +113,7 @@ export const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(funct
  * @param excludeSites - optional list of site IDs (hex) to exclude
  *
  * @example
+ * ```typescript
  * import * as CrSql from "@effect-native/crsql"
  * import { Effect } from "effect"
  *
@@ -80,8 +121,10 @@ export const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(funct
  *   const since = yield* CrSql.getDbVersion
  *   return yield* CrSql.pullChanges(since, ["A1B2C3D4E5F6789012345678ABCDEF90"])
  * })
+ * ```
  *
- * @since 0.0.0
+ * @since 1.0.0
+ * @category Operations
  */
 export const pullChanges = Effect.fn("@effect-native/crsql/pullChanges")(function*(
   since: CrSqlSchema.VersionString = "0",
@@ -149,13 +192,16 @@ export const pullChanges = Effect.fn("@effect-native/crsql/pullChanges")(functio
  * @param changes - array of pre‑serialized change rows to apply
  *
  * @example
+ * ```typescript
  * import * as CrSql from "@effect-native/crsql"
  * import { Effect } from "effect"
  *
  * const apply = (rows: ReadonlyArray<CrSql.schema.ChangeRowSerialized>) =>
  *   CrSql.applyChanges(rows)
+ * ```
  *
- * @since 0.0.0
+ * @since 1.0.0
+ * @category Operations
  */
 export const applyChanges = Effect.fn("@effect-native/crsql/applyChanges")(function*(
   changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
@@ -202,7 +248,18 @@ export const applyChanges = Effect.fn("@effect-native/crsql/applyChanges")(funct
  * @param version - peer database version (base‑10 string)
  * @param seq - peer sequence number associated with the version
  *
- * @since 0.0.0
+ * @example
+ * ```typescript
+ * import * as CrSql from "@effect-native/crsql"
+ * import { Effect } from "effect"
+ *
+ * const updatePeer = Effect.gen(function* () {
+ *   yield* CrSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 0)
+ * })
+ * ```
+ *
+ * @since 1.0.0
+ * @category Operations
  */
 export const setPeerVersion = Effect.fn("@effect-native/crsql/setPeerVersion")(function*(
   siteId: CrSqlSchema.SiteIdHex,
@@ -225,7 +282,21 @@ export const setPeerVersion = Effect.fn("@effect-native/crsql/setPeerVersion")(f
  * @param siteId - peer site identifier (hex, 16 bytes)
  * @returns `{ version: string, seq: number } | null`
  *
- * @since 0.0.0
+ * @example
+ * ```typescript
+ * import * as CrSql from "@effect-native/crsql"
+ * import { Effect } from "effect"
+ *
+ * const checkPeer = Effect.gen(function* () {
+ *   const peerInfo = yield* CrSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
+ *   if (peerInfo) {
+ *     console.log(`Peer version: ${peerInfo.version}, seq: ${peerInfo.seq}`)
+ *   }
+ * })
+ * ```
+ *
+ * @since 1.0.0
+ * @category Operations
  */
 export const getPeerVersion = Effect.fn("@effect-native/crsql/getPeerVersion")(function*(
   siteId: CrSqlSchema.SiteIdHex
