@@ -4,7 +4,6 @@
  */
 export * as errors from "./errors.js"
 
-
 export * as schema from "./schema.js"
 
 /**
@@ -27,4 +26,4 @@ export * as schema from "./schema.js"
  *
  * @since 0.0.0
  */
-export * as service from "./service.js"
+export * as CrSql from "./service.js"
