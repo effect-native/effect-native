@@ -9,6 +9,11 @@
  *
  * All operations are Effect-based for composable error handling and dependency injection.
  *
+ * **Security Note**: This module uses Effect SQL's tagged template literals,
+ * which automatically handle parameterization and SQL injection protection.
+ * The `${variable}` syntax is safe - Effect SQL converts these to proper
+ * parameterized queries under the hood.
+ *
  * @since 1.0.0
  * @example
  * ```typescript

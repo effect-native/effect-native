@@ -9,6 +9,11 @@
  *
  * All operations are Effect-based for composable error handling and dependency injection.
  *
+ * **Security Note**: This module uses Effect SQL's tagged template literals,
+ * which automatically handle parameterization and SQL injection protection.
+ * The `${variable}` syntax is safe - Effect SQL converts these to proper
+ * parameterized queries under the hood.
+ *
  * @since 1.0.0
  * @example
  * ```typescript
@@ -63,6 +68,16 @@ export const getSiteIdHex = Effect.fn("@effect-native/crsql/getSiteIdHex")(funct
     Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
   )
   const rows = yield* sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`
+
+  // CR-SQLite always returns exactly one row with site_id, but adding defensive check
+  if (rows.length === 0) {
+    return yield* Effect.fail(
+      new CrSqlErrors.CrSqliteExtensionMissing({
+        cause: new Error("crsql_site_id() returned no rows")
+      })
+    )
+  }
+
   return rows[0].site_id
 })()
 
@@ -92,6 +107,16 @@ export const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(funct
   const rows = yield* sql<
     { version: CrSqlSchema.VersionString }
   >`SELECT CAST(crsql_db_version() AS TEXT) AS version`
+
+  // CR-SQLite always returns exactly one row with version, but adding defensive check
+  if (rows.length === 0) {
+    return yield* Effect.fail(
+      new CrSqlErrors.CrSqliteExtensionMissing({
+        cause: new Error("crsql_db_version() returned no rows")
+      })
+    )
+  }
+
   return rows[0].version
 })()
 
@@ -107,6 +132,7 @@ export const getDbVersion = Effect.fn("@effect-native/crsql/getDbVersion")(funct
  * - Results are ordered by `(db_version, seq)` for a deterministic total order
  *
  * @param since - lower bound (exclusive) for `db_version` (default "0")
+ *                Safe from SQL injection via Effect SQL's automatic parameterization
  * @param excludeSites - optional list of site IDs (hex) to exclude
  *
  * @example

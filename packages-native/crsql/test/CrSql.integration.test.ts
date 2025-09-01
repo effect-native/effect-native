@@ -15,6 +15,7 @@ import type { Connection } from "@effect/sql/SqlConnection"
 import * as Statement from "@effect/sql/Statement"
 import { assert, describe, it, layer } from "@effect/vitest"
 import { Effect, Layer, Stream } from "effect"
+import * as Duration from "effect/Duration"
 import * as Schema from "effect/Schema"
 
 const tmpDBPath = Effect.gen(function*() {
@@ -41,12 +42,26 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
         "SELECT hex(crsql_site_id())"
       )
 
-      // If exit code is 0, sqlite-cr and CR-SQLite are working
-      assert.strictEqual(
-        yield* executor.exitCode(command),
-        0,
-        "sqlite-cr should execute crsql_site_id() successfully"
+      // Add timeout and better error reporting
+      const result = yield* executor.exitCode(command).pipe(
+        Effect.timeout(Duration.seconds(25)),
+        Effect.catchAll((error) =>
+          Effect.gen(function*() {
+            // Get stderr for debugging
+            const stderr = yield* executor.stderr(command).pipe(Effect.ignore)
+            const stdout = yield* executor.stdout(command).pipe(Effect.ignore)
+
+            return Effect.fail(
+              new Error(
+                `sqlite-cr command failed or timed out. Error: ${error}. Stdout: ${stdout}. Stderr: ${stderr}`
+              )
+            )
+          })
+        )
       )
+
+      // If exit code is 0, sqlite-cr and CR-SQLite are working
+      assert.strictEqual(result, 0, "sqlite-cr should execute crsql_site_id() successfully")
     }))
 
   it.scoped("gets a valid site ID from CR-SQLite", () =>
@@ -71,7 +86,10 @@ layer(NodeContext.layer)("CrSql Integration Tests", (it) => {
         site_id: CrSql.schema.SiteIdHex
       })))
 
-      const [{ site_id }] = yield* executor.string(command).pipe(Effect.flatMap(Schema.decode(schema)))
+      const [{ site_id }] = yield* executor.string(command).pipe(
+        Effect.timeout(Duration.seconds(25)),
+        Effect.flatMap(Schema.decode(schema))
+      )
 
       assert.ok(Schema.is(CrSql.schema.SiteIdHex)(site_id), "site_id should be valid SiteIdHex")
     }))
@@ -112,6 +130,7 @@ const TestSqlClientLayer = Layer.scoped(
           )
 
           const output = yield* executor.string(command).pipe(
+            Effect.timeout(Duration.seconds(25)),
             Effect.orDieWith((cause) => new Error(`DEFECT: Failed to execute SQL with sqlite-cr cli tool`, { cause }))
           )
 
