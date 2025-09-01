@@ -73,8 +73,16 @@ nav_order: ${order}
 }
 
 packages().forEach((pkg, i) => {
-  Fs.rmSync(Path.join("docs", pkg), { recursive: true, force: true })
-  Fs.mkdirSync(Path.join("docs", pkg), { recursive: true })
-  copyFiles(pkg)
-  generateIndex(pkg, i + 2)
+  const basePath = pkg.startsWith("../packages-native/")
+    ? Path.join("packages-native", pkg.replace("../packages-native/", ""))
+    : Path.join("packages", pkg)
+  const docsModulesPath = Path.join(basePath, "docs/modules")
+  
+  // Only process packages that have docs/modules directory
+  if (Fs.existsSync(docsModulesPath)) {
+    Fs.rmSync(Path.join("docs", pkg), { recursive: true, force: true })
+    Fs.mkdirSync(Path.join("docs", pkg), { recursive: true })
+    copyFiles(pkg)
+    generateIndex(pkg, i + 2)
+  }
 })
