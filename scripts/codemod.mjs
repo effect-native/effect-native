@@ -5,7 +5,7 @@ import * as Path from "node:path"
 
 // Look up files in all workspace packages including those nested in
 // sub-packages (e.g. `packages/ai/openapi`) and packages-native.
-const pattern = "{packages/{*,*/*},packages-native/*}/src/**/*.ts"
+const pattern = "packages-native/*/src/**/*.ts"
 
 const paths = Glob.globSync(pattern, {
   ignore: ["**/internal/**"]
