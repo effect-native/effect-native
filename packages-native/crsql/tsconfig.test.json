@@ -2,14 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "include": ["test"],
   "references": [
-    { "path": "tsconfig.src.json" },
-    { "path": "../../packages/vitest" },
-    { "path": "../../packages/effect/tsconfig.src.json" },
-    { "path": "../../packages/sql/tsconfig.src.json" },
-    { "path": "../../packages/sql-sqlite-node/tsconfig.src.json" },
-    { "path": "../../packages/platform/tsconfig.src.json" },
-    { "path": "../../packages/platform-node/tsconfig.src.json" },
-    { "path": "../../packages/experimental/tsconfig.src.json" }
+    { "path": "tsconfig.src.json" }
   ],
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
