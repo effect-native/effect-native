@@ -25,11 +25,8 @@
  * })
  *
  * const SqlLive = SqliteClient.layer({
- *   filename: "database.db",
- *   transformQueryNames: Config.literal("camelCase")
+ *   filename: "database.db"
  * })
- *
- * Effect.runPromise(program.pipe(Effect.provide(SqlLive)))
  * ```
  */
 import * as SqlClient from "@effect/sql/SqlClient"

@@ -11,10 +11,7 @@
  * import { Effect } from "effect"
  *
  * // Handle specific error types
- * const program = Effect.gen(function* () {
- *   // ... some CR-SQLite operation that might fail
- *   return "success"
- * }).pipe(
+ * const program = Effect.fail(new Errors.CrSqliteExtensionMissing()).pipe(
  *   Effect.catchTag("CrSqliteExtensionMissing", (error) =>
  *     Effect.succeed("handled error")
  *   )
