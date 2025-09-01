@@ -77,7 +77,7 @@ packages().forEach((pkg, i) => {
     ? Path.join("packages-native", pkg.replace("../packages-native/", ""))
     : Path.join("packages", pkg)
   const docsModulesPath = Path.join(basePath, "docs/modules")
-  
+
   // Only process packages that have docs/modules directory
   if (Fs.existsSync(docsModulesPath)) {
     Fs.rmSync(Path.join("docs", pkg), { recursive: true, force: true })
