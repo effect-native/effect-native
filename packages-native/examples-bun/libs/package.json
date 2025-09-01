@@ -15,6 +15,6 @@
   },
   "scripts": {
     "prebuild-and-run": "cd ../../libcrsql; pnpm build; cd ../libsqlite; pnpm build",
-    "build-and-run": "rm ./index; bun build --target=bun --compile --minify --sourcemap --bytecode . --outfile index && ./index"
+    "build-and-run": "rm ./index *.dylib; bun build --target=bun --compile --minify --sourcemap . --outfile index && ./index"
   }
 }

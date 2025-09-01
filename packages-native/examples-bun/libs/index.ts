@@ -1,34 +1,33 @@
-// import { getCrSqliteExtensionPathSync } from "@effect-native/libcrsql"
-// import { getLibSqlitePathSync } from "@effect-native/libsqlite"
-import { getCrSqliteExtensionPathSync } from "@effect-native/libcrsql" with { type: "macro" }
-import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
+/* eslint-disable @typescript-eslint/no-require-imports */
+// GOAL: embed and use libsqlite and crsqlite in a compiled Bun single file executable
+
 import { Database } from "bun:sqlite"
 
-async function main() {
-  console.log(
-    "pathToCrSqliteExtension",
-    (await import(getCrSqliteExtensionPathSync(), { assert: { type: "file" } })).default
-  )
-  console.log("pathToLibSqlite", (await import(getLibSqlitePathSync(), { assert: { type: "file" } })).default)
-}
+// 1. get the original paths at compile time
+import { getCrSqliteExtensionPathSync } from "@effect-native/libcrsql" with { type: "macro" }
+import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
 
-// main().catch((err) => {
-//   console.error(err)
-// })
+// 2. embed the files so they are included in the compiled binary
+// NOTE: use require to make it synchronous
+const embeddedCrSqliteExtensionPath: string = require(getCrSqliteExtensionPathSync())
+const embeddedLibSqlitePath: string = require(getLibSqlitePathSync())
 
-console.log("embeddedFiles", Bun.embeddedFiles.length, Bun.embeddedFiles.map((it) => it.name))
+// 3. enable the embedded files to be loaded by writing them out to the filesystem
+// causes bun build to include them in the compiled binary
+const embeddedCrSqliteExtensionFile = Bun.file(embeddedCrSqliteExtensionPath)
+const embeddedLibSqliteFile = Bun.file(embeddedLibSqlitePath)
 
-console.log("Using SQLite library at:", { pathToLibSqlite: getLibSqlitePathSync() })
-Database.setCustomSQLite(getLibSqlitePathSync())
+const exportedCrSqliteExtensionPath = `./.${embeddedCrSqliteExtensionFile.name}`
+const exportedLibSqlitePath = `./.${embeddedLibSqliteFile.name}`
+
+Bun.write(exportedCrSqliteExtensionPath, embeddedCrSqliteExtensionFile)
+Bun.write(exportedLibSqlitePath, embeddedLibSqliteFile)
+
+// 4. use the exported paths at runtime
+Database.setCustomSQLite(exportedLibSqlitePath)
 
 const db = new Database(":memory:")
 console.log("LibSqlite loaded successfully?", db.query("SELECT sqlite_version() AS sqliteVersion").get())
 
-try {
-  console.log("CRSQLite extension works before loading?", db.query("SELECT hex(crsql_site_id()) AS siteId").get())
-} catch (cause) {
-  console.log("CRSQLite extension works before loading?", String(cause))
-}
-db.loadExtension(getCrSqliteExtensionPathSync())
-console.log("Using CRSQLite extension at:", { pathToCrSqliteExtension: getCrSqliteExtensionPathSync() })
+db.loadExtension(exportedCrSqliteExtensionPath, "sqlite3_crsqlite_init")
 console.log("CRSQLite extension loaded successfully?", db.query("SELECT hex(crsql_site_id()) AS siteId").get())
