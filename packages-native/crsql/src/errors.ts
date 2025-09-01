@@ -12,10 +12,11 @@
  *
  * // Handle specific error types
  * const program = Effect.gen(function* () {
- *   // ... some CR-SQLite operation
+ *   // ... some CR-SQLite operation that might fail
+ *   return "success"
  * }).pipe(
  *   Effect.catchTag("CrSqliteExtensionMissing", (error) =>
- *     Effect.logError("CR-SQLite extension not loaded", error)
+ *     Effect.succeed("handled error")
  *   )
  * )
  * ```

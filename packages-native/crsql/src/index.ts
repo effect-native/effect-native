@@ -13,13 +13,13 @@
  * @example
  * ```typescript
  * import * as CrSql from "@effect-native/crsql"
- * import { Effect, Layer } from "effect"
+ * import { Config, Effect, Layer } from "effect"
  * import { SqliteClient } from "@effect/sql-sqlite-node"
  *
  * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.getSiteIdHex
- *   const version = yield* CrSql.getDbVersion
- *   const changes = yield* CrSql.pullChanges("0")
+ *   const siteId = yield* CrSql.CrSql.getSiteIdHex
+ *   const version = yield* CrSql.CrSql.getDbVersion
+ *   const changes = yield* CrSql.CrSql.pullChanges("0")
  *
  *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
  * })
@@ -48,10 +48,11 @@ export * as CrSql from "./CrSql.js"
  *
  * // Handle specific error types
  * const program = Effect.gen(function* () {
- *   // ... some CR-SQLite operation
+ *   // ... some CR-SQLite operation that might fail
+ *   return "success"
  * }).pipe(
  *   Effect.catchTag("CrSqliteExtensionMissing", (error) =>
- *     Effect.logError("CR-SQLite extension not loaded", error)
+ *     Effect.succeed("handled error")
  *   )
  * )
  * ```
