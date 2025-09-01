@@ -1,12 +1,4 @@
 /**
- * @since 0.0.0
- * @category Errors
- */
-export * as errors from "./errors.js"
-
-export * as schema from "./schema.js"
-
-/**
  * Returns this database's CR‑SQLite site identifier as a 16‑byte hex string.
  *
  * Conceptually, the site ID is a stable replica identity persisted in the
@@ -26,4 +18,13 @@ export * as schema from "./schema.js"
  *
  * @since 0.0.0
  */
-export * as CrSql from "./service.js"
+export * as CrSql from "./CrSql.js"
+
+/**
+ * @since 0.0.0
+ * @category Errors
+ */
+export * as errors from "./errors.js"
+
+
+export * as schema from "./schema.js"
