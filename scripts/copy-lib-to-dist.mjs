@@ -17,4 +17,3 @@ mkdirSync(resolve(cwd, "dist"), { recursive: true })
 rmSync(dst, { recursive: true, force: true })
 cpSync(src, dst, { recursive: true })
 console.log(`copy-lib-to-dist: copied ${src} -> ${dst}`)
-
