@@ -16,7 +16,7 @@
  *
  * @since 1.0.0
  */
-export * as CrSql from "./CrSql.js"
+export * from "./CrSql.js"
 
 /**
  * Error types for CR-SQLite operations.

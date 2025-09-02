@@ -40,7 +40,7 @@ import * as CrSqlErrors from "./CrSqlErrors.js"
 import type * as CrSqlSchema from "./CrSqlSchema.js"
 import { SqliteClient } from "./SqliteClient.js"
 
-const makeCrSql = Effect.gen(function*() {
+export const makeCrSql = Effect.gen(function*() {
   const sql = yield* SqliteClient
   yield* sql.loadExtension(yield* LibCrSql.getCrSqliteExtensionPath())
   yield* Effect.addFinalizer(() => finalize.pipe(Effect.ignore))
