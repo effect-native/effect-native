@@ -22,6 +22,7 @@
     "changeset-publish": "pnpm codemod && pnpm build && TEST_DIST= pnpm vitest && changeset publish && node scripts/postpublish-dist-tags.mjs"
   },
   "resolutions": {
+    "effect": "latest",
     "dependency-tree": "^10.0.9",
     "detective-amd": "^5.0.2",
     "detective-cjs": "^5.0.1",
