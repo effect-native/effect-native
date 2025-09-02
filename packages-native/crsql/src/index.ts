@@ -50,7 +50,7 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  * @since 1.0.0
  * @example
  * ```typescript
- * import * as Schema from "@effect-native/crsql/schema"
+ * import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
  * import { Schema as S } from "effect"
  *
  * // Validate a change row from CR-SQLite
@@ -67,7 +67,7 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  *   seq: 0
  * }
  *
- * const decoded = S.decodeUnknownSync(Schema.ChangeRowSerialized)(changeRow)
+ * const decoded = S.decodeUnknownSync(CrSqlSchema.ChangeRowSerialized)(changeRow)
  * ```
  */
 export * as CrSqlSchema from "./CrSqlSchema.js"
