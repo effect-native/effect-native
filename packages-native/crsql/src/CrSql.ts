@@ -36,9 +36,9 @@
  */
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as CrSqlErrors from "./CrSqlErrors.js"
-import type * as CrSqlSchema from "./schema.js"
-
+import type * as CrSqlSchema from "./schema.js
 /**
  * Returns this database's CR‑SQLite site identifier as a 16‑byte hex string.
  *
@@ -200,6 +200,45 @@ export const pullChanges = Effect.fn("@effect-native/crsql/pullChanges")(functio
 })
 
 /**
+ * Tears down CR‑SQLite per‑connection resources by calling `crsql_finalize()`.
+ *
+ * CR‑SQLite registers persistent prepared statements and caches when the
+ * extension loads. In some host environments, relying on the extension unload
+ * hook to clean these up is unreliable. The upstream project recommends
+ * explicitly running `SELECT crsql_finalize();` before closing the SQLite
+ * connection to finalize statements and clear caches.
+ *
+ * References:
+ * - CR‑SQLite README example: selects `crsql_finalize()` before closing
+ * - SQLite forum context on extension destructors: https://sqlite.org/forum/forumpost/c94f943821
+ * - Upstream implementation in `ext-data.c` documents intended usage
+ *
+ * Safe to call multiple times. No result rows are used.
+ *
+ * @example
+ * ```typescript
+ * import * as CrSql from "@effect-native/crsql"
+ * import { Effect } from "effect"
+ *
+ * // Close down a connection cleanly
+ * const done = Effect.gen(function* () {
+ *   // ...your work with the database...
+ *   yield* CrSql.CrSql.finalize
+ *   // then close the underlying SQLite connection
+ * })
+ * ```
+ *
+ * @since 1.0.0
+ * @category Operations
+ */
+export const finalize = Effect.fn("@effect-native/crsql/finalize")(function*() {
+  const sql = yield* SqlClient.SqlClient
+  yield* sql`SELECT crsql_finalize();`.pipe(
+    Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
+  )
+})()
+
+/**
  * Applies a batch of CR‑SQLite change rows in a single transaction.
  *
  * Inverse of {@link pullChanges}. Expects the serialized transport
@@ -334,3 +373,54 @@ export const getPeerVersion = Effect.fn("@effect-native/crsql/getPeerVersion")(f
   // Return single object if found, null if not found (consistent with integration tests)
   return rows.length > 0 ? rows[0] : null
 })
+
+const makeCrSql = Effect.gen(function*() {
+  const sql = yield* SqlClient.SqlClient
+
+  const getPeerVersion = Effect.fn("@effect-native/crsql/getPeerVersion")(function*(
+    siteId: CrSqlSchema.SiteIdHex
+  ) {
+    const rows = yield* sql<{
+      version: CrSqlSchema.VersionString
+      seq: number
+    }>`SELECT CAST(version AS TEXT) as version, seq FROM crsql_tracked_peers WHERE site_id = unhex(${siteId})`
+
+    // Return single object if found, null if not found (consistent with integration tests)
+    return rows.length > 0 ? rows[0] : null
+  })
+
+  return {
+    sql,
+    /**
+     * Reads the tracked version for a peer site from `crsql_tracked_peers`.
+     *
+     * Returns `null` when no row exists. The version is returned as a base‑10
+     * string to avoid bigint precision issues; `seq` is a non‑negative integer.
+     *
+     * @param siteId - peer site identifier (hex, 16 bytes)
+     * @returns `{ version: string, seq: number } | null`
+     *
+     * @example
+     * ```typescript
+     * import * as CrSql from "@effect-native/crsql"
+     * import { Effect } from "effect"
+     *
+     * const checkPeer = Effect.gen(function* () {
+     *   const peerInfo = yield* CrSql.CrSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
+     *   if (peerInfo) {
+     *     console.log(`Peer version: ${peerInfo.version}, seq: ${peerInfo.seq}`)
+     *   }
+     * })
+     * ```
+     *
+     * @since 1.0.0
+     * @category Operations
+     */
+    getPeerVersion
+  } as const
+})
+
+export class CrSql extends Effect.Service<CrSql>()("CrSql", {
+  accessors: true,
+  effect: makeCrSql,
+}) {}

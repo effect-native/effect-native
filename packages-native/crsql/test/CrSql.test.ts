@@ -212,16 +212,6 @@ withLayer(testLayer)("CrSql", (it) => {
       assert.strictEqual(changes[0].site_id, "C3D4E5F6789012345678ABCDEF90A1B2")
     }))
 
-  // REMOVED: "sets version for a new peer" test
-  // This test was only checking that setPeerVersion doesn't throw an error,
-  // which provides no value. The integration tests already verify that
-  // setPeerVersion actually works with real CR-SQLite.
-
-  // REMOVED: "updates version for an existing peer" test
-  // This test was checking mock data then calling setPeerVersion without
-  // verifying any actual behavior. The integration tests properly verify
-  // that setPeerVersion updates existing peers.
-
   it.scoped("retrieves version for a known peer", () =>
     Effect.gen(function*() {
       const result = yield* CrSql.CrSql.getPeerVersion("B2C3D4E5F6789012345678ABCDEF90A1")
@@ -233,8 +223,4 @@ withLayer(testLayer)("CrSql", (it) => {
       const result = yield* CrSql.CrSql.getPeerVersion("UNKNOWN012345678ABCDEF90A1B2C3D4")
       assert.strictEqual(result, null)
     }))
-
-  // REMOVED: "demonstrates setPeerVersion and getPeerVersion working together" test
-  // This test was trying to test everything and testing nothing well.
-  // The behavior is already properly tested in the integration tests.
 })

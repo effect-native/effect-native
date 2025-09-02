@@ -195,15 +195,19 @@ importers:
       '@effect/sql':
         specifier: ^0.44.2
         version: 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
-      '@effect/sql-sqlite-node':
-        specifier: ^0.45.1
-        version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
       '@effect/vitest':
         specifier: ^0.25.1
         version: 0.25.1(effect@3.17.9)(vitest@3.2.4)
       effect:
         specifier: ^3.17.9
         version: 3.17.9
+    optionalDependencies:
+      '@effect/sql-sqlite-bun':
+        specifier: ^0.45.1
+        version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
+      '@effect/sql-sqlite-node':
+        specifier: ^0.45.1
+        version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
     publishDirectory: dist
 
   packages-native/libcrsql:
@@ -251,7 +255,7 @@ importers:
         version: 0.5.0(@effect/ai@0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10))(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)
       '@effect/ai-openai':
         specifier: latest
-        version: 0.29.0(@effect/ai@0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10))(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)
+        version: 0.29.1(@effect/ai@0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10))(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)
       '@effect/cli':
         specifier: latest
         version: 0.69.2(@effect/platform@0.90.6(effect@3.17.10))(@effect/printer-ansi@0.45.0(@effect/typeclass@0.36.0(effect@3.17.10))(effect@3.17.10))(@effect/printer@0.45.0(@effect/typeclass@0.36.0(effect@3.17.10))(effect@3.17.10))(effect@3.17.10)
@@ -263,7 +267,7 @@ importers:
         version: 0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1)
       '@effect/opentelemetry':
         specifier: latest
-        version: 0.56.4(@effect/platform@0.90.6(effect@3.17.10))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.36.0)(effect@3.17.10)
+        version: 0.56.5(@effect/platform@0.90.6(effect@3.17.10))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.36.0)(effect@3.17.10)
       '@effect/platform':
         specifier: latest
         version: 0.90.6(effect@3.17.10)
@@ -833,13 +837,13 @@ packages:
       '@effect/platform': ^0.90.2
       effect: ^3.17.7
 
-  '@effect/ai-openai@0.29.0':
-    resolution: {integrity: sha512-sjltriXdfFZ+mDZfG3NhSiOVuAQHuFlewozVBXWg7FYTGfI0QLRM+OUvCMrSOnaj+yvmEOf88CWMjQBdE0cBTw==}
+  '@effect/ai-openai@0.29.1':
+    resolution: {integrity: sha512-DkkOEOfGH8AvY4MDMT2vLQrsJEYe3fE9AzGUjU3HyVzgS8m/rZ+ohE0N+RieQ0qHDPNIOAqtiX2xtYcj1314Zg==}
     peerDependencies:
       '@effect/ai': ^0.26.0
       '@effect/experimental': ^0.54.6
-      '@effect/platform': ^0.90.2
-      effect: ^3.17.7
+      '@effect/platform': ^0.90.6
+      effect: ^3.17.10
 
   '@effect/ai@0.26.0':
     resolution: {integrity: sha512-zqnF0Ne+bctTVTysR7P1y7kM8M1h6PzdemDpcxe3lwDjl3HxsrijCr4YGvw9styiNscPTMYMZAKXti11mtnr5g==}
@@ -903,10 +907,10 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/opentelemetry@0.56.4':
-    resolution: {integrity: sha512-Gwui1u/n1zgkPAt6oDdmpHVxkO7zxukRQU+Lj/6+C5tjt+O7mFLZD6LJWHnA68l2Rmt+vvfkYHk+JgrPNziwOA==}
+  '@effect/opentelemetry@0.56.5':
+    resolution: {integrity: sha512-H6/GJup83i13NydSzhVvO/IrjNyANc6sMVVIYQ3EGQfwqek6VLSHF7KuaPDmbYB1tvJ1o17nwFr/nq7IoCa15w==}
     peerDependencies:
-      '@effect/platform': ^0.90.5
+      '@effect/platform': ^0.90.6
       '@opentelemetry/api': ^1.9
       '@opentelemetry/resources': ^2.0.0
       '@opentelemetry/sdk-logs': ^0.203.0
@@ -915,7 +919,7 @@ packages:
       '@opentelemetry/sdk-trace-node': ^2.0.0
       '@opentelemetry/sdk-trace-web': ^2.0.0
       '@opentelemetry/semantic-conventions': ^1.33.0
-      effect: ^3.17.8
+      effect: ^3.17.10
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
@@ -6698,7 +6702,7 @@ snapshots:
       '@effect/platform': 0.90.6(effect@3.17.10)
       effect: 3.17.10
 
-  '@effect/ai-openai@0.29.0(@effect/ai@0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10))(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)':
+  '@effect/ai-openai@0.29.1(@effect/ai@0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10))(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)':
     dependencies:
       '@effect/ai': 0.26.0(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10)
       '@effect/experimental': 0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1)
@@ -6795,7 +6799,7 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/opentelemetry@0.56.4(@effect/platform@0.90.6(effect@3.17.10))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.36.0)(effect@3.17.10)':
+  '@effect/opentelemetry@0.56.5(@effect/platform@0.90.6(effect@3.17.10))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.203.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.36.0)(effect@3.17.10)':
     dependencies:
       '@effect/platform': 0.90.6(effect@3.17.10)
       '@opentelemetry/semantic-conventions': 1.36.0
@@ -6994,6 +6998,14 @@ snapshots:
       '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)
       effect: 3.17.10
 
+  '@effect/sql-sqlite-bun@0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)':
+    dependencies:
+      '@effect/experimental': 0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1)
+      '@effect/platform': 0.90.6(effect@3.17.9)
+      '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
+      effect: 3.17.9
+    optional: true
+
   '@effect/sql-sqlite-do@0.22.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(effect@3.17.10)':
     dependencies:
       '@effect/experimental': 0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1)
@@ -7015,6 +7027,7 @@ snapshots:
       '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
       better-sqlite3: 11.10.0
       effect: 3.17.9
+    optional: true
 
   '@effect/sql-sqlite-react-native@0.47.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.90.6(effect@3.17.10))(effect@3.17.10))(@op-engineering/op-sqlite@7.1.0(react-native@0.80.1(@babel/core@7.28.0)(@types/react@19.1.8)(react@19.1.0))(react@19.1.0))(effect@3.17.10)':
     dependencies:
@@ -7051,7 +7064,7 @@ snapshots:
   '@effect/vitest@0.25.1(effect@3.17.10)(vitest@3.2.4)':
     dependencies:
       effect: 3.17.10
-      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@24.0.14)(@vitest/browser@3.2.4)(happy-dom@17.6.3)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
+      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@22.16.4)(@vitest/browser@3.2.4)(happy-dom@17.6.3)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
 
   '@effect/vitest@0.25.1(effect@3.17.9)(vitest@3.2.4)':
     dependencies:

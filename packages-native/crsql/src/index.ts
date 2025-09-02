@@ -35,6 +35,15 @@
  * ```
  */
 export * as CrSql from "./CrSql.js"
+/**
+ * CR-SQLite compatible Sqlite client tag and type.
+ *
+ * Provides the `SqliteClient` tag which augments the base `@effect/sql` client
+ * with a `loadExtension` method required to activate CR-SQLite.
+ *
+ * @since 1.0.0
+ */
+export * as CrSqlClient from "./CrSqlClient.js"
 
 /**
  * Error types for CR-SQLite operations.
