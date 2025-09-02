@@ -71,3 +71,5 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  * ```
  */
 export * as CrSqlSchema from "./CrSqlSchema.js"
+
+export * as SqliteClient from "./SqliteClient.js"

@@ -12,10 +12,11 @@
  *
  * @since 0.0.0
  */
-import type * as SqlClient from "@effect/sql/SqlClient"
+import * as SqlClient from "@effect/sql/SqlClient"
 import type { SqlError } from "@effect/sql/SqlError"
-import type { Effect } from "effect"
+import { Effect, Layer } from "effect"
 import * as Context from "effect/Context"
+import * as Data from "effect/Data"
 
 /**
  * Extends the generic `SqlClient` with SQLite's `loadExtension` capability.
@@ -39,3 +40,21 @@ export interface SqliteClient extends SqlClient.SqlClient {
 export const SqliteClient = Context.GenericTag<SqliteClient>(
   "@effect-native/crsql/SqliteClient"
 )
+
+export class SqliteClientError extends Data.TaggedError("SqliteClientError")<{
+  cause: unknown
+}> {}
+
+/**
+ * @category layers
+ * @since 1.0.0
+ */
+export const layer = (client: SqliteClient) => Layer.scopedContext(Effect.succeed(Context.make(SqliteClient, client)))
+
+export const Default = Effect.gen(function*() {
+  const sql = yield* SqlClient.SqlClient
+  if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
+    return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
+  }
+  return layer(sql as SqliteClient)
+}).pipe(Layer.unwrapEffect)
