@@ -45,18 +45,18 @@ export * as CrSql from "./CrSql.js"
  * @since 1.0.0
  * @example
  * ```typescript
- * import * as Errors from "@effect-native/crsql/errors"
+ * import * as CrSqlErrors from "@effect-native/crsql/CrSqlErrors"
  * import { Effect } from "effect"
  *
  * // Handle specific error types
- * const program = Effect.fail(new Errors.CrSqliteExtensionMissing()).pipe(
+ * const program = Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing()).pipe(
  *   Effect.catchTag("CrSqliteExtensionMissing", (error) =>
  *     Effect.succeed("handled error")
  *   )
  * )
  * ```
  */
-export * as errors from "./errors.js"
+export * as CrSqlErrors from "./CrSqlErrors.js"
 
 /**
  * Schema definitions for CR-SQLite change tracking and serialization.

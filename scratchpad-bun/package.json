@@ -50,7 +50,7 @@
     "@effect/workflow": "workspace:*",
     "@effect-native/bun-test": "workspace:*",
     "@effect-native/crsql": "workspace:*",
-    "@effect-native/libsqlite": "^3.50.2-1",
+    "@effect-native/libsqlite": "workspace:*",
     "effect": "workspace:*"
   }
 }

@@ -7,11 +7,11 @@
  * @since 1.0.0
  * @example
  * ```typescript
- * import * as Errors from "@effect-native/crsql/errors"
+ * import * as CrSqlErrors from "@effect-native/crsql/CrSqlErrors"
  * import { Effect } from "effect"
  *
  * // Handle specific error types
- * const program = Effect.fail(new Errors.CrSqliteExtensionMissing()).pipe(
+ * const program = Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing()).pipe(
  *   Effect.catchTag("CrSqliteExtensionMissing", (error) =>
  *     Effect.succeed("handled error")
  *   )

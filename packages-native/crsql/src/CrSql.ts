@@ -36,7 +36,7 @@
  */
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as Effect from "effect/Effect"
-import * as CrSqlErrors from "./errors.js"
+import * as CrSqlErrors from "./CrSqlErrors.js"
 import type * as CrSqlSchema from "./schema.js"
 
 /**
@@ -230,6 +230,7 @@ export const applyChanges = Effect.fn("@effect-native/crsql/applyChanges")(funct
   changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
 ) {
   const sql = yield* SqlClient.SqlClient
+  // Ensure unhex() exists and returns something meaningful
   yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
     Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
   )
