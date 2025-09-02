@@ -15,35 +15,8 @@
  * parameterized queries under the hood.
  *
  * @since 1.0.0
- * @example
- * ```typescript
- * import * as CrSql from "@effect-native/crsql"
- * import { Config, Effect, Layer } from "effect"
- * import { SqliteClient } from "@effect/sql-sqlite-node"
- *
- * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.CrSql.getSiteIdHex
- *   const version = yield* CrSql.CrSql.getDbVersion
- *   const changes = yield* CrSql.CrSql.pullChanges("0")
- *
- *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
- * })
- *
- * const SqlLive = SqliteClient.layer({
- *   filename: "database.db"
- * })
- * ```
  */
 export * as CrSql from "./CrSql.js"
-/**
- * CR-SQLite compatible Sqlite client tag and type.
- *
- * Provides the `SqliteClient` tag which augments the base `@effect/sql` client
- * with a `loadExtension` method required to activate CR-SQLite.
- *
- * @since 1.0.0
- */
-export * as CrSqlClient from "./CrSqlClient.js"
 
 /**
  * Error types for CR-SQLite operations.
@@ -97,4 +70,4 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  * const decoded = S.decodeUnknownSync(Schema.ChangeRowSerialized)(changeRow)
  * ```
  */
-export * as schema from "./schema.js"
+export * as CrSqlSchema from "./CrSqlSchema.js"
