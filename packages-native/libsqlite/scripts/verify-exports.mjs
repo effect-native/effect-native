@@ -11,7 +11,6 @@ const root = dirname(__dirname)
 function assert(cond, msg) {
   if (!cond) {
     console.error(`verify-exports: ${msg}`)
-
     process.exit(1)
   }
 }
@@ -44,11 +43,7 @@ assert(pkgJson.exports && pkgJson.exports["./effect"], "exports[\"./effect\"] no
 
 await import(pathToFileURL(distEsm).href).catch((e) => {
   console.error("verify-exports: ESM import failed:", e)
-
   process.exit(1)
 })
-
-// Optionally, consumers may use CJS entry via the folder package. We don't
-// assert it here due to Node ESM/CJS loader edge-cases in monorepos.
 
 console.log("verify-exports: OK")

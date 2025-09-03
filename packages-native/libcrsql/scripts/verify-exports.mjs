@@ -11,7 +11,6 @@ const root = dirname(__dirname) // package root
 function assert(cond, msg) {
   if (!cond) {
     console.error(`verify-exports: ${msg}`)
-
     process.exit(1)
   }
 }
@@ -50,9 +49,5 @@ await import(esmUrl).catch((e) => {
   console.error("verify-exports: ESM import failed:", e)
   process.exit(1)
 })
-
-// Also verify CJS require works
-// Optionally, consumers may use CJS entry via the folder package. We don't
-// assert it here due to Node ESM/CJS loader edge-cases in monorepos.
 
 console.log("verify-exports: OK")

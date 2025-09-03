@@ -54,6 +54,16 @@ jobs:
         uses: ./.github/actions/setup
       - uses: oven-sh/setup-bun@v1
         if: matrix.runtime == 'Bun'
+  verify-subpaths:
+    name: Verify Subpaths
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - name: Verify effect subpath builds
+        run: pnpm verify-subpaths
         with:
           bun-version: 1.0.25
       - name: Test
