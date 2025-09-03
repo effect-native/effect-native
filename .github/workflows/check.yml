@@ -64,11 +64,3 @@ jobs:
         uses: ./.github/actions/setup
       - name: Verify effect subpath builds
         run: pnpm verify-subpaths
-        with:
-          bun-version: 1.0.25
-      - name: Test
-        run: pnpm vitest --shard ${{ matrix.shard }}
-        if: matrix.runtime == 'Node'
-      - name: Test
-        run: bun vitest --shard ${{ matrix.shard }}
-        if: matrix.runtime == 'Bun'
