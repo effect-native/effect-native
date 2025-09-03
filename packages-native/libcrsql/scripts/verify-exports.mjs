@@ -1,6 +1,7 @@
 /* eslint-env node */
 /* global console, process */
 import { existsSync, readFileSync } from "node:fs"
+import { createRequire } from "node:module"
 import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
@@ -40,5 +41,14 @@ await import(esmUrl).catch((e) => {
 
   process.exit(1)
 })
+
+// Also verify CJS require works
+try {
+  const req = createRequire(import.meta.url)
+  req(distCjs)
+} catch (e) {
+  console.error("verify-exports: CJS require failed:", e)
+  process.exit(1)
+}
 
 console.log("verify-exports: OK")
