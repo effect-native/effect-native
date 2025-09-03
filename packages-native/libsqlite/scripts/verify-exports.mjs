@@ -8,22 +8,29 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const root = dirname(__dirname)
 
-function fail(msg) {
-  console.error(`verify-exports: ${msg}`)
+function assert(cond, msg) {
+  if (!cond) {
+    console.error(`verify-exports: ${msg}`)
 
-  process.exit(1)
+    process.exit(1)
+  }
 }
 
 const distEsm = join(root, "dist/dist/esm/effect.js")
 const distCjs = join(root, "dist/dist/cjs/effect.js")
 const distDts = join(root, "dist/dist/dts/effect.d.ts")
 
-if (!existsSync(distEsm)) fail(`missing ${distEsm}`)
-if (!existsSync(distCjs)) fail(`missing ${distCjs}`)
-if (!existsSync(distDts)) fail(`missing ${distDts}`)
+assert(existsSync(distEsm), `missing ${distEsm}`)
+assert(existsSync(distCjs), `missing ${distCjs}`)
+assert(existsSync(distDts), `missing ${distDts}`)
 
-const pkgJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
-if (!(pkgJson.exports && pkgJson.exports["./effect"])) fail("exports[\"./effect\"] not present")
+let pkgJson
+try {
+  pkgJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"))
+} catch (e) {
+  assert(false, `failed to read/parse package.json: ${e?.message ?? e}`)
+}
+assert(pkgJson.exports && pkgJson.exports["./effect"], "exports[\"./effect\"] not present")
 
 await import(pathToFileURL(distEsm).href).catch((e) => {
   console.error("verify-exports: ESM import failed:", e)
