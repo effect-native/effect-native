@@ -48,6 +48,14 @@ Guidance:
 - Public identity: Never take public action in the name of anyone other than yourself. Do not misrepresent who is speaking. When commenting on PRs or public threads, clearly indicate your identity (e.g., note that you are the automation agent when applicable).
 - Push discipline: Never run `git push` without explicit direction from the user/maintainer.
 
+### Pre‑Push Review Gate
+
+Before any `git push` (when explicitly directed to push):
+- Fetch PR comments and CI status for the branch.
+- Ensure all failed checks are resolved or re‑run and passing.
+- Ensure all reviewer feedback is addressed in code or accompanied by clear, inline code comments explaining the resolution or rationale.
+- If any item remains unresolved, refuse to push and report what needs attention instead.
+
 ### Local CI Parity
 
 - Always run `pnpm ok` after making changes and before pushing. This mirrors our GitHub checks (types, lint, circular, codegen + diff, test-types target, docgen, codemod, build) so failures show up locally first.
