@@ -28,6 +28,26 @@ This is the **effect-native fork** of the Effect TypeScript framework. It mainta
 - **Always use `return yield*`** for errors and interrupts
 - **100% JSDoc coverage required** with working examples
 
+### Story Before Action
+
+Before taking any action (running commands, editing files, pushing commits, or invoking tools), briefly print the story so reviewers can follow intent and context:
+
+- Goal: what outcome you are aiming for.
+- Obstacle: what’s blocking or risky.
+- Options: 2–3 plausible approaches considered.
+- Chosen path: the approach you will take now.
+- Why: why this is the best path to the goal.
+
+Guidance:
+- Keep each item concise (one short sentence), total under ~6 lines.
+- Place the story immediately before the action (e.g., before shell/tool calls or large edits).
+- Favor clarity over verbosity; update the story when the plan changes.
+
+### Identity and Push Safety
+
+- Public identity: Never take public action in the name of anyone other than yourself. Do not misrepresent who is speaking. When commenting on PRs or public threads, clearly indicate your identity (e.g., note that you are the automation agent when applicable).
+- Push discipline: Never run `git push` without explicit direction from the user/maintainer.
+
 ### Local CI Parity
 
 - Always run `pnpm ok` after making changes and before pushing. This mirrors our GitHub checks (types, lint, circular, codegen + diff, test-types target, docgen, codemod, build) so failures show up locally first.
