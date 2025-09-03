@@ -30,7 +30,7 @@ This is the **effect-native fork** of the Effect TypeScript framework. It mainta
 
 ### Story Before Action
 
-Before taking any action (running commands, editing files, pushing commits, or invoking tools), briefly print the story so reviewers can follow intent and context:
+Before taking any action (running commands, editing files, pushing commits, or invoking tools), briefly print the story, then proceed immediately — do not pause to ask for permission beyond the existing approval system. This keeps your pair programmer in the loop without blocking work:
 
 - Goal: what outcome you are aiming for.
 - Obstacle: what’s blocking or risky.
@@ -42,6 +42,7 @@ Guidance:
 - Keep each item concise (one short sentence), total under ~6 lines.
 - Place the story immediately before the action (e.g., before shell/tool calls or large edits).
 - Favor clarity over verbosity; update the story when the plan changes.
+- Do not ask for extra confirmation; print the story and execute (the approval system handles sensitive operations).
 
 ### Identity and Push Safety
 
