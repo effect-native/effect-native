@@ -35,20 +35,38 @@
  * ```
  */
 import * as LibCrSql from "@effect-native/libcrsql/effect"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { Effect } from "effect"
+import * as Layer from "effect/Layer"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import type * as CrSqlSchema from "./CrSqlSchema.js"
-import { SqliteClient } from "./SqliteClient.js"
+import * as SqliteClient from "./SqliteClient.js"
 
-export const makeCrSql = Effect.gen(function*() {
-  const sql = yield* SqliteClient
+// TODO(effect-native): Reactivity integration
+// - Define and export key helpers (dbVersion, changes, table, row, peer)
+// - Add reactive accessors (reactiveDbVersion, reactivePeerVersion, reactivePullChanges)
+// - Wrap mutations with Reactivity.mutation and invalidate precise keys
+// See packages-native/crsql/TODO.md (Key Scheme, Key Helper Builders, Reactive Accessors, Mutation Wiring)
+
+const makeCrSql = Effect.gen(function*() {
+  // assert that our SqlClient has the methods we need
+  const sql = yield* SqliteClient.fromSqlClient(yield* SqlClient.SqlClient)
+
   yield* sql.loadExtension(yield* LibCrSql.getCrSqliteExtensionPath())
-  yield* Effect.addFinalizer(() => finalize.pipe(Effect.ignore))
+  // TODO(effect-native): clear prepared statement cache after loading extension
+  // See https://github.com/Effect-TS/effect/issues/5457
 
-  const getSiteIdHex = Effect.fn("@effect-native/crsql/CrSql#getSiteIdHex")(function*() {
-    yield* sql`SELECT hex(crsql_site_id()) as site_id`.pipe(
-      Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
-    )
+  // Create extension assertion AFTER loadExtension
+  const assertCrSqliteExtensionLoaded = sql`SELECT hex(crsql_site_id()) AS site_id`.pipe(
+    Effect.as(void 0),
+    Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
+  ).pipe(Effect.withSpan("@effect-native/crsql/CrSql#assertCrSqliteExtensionLoaded"))
+
+  yield* assertCrSqliteExtensionLoaded
+
+  yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
+
+  const getSiteIdHex = Effect.fn("@effect-native/crsql/CrSql#getSiteIdHex")(function* getSiteIdHex() {
     const rows = yield* sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`
 
     // CR-SQLite always returns exactly one row with site_id, but adding defensive check
@@ -63,7 +81,7 @@ export const makeCrSql = Effect.gen(function*() {
     return rows[0].site_id
   })()
 
-  const getDbVersion = Effect.fn("@effect-native/crsql/CrSql#getDbVersion")(function*() {
+  const getDbVersion = Effect.fn("@effect-native/crsql/CrSql#getDbVersion")(function* getDbVersion() {
     const rows = yield* sql<
       { version: CrSqlSchema.VersionString }
     >`SELECT CAST(crsql_db_version() AS TEXT) AS version`
@@ -80,7 +98,7 @@ export const makeCrSql = Effect.gen(function*() {
     return rows[0].version
   })()
 
-  const pullChanges = Effect.fn("@effect-native/crsql/CrSql#pullChanges")(function*(
+  const pullChanges = Effect.fn("@effect-native/crsql/CrSql#pullChanges")(function* pullChanges(
     since: CrSqlSchema.VersionString = "0",
     excludeSites?: ReadonlyArray<CrSqlSchema.SiteIdHex>
   ) {
@@ -129,19 +147,31 @@ export const makeCrSql = Effect.gen(function*() {
     `
   })
 
-  const finalize = Effect.fn("@effect-native/crsql/CrSql#finalize")(function*() {
+  // TODO(effect-native): Add reactive Stream accessors
+  // - reactiveDbVersion: Reactivity.stream(["crsql:dbVersion"], getDbVersion)
+  // - reactivePeerVersion(siteId): Reactivity.stream({ "crsql:peer": [siteId] }, getPeerVersion(siteId))
+  // - reactivePullChanges(since, excludes): Reactivity.stream(["crsql:changes"], pullChanges(since, excludes))
+  // See packages-native/crsql/TODO.md#reactive-accessors
+
+  const finalize = Effect.fn("@effect-native/crsql/CrSql#finalize")(function* finalize() {
     yield* sql`SELECT crsql_finalize();`.pipe(
       Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
     )
   })()
 
-  const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function*(
+  const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
   ) {
     // Ensure unhex() exists and returns something meaningful
     yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
       Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
     )
+    // TODO(effect-native): Wrap with Reactivity.mutation and invalidate keys
+    // - Invalidate ["crsql:dbVersion", "crsql:changes"] after successful apply
+    // - Aggregate row-level invalidations by table: { ["crsql:row:" + table]: [pkHex...] }
+    //   where pkHex is the hex string from change.pk
+    // Implementation should keep Effect.withTransaction intact and only augment with Reactivity
+    // See packages-native/crsql/TODO.md#mutation-wiring
     yield* sql.withTransaction(
       Effect.forEach(
         changes,
@@ -169,18 +199,21 @@ export const makeCrSql = Effect.gen(function*() {
     )
   })
 
-  const setPeerVersion = Effect.fn("@effect-native/crsql/CrSql#setPeerVersion")(function*(
+  const setPeerVersion = Effect.fn("@effect-native/crsql/CrSql#setPeerVersion")(function* setPeerVersion(
     siteId: CrSqlSchema.SiteIdHex,
     version: CrSqlSchema.VersionString,
     seq: number
   ) {
+    // TODO(effect-native): Wrap with Reactivity.mutation to invalidate peer watchers
+    // - Invalidate { "crsql:peer": [siteId] }
+    // See packages-native/crsql/TODO.md#mutation-wiring
     yield* sql`
       INSERT OR REPLACE INTO crsql_tracked_peers (site_id, version, tag, event, seq)
       VALUES (unhex(${siteId}), CAST(${version} AS INTEGER), 0, 0, ${seq})
     `
   })
 
-  const getPeerVersion = Effect.fn("@effect-native/crsql/CrSql#getPeerVersion")(function*(
+  const getPeerVersion = Effect.fn("@effect-native/crsql/CrSql#getPeerVersion")(function* getPeerVersion(
     siteId: CrSqlSchema.SiteIdHex
   ) {
     const rows = yield* sql<{
@@ -192,7 +225,7 @@ export const makeCrSql = Effect.gen(function*() {
     return rows.length > 0 ? rows[0] : null
   })
 
-  return {
+  const crsql = {
     /**
      * Returns this database's CR‑SQLite site identifier as a 16‑byte hex string.
      *
@@ -382,11 +415,27 @@ export const makeCrSql = Effect.gen(function*() {
      */
     getPeerVersion,
 
-    sql: Effect.succeed(sql)
+    // TODO(effect-native): expose reactive helpers in service API
+    // reactiveDbVersion,
+    // reactivePeerVersion,
+    // reactivePullChanges,
+
+    /**
+     * The underlying `SqlClient` instance used by this service.
+     */
+    sql: sql satisfies SqlClient.SqlClient
   } as const
+
+  return crsql
 })
 
 export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   accessors: true,
   effect: makeCrSql
-}) {}
+}) {
+  static fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
+    function* fromSqliteClient(sql: SqliteClient.SqliteClient) {
+      return yield* makeCrSql.pipe(Effect.provide(Layer.succeed(SqlClient.SqlClient, sql)))
+    }
+  )
+}

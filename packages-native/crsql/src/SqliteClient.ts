@@ -14,9 +14,10 @@
  */
 import * as SqlClient from "@effect/sql/SqlClient"
 import type { SqlError } from "@effect/sql/SqlError"
-import { Effect, Layer } from "effect"
+import { Effect } from "effect"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
+import * as Layer from "effect/Layer"
 
 /**
  * Extends the generic `SqlClient` with SQLite's `loadExtension` capability.
@@ -45,16 +46,26 @@ export class SqliteClientError extends Data.TaggedError("SqliteClientError")<{
   cause: unknown
 }> {}
 
-/**
- * @category layers
- * @since 1.0.0
- */
-export const layer = (client: SqliteClient) => Layer.scopedContext(Effect.succeed(Context.make(SqliteClient, client)))
-
-export const Default = Effect.gen(function*() {
-  const sql = yield* SqlClient.SqlClient
-  if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
-    return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
+export const loadExtension = Effect.fn("@effect-native/crsql/SqlClient#loadExtension")(
+  function*(path: string) {
+    const sql = (yield* SqlClient.SqlClient) as SqlClient.SqlClient | SqliteClient
+    if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
+      return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
+    }
+    return yield* sql.loadExtension(path)
   }
-  return layer(sql as SqliteClient)
-}).pipe(Layer.unwrapEffect)
+)
+
+export const fromSqlClient = Effect.fn("@effect-native/crsql/SqlClient#from")(
+  function*(sql: SqlClient.SqlClient | SqliteClient) {
+    if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
+      return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
+    }
+    return sql as SqliteClient
+  }
+)
+
+export const layer = (sql: SqliteClient) => Layer.succeed(SqliteClient, sql)
+
+export const layerFromSqlClient = (sql: SqlClient.SqlClient | SqliteClient) =>
+  Layer.effect(SqliteClient, fromSqlClient(sql))
