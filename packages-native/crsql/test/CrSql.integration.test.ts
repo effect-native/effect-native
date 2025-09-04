@@ -6,24 +6,6 @@ import { assert, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
-// Compose a layer that opens an in-memory db and loads the CR-SQLite extension
-const InMemorySqliteClient = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-const InMemorySqliteClientWithCr: Layer.Layer<NodeSqlite.SqliteClient.SqliteClient | SqlClient.SqlClient, never> = Layer
-  .effect(
-    NodeSqlite.SqliteClient.SqliteClient,
-    Effect.gen(function*() {
-      const client = yield* NodeSqlite.SqliteClient.SqliteClient
-      const ext = yield* getCrSqliteExtensionPath()
-      yield* client.loadExtension(ext).pipe(Effect.orDie)
-      return client
-    })
-  ).pipe(Layer.provide(InMemorySqliteClient)) as unknown as Layer.Layer<
-    NodeSqlite.SqliteClient.SqliteClient | SqlClient.SqlClient,
-    never
-  >
-
-const withDb = <A, E>(eff: Effect.Effect<A, E, any>) => eff.pipe(Effect.provide(InMemorySqliteClientWithCr))
-
 // No guards: we run these tests against the real native driver.
 
 const createTodosCrr = Effect.gen(function*() {
@@ -37,30 +19,69 @@ const createTodosCrr = Effect.gen(function*() {
 })
 
 it.scoped("CrSql basic (node): gets site id", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     const crsql = yield* CrSqlPkg.CrSql.fromSqliteClient(yield* NodeSqlite.SqliteClient.SqliteClient)
     const siteId = yield* crsql.getSiteIdHex
     assert.strictEqual(siteId.length, 32)
     assert.match(siteId, /^[0-9A-F]{32}$/i)
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql basic (node): gets db version", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     const crsql = yield* CrSqlPkg.CrSql.fromSqliteClient(yield* NodeSqlite.SqliteClient.SqliteClient)
     const version = yield* crsql.getDbVersion
     assert.strictEqual(version, "0")
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql basic (node): pullChanges empty", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     yield* createTodosCrr
     const crsql = yield* CrSqlPkg.CrSql.fromSqliteClient(yield* NodeSqlite.SqliteClient.SqliteClient)
     const changes = yield* crsql.pullChanges("0")
     assert.strictEqual(changes.length, 0)
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql CRR + changes: records after insert", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     yield* createTodosCrr
     const sql = yield* SqlClient.SqlClient
     const pk1 = "00112233445566778899AABBCCDDEEFF"
@@ -72,10 +93,23 @@ it.scoped("CrSql CRR + changes: records after insert", () =>
     const forPk1 = changes.filter((c) => c.pk.toUpperCase() === pk1)
     assert.ok(forPk1.some((c) => c.cid === "content" && c.val === "Buy milk"))
     assert.ok(forPk1.some((c) => c.cid === "completed" && c.val === 0))
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql CRR + changes: delta since version", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     yield* createTodosCrr
     const sql = yield* SqlClient.SqlClient
     const pk1 = "00112233445566778899AABBCCDDEEFF"
@@ -92,10 +126,23 @@ it.scoped("CrSql CRR + changes: delta since version", () =>
     const pks = new Set(delta.map((c) => c.pk.toUpperCase()))
     assert.ok(pks.has(pk2))
     assert.ok(!pks.has(pk1))
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql CRR + changes: excludes local site", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     yield* createTodosCrr
     const sql = yield* SqlClient.SqlClient
     yield* sql`INSERT INTO todos (id, content, completed)
@@ -104,18 +151,31 @@ it.scoped("CrSql CRR + changes: excludes local site", () =>
     const site = yield* crsql.getSiteIdHex
     const excluded = yield* crsql.pullChanges("0", [site])
     assert.strictEqual(excluded.length, 0)
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql end-to-end: exports from DB1 and applies to DB2", () =>
-  withDb(Effect.gen(function*() {
-    const Db1 = InMemorySqliteClientWithCr
+  Effect.gen(function*() {
+    const Db1 = MemoryCrLayer
     const Db2Mem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
     const Db2: Layer.Layer<NodeSqlite.SqliteClient.SqliteClient | SqlClient.SqlClient, never> = Layer.effect(
       NodeSqlite.SqliteClient.SqliteClient,
       Effect.gen(function*() {
         const client = yield* NodeSqlite.SqliteClient.SqliteClient
         const ext = yield* getCrSqliteExtensionPath()
-        yield* client.loadExtension(ext).pipe(Effect.orDie)
+        yield* client.loadExtension(ext)
         return client
       })
     ).pipe(Layer.provide(Db2Mem)) as unknown as Layer.Layer<
@@ -166,18 +226,31 @@ it.scoped("CrSql end-to-end: exports from DB1 and applies to DB2", () =>
       assert.strictEqual(rowsB[0].content, "Beta")
       assert.strictEqual(rowsB[0].completed, 1)
     }).pipe(Effect.provide(Db2))
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql end-to-end: tracks peer version across DBs", () =>
-  withDb(Effect.gen(function*() {
-    const Db1 = InMemorySqliteClientWithCr
+  Effect.gen(function*() {
+    const Db1 = MemoryCrLayer
     const Db2Mem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
     const Db2: Layer.Layer<NodeSqlite.SqliteClient.SqliteClient | SqlClient.SqlClient, never> = Layer.effect(
       NodeSqlite.SqliteClient.SqliteClient,
       Effect.gen(function*() {
         const client = yield* NodeSqlite.SqliteClient.SqliteClient
         const ext = yield* getCrSqliteExtensionPath()
-        yield* client.loadExtension(ext).pipe(Effect.orDie)
+        yield* client.loadExtension(ext)
         return client
       })
     ).pipe(Layer.provide(Db2Mem)) as unknown as Layer.Layer<
@@ -215,12 +288,38 @@ it.scoped("CrSql end-to-end: tracks peer version across DBs", () =>
       return yield* crsql.getPeerVersion(site2)
     }).pipe(Effect.provide(Db1))
     assert.deepEqual(tracked, { version: v2, seq: 0 })
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
 
 it.scoped("CrSql peer: returns null for unknown peer", () =>
-  withDb(Effect.gen(function*() {
+  Effect.gen(function*() {
     yield* createTodosCrr
     const crsql = yield* CrSqlPkg.CrSql.fromSqliteClient(yield* NodeSqlite.SqliteClient.SqliteClient)
     const result = yield* crsql.getPeerVersion("ABCDEF0123456789ABCDEF0123456789")
     assert.strictEqual(result, null)
-  })))
+  }).pipe(
+    Effect.provide(
+      Layer.effect(
+        NodeSqlite.SqliteClient.SqliteClient,
+        Effect.gen(function*() {
+          const client = yield* NodeSqlite.SqliteClient.SqliteClient
+          const ext = yield* getCrSqliteExtensionPath()
+          yield* client.loadExtension(ext)
+          return client
+        })
+      ).pipe(Layer.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+    )
+  )
+)
