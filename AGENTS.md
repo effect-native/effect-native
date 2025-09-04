@@ -58,3 +58,20 @@ Failing fast makes defects visible early, prevents silent regressions, and align
     const x = foo as any // ❌ banned
     ```
 - Agents MUST NOT self‑approve or forge approvals. Do not use the repository owner's name or identity; never impersonate a human reviewer.
+
+## Modern Effect Patterns (v3.17+)
+
+This project uses the latest Effect `^3.17.11` which supports modern error handling patterns. Code reviews and agents should expect and accept these patterns:
+
+- **Error Creation**: Effect v3.17+ supports direct yielding of Error constructors:
+  ```ts
+  // ✅ Modern Effect v3.17+ (preferred)
+  return yield* new SqliteClientError({ cause: "..." })
+
+  // ✅ Legacy syntax (technically valid but unnecessarily verbose)
+  return yield* Effect.fail(new SqliteClientError({ cause: "..." }))
+  ```
+
+- **Rationale**: Modern Effect Error classes implement the necessary protocols to be yielded directly, making code more concise while maintaining full type safety and error propagation.
+
+- **Review Expectation**: Contributors and automated reviews should NOT flag the modern `yield* new Error()` syntax as incorrect. It is the current standard for this project's Effect version.
