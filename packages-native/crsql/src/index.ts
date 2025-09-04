@@ -22,9 +22,9 @@
  * import { SqliteClient } from "@effect/sql-sqlite-node"
  *
  * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.getSiteIdHex
- *   const version = yield* CrSql.getDbVersion
- *   const changes = yield* CrSql.pullChanges("0")
+ *   const siteId = yield* CrSql.CrSql.getSiteIdHex
+ *   const version = yield* CrSql.CrSql.getDbVersion
+ *   const changes = yield* CrSql.CrSql.pullChanges("0")
  *
  *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
  * })

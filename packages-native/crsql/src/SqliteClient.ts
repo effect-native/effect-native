@@ -42,10 +42,20 @@ export const SqliteClient = Context.GenericTag<SqliteClient>(
   "@effect-native/crsql/SqliteClient"
 )
 
+/**
+ * Error raised when a base `SqlClient` does not support `loadExtension`.
+ *
+ * @since 1.0.0
+ */
 export class SqliteClientError extends Data.TaggedError("SqliteClientError")<{
   cause: unknown
 }> {}
 
+/**
+ * Loads a SQLite extension (e.g., CR‑SQLite) on the current connection.
+ *
+ * @since 1.0.0
+ */
 export const loadExtension = Effect.fn("@effect-native/crsql/SqlClient#loadExtension")(
   function*(path: string) {
     const sql = (yield* SqlClient.SqlClient) as SqlClient.SqlClient | SqliteClient
@@ -56,6 +66,11 @@ export const loadExtension = Effect.fn("@effect-native/crsql/SqlClient#loadExten
   }
 )
 
+/**
+ * Validates a base `SqlClient` supports `loadExtension` and narrows it to `SqliteClient`.
+ *
+ * @since 1.0.0
+ */
 export const fromSqlClient = Effect.fn("@effect-native/crsql/SqlClient#from")(
   function*(sql: SqlClient.SqlClient | SqliteClient) {
     if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
@@ -65,7 +80,17 @@ export const fromSqlClient = Effect.fn("@effect-native/crsql/SqlClient#from")(
   }
 )
 
+/**
+ * Provides a `SqliteClient` instance into the environment.
+ *
+ * @since 1.0.0
+ */
 export const layer = (sql: SqliteClient) => Layer.succeed(SqliteClient, sql)
 
+/**
+ * Lifts a base `SqlClient` into a `SqliteClient` if it exposes `loadExtension`.
+ *
+ * @since 1.0.0
+ */
 export const layerFromSqlClient = (sql: SqlClient.SqlClient | SqliteClient) =>
   Layer.effect(SqliteClient, fromSqlClient(sql))

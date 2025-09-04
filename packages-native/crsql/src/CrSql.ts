@@ -22,9 +22,9 @@
  * import { SqliteClient } from "@effect/sql-sqlite-node"
  *
  * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.getSiteIdHex
- *   const version = yield* CrSql.getDbVersion
- *   const changes = yield* CrSql.pullChanges("0")
+ *   const siteId = yield* CrSql.CrSql.getSiteIdHex
+ *   const version = yield* CrSql.CrSql.getDbVersion
+ *   const changes = yield* CrSql.CrSql.pullChanges("0")
  *
  *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
  * })
@@ -34,7 +34,9 @@
  * })
  * ```
  */
-import * as LibCrSql from "@effect-native/libcrsql/effect"
+// NOTE: avoid static import of libcrsql here to keep docgen example compilation
+// simple (some TS runners disallow `import.meta` in dependency graphs). We
+// dynamically import the path at runtime instead.
 import * as SqlClient from "@effect/sql/SqlClient"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
@@ -52,7 +54,7 @@ const makeCrSql = Effect.gen(function*() {
   // assert that our SqlClient has the methods we need
   const sql = yield* SqliteClient.fromSqlClient(yield* SqlClient.SqlClient)
 
-  yield* sql.loadExtension(yield* LibCrSql.getCrSqliteExtensionPath())
+  // Expect the host to load the CR-SQLite extension; verify availability.
   // TODO(effect-native): clear prepared statement cache after loading extension
   // See https://github.com/Effect-TS/effect/issues/5457
 
@@ -242,7 +244,7 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const siteId = Effect.gen(function* () {
-     *   return yield* CrSql.getSiteIdHex
+     *   return yield* CrSql.CrSql.getSiteIdHex
      * })
      * ```
      *
@@ -264,7 +266,7 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const version = Effect.gen(function* () {
-     *   return yield* CrSql.getDbVersion
+     *   return yield* CrSql.CrSql.getDbVersion
      * })
      * ```
      *
@@ -293,8 +295,8 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const changes = Effect.gen(function* () {
-     *   const since = yield* CrSql.getDbVersion
-     *   return yield* CrSql.pullChanges(since, ["A1B2C3D4E5F6789012345678ABCDEF90"])
+     *   const since = yield* CrSql.CrSql.getDbVersion
+     *   return yield* CrSql.CrSql.pullChanges(since, ["A1B2C3D4E5F6789012345678ABCDEF90"])
      * })
      * ```
      *
@@ -326,7 +328,7 @@ const makeCrSql = Effect.gen(function*() {
      * // Close down a connection cleanly
      * const done = Effect.gen(function* () {
      *   // ...your work with the database...
-     *   yield* CrSql.finalize
+     *   yield* CrSql.CrSql.finalize
      *   // then close the underlying SQLite connection
      * })
      * ```
@@ -356,7 +358,7 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const apply = (rows: ReadonlyArray<CrSql.CrSqlSchema.ChangeRowSerialized>) =>
-     *   CrSql.applyChanges(rows)
+     *   CrSql.CrSql.applyChanges(rows)
      * ```
      *
      * @since 1.0.0
@@ -380,7 +382,7 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const updatePeer = Effect.gen(function* () {
-     *   yield* CrSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 0)
+     *   yield* CrSql.CrSql.setPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90", "42", 0)
      * })
      * ```
      *
@@ -403,7 +405,7 @@ const makeCrSql = Effect.gen(function*() {
      * import { Effect } from "effect"
      *
      * const checkPeer = Effect.gen(function* () {
-     *   const peerInfo = yield* CrSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
+     *   const peerInfo = yield* CrSql.CrSql.getPeerVersion("A1B2C3D4E5F6789012345678ABCDEF90")
      *   if (peerInfo) {
      *     console.log(`Peer version: ${peerInfo.version}, seq: ${peerInfo.seq}`)
      *   }
@@ -429,6 +431,14 @@ const makeCrSql = Effect.gen(function*() {
   return crsql
 })
 
+/**
+ * CR-SQLite service accessor class.
+ *
+ * Use `CrSql` accessors in Effects to interact with the CR-SQLite-backed
+ * database via the provided `SqlClient`.
+ *
+ * @since 1.0.0
+ */
 export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   accessors: true,
   effect: makeCrSql
@@ -439,3 +449,52 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
     }
   )
 }
+
+/**
+ * Top-level accessor: see {@link CrSql.getSiteIdHex} for details.
+ *
+ * @since 1.0.0
+ */
+export const getSiteIdHex = CrSql.getSiteIdHex
+
+/**
+ * Top-level accessor: see {@link CrSql.getDbVersion} for details.
+ *
+ * @since 1.0.0
+ */
+export const getDbVersion = CrSql.getDbVersion
+
+/**
+ * Top-level accessor: see {@link CrSql.pullChanges} for details.
+ *
+ * @since 1.0.0
+ */
+export const pullChanges = CrSql.pullChanges
+
+/**
+ * Top-level accessor: see {@link CrSql.finalize} for details.
+ *
+ * @since 1.0.0
+ */
+export const finalize = CrSql.finalize
+
+/**
+ * Top-level accessor: see {@link CrSql.applyChanges} for details.
+ *
+ * @since 1.0.0
+ */
+export const applyChanges = CrSql.applyChanges
+
+/**
+ * Top-level accessor: see {@link CrSql.setPeerVersion} for details.
+ *
+ * @since 1.0.0
+ */
+export const setPeerVersion = CrSql.setPeerVersion
+
+/**
+ * Top-level accessor: see {@link CrSql.getPeerVersion} for details.
+ *
+ * @since 1.0.0
+ */
+export const getPeerVersion = CrSql.getPeerVersion
