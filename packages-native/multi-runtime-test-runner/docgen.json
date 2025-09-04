@@ -1,0 +1,13 @@
+{
+  "name": "@effect-native/multi-runtime-test-runner",
+  "modulePrefix": "@effect-native/multi-runtime-test-runner",
+  "srcDir": "src",
+  "outDir": "docs",
+  "theme": "mikearnaldi/effect-docgen-theme",
+  "enableSearch": true,
+  "enforceVersion": true,
+  "exclude": ["internal/**/*"],
+  "parseCompilerOptions": {
+    "strict": true
+  }
+}

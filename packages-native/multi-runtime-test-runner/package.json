@@ -1,0 +1,53 @@
+{
+  "name": "@effect-native/multi-runtime-test-runner",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Run tests across multiple runtimes and versions (Node.js, Bun, Browser)",
+  "homepage": "https://effect.website",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect.git",
+    "directory": "packages-native/multi-runtime-test-runner"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null
+  },
+  "scripts": {
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "peerDependencies": {
+    "effect": "workspace:^",
+    "@effect/platform": "workspace:^",
+    "@effect/platform-node": "workspace:^",
+    "@effect/platform-bun": "workspace:^",
+    "@effect/platform-browser": "workspace:^",
+    "@effect/vitest": "workspace:^"
+  },
+  "devDependencies": {
+    "effect": "workspace:^",
+    "@effect/platform": "workspace:^",
+    "@effect/platform-node": "workspace:^", 
+    "@effect/platform-bun": "workspace:^",
+    "@effect/platform-browser": "workspace:^",
+    "@effect/vitest": "workspace:^",
+    "puppeteer": "^23.1.1"
+  }
+}

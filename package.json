@@ -11,6 +11,7 @@
     "build": "pnpm --recursive --parallel --filter \"./packages-native/**/*\" run build",
     "circular": "depcruise --config .dependency-cruiser.cjs \"packages-native/*/src/**/*.{ts,tsx}\" --output-type err --validate",
     "test": "vitest",
+    "test:multi-runtime": "tsx packages-native/multi-runtime-test-runner/scripts/multi-runtime-cli.ts",
     "coverage": "vitest --coverage",
     "check": "tsc -b tsconfig.json",
     "check-recursive": "pnpm --recursive --filter \"./packages-native/**/*\" exec tsc -b tsconfig.json",

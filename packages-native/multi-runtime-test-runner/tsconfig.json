@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@effect-native/multi-runtime-test-runner": ["./src/index.ts"],
+      "@effect-native/multi-runtime-test-runner/*": ["./src/*.ts"],
+      "effect": ["../../packages/effect/src"],
+      "effect/*": ["../../packages/effect/src/*"],
+      "@effect/platform": ["../../packages/platform/src"],
+      "@effect/platform/*": ["../../packages/platform/src/*"],
+      "@effect/platform-node": ["../../packages/platform-node/src"],
+      "@effect/platform-node/*": ["../../packages/platform-node/src/*"],
+      "@effect/platform-bun": ["../../packages/platform-bun/src"],
+      "@effect/platform-bun/*": ["../../packages/platform-bun/src/*"],
+      "@effect/platform-browser": ["../../packages/platform-browser/src"],
+      "@effect/platform-browser/*": ["../../packages/platform-browser/src/*"],
+      "@effect/vitest": ["../../packages/vitest/src"],
+      "@effect/vitest/*": ["../../packages/vitest/src/*"]
+    }
+  },
+  "references": []
+}
