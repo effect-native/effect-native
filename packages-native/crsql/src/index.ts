@@ -15,8 +15,26 @@
  * parameterized queries under the hood.
  *
  * @since 1.0.0
+ * @example
+ * ```typescript
+ * import * as CrSql from "@effect-native/crsql"
+ * import { Config, Effect, Layer } from "effect"
+ * import { SqliteClient } from "@effect/sql-sqlite-node"
+ *
+ * const program = Effect.gen(function* () {
+ *   const siteId = yield* CrSql.getSiteIdHex
+ *   const version = yield* CrSql.getDbVersion
+ *   const changes = yield* CrSql.pullChanges("0")
+ *
+ *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
+ * })
+ *
+ * const SqlLive = SqliteClient.layer({
+ *   filename: "database.db"
+ * })
+ * ```
  */
-export * from "./CrSql.js"
+export * as CrSql from "./CrSql.js"
 
 /**
  * Error types for CR-SQLite operations.
@@ -72,4 +90,18 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  */
 export * as CrSqlSchema from "./CrSqlSchema.js"
 
+/**
+ * CR-SQLite compatible Sqlite client tag and type.
+ *
+ * This augments the base `@effect/sql` `SqlClient` with the SQLite-specific
+ * ability to `loadExtension`, which CR-SQLite requires to activate its
+ * functionality on a connection.
+ *
+ * Implementations are provided by platform drivers such as
+ * `@effect/sql-sqlite-node` and `@effect/sql-sqlite-bun`, which already expose
+ * a `loadExtension` method. This tag allows CR-SQLite helpers to depend on the
+ * minimal capability needed across platforms.
+ *
+ * @since 0.0.0
+ */
 export * as SqliteClient from "./SqliteClient.js"
