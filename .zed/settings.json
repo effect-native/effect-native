@@ -8,7 +8,7 @@
       // Use ESLint's --fix:
       "source.fixAll.eslint": true,
       // Organize imports on save:
-      "source.organizeImports": true
+      "source.organizeImports": false
     }
   },
   "lsp": {
