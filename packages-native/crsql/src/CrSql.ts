@@ -41,9 +41,10 @@ import * as SqlClient from "@effect/sql/SqlClient"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 import * as CrSqlErrors from "./CrSqlErrors.js"
-import { CrSqliteExtension } from "./CrSqliteExtension.js"
-import type * as CrSqlSchema from "./CrSqlSchema.js"
+import * as CrSqliteExtension from "./CrSqliteExtension.js"
+import * as CrSqlSchema from "./CrSqlSchema.js"
 import type * as SqliteClient from "./SqliteClient.js"
 
 // TODO(effect-native): Reactivity integration
@@ -437,19 +438,25 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
 }) {
   static fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
     function* fromSqliteClient(
-      params: { sql: SqliteClient.SqliteClient; extInfo?: Effect.Effect<CrSqliteExtension.ExtInfo> }
+      params: {
+        sql: SqliteClient.SqliteClient
+        /** when you want to take ownership of extension loading, provide this */
+        loadedExtensionInfo?: Effect.Effect<CrSqlSchema.ExtInfoLoaded>
+      }
     ) {
       const layerSqlClient = Layer.succeed(SqlClient.SqlClient, params.sql)
-      const extInfo = yield* params.extInfo ??
+
+      const loadInfo = yield* params.loadedExtensionInfo?.pipe(Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded)) ??
         CrSqliteExtension.loadLibCrSql.pipe(Effect.provide(layerSqlClient))
+
+      const extInfo = CrSqlSchema.ExtInfo.make({ ...loadInfo, ...yield* CrSqliteExtension.sqlExtInfo })
 
       const layers = Layer.mergeAll(
         layerSqlClient,
         Layer.succeed(
           CrSqliteExtension.ExtInfoLoaded,
           CrSqliteExtension.ExtInfoLoaded.make(extInfo)
-        ),
-        Layer.empty
+        )
       )
 
       return yield* makeCrSql.pipe(Effect.provide(layers))
