@@ -32,8 +32,9 @@ Verify that the final implementation meets all specified requirements and mainta
 ### Core Library Features
 (Features will be added here as they are specified and implemented)
 
-### Documentation & Testing  
-(Documentation and testing enhancements will be tracked here)
+### Documentation & Testing
+- [ ] [Multi-Runtime Test Runner](./multi-runtime-test-runner/)
+- [ ] [Service Spec Conformance Harness](./service-spec-conformance/)
 
 ### Platform Integrations
 (Platform-specific features and integrations will be documented here)
