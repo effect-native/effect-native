@@ -15,24 +15,6 @@
  * parameterized queries under the hood.
  *
  * @since 1.0.0
- * @example
- * ```typescript
- * import * as CrSql from "@effect-native/crsql"
- * import { Config, Effect, Layer } from "effect"
- * import { SqliteClient } from "@effect/sql-sqlite-node"
- *
- * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.CrSql.getSiteIdHex
- *   const version = yield* CrSql.CrSql.getDbVersion
- *   const changes = yield* CrSql.CrSql.pullChanges("0")
- *
- *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
- * })
- *
- * const SqlLive = SqliteClient.layer({
- *   filename: "database.db"
- * })
- * ```
  */
 export * as CrSql from "./CrSql.js"
 
@@ -90,7 +72,21 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  */
 export * as CrSqlSchema from "./CrSqlSchema.js"
 
-
+/**
+ * CR-SQLite extension loading and information utilities.
+ *
+ * This module provides low-level utilities for loading the CR-SQLite extension
+ * and retrieving information about it. It handles the dynamic import of the
+ * native library, loads the extension into the SQLite connection, and provides
+ * structured information about the loaded extension.
+ *
+ * The main operations include:
+ * - Loading the CR-SQLite extension from the native library
+ * - Querying extension information (SHA, site ID)
+ * - Creating Effect services for dependency injection
+ *
+ * @since 1.0.0
+ */
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 
 /**

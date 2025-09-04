@@ -201,20 +201,65 @@ export const TrackedPeerSerialized = S.Struct({
  */
 export type TrackedPeerSerialized = typeof TrackedPeerSerialized.Type
 
+/**
+ * Complete information about a loaded CR-SQLite extension.
+ *
+ * Contains both SQL-queryable information (SHA, site ID) and loading metadata
+ * (filesystem path, timestamp). Used when the extension has been successfully
+ * loaded and is ready for use.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const ExtInfo = S.Struct({
   sha: S.String.annotations({ description: "Git commit SHA of the cr-sqlite extension" }),
   siteId: SiteIdHex,
   path: S.NullOr(S.String).annotations({ description: "Filesystem path to the loaded extension, if any" }),
   loadedAt: S.DateTimeUtcFromDate.annotations({ description: "Timestamp when the extension was loaded" })
 }).annotations({ description: "Info about the cr-sqlite extension" })
+
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type ExtInfo = typeof ExtInfo.Type
 
+/**
+ * SQL-queryable information about the CR-SQLite extension.
+ *
+ * Contains only the information that can be retrieved by querying the
+ * extension directly via SQL functions like `crsql_sha()` and `crsql_site_id()`.
+ * Does not include loading metadata like filesystem path or timestamp.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const ExtInfoSql = ExtInfo.pick("sha", "siteId").annotations({
   description: "Info from querying the cr-sqlite extension"
 })
+
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type ExtInfoSql = typeof ExtInfoSql.Type
 
+/**
+ * Loading metadata for the CR-SQLite extension.
+ *
+ * Contains information about when and from where the extension was loaded,
+ * but not the SQL-queryable information like SHA or site ID. Useful for
+ * debugging and auditing extension loading operations.
+ *
+ * @since 1.0.0
+ * @category Schema
+ */
 export const ExtInfoLoaded = ExtInfo.pick("path", "loadedAt").annotations({
   description: "Info about loading the cr-sqlite extension"
 })
+
+/**
+ * @since 1.0.0
+ * @category Models
+ */
 export type ExtInfoLoaded = typeof ExtInfoLoaded.Type

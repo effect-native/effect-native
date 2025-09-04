@@ -15,24 +15,6 @@
  * parameterized queries under the hood.
  *
  * @since 1.0.0
- * @example
- * ```typescript
- * import * as CrSql from "@effect-native/crsql"
- * import { Config, Effect, Layer } from "effect"
- * import { SqliteClient } from "@effect/sql-sqlite-node"
- *
- * const program = Effect.gen(function* () {
- *   const siteId = yield* CrSql.CrSql.getSiteIdHex
- *   const version = yield* CrSql.CrSql.getDbVersion
- *   const changes = yield* CrSql.CrSql.pullChanges("0")
- *
- *   console.log(`Site: ${siteId}, Version: ${version}, Changes: ${changes.length}`)
- * })
- *
- * const SqlLive = SqliteClient.layer({
- *   filename: "database.db"
- * })
- * ```
  */
 // NOTE: avoid static import of libcrsql here to keep docgen example compilation
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
