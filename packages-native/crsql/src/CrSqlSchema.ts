@@ -50,7 +50,7 @@ export const SiteIdHex = S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/))
  * @since 1.0.0
  * @category Models
  */
-export type SiteIdHex = S.Schema.Type<typeof SiteIdHex>
+export type SiteIdHex = typeof SiteIdHex.Type
 
 /**
  * Version string schema for CR-SQLite version fields.
@@ -80,12 +80,12 @@ export const VersionString = S.String.pipe(
  * @since 1.0.0
  * @category Models
  */
-export type VersionString = S.Schema.Type<typeof VersionString>
+export type VersionString = typeof VersionString.Type
 
 // Example for a parsed variant (not exported):
 //
 //   const Version = S.BigInt.pipe(S.nonNegativeBigInt())
-//   type Version = S.Schema.Type<typeof Version> // bigint in code
+//   type Version = typeof Version> // bigint in cod.Type
 //   type VersionEncoded = S.Schema.Encoded<typeof Version> // string at the boundary
 
 /**
@@ -176,7 +176,7 @@ export const ChangeRowSerialized = S.Struct({
  * @since 1.0.0
  * @category Models
  */
-export type ChangeRowSerialized = S.Schema.Type<typeof ChangeRowSerialized>
+export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
 
 /**
  * Pre-serialized crsql_tracked_peers row for transport (per-peer cursor).
@@ -199,4 +199,22 @@ export const TrackedPeerSerialized = S.Struct({
  * @since 1.0.0
  * @category Models
  */
-export type TrackedPeerSerialized = S.Schema.Type<typeof TrackedPeerSerialized>
+export type TrackedPeerSerialized = typeof TrackedPeerSerialized.Type
+
+export const ExtInfo = S.Struct({
+  sha: S.String.annotations({ description: "Git commit SHA of the cr-sqlite extension" }),
+  siteId: SiteIdHex,
+  path: S.NullOr(S.String).annotations({ description: "Filesystem path to the loaded extension, if any" }),
+  loadedAt: S.DateTimeUtcFromDate.annotations({ description: "Timestamp when the extension was loaded" })
+}).annotations({ description: "Info about the cr-sqlite extension" })
+export type ExtInfo = typeof ExtInfo.Type
+
+export const ExtInfoSql = ExtInfo.pick("sha", "siteId").annotations({
+  description: "Info from querying the cr-sqlite extension"
+})
+export type ExtInfoSql = typeof ExtInfoSql.Type
+
+export const ExtInfoLoaded = ExtInfo.pick("path", "loadedAt").annotations({
+  description: "Info about loading the cr-sqlite extension"
+})
+export type ExtInfoLoaded = typeof ExtInfoLoaded.Type

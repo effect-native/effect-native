@@ -38,11 +38,13 @@
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
 import * as SqlClient from "@effect/sql/SqlClient"
-import { Effect } from "effect"
+import * as Console from "effect/Console"
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as CrSqlErrors from "./CrSqlErrors.js"
+import { CrSqliteExtension } from "./CrSqliteExtension.js"
 import type * as CrSqlSchema from "./CrSqlSchema.js"
-import * as SqliteClient from "./SqliteClient.js"
+import type * as SqliteClient from "./SqliteClient.js"
 
 // TODO(effect-native): Reactivity integration
 // - Define and export key helpers (dbVersion, changes, table, row, peer)
@@ -51,20 +53,9 @@ import * as SqliteClient from "./SqliteClient.js"
 // See packages-native/crsql/TODO.md (Key Scheme, Key Helper Builders, Reactive Accessors, Mutation Wiring)
 
 const makeCrSql = Effect.gen(function*() {
-  // assert that our SqlClient has the methods we need
-  const sql = yield* SqliteClient.fromSqlClient(yield* SqlClient.SqlClient)
-
-  // Expect the host to load the CR-SQLite extension; verify availability.
-  // TODO(effect-native): clear prepared statement cache after loading extension
-  // See https://github.com/Effect-TS/effect/issues/5457
-
-  // Create extension assertion AFTER loadExtension
-  const assertCrSqliteExtensionLoaded = sql`SELECT hex(crsql_site_id()) AS site_id`.pipe(
-    Effect.as(void 0),
-    Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
-  ).pipe(Effect.withSpan("@effect-native/crsql/CrSql#assertCrSqliteExtensionLoaded"))
-
-  yield* assertCrSqliteExtensionLoaded
+  const sql = yield* SqlClient.SqlClient
+  const extInfo = yield* CrSqliteExtension.ExtInfoLoaded
+  yield* Console.debug({ extInfo })
 
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
@@ -441,60 +432,27 @@ const makeCrSql = Effect.gen(function*() {
  */
 export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   accessors: true,
-  effect: makeCrSql
+  effect: makeCrSql,
+  dependencies: [CrSqliteExtension.ExtInfoLoaded.Default]
 }) {
   static fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-    function* fromSqliteClient(sql: SqliteClient.SqliteClient) {
-      return yield* makeCrSql.pipe(Effect.provide(Layer.succeed(SqlClient.SqlClient, sql)))
+    function* fromSqliteClient(
+      params: { sql: SqliteClient.SqliteClient; extInfo?: Effect.Effect<CrSqliteExtension.ExtInfo> }
+    ) {
+      const layerSqlClient = Layer.succeed(SqlClient.SqlClient, params.sql)
+      const extInfo = yield* params.extInfo ??
+        CrSqliteExtension.loadLibCrSql.pipe(Effect.provide(layerSqlClient))
+
+      const layers = Layer.mergeAll(
+        layerSqlClient,
+        Layer.succeed(
+          CrSqliteExtension.ExtInfoLoaded,
+          CrSqliteExtension.ExtInfoLoaded.make(extInfo)
+        ),
+        Layer.empty
+      )
+
+      return yield* makeCrSql.pipe(Effect.provide(layers))
     }
   )
 }
-
-/**
- * Top-level accessor: see {@link CrSql.getSiteIdHex} for details.
- *
- * @since 1.0.0
- */
-export const getSiteIdHex = CrSql.getSiteIdHex
-
-/**
- * Top-level accessor: see {@link CrSql.getDbVersion} for details.
- *
- * @since 1.0.0
- */
-export const getDbVersion = CrSql.getDbVersion
-
-/**
- * Top-level accessor: see {@link CrSql.pullChanges} for details.
- *
- * @since 1.0.0
- */
-export const pullChanges = CrSql.pullChanges
-
-/**
- * Top-level accessor: see {@link CrSql.finalize} for details.
- *
- * @since 1.0.0
- */
-export const finalize = CrSql.finalize
-
-/**
- * Top-level accessor: see {@link CrSql.applyChanges} for details.
- *
- * @since 1.0.0
- */
-export const applyChanges = CrSql.applyChanges
-
-/**
- * Top-level accessor: see {@link CrSql.setPeerVersion} for details.
- *
- * @since 1.0.0
- */
-export const setPeerVersion = CrSql.setPeerVersion
-
-/**
- * Top-level accessor: see {@link CrSql.getPeerVersion} for details.
- *
- * @since 1.0.0
- */
-export const getPeerVersion = CrSql.getPeerVersion
