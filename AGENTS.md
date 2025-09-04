@@ -39,3 +39,22 @@ Failing fast makes defects visible early, prevents silent regressions, and align
 
 - Ensure native dependencies match the current runtime. If installing is not possible in a given matrix, mark tests with a clear CI job exclusion rather than weakening test logic.
 - Keep integration tests using the real drivers and environments; prefer realistic failure modes over mocks for critical paths.
+
+## TypeScript Type Assertions (`as`) Policy
+
+- NEVER use TypeScript type assertions (`as`, including double assertions like `as unknown as T`) in production or test code by default. This includes but is not limited to `as any`, `as never`, or casting to widen/narrow types to bypass the checker.
+- Exceptions must be rare and explicitly justified:
+  - Place a one‑line comment immediately above the assertion with:
+    - `Justification:` short, concrete rationale explaining why the assertion is safe and unavoidable.
+    - `Approved‑by:` the handle of a specific engineer who reviewed the line (not an agent; do not impersonate anyone). Include a link to the PR or issue.
+  - Example (allowed):
+    ```ts
+    // Justification: upstream API returns branded string at runtime; Approved-by: @eng-handle (PR #123)
+    const id = value as Brand<Id>
+    ```
+  - Example (forbidden):
+    ```ts
+    // "works on my machine"
+    const x = foo as any // ❌ banned
+    ```
+- Agents MUST NOT self‑approve or forge approvals. Do not use the repository owner's name or identity; never impersonate a human reviewer.
