@@ -23,7 +23,7 @@ export const loadLibCrSql = Effect.gen(function*() {
   const LibCrSql = yield* importLibCrSql
   const path = yield* LibCrSql.getCrSqliteExtensionPath()
   yield* SqliteClient.loadExtension(path)
-  return CrSqlSchema.ExtInfo.make({ ...yield* sqlExtInfo, path, loadedAt: yield* DateTime.now })
+  return CrSqlSchema.ExtInfo.make({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
 }).pipe(
   Effect.catchAll((cause) =>
     cause._tag === "CrSqliteExtensionMissing" ?

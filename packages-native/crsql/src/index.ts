@@ -90,6 +90,9 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  */
 export * as CrSqlSchema from "./CrSqlSchema.js"
 
+
+export * as CrSqliteExtension from "./CrSqliteExtension.js"
+
 /**
  * CR-SQLite compatible Sqlite client tag and type.
  *
