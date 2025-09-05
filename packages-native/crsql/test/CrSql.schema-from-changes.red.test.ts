@@ -3,14 +3,15 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, describe, it } from "@effect/vitest"
 import { Effect } from "effect"
+import * as Console from "effect/Console"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 // Kent Beck style TDD: red test first for a feature we wish existed.
 // Goal: derive a schema from exported CR-SQLite changes, apply it via automigrate
 // to a fresh DB, then apply those changes successfully.
 
-describe.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
-  it.todo("can recreate schema for exported changes and apply them", () =>
+describe("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
+  it.scoped("can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {
@@ -46,6 +47,7 @@ describe.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", ()
       yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        yield* Console.debug(schema)
         yield* crsql.automigrate(schema)
         yield* crsql.applyChanges(exported)
 
