@@ -164,7 +164,9 @@ const makeCrSql = Effect.gen(function*() {
       ? buildSchema(first as TemplateStringsArray, values)
       : String(first)
     // Delegate to crsql_automigrate. Fail fast on any error.
-    return sql`SELECT crsql_automigrate(${schema})`.pipe(Effect.asUnit, Effect.withSpan("CrSql.automigrate"))
+    return Effect.gen(function*() {
+      yield* sql`SELECT crsql_automigrate(${schema})`
+    }).pipe(Effect.withSpan("CrSql.automigrate"))
   }) as AutomigrateTag
 
   const fractAsOrdered = Effect.fn("@effect-native/crsql/CrSql#fractAsOrdered")(function* fractAsOrdered(
