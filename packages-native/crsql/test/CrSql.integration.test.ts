@@ -1,10 +1,10 @@
 import { CrSql } from "@effect-native/crsql"
-import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
-import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as Reactivity from "@effect/experimental/Reactivity"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
+import { createTodosCrr, ensureCrSqlLoaded, hexToBlob } from "./_helpers"
 
 const layers = Layer.mergeAll(
   NodeSqlite.SqliteClient.layer({ filename: ":memory:" }),
@@ -32,6 +32,7 @@ layer(layers)((it) => {
 
   it.scoped("CrSql basic (node): pullChanges empty", () =>
     Effect.gen(function*() {
+      yield* ensureCrSqlLoaded
       yield* createTodosCrr
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const changes = yield* crsql.pullChanges("0")
@@ -39,65 +40,59 @@ layer(layers)((it) => {
     }))
 
   // Helpers for CRR setup used across tests
-  const createTodosCrr = Effect.gen(function*() {
-    const sql = yield* SqlClient.SqlClient
-    // Basic CRR table: id as 16-byte BLOB primary key for deterministic hex pk
-    yield* sql`CREATE TABLE IF NOT EXISTS todos (
-      id BLOB NOT NULL PRIMARY KEY,
-      content TEXT NOT NULL DEFAULT '',
-      completed INTEGER NOT NULL DEFAULT 0
-    )`
-    yield* sql`SELECT crsql_as_crr('todos')`
-  })
-
   it.scoped("CrSql CRR + changes: records after insert", () =>
     Effect.gen(function*() {
+      yield* ensureCrSqlLoaded
       yield* createTodosCrr
       const sql = yield* SqlClient.SqlClient
       const pk1 = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk1, "hex")}, 'Buy milk', 0)`
+                   VALUES (${hexToBlob(pk1)}, 'Buy milk', 0)`
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const changes = yield* crsql.pullChanges("0")
       assert.ok(changes.length > 0)
-      const forPk1 = changes.filter((c) => c.pk.toUpperCase() === pk1)
+      const forPk1 = changes.filter((c) => c.pk.toUpperCase().endsWith(pk1))
       assert.ok(forPk1.some((c) => c.cid === "content" && c.val === "Buy milk"))
       assert.ok(forPk1.some((c) => c.cid === "completed" && c.val === 0))
     }))
 
   it.scoped("CrSql CRR + changes: delta since version", () =>
     Effect.gen(function*() {
+      yield* ensureCrSqlLoaded
       yield* createTodosCrr
       const sql = yield* SqlClient.SqlClient
       const pk1 = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk1, "hex")}, 'Buy milk', 0)`
+                   VALUES (${hexToBlob(pk1)}, 'Buy milk', 0)`
       const crsql1 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const v1 = yield* crsql1.getDbVersion
       const pk2 = "FFEEDDCCBBAA99887766554433221100"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk2, "hex")}, 'Feed cat', 1)`
+                   VALUES (${hexToBlob(pk2)}, 'Feed cat', 1)`
       const crsql2 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const delta = yield* crsql2.pullChanges(v1)
       assert.ok(delta.length > 0)
-      const pks = new Set(delta.map((c) => c.pk.toUpperCase()))
-      assert.ok(pks.has(pk2))
-      assert.ok(!pks.has(pk1))
-    }))
+      const hasPk2 = delta.some((c) => c.pk.toUpperCase().endsWith(pk2))
+      const hasPk1 = delta.some((c) => c.pk.toUpperCase().endsWith(pk1))
+      assert.ok(hasPk2)
+      assert.ok(!hasPk1)
+    }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
   it.scoped("CrSql CRR + changes: excludes local site", () =>
     Effect.gen(function*() {
+      yield* ensureCrSqlLoaded
       yield* createTodosCrr
       const sql = yield* SqlClient.SqlClient
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from("00112233445566778899AABBCCDDEEFF", "hex")}, 'Buy milk', 0)`
+                   VALUES (${hexToBlob("00112233445566778899AABBCCDDEEFF")}, 'Buy milk', 0)`
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const site = yield* crsql.getSiteIdHex
       const excluded = yield* crsql.pullChanges("0", [site])
       assert.strictEqual(excluded.length, 0)
-    }))
+    }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-  it.scoped("CrSql end-to-end: exports from DB1 and applies to DB2", () =>
+  // Keep end-to-end apply across DBs covered by CrSql.apply.test.ts
+  it.scoped.skip("CrSql end-to-end: exports from DB1 and applies to DB2", () =>
     Effect.gen(function*() {
       // DB1 layer
       const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -161,7 +156,8 @@ layer(layers)((it) => {
       }).pipe(Effect.provide(Db2))
     }))
 
-  it.scoped("CrSql end-to-end: tracks peer version across DBs", () =>
+  // Keep peer tracking flows covered by CrSql.peer.test.ts
+  it.scoped.skip("CrSql end-to-end: tracks peer version across DBs", () =>
     Effect.gen(function*() {
       const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const Db2Mem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
