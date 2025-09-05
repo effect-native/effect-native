@@ -23,6 +23,19 @@ const sometimesAllowed = AccessControl.make(Effect.sync(()=>Math.random()>0.5))
 const getSecretIfAllowed = getSecret.pipe(AccessControl.withPermission(sometimesAllowed))
 ```
 
+For layers
+
+
+```ts
+const program = Effect.gen(function*(){
+  // randomly AccessControlError
+  const sql = yield* SqlClient
+})
+
+const mainLayer = Layer.mergeAll(
+  AccessControl.layerProxyShallow(sometimesAllowed, BunSqliteClient.layer)
+)
+```
 
 
 
