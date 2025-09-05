@@ -146,6 +146,72 @@ const makeCrSql = Effect.gen(function*() {
     Effect.withSpan("CrSql.getSha")
   )
 
+  /**
+   * Apply schema changes using CR-SQLite's automigration engine.
+   *
+   * This is exposed as a flexible tagged template or a plain-string function:
+   *
+   * - Template: `yield* crsql.automigrate`...schema...``
+   * - String:   `yield* crsql.automigrate(schema)`
+   *
+   * The provided SQL should describe the desired schema using normal SQLite DDL
+   * (e.g. `CREATE TABLE IF NOT EXISTS ...`, index definitions) plus any
+   * CR-SQLite setup statements you want re-applied after structural changes
+   * (e.g. `SELECT crsql_as_crr('table')`, `SELECT crsql_fract_as_ordered(...)`).
+   *
+   * Under the hood, crsql_automigrate performs the following (per upstream):
+   * - Creates a temporary in-memory database and executes your schema after
+   *   stripping CRR-specific statements (e.g., `crsql_as_crr`, `crsql_fract_as_ordered`).
+   * - Diffs the temp DB against the current database and applies structural
+   *   changes inside a savepoint:
+   *   - Drops tables that no longer exist in the new schema
+   *   - Adds or drops columns as needed (NOTE: adding primary key columns is
+   *     not supported and will fail)
+   *   - Updates non-PK indices to match the new schema (drops/recreates when needed)
+   *   - For CRR tables, wraps structural changes in `crsql_begin_alter` /
+   *     `crsql_commit_alter` to safely manage triggers
+   * - Finally, executes your original schema string on the local DB so CRR
+   *   statements and other declarative conveniences are (re)applied.
+   *
+   * Guidance and limitations:
+   * - Use `CREATE TABLE IF NOT EXISTS` (and similar idempotent DDL) in your
+   *   schema so it can be applied repeatedly.
+   * - Do not attempt to change primary key definitions using automigrate; use
+   *   a manual migration for PK changes.
+   * - Keep your own schema version/name in a metadata table (e.g.,
+   *   `crsql_master`) and decide when to call `automigrate` vs. a first-time
+   *   `exec` of the schema (the upstream js driver does this pattern).
+   * - Some SQLite drivers cache table info aggressively; after automigrating,
+   *   you may prefer to use a fresh connection or call `crsql.finalize` before
+   *   continuing to avoid stale statement state. Our tests demonstrate both
+   *   approaches.
+   *
+   * Errors:
+   * - Fails fast with a SqlError when schema is invalid or a disallowed change
+   *   (e.g., adding a PK column) is detected. No errors are swallowed.
+   *
+   * Examples
+   * ```ts
+   * // Initial apply
+   * yield* crsql.automigrate`
+   *   CREATE TABLE IF NOT EXISTS items (
+   *     id BLOB PRIMARY KEY,
+   *     name TEXT NOT NULL DEFAULT ''
+   *   );
+   *   SELECT crsql_as_crr('items');
+   * `
+   *
+   * // Later migration: add a column
+   * yield* crsql.automigrate`
+   *   CREATE TABLE IF NOT EXISTS items (
+   *     id BLOB PRIMARY KEY,
+   *     name TEXT NOT NULL DEFAULT '',
+   *     note TEXT NOT NULL DEFAULT ''
+   *   );
+   *   SELECT crsql_as_crr('items');
+   * `
+   * ```
+   */
   type AutomigrateTag = {
     (strings: TemplateStringsArray, ...values: ReadonlyArray<unknown>): Effect.Effect<void>
     (schema: string): Effect.Effect<void>

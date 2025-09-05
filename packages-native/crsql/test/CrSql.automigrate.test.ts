@@ -3,9 +3,7 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import { ensureCrSqlLoaded, hexToBlob } from "./_helpers"
-import * as os from "node:os"
-import * as path from "node:path"
+import { ensureCrSqlLoaded, hexToBlob } from "./_helpers.js"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -46,8 +44,8 @@ layer(DbMem)((it) => {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         const sql = yield* SqlClient.SqlClient
 
-      // Initial schema (no note column)
-      const schemaV1 = `
+        // Initial schema (no note column)
+        const schemaV1 = `
         CREATE TABLE IF NOT EXISTS items2 (
           id BLOB NOT NULL PRIMARY KEY,
           name TEXT NOT NULL DEFAULT '',
@@ -55,14 +53,14 @@ layer(DbMem)((it) => {
         );
         SELECT crsql_as_crr('items2');
       `
-      yield* crsql.automigrate(schemaV1)
+        yield* crsql.automigrate(schemaV1)
 
-      const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-      yield* sql`INSERT INTO items2 (id, name, qty) VALUES (${hexToBlob(pk1)}, 'Alpha', 1)`
-      const v1 = yield* crsql.getDbVersion
+        const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        yield* sql`INSERT INTO items2 (id, name, qty) VALUES (${hexToBlob(pk1)}, 'Alpha', 1)`
+        const v1 = yield* crsql.getDbVersion
 
-      // New schema with added column
-      const schemaV2 = `
+        // New schema with added column
+        const schemaV2 = `
         CREATE TABLE IF NOT EXISTS items2 (
           id BLOB NOT NULL PRIMARY KEY,
           name TEXT NOT NULL DEFAULT '',
