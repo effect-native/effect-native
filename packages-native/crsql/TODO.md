@@ -104,3 +104,22 @@ For writes that bypass `CrSql.applyChanges` or `CrSql.setPeerVersion`, callers s
 - SQL client reactive integration: `packages/sql/src/internal/client.ts`, `packages/sql/src/SqlClient.ts`
 - EventLog reactivity example: `packages/experimental/src/EventLog.ts`
 
+## Future: Schema Migration (crsql_automigrate)
+
+Add a first‑class wrapper for CR‑SQLite automigrations in the `CrSql` service.
+
+- API shape (proposed):
+  - `automigrate(schema: string): Effect<void, CrSqlErrors.CrSqliteExtensionMissing | SqlError>`
+  - The `schema` is a SQL string (or concatenated SQL) describing tables and constraints to migrate.
+- Implementation:
+  - Ensure the extension is loaded (reuse existing service wiring).
+  - Execute `SELECT crsql_automigrate(${schema})` via `SqlClient`.
+  - No feature detection or soft fallbacks; fail fast on invalid input or missing extension.
+- Tests:
+  - Creates new CRR table(s) from an empty DB; verify presence via `sqlite_master` and `crsql_changes` activity after an insert.
+  - Alters existing CRR schema (e.g., add a column) and verifies changes get captured post‑migration.
+  - Idempotency: running the same schema twice is a no‑op and does not error.
+  - Failure cases: invalid SQL causes explicit failure (assert precise error). No try/catch swallowing.
+- Notes:
+  - Keep migrations single‑connection scoped in tests to avoid `:memory:` identity drift.
+  - Document expected schema string format with examples in `CrSql.ts` JSDoc when implementing.
