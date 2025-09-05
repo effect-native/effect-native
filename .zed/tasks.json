@@ -51,13 +51,15 @@
     "label": "codex",
     "command": "nix develop -c codex",
     "reveal_target": "dock",
-    "allow_concurrent_runs": true
+    "allow_concurrent_runs": true,
+    "use_new_terminal": true
   },
   {
     "label": "claude continue",
     "command": "nix develop -c claude --continue",
     "reveal_target": "dock",
-    "allow_concurrent_runs": true
+    "allow_concurrent_runs": true,
+    "use_new_terminal": true
   },
   {
     "label": "pnpm ok",

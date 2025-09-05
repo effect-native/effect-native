@@ -72,9 +72,6 @@ layer(DbMem)((it) => {
 
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const changes = yield* crsql.pullChanges("0")
-      // Temporary debug to inspect actual change rows
-
-      console.log("atomic.pullChanges", changes)
       assert.ok(changes.length > 0)
       // CR-SQLite encodes PKs in a packed blob; for single BLOB PKs the hex
       // ends with the actual PK value. Match by suffix to avoid coupling to
