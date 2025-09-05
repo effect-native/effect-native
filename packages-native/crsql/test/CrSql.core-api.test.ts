@@ -3,7 +3,7 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import { createTodosCrr, ensureCrSqlLoaded, hexToBlob } from "./_helpers"
+import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -33,7 +33,7 @@ layer(DbMem)((it) => {
       // Create a CRR and insert one row to bump version and rows_impacted
       yield* createTodosCrr
       const pk = "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"
-      yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pk)}, 'Hello', 0)`
+      yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk}), 'Hello', 0)`
 
       // rows_impacted reflects the last write; read via service
       const impacted = yield* crsql.getRowsImpacted
@@ -69,7 +69,7 @@ layer(DbMem)((it) => {
       yield* crsql.asCrr("xtodos")
 
       const pk1 = "00112233445566778899AABBCCDDEEFF"
-      yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (${hexToBlob(pk1)}, 'A', 0)`
+      yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (unhex(${pk1}), 'A', 0)`
 
       // Verify changes captured
       const crsql1 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
@@ -80,7 +80,7 @@ layer(DbMem)((it) => {
       // Downgrade and insert another row
       yield* crsql.asTable("xtodos")
       const pk2 = "FFEEDDCCBBAA99887766554433221100"
-      yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (${hexToBlob(pk2)}, 'B', 1)`
+      yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (unhex(${pk2}), 'B', 1)`
 
       // No new changes after v1
       const delta = yield* crsql.pullChanges(v1)
@@ -103,7 +103,7 @@ layer(DbMem)((it) => {
 
       // Insert once and snapshot version
       const pk1 = "AA11223344556677889900AABBCCDDEE"
-      yield* sql`INSERT INTO utodos (id, content, completed) VALUES (${hexToBlob(pk1)}, 'One', 0)`
+      yield* sql`INSERT INTO utodos (id, content, completed) VALUES (unhex(${pk1}), 'One', 0)`
 
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const v1 = yield* crsql.getDbVersion
@@ -116,7 +116,7 @@ layer(DbMem)((it) => {
 
       // Insert again, this time with new column set
       const pk2 = "BB11223344556677889900AABBCCDDEE"
-      yield* sql`INSERT INTO utodos (id, content, completed, note) VALUES (${hexToBlob(pk2)}, 'Two', 1, 'n')`
+      yield* sql`INSERT INTO utodos (id, content, completed, note) VALUES (unhex(${pk2}), 'Two', 1, 'n')`
 
       // Expect new changes only for pk2 and include the new column
       const delta = yield* crsql.pullChanges(v1)

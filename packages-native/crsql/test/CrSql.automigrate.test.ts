@@ -3,7 +3,9 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import { ensureCrSqlLoaded, hexToBlob } from "./_helpers.js"
+import { ensureCrSqlLoaded } from "./_helpers.js"
+import * as os from "node:os"
+import * as path from "node:path"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -27,7 +29,7 @@ layer(DbMem)((it) => {
 
       // Insert a row; verify changes visible
       const pk = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      yield* sql`INSERT INTO items (id, name, qty) VALUES (${hexToBlob(pk)}, 'Widget', 2)`
+      yield* sql`INSERT INTO items (id, name, qty) VALUES (unhex(${pk}), 'Widget', 2)`
 
       const changes = yield* crsql.pullChanges("0")
       assert.ok(changes.some((c) => c.table === "items" && c.pk.toUpperCase().endsWith(pk)))
@@ -55,8 +57,8 @@ layer(DbMem)((it) => {
       `
         yield* crsql.automigrate(schemaV1)
 
-        const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-        yield* sql`INSERT INTO items2 (id, name, qty) VALUES (${hexToBlob(pk1)}, 'Alpha', 1)`
+      const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+      yield* sql`INSERT INTO items2 (id, name, qty) VALUES (unhex(${pk1}), 'Alpha', 1)`
         const v1 = yield* crsql.getDbVersion
 
         // New schema with added column
@@ -78,7 +80,7 @@ layer(DbMem)((it) => {
         const crsql2 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         const sql2 = yield* SqlClient.SqlClient
         const pk2 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
-        yield* sql2`INSERT INTO items2 (id, name, qty, note) VALUES (${hexToBlob(pk2)}, 'Beta', 2, 'n')`
+        yield* sql2`INSERT INTO items2 (id, name, qty, note) VALUES (unhex(${pk2}), 'Beta', 2, 'n')`
         const out = yield* crsql2.pullChanges(stage1.v1)
         return { out, pk2 }
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))

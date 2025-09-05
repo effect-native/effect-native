@@ -21,6 +21,4 @@ export const createTodosCrr = Effect.gen(function*() {
   yield* crsql.asCrr("todos")
 })
 
-export const hexToBlob = (hex: string) => Buffer.from(hex, "hex")
-
 // Intentionally no generic provide helpers; inline provisions in tests for clarity.

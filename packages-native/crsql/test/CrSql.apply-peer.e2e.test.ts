@@ -5,7 +5,7 @@ import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
-import { createTodosCrr, ensureCrSqlLoaded, hexToBlob } from "./_helpers.js"
+import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
   it.scoped("applyChanges: exports from DB1 apply into DB2", () =>
@@ -22,8 +22,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
-        yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pkA)}, 'Alpha', 0)`
-        yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pkB)}, 'Beta', 1)`
+        yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkA}), 'Alpha', 0)`
+        yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkB}), 'Beta', 1)`
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         return yield* crsql.pullChanges("0")
       }).pipe(Effect.provide(Db1))
@@ -38,10 +38,10 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
 
         const sql = yield* SqlClient.SqlClient
         const rowsA = yield* sql<{ content: string; completed: number }>`
-          SELECT content, completed FROM todos WHERE id = ${hexToBlob(pkA)}
+          SELECT content, completed FROM todos WHERE id = unhex(${pkA})
         `
         const rowsB = yield* sql<{ content: string; completed: number }>`
-          SELECT content, completed FROM todos WHERE id = ${hexToBlob(pkB)}
+          SELECT content, completed FROM todos WHERE id = unhex(${pkB})
         `
         assert.strictEqual(rowsA.length, 1)
         assert.strictEqual(rowsA[0].content, "Alpha")
@@ -63,7 +63,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
-        yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pk)}, 'Gamma', 0)`
+        yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk}), 'Gamma', 0)`
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         const site2 = yield* crsql.getSiteIdHex
         const v2 = yield* crsql.getDbVersion

@@ -54,7 +54,7 @@ layer(DbMem)((it) => {
       const sql = yield* SqlClient.SqlClient
       const pk = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk, "hex")}, 'Alpha', 0)`
+                   VALUES (unhex(${pk}), 'Alpha', 0)`
       const rows = yield* sql<{ n: number }>`SELECT COUNT(*) AS n FROM todos`
       assert.strictEqual(rows[0]?.n, 1)
     }))
@@ -66,7 +66,7 @@ layer(DbMem)((it) => {
       const sql = yield* SqlClient.SqlClient
       const pk = "11223344556677889900AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk, "hex")}, 'Buy milk', 0)`
+                   VALUES (unhex(${pk}), 'Buy milk', 0)`
 
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const changes = yield* crsql.pullChanges("0")
@@ -88,12 +88,12 @@ layer(DbMem)((it) => {
       const sql = yield* SqlClient.SqlClient
       const pk1 = "AA11223344556677889900AABBCCDDEE"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk1, "hex")}, 'One', 0)`
+                   VALUES (unhex(${pk1}), 'One', 0)`
       const v1 = yield* crsql.getDbVersion
 
       const pk2 = "BB11223344556677889900AABBCCDDEE"
       yield* sql`INSERT INTO todos (id, content, completed)
-                   VALUES (${Buffer.from(pk2, "hex")}, 'Two', 1)`
+                   VALUES (unhex(${pk2}), 'Two', 1)`
 
       const delta = yield* crsql.pullChanges(v1)
       const byPk2 = delta.filter((c) => c.pk.toUpperCase().endsWith(pk2))
