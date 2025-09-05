@@ -36,7 +36,8 @@ import type * as SqliteClient from "./SqliteClient.js"
 
 const makeCrSql = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient
-  const extInfo = yield* CrSqliteExtension.ExtInfoLoaded
+  const { sha } = yield* CrSqliteExtension.ExtInfoLoaded
+  if (!sha) return yield* new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql extension SHA missing" })
 
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
@@ -250,14 +251,41 @@ const makeCrSql = Effect.gen(function*() {
     }).pipe(Effect.withSpan("CrSql.automigrate"))
   }) as AutomigrateTag
 
+  /**
+   * Enable Fractional Indexing for ordered lists on a table.
+   *
+   * crsql_fract_as_ordered configures a table so that an order column is
+   * maintained via an “infinite precision” fractional index. This allows:
+   * - Appending/prepending via special sentinel values (1 = append, -1 = prepend)
+   * - Generating keys between two neighbors without reindexing
+   * - Conflict resolution for concurrent/offline inserts that target the same
+   *   position; the index is guaranteed to converge
+   *
+   * References:
+   * - Overview video: https://www.youtube.com/watch?v=BghFgK6VJIE
+   * - Extension source: https://github.com/vlcn-io/cr-sqlite/tree/main/core/rs/fractindex-core/src
+   * - Implementation uses a view named "{table}_fractindex" for ordered ops
+   *
+   * Notes:
+   * - Minimal signature is provided here (table + order column). The upstream
+   *   function also accepts additional columns that define the list scope (e.g.,
+   *   list_id). A variadic helper that passes additional grouping columns can be
+   *   added in a follow-up with a safe parameterization strategy.
+   */
   const fractAsOrdered = Effect.fn("@effect-native/crsql/CrSql#fractAsOrdered")(function* fractAsOrdered(
     tableName: string,
     orderColumn: string
   ) {
-    // Minimal signature: additional ordering columns can be added later
     yield* sql`SELECT crsql_fract_as_ordered(${tableName}, ${orderColumn})`
   })
 
+  /**
+   * Generate a fractional key between two existing order keys.
+   *
+   * Returns a stable string key that sorts between the two inputs when used in
+   * the configured order column. Use this when inserting “between” neighbors or
+   * during reordering operations.
+   */
   const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")((key1: string, key2: string) =>
     sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`.pipe(
       Effect.map((rows) => rows[0].key),
@@ -438,6 +466,9 @@ const makeCrSql = Effect.gen(function*() {
     pullChanges,
     /**
      * Tears down CR‑SQLite per‑connection resources by calling `crsql_finalize()`.
+     *
+     * Why can't crsqlite auto-destruct itself? See this SQLite forum context:
+     * https://sqlite.org/forum/forumpost/c94f943821
      *
      * CR‑SQLite registers persistent prepared statements and caches when the
      * extension loads. In some host environments, relying on the extension unload
