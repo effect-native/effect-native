@@ -41,57 +41,27 @@ const makeCrSql = Effect.gen(function*() {
 
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
-  const getSiteIdHex = Effect.fn("@effect-native/crsql/CrSql#getSiteIdHex")(function* getSiteIdHex() {
-    const rows = yield* sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`
+  const getSiteIdHex = sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`.pipe(
+    Effect.map((rows) => rows[0].site_id),
+    Effect.withSpan("CrSql.getSiteIdHex")
+  )
 
-    // CR-SQLite always returns exactly one row with site_id, but adding defensive check
-    if (rows.length === 0) {
-      return yield* Effect.fail(
-        new CrSqlErrors.CrSqliteExtensionMissing({
-          cause: new Error("crsql_site_id() returned no rows")
-        })
-      )
-    }
+  const getDbVersion = sql<{ version: CrSqlSchema.VersionString }>`SELECT CAST(crsql_db_version() AS TEXT) AS version`
+    .pipe(
+      Effect.map((rows) => rows[0].version),
+      Effect.withSpan("CrSql.getDbVersion")
+    )
 
-    return rows[0].site_id
-  })()
+  const getNextDbVersion = sql<{ v: CrSqlSchema.VersionString }>`SELECT CAST(crsql_next_db_version() AS TEXT) AS v`
+    .pipe(
+      Effect.map((rows) => rows[0].v),
+      Effect.withSpan("CrSql.getNextDbVersion")
+    )
 
-  const getDbVersion = Effect.fn("@effect-native/crsql/CrSql#getDbVersion")(function* getDbVersion() {
-    const rows = yield* sql<
-      { version: CrSqlSchema.VersionString }
-    >`SELECT CAST(crsql_db_version() AS TEXT) AS version`
-
-    // CR-SQLite always returns exactly one row with version, but adding defensive check
-    if (rows.length === 0) {
-      return yield* Effect.fail(
-        new CrSqlErrors.CrSqliteExtensionMissing({
-          cause: new Error("crsql_db_version() returned no rows")
-        })
-      )
-    }
-
-    return rows[0].version
-  })()
-
-  const getNextDbVersion = Effect.fn("@effect-native/crsql/CrSql#getNextDbVersion")(function* getNextDbVersion() {
-    const rows = yield* sql<{ v: CrSqlSchema.VersionString }>`SELECT CAST(crsql_next_db_version() AS TEXT) AS v`
-    if (rows.length === 0) {
-      return yield* Effect.fail(
-        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_next_db_version() returned no rows") })
-      )
-    }
-    return rows[0].v
-  })()
-
-  const getRowsImpacted = Effect.fn("@effect-native/crsql/CrSql#getRowsImpacted")(function* getRowsImpacted() {
-    const rows = yield* sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`
-    if (rows.length === 0) {
-      return yield* Effect.fail(
-        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_rows_impacted() returned no rows") })
-      )
-    }
-    return rows[0].n
-  })()
+  const getRowsImpacted = sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`.pipe(
+    Effect.map((rows) => rows[0].n),
+    Effect.withSpan("CrSql.getRowsImpacted")
+  )
 
   const pullChanges = Effect.fn("@effect-native/crsql/CrSql#pullChanges")(function* pullChanges(
     since: CrSqlSchema.VersionString = "0",
@@ -171,9 +141,10 @@ const makeCrSql = Effect.gen(function*() {
     yield* sql`SELECT crsql_commit_alter(${tableName})`
   })
 
-  const getSha = Effect.fn("@effect-native/crsql/CrSql#getSha")(function* getSha() {
-    return extInfo.sha
-  })()
+  const getSha = sql<{ sha: string }>`SELECT crsql_sha() as sha`.pipe(
+    Effect.map((rows) => rows[0].sha),
+    Effect.withSpan("CrSql.getSha")
+  )
 
   const fractAsOrdered = Effect.fn("@effect-native/crsql/CrSql#fractAsOrdered")(function* fractAsOrdered(
     tableName: string,
@@ -183,28 +154,24 @@ const makeCrSql = Effect.gen(function*() {
     yield* sql`SELECT crsql_fract_as_ordered(${tableName}, ${orderColumn})`
   })
 
-  const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")(function* fractKeyBetween(
-    key1: string,
-    key2: string
-  ) {
-    const rows = yield* sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`
-    if (rows.length === 0) {
-      return yield* Effect.fail(
-        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_fract_key_between() returned no rows") })
-      )
-    }
-    return rows[0].key
-  })
+  const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")((key1: string, key2: string) =>
+    sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`.pipe(
+      Effect.map((rows) => rows[0].key),
+      Effect.withSpan("CrSql.fractKeyBetween")
+    )
+  )
 
+  // Product decision: rely on SQLite's unhex() (available in sqlite >= 3.50.2).
+  // If unhex() is missing or disabled in the host, we fail fast with
+  // UnhexUnavailable rather than adding feature-detection fallbacks.
+  // NOTE: verifying unhex() presence as early as possible in layer creation
+  // so that it'll be easier to know when there's a configuration issue
+  yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
+    Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
+  )
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
   ) {
-    // Product decision: rely on SQLite's unhex() (available in sqlite >= 3.50.2).
-    // If unhex() is missing or disabled in the host, we fail fast with
-    // UnhexUnavailable rather than adding feature-detection fallbacks.
-    yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
-      Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
-    )
     // TODO(effect-native): Wrap with Reactivity.mutation and invalidate keys
     // - Invalidate ["crsql:dbVersion", "crsql:changes"] after successful apply
     // - Aggregate row-level invalidations by table: { ["crsql:row:" + table]: [pkHex...] }
@@ -242,9 +209,11 @@ const makeCrSql = Effect.gen(function*() {
   })
 
   const setPeerVersion = Effect.fn("@effect-native/crsql/CrSql#setPeerVersion")(function* setPeerVersion(
-    siteId: CrSqlSchema.SiteIdHex,
-    version: CrSqlSchema.VersionString,
-    seq: number
+    props: {
+      siteId: CrSqlSchema.SiteIdHex
+      version: CrSqlSchema.VersionString
+      seq: number
+    }
   ) {
     // TODO(effect-native): Wrap with Reactivity.mutation to invalidate peer watchers
     // - Invalidate { "crsql:peer": [siteId] }
@@ -252,27 +221,36 @@ const makeCrSql = Effect.gen(function*() {
     // Product decision: compare/store peer site ids as BLOBs via unhex().
     yield* sql`
       INSERT OR REPLACE INTO crsql_tracked_peers (site_id, version, tag, event, seq)
-      VALUES (unhex(${siteId}), CAST(${version} AS INTEGER), 0, 0, ${seq})
+      VALUES (unhex(${props.siteId}), CAST(${props.version} AS INTEGER), 0, 0, ${props.seq})
     `
   })
 
+  // Product decision: rely on unhex() to compare stored BLOB site_id with
+  // transport hex. Environments without unhex() should fail fast.
   const getPeerVersion = Effect.fn("@effect-native/crsql/CrSql#getPeerVersion")(function* getPeerVersion(
     siteId: CrSqlSchema.SiteIdHex
   ) {
-    // Product decision: rely on unhex() to compare stored BLOB site_id with
-    // transport hex. Environments without unhex() should fail fast.
-    const rows = yield* sql<{
-      version: CrSqlSchema.VersionString
-      seq: number
-    }>`
+    const [peerVersion] = yield* sql<{ version: CrSqlSchema.VersionString; seq: number }>`
       SELECT CAST(version AS TEXT) as version, seq
       FROM crsql_tracked_peers
       WHERE site_id = unhex(${siteId})
     `
-
-    // Return single object if found, null if not found (consistent with integration tests)
-    return rows.length > 0 ? rows[0] : null
+    return peerVersion ?? null
   })
+
+  const listTrackedPeers = sql<CrSqlSchema.TrackedPeerSerialized>`
+    SELECT hex(site_id) AS site_id, CAST(version AS TEXT) AS version, seq
+    FROM crsql_tracked_peers
+  `.pipe(Effect.withSpan("CrSql.listTrackedPeers"))
+
+  const trackedPeersMap = listTrackedPeers.pipe(
+    Effect.map((rows) =>
+      Object.fromEntries(
+        rows.map((r) => [r.site_id, { version: r.version, seq: r.seq }])
+      ) as Record<CrSqlSchema.SiteIdHex, { version: CrSqlSchema.VersionString; seq: number }>
+    ),
+    Effect.withSpan("CrSql.trackedPeersMap")
+  )
 
   const crsql = {
     /**
@@ -479,6 +457,8 @@ const makeCrSql = Effect.gen(function*() {
      * @category Operations
      */
     getPeerVersion,
+    listTrackedPeers,
+    trackedPeersMap,
 
     // TODO(effect-native): expose reactive helpers in service API
     // reactiveDbVersion,

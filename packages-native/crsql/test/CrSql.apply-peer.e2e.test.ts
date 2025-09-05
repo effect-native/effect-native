@@ -4,7 +4,8 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
-import { createTodosCrr, ensureCrSqlLoaded, hexToBlob } from "./_helpers"
+import * as Console from "effect/Console"
+import { createTodosCrr, ensureCrSqlLoaded, hexToBlob } from "./_helpers.js"
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
   it.scoped("applyChanges: exports from DB1 apply into DB2", () =>
@@ -74,14 +75,14 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-        yield* crsql.setPeerVersion(info2.site2, info2.v2, 0)
+        yield* crsql.setPeerVersion({ siteId: info2.site2, version: info2.v2, seq: 0 })
         // Inspect stored peers to validate hex site id and version
         const sql = yield* SqlClient.SqlClient
         const rows = yield* sql<{ sid: string; v: string; seq: number }>`
           SELECT hex(site_id) AS sid, CAST(version AS TEXT) AS v, seq FROM crsql_tracked_peers
         `
-        console.log("DB1 tracked_peers rows:", rows)
-        console.log("Expect site2:", info2.site2, "v2:", info2.v2)
+        yield* Console.log("DB1 tracked_peers rows:", rows)
+        yield* Console.log("Expect site2:", info2.site2, "v2:", info2.v2)
         // Expect at least one row matching site2 and v2
         const checks = rows.map((r) => ({
           sidEq: r.sid.toUpperCase() === info2.site2.toUpperCase(),
@@ -89,10 +90,13 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
           v2: info2.v2,
           seq: r.seq
         }))
-        console.log("peer checks:", checks)
+        yield* Console.log("peer checks:", checks)
         assert.ok(
           rows.some((r) => r.sid.toUpperCase() === info2.site2.toUpperCase() && r.v === info2.v2 && r.seq === 0)
         )
+        // Also validate map keyed by site id
+        const map = yield* crsql.trackedPeersMap
+        assert.deepEqual(map[info2.site2], { version: info2.v2, seq: 0 })
         return yield* crsql.getPeerVersion(info2.site2)
       }).pipe(Effect.provide(Db1))
 
