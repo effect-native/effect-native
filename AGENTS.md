@@ -75,3 +75,24 @@ This project uses the latest Effect `^3.17.11` which supports modern error handl
 - **Rationale**: Modern Effect Error classes implement the necessary protocols to be yielded directly, making code more concise while maintaining full type safety and error propagation.
 
 - **Review Expectation**: Contributors and automated reviews should NOT flag the modern `yield* new Error()` syntax as incorrect. It is the current standard for this project's Effect version.
+
+## Nix Development Environment
+
+This project uses Nix for dependency management and reproducible builds. All development commands should be run within the Nix development shell:
+
+- **Command Prefix**: Always prefix package manager and build commands with `nix develop --command` or run `nix develop` first to enter the shell:
+  ```bash
+  # ✅ Preferred
+  nix develop --command pnpm install
+  nix develop --command pnpm ok
+  nix develop --command pnpm test
+
+  # ✅ Alternative (enter shell first)
+  nix develop
+  pnpm install
+  pnpm ok
+  ```
+
+- **Rationale**: The Nix shell ensures consistent Node.js versions, native dependencies, and build tools across all environments, preventing "works on my machine" issues.
+
+- **CI Alignment**: This matches the CI environment which also runs commands within the Nix development shell.
