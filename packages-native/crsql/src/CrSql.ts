@@ -20,15 +20,15 @@
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
 import * as SqlClient from "@effect/sql/SqlClient"
+import * as SqlError from "@effect/sql/SqlError"
+import * as Statement from "@effect/sql/Statement"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import * as CrSqlErrors from "./CrSqlErrors.js"
-import * as Statement from "@effect/sql/Statement"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
 import type * as SqliteClient from "./SqliteClient.js"
-import * as SqlError from "@effect/sql/SqlError"
 
 // TODO(effect-native): Reactivity integration
 // - Define and export key helpers (dbVersion, changes, table, row, peer)
@@ -230,28 +230,22 @@ const makeCrSql = Effect.gen(function*() {
    * `
    * ```
    */
-  type AutomigrateTag = {
-    (strings: TemplateStringsArray, ...values: ReadonlyArray<unknown>): Effect.Effect<void>
-    (schema: string): Effect.Effect<void>
-  }
-
-  const automigrate: AutomigrateTag = ((first: unknown, ...values: ReadonlyArray<unknown>) => {
-    const buildSchema = (strings: TemplateStringsArray, values: ReadonlyArray<unknown>) => {
-      let out = ""
-      for (let i = 0; i < strings.length; i++) {
-        out += strings[i]
-        if (i < values.length) out += String(values[i])
-      }
-      return out
+  const automigrate = Effect.fn("CrSql.automigrate")(
+    (
+      first: string | TemplateStringsArray,
+      // TODO: add support for values other than string maybe someday
+      ...values: ReadonlyArray<string>
+    ) => {
+      const schema = isTemplateStringsArray(first)
+        ? String.raw(
+          first,
+          // TODO: add support for values other than string maybe someday
+          ...values.map((it) => String(it))
+        )
+        : String(first)
+      return sql`SELECT crsql_automigrate(${schema})`.pipe(Effect.asVoid)
     }
-    const schema = Array.isArray(first) && Object.prototype.hasOwnProperty.call(first, "raw")
-      ? buildSchema(first as TemplateStringsArray, values)
-      : String(first)
-    // Delegate to crsql_automigrate. Fail fast on any error.
-    return Effect.gen(function*() {
-      yield* sql`SELECT crsql_automigrate(${schema})`
-    }).pipe(Effect.withSpan("CrSql.automigrate"))
-  }) as AutomigrateTag
+  )
 
   /**
    * Enable Fractional Indexing for ordered lists on a table.
@@ -787,4 +781,8 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
       return yield* makeCrSql.pipe(Effect.provide(layers))
     }
   )
+}
+
+function isTemplateStringsArray(first: string | TemplateStringsArray): first is TemplateStringsArray {
+  return Array.isArray(first) && Object.hasOwn(first, "raw")
 }

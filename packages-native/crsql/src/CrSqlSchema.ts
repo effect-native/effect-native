@@ -95,6 +95,7 @@ export type VersionString = typeof VersionString.Type
  * @category Schema
  */
 export const SqlValueType = S.Literal("null", "text", "integer", "real", "blob")
+export type SqlValueType = typeof SqlValueType.Type
 
 /**
  * Simple SQL identifier pattern.
