@@ -5,8 +5,6 @@ import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 
-// Kent Beck–style atomic tests to isolate minimal behaviors.
-
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 const createTodosCrr = Effect.gen(function*() {

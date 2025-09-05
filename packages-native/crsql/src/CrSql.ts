@@ -38,7 +38,6 @@ import type * as SqliteClient from "./SqliteClient.js"
 const makeCrSql = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient
   const extInfo = yield* CrSqliteExtension.ExtInfoLoaded
-  yield* Console.debug({ extInfo })
 
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
@@ -444,7 +443,7 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
       // load the extension via params or default to our standard loader
       const loadInfo = yield* params.loadedExtensionInfo?.pipe(
         Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded),
-        Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
+        Effect.catchTag("ParseError", (cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))),
         Effect.withSpan("params.loadedExtensionInfo")
       ) ??
         CrSqliteExtension.loadLibCrSql.pipe(Effect.provide(layerSqlClient))

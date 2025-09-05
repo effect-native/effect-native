@@ -40,7 +40,7 @@ export const sqlExtInfo = Effect.gen(function*() {
   const [info] = yield* sql<CrSqlSchema.ExtInfoSql>`SELECT crsql_sha() as sha, hex(crsql_site_id()) as siteId`
   return CrSqlSchema.ExtInfoSql.make(info)
 }).pipe(
-  Effect.catchAll((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
+  Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.sqlExtInfo")
 )
 
@@ -66,7 +66,7 @@ export const loadLibCrSql = Effect.gen(function*() {
   Effect.catchAll((cause) =>
     cause._tag === "CrSqliteExtensionMissing" ?
       Effect.fail(cause) :
-      new CrSqlErrors.CrSqliteExtensionMissing({ cause })
+      Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
   ),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.loadLibCrSql")
 )
