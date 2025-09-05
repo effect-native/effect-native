@@ -88,4 +88,31 @@ layer(DbMem)((it) => {
       // Ensure we did not include the earlier row (pk1) in the delta
       assert.ok(!changes2.some((c) => c.pk.toUpperCase().endsWith(stage1.pk1)))
     }))
+
+  it.scoped("automigrate call is parameterized; injection cannot break out", () =>
+    Effect.gen(function*() {
+      yield* ensureCrSqlLoaded
+      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const sql = yield* SqlClient.SqlClient
+
+      // Create a victim table to assert that it cannot be dropped via injection
+      yield* sql`CREATE TABLE victim (name TEXT NOT NULL)`
+      yield* sql`INSERT INTO victim (name) VALUES ('ok')`
+
+      // If the crsql.automigrate call were built via string concatenation, the following
+      // payload would terminate the function call and execute a DROP TABLE. Because the call
+      // is parameterized via Effect SQL templates, this remains an argument to the function
+      // and does not execute as separate SQL.
+      const payload = "'); DROP TABLE victim; --"
+
+      const result = yield* crsql.automigrate(payload).pipe(Effect.either)
+      assert.isTrue(result._tag === "Left") // invalid migration payload causes a failure
+
+      const [exists] = yield* sql<{ n: number }>`
+        SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'victim'
+      `
+      assert.strictEqual(exists.n, 1)
+      const [row] = yield* sql<{ name: string }>`SELECT name FROM victim LIMIT 1`
+      assert.strictEqual(row.name, 'ok')
+    }))
 })

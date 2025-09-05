@@ -52,6 +52,6 @@ layer(DbMem)((it) => {
       `
       assert.strictEqual(exists.n, 1)
       const [row] = yield* sql<{ note: string }>`SELECT note FROM safe_blob LIMIT 1`
-      assert.strictEqual(row.note, 'ok')
+      assert.strictEqual(row.note, "ok")
     }))
 })

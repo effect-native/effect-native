@@ -20,7 +20,6 @@
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
 import * as SqlClient from "@effect/sql/SqlClient"
-import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
@@ -43,7 +42,9 @@ const makeCrSql = Effect.gen(function*() {
 
   const getSiteIdHex = sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`.pipe(
     Effect.flatMap((rows) =>
-      rows.length > 0 ? Effect.succeed(rows[0].site_id) : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_site_id() returned no rows" }))
+      rows.length > 0
+        ? Effect.succeed(rows[0].site_id)
+        : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_site_id() returned no rows" }))
     ),
     Effect.withSpan("CrSql.getSiteIdHex")
   )
@@ -51,7 +52,9 @@ const makeCrSql = Effect.gen(function*() {
   const getDbVersion = sql<{ version: CrSqlSchema.VersionString }>`SELECT CAST(crsql_db_version() AS TEXT) AS version`
     .pipe(
       Effect.flatMap((rows) =>
-        rows.length > 0 ? Effect.succeed(rows[0].version) : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_db_version() returned no rows" }))
+        rows.length > 0
+          ? Effect.succeed(rows[0].version)
+          : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_db_version() returned no rows" }))
       ),
       Effect.withSpan("CrSql.getDbVersion")
     )
@@ -59,14 +62,18 @@ const makeCrSql = Effect.gen(function*() {
   const getNextDbVersion = sql<{ v: CrSqlSchema.VersionString }>`SELECT CAST(crsql_next_db_version() AS TEXT) AS v`
     .pipe(
       Effect.flatMap((rows) =>
-        rows.length > 0 ? Effect.succeed(rows[0].v) : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_next_db_version() returned no rows" }))
+        rows.length > 0
+          ? Effect.succeed(rows[0].v)
+          : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_next_db_version() returned no rows" }))
       ),
       Effect.withSpan("CrSql.getNextDbVersion")
     )
 
   const getRowsImpacted = sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`.pipe(
     Effect.flatMap((rows) =>
-      rows.length > 0 ? Effect.succeed(rows[0].n) : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_rows_impacted() returned no rows" }))
+      rows.length > 0
+        ? Effect.succeed(rows[0].n)
+        : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_rows_impacted() returned no rows" }))
     ),
     Effect.withSpan("CrSql.getRowsImpacted")
   )
