@@ -3,9 +3,9 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import { ensureCrSqlLoaded } from "./_helpers.js"
 import * as os from "node:os"
 import * as path from "node:path"
+import { ensureCrSqlLoaded } from "./_helpers.js"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -16,7 +16,7 @@ layer(DbMem)((it) => {
       const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const sql = yield* SqlClient.SqlClient
 
-      const schema = `
+      yield* crsql.automigrate`
         CREATE TABLE IF NOT EXISTS items (
           id BLOB NOT NULL PRIMARY KEY,
           name TEXT NOT NULL DEFAULT '',
@@ -24,8 +24,6 @@ layer(DbMem)((it) => {
         );
         SELECT crsql_as_crr('items');
       `
-
-      yield* crsql.automigrate(schema)
 
       // Insert a row; verify changes visible
       const pk = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -47,31 +45,29 @@ layer(DbMem)((it) => {
         const sql = yield* SqlClient.SqlClient
 
         // Initial schema (no note column)
-        const schemaV1 = `
-        CREATE TABLE IF NOT EXISTS items2 (
-          id BLOB NOT NULL PRIMARY KEY,
-          name TEXT NOT NULL DEFAULT '',
-          qty INTEGER NOT NULL DEFAULT 0
-        );
-        SELECT crsql_as_crr('items2');
-      `
-        yield* crsql.automigrate(schemaV1)
+        yield* crsql.automigrate`
+          CREATE TABLE IF NOT EXISTS items2 (
+            id BLOB NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL DEFAULT '',
+            qty INTEGER NOT NULL DEFAULT 0
+          );
+          SELECT crsql_as_crr('items2');
+        `
 
-      const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-      yield* sql`INSERT INTO items2 (id, name, qty) VALUES (unhex(${pk1}), 'Alpha', 1)`
+        const pk1 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        yield* sql`INSERT INTO items2 (id, name, qty) VALUES (unhex(${pk1}), 'Alpha', 1)`
         const v1 = yield* crsql.getDbVersion
 
         // New schema with added column
-        const schemaV2 = `
-        CREATE TABLE IF NOT EXISTS items2 (
-          id BLOB NOT NULL PRIMARY KEY,
-          name TEXT NOT NULL DEFAULT '',
-          qty INTEGER NOT NULL DEFAULT 0,
-          note TEXT NOT NULL DEFAULT ''
-        );
-        SELECT crsql_as_crr('items2');
-      `
-        yield* crsql.automigrate(schemaV2)
+        yield* crsql.automigrate`
+          CREATE TABLE IF NOT EXISTS items2 (
+            id BLOB NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL DEFAULT '',
+            qty INTEGER NOT NULL DEFAULT 0,
+            note TEXT NOT NULL DEFAULT ''
+          );
+          SELECT crsql_as_crr('items2');
+        `
         return { v1, pk1 }
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))
 
