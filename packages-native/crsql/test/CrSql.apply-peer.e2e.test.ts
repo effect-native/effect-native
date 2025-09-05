@@ -56,42 +56,46 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const Db2 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
-      // DB2: make one change
-      const pk = "00112233445566778899AABBCCDDEEFF"
-      yield* Effect.gen(function*() {
+      // Keep DB2 work on a single connection/layer provision
+      const info2 = yield* Effect.gen(function*() {
+        const pk = "00112233445566778899AABBCCDDEEFF"
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pk)}, 'Gamma', 0)`
-      }).pipe(Effect.provide(Db2))
-
-      const site2 = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-        return yield* crsql.getSiteIdHex
+        const site2 = yield* crsql.getSiteIdHex
+        const v2 = yield* crsql.getDbVersion
+        return { site2, v2 }
       }).pipe(Effect.provide(Db2))
 
-      const v2 = yield* Effect.gen(function*() {
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-        return yield* crsql.getDbVersion
-      }).pipe(Effect.provide(Db2))
-
-      // DB1: record DB2's version
-      yield* Effect.gen(function*() {
+      // Keep DB1 work on a single connection/layer provision
+      const tracked = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-        return yield* crsql.setPeerVersion(site2, v2, 0)
+        yield* crsql.setPeerVersion(info2.site2, info2.v2, 0)
+        // Inspect stored peers to validate hex site id and version
+        const sql = yield* SqlClient.SqlClient
+        const rows = yield* sql<{ sid: string; v: string; seq: number }>`
+          SELECT hex(site_id) AS sid, CAST(version AS TEXT) AS v, seq FROM crsql_tracked_peers
+        `
+        console.log("DB1 tracked_peers rows:", rows)
+        console.log("Expect site2:", info2.site2, "v2:", info2.v2)
+        // Expect at least one row matching site2 and v2
+        const checks = rows.map((r) => ({
+          sidEq: r.sid.toUpperCase() === info2.site2.toUpperCase(),
+          v: r.v,
+          v2: info2.v2,
+          seq: r.seq
+        }))
+        console.log("peer checks:", checks)
+        assert.ok(
+          rows.some((r) => r.sid.toUpperCase() === info2.site2.toUpperCase() && r.v === info2.v2 && r.seq === 0)
+        )
+        return yield* crsql.getPeerVersion(info2.site2)
       }).pipe(Effect.provide(Db1))
 
-      // Validate tracked peer info in DB1
-      const tracked = yield* Effect.gen(function*() {
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-        // Sanity check: table exists
-        const sql = yield* SqlClient.SqlClient
-        // Will error if table missing
-        yield* sql`SELECT COUNT(*) AS n FROM crsql_tracked_peers`
-        return yield* crsql.getPeerVersion(site2)
-      }).pipe(Effect.provide(Db1))
-      assert.deepEqual(tracked, { version: v2, seq: 0 })
+      assert.deepEqual(tracked, { version: info2.v2, seq: 0 })
     }))
 })
