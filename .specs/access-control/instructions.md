@@ -33,10 +33,33 @@ const program = Effect.gen(function*(){
 })
 
 const mainLayer = Layer.mergeAll(
-  AccessControl.layerProxyShallow(sometimesAllowed, BunSqliteClient.layer)
+  AccessControl.layer(sometimesAllowed, BunSqliteClient.layer)
 )
+
+runMain(program.pipe(Effect.provide(mainLayer))
 ```
 
 
+For layers
+
+Creates a proxy layer that provides a context that is indistinguishable from the real context except that each field is gated by the access controller effect
+
+
+```ts
+const program = Effect.gen(function*(){
+  const sql = yield* SqlClient
+  
+  // …
+  
+  // randomly AccessControlError
+  yield* sql.query(`SELECT 123`)
+})
+
+const mainLayer = Layer.mergeAll(
+  AccessControl.layerProxy(sometimesAllowed, BunSqliteClient.layer)
+)
+
+runMain(program.pipe(Effect.provide(mainLayer))
+```
 
 
