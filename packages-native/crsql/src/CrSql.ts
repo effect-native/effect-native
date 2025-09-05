@@ -138,7 +138,9 @@ const makeCrSql = Effect.gen(function*() {
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
   ) {
-    // Ensure unhex() exists and returns something meaningful
+    // Product decision: rely on SQLite's unhex() (available in sqlite >= 3.50.2).
+    // If unhex() is missing or disabled in the host, we fail fast with
+    // UnhexUnavailable rather than adding feature-detection fallbacks.
     yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
       Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
     )
@@ -152,6 +154,9 @@ const makeCrSql = Effect.gen(function*() {
       Effect.forEach(
         changes,
         (change) =>
+          // Product decision: use unhex() to decode transport hex into BLOBs
+          // (pk, site_id, and val when val_type='blob'), instead of pushing this
+          // responsibility into application code. Tests assume unhex() presence.
           sql`
             INSERT INTO crsql_changes ("table", pk, cid, val, col_version, db_version, site_id, cl, seq)
             VALUES (
@@ -183,6 +188,7 @@ const makeCrSql = Effect.gen(function*() {
     // TODO(effect-native): Wrap with Reactivity.mutation to invalidate peer watchers
     // - Invalidate { "crsql:peer": [siteId] }
     // See packages-native/crsql/TODO.md#mutation-wiring
+    // Product decision: compare/store peer site ids as BLOBs via unhex().
     yield* sql`
       INSERT OR REPLACE INTO crsql_tracked_peers (site_id, version, tag, event, seq)
       VALUES (unhex(${siteId}), CAST(${version} AS INTEGER), 0, 0, ${seq})
@@ -192,10 +198,16 @@ const makeCrSql = Effect.gen(function*() {
   const getPeerVersion = Effect.fn("@effect-native/crsql/CrSql#getPeerVersion")(function* getPeerVersion(
     siteId: CrSqlSchema.SiteIdHex
   ) {
+    // Product decision: rely on unhex() to compare stored BLOB site_id with
+    // transport hex. Environments without unhex() should fail fast.
     const rows = yield* sql<{
       version: CrSqlSchema.VersionString
       seq: number
-    }>`SELECT CAST(version AS TEXT) as version, seq FROM crsql_tracked_peers WHERE site_id = unhex(${siteId})`
+    }>`
+      SELECT CAST(version AS TEXT) as version, seq
+      FROM crsql_tracked_peers
+      WHERE site_id = unhex(${siteId})
+    `
 
     // Return single object if found, null if not found (consistent with integration tests)
     return rows.length > 0 ? rows[0] : null
