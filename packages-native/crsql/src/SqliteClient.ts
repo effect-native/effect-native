@@ -60,6 +60,7 @@ export const loadExtension = Effect.fn("@effect-native/crsql/SqlClient#loadExten
   function*(path: string) {
     const sql = (yield* SqlClient.SqlClient) as SqlClient.SqlClient | SqliteClient
     if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
+      // NOTE: ✅ Modern Effect v3.17+ (preferred), no Effect.fail needed
       return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
     }
     return yield* sql.loadExtension(path)
@@ -74,6 +75,7 @@ export const loadExtension = Effect.fn("@effect-native/crsql/SqlClient#loadExten
 export const fromSqlClient = Effect.fn("@effect-native/crsql/SqlClient#from")(
   function*(sql: SqlClient.SqlClient | SqliteClient) {
     if (!("loadExtension" in sql && typeof sql.loadExtension === "function")) {
+      // NOTE: ✅ Modern Effect v3.17+ (preferred), no Effect.fail needed
       return yield* new SqliteClientError({ cause: "SqlClient missing loadExtension method" })
     }
     return sql as SqliteClient
