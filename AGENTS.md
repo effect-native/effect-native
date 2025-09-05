@@ -42,8 +42,11 @@ Failing fast makes defects visible early, prevents silent regressions, and align
 
 ## TypeScript Type Assertions (`as`) Policy
 
-- NEVER use TypeScript type assertions (`as`, including double assertions like `as unknown as T`) in production or test code by default. This includes but is not limited to `as any`, `as never`, or casting to widen/narrow types to bypass the checker.
-- Exceptions must be rare and explicitly justified:
+- Prefer type inference and precise types. Avoid assertions that "lie about reality" by widening or narrowing without proof.
+- "as const" is explicitly allowed and encouraged: it narrows values (e.g., tuples and object literals) and increases strictness. This does not misrepresent runtime values.
+- "as any" is explicitly banned. It disables type safety and is a foot cannon.
+- Double assertions (e.g., `as unknown as T`) and other unsafe up/down casts are banned by default unless narrowly justified.
+- Rare exceptions must be explicitly justified:
   - Place a one‑line comment immediately above the assertion with:
     - `Justification:` short, concrete rationale explaining why the assertion is safe and unavoidable.
     - `Approved‑by:` the handle of a specific engineer who reviewed the line (not an agent; do not impersonate anyone). Include a link to the PR or issue.
