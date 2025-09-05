@@ -10,8 +10,7 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // to a fresh DB, then apply those changes successfully.
 
 describe.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
-  it.todo("can recreate schema for exported changes and apply them")
-  /*
+  it.todo("can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {
@@ -61,5 +60,4 @@ describe.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", ()
         ])
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
     }))
-  */
 })
