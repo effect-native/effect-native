@@ -11,38 +11,38 @@ layer(DbMem)((it) => {
   it.scoped("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
+      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const sql = yield* SqlClient.SqlClient
 
-      // sha
-      const [shaRow] = yield* sql<{ sha: string }>`SELECT crsql_sha() as sha`
-      assert.ok(typeof shaRow.sha === "string" && shaRow.sha.length > 0)
-      assert.match(shaRow.sha, /^[0-9a-f]+$/i)
+      // sha via service
+      const sha = yield* crsql.getSha
+      assert.ok(typeof sha === "string" && sha.length > 0)
+      assert.match(sha, /^[0-9a-f]+$/i)
 
-      // site id
-      const [siteRow] = yield* sql<{ siteId: string }>`SELECT hex(crsql_site_id()) as siteId`
-      assert.strictEqual(siteRow.siteId.length, 32)
-      assert.match(siteRow.siteId, /^[0-9A-F]{32}$/i)
+      // site id via service
+      const siteId = yield* crsql.getSiteIdHex
+      assert.strictEqual(siteId.length, 32)
+      assert.match(siteId, /^[0-9A-F]{32}$/i)
 
-      // db version and next
-      const [v0Row] = yield* sql<{ v0: string }>`SELECT CAST(crsql_db_version() AS TEXT) as v0`
-      assert.strictEqual(v0Row.v0, "0")
-      const [vnext0Row] = yield* sql<{ vnext: string }>`SELECT CAST(crsql_next_db_version() AS TEXT) as vnext`
-      assert.strictEqual(BigInt(vnext0Row.vnext), BigInt(v0Row.v0) + 1n)
+      // db version and next via service
+      const v0 = yield* crsql.getDbVersion
+      assert.strictEqual(v0, "0")
+      const vnext0 = yield* crsql.getNextDbVersion
+      assert.strictEqual(BigInt(vnext0), BigInt(v0) + 1n)
 
       // Create a CRR and insert one row to bump version and rows_impacted
       yield* createTodosCrr
       const pk = "C0C1C2C3C4C5C6C7C8C9CACBCCCDCECF"
       yield* sql`INSERT INTO todos (id, content, completed) VALUES (${hexToBlob(pk)}, 'Hello', 0)`
 
-      // rows_impacted reflects the last write; read it immediately after insert
-      const [impacted] = yield* sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`
-      // Implementation detail varies; assert it's a non-negative integer.
-      assert.ok(Number.isInteger(impacted.n) && impacted.n >= 0)
+      // rows_impacted reflects the last write; read via service
+      const impacted = yield* crsql.getRowsImpacted
+      assert.ok(Number.isInteger(impacted) && impacted >= 0)
 
-      const [v1Row] = yield* sql<{ v1: string }>`SELECT CAST(crsql_db_version() AS TEXT) as v1`
-      assert.strictEqual(BigInt(v1Row.v1), 1n)
-      const [vnext1Row] = yield* sql<{ vnext: string }>`SELECT CAST(crsql_next_db_version() AS TEXT) as vnext`
-      assert.strictEqual(BigInt(vnext1Row.vnext), BigInt(v1Row.v1) + 1n)
+      const v1 = yield* crsql.getDbVersion
+      assert.strictEqual(BigInt(v1), 1n)
+      const vnext1 = yield* crsql.getNextDbVersion
+      assert.strictEqual(BigInt(vnext1), BigInt(v1) + 1n)
     }))
 
   it.scoped("crsql_changes virtual table accessible", () =>
@@ -65,19 +65,20 @@ layer(DbMem)((it) => {
         content TEXT NOT NULL DEFAULT '',
         completed INTEGER NOT NULL DEFAULT 0
       )`
-      yield* sql`SELECT crsql_as_crr('xtodos')`
+      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      yield* crsql.asCrr("xtodos")
 
       const pk1 = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (${hexToBlob(pk1)}, 'A', 0)`
 
       // Verify changes captured
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-      const v1 = yield* crsql.getDbVersion
-      const all = yield* crsql.pullChanges("0")
+      const crsql1 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const v1 = yield* crsql1.getDbVersion
+      const all = yield* crsql1.pullChanges("0")
       assert.ok(all.some((c) => c.pk.toUpperCase().endsWith(pk1)))
 
       // Downgrade and insert another row
-      yield* sql`SELECT crsql_as_table('xtodos')`
+      yield* crsql.asTable("xtodos")
       const pk2 = "FFEEDDCCBBAA99887766554433221100"
       yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (${hexToBlob(pk2)}, 'B', 1)`
 
@@ -108,9 +109,10 @@ layer(DbMem)((it) => {
       const v1 = yield* crsql.getDbVersion
 
       // Alter schema under begin/commit
-      yield* sql`SELECT crsql_begin_alter('utodos')`
+      const crsql2 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      yield* crsql2.beginAlter("utodos")
       yield* sql`ALTER TABLE utodos ADD COLUMN note TEXT NOT NULL DEFAULT ''`
-      yield* sql`SELECT crsql_commit_alter('utodos')`
+      yield* crsql2.commitAlter("utodos")
 
       // Insert again, this time with new column set
       const pk2 = "BB11223344556677889900AABBCCDDEE"

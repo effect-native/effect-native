@@ -73,6 +73,26 @@ const makeCrSql = Effect.gen(function*() {
     return rows[0].version
   })()
 
+  const getNextDbVersion = Effect.fn("@effect-native/crsql/CrSql#getNextDbVersion")(function* getNextDbVersion() {
+    const rows = yield* sql<{ v: CrSqlSchema.VersionString }>`SELECT CAST(crsql_next_db_version() AS TEXT) AS v`
+    if (rows.length === 0) {
+      return yield* Effect.fail(
+        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_next_db_version() returned no rows") })
+      )
+    }
+    return rows[0].v
+  })()
+
+  const getRowsImpacted = Effect.fn("@effect-native/crsql/CrSql#getRowsImpacted")(function* getRowsImpacted() {
+    const rows = yield* sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`
+    if (rows.length === 0) {
+      return yield* Effect.fail(
+        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_rows_impacted() returned no rows") })
+      )
+    }
+    return rows[0].n
+  })()
+
   const pullChanges = Effect.fn("@effect-native/crsql/CrSql#pullChanges")(function* pullChanges(
     since: CrSqlSchema.VersionString = "0",
     excludeSites?: ReadonlyArray<CrSqlSchema.SiteIdHex>
@@ -133,6 +153,48 @@ const makeCrSql = Effect.gen(function*() {
       Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause })))
     )
   })()
+
+  const asCrr = Effect.fn("@effect-native/crsql/CrSql#asCrr")(function* asCrr(tableName: string) {
+    // Idempotent: crsql_as_crr ignores if already a CRR
+    yield* sql`SELECT crsql_as_crr(${tableName})`
+  })
+
+  const asTable = Effect.fn("@effect-native/crsql/CrSql#asTable")(function* asTable(tableName: string) {
+    yield* sql`SELECT crsql_as_table(${tableName})`
+  })
+
+  const beginAlter = Effect.fn("@effect-native/crsql/CrSql#beginAlter")(function* beginAlter(tableName: string) {
+    yield* sql`SELECT crsql_begin_alter(${tableName})`
+  })
+
+  const commitAlter = Effect.fn("@effect-native/crsql/CrSql#commitAlter")(function* commitAlter(tableName: string) {
+    yield* sql`SELECT crsql_commit_alter(${tableName})`
+  })
+
+  const getSha = Effect.fn("@effect-native/crsql/CrSql#getSha")(function* getSha() {
+    return extInfo.sha
+  })()
+
+  const fractAsOrdered = Effect.fn("@effect-native/crsql/CrSql#fractAsOrdered")(function* fractAsOrdered(
+    tableName: string,
+    orderColumn: string
+  ) {
+    // Minimal signature: additional ordering columns can be added later
+    yield* sql`SELECT crsql_fract_as_ordered(${tableName}, ${orderColumn})`
+  })
+
+  const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")(function* fractKeyBetween(
+    key1: string,
+    key2: string
+  ) {
+    const rows = yield* sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`
+    if (rows.length === 0) {
+      return yield* Effect.fail(
+        new CrSqlErrors.CrSqliteExtensionMissing({ cause: new Error("crsql_fract_key_between() returned no rows") })
+      )
+    }
+    return rows[0].key
+  })
 
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
@@ -259,6 +321,8 @@ const makeCrSql = Effect.gen(function*() {
      * @category Operations
      */
     getDbVersion,
+    getNextDbVersion,
+    getRowsImpacted,
     /**
      * Pulls CR‑SQLite change rows newer than a given version, optionally
      * excluding changes produced by specific sites.
@@ -350,6 +414,20 @@ const makeCrSql = Effect.gen(function*() {
      * @category Operations
      */
     applyChanges,
+    /** Create CRR tracking for an existing table. */
+    asCrr,
+    /** Remove CRR tracking and downgrade to table. */
+    asTable,
+    /** Prepare a CRR table for schema alteration. */
+    beginAlter,
+    /** Finalize schema alteration on a CRR table. */
+    commitAlter,
+    /** Extension SHA string from crsql_sha(). */
+    getSha,
+    /** Enable fractional ordering on a table/column. */
+    fractAsOrdered,
+    /** Compute a fractional key between two keys. */
+    fractKeyBetween,
     /**
      * Sets or updates the tracked version for a peer site in `crsql_tracked_peers`.
      *

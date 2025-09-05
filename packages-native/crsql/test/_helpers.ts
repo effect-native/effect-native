@@ -17,7 +17,8 @@ export const createTodosCrr = Effect.gen(function*() {
     content TEXT NOT NULL DEFAULT '',
     completed INTEGER NOT NULL DEFAULT 0
   )`
-  yield* sql`SELECT crsql_as_crr('todos')`
+  const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+  yield* crsql.asCrr("todos")
 })
 
 export const hexToBlob = (hex: string) => Buffer.from(hex, "hex")
