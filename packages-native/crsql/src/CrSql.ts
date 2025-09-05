@@ -388,7 +388,7 @@ const makeCrSql = Effect.gen(function*() {
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
   ) {
     type SqlType = "TEXT" | "INTEGER" | "REAL" | "BLOB"
-    const mapType = (t: CrSqlSchema.SqlValueType): SqlType | null => {
+    const mapType = (t: CrSqlSchema.ChangeRowSerialized["val_type"]): SqlType | null => {
       if (t === "null") return null
       const mapping: { readonly [K in Exclude<CrSqlSchema.SqlValueType, "null">]: SqlType } = {
         text: "TEXT",
