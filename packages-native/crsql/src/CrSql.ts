@@ -146,6 +146,27 @@ const makeCrSql = Effect.gen(function*() {
     Effect.withSpan("CrSql.getSha")
   )
 
+  type AutomigrateTag = {
+    (strings: TemplateStringsArray, ...values: ReadonlyArray<unknown>): Effect.Effect<void>
+    (schema: string): Effect.Effect<void>
+  }
+
+  const automigrate: AutomigrateTag = ((first: unknown, ...values: ReadonlyArray<unknown>) => {
+    const buildSchema = (strings: TemplateStringsArray, values: ReadonlyArray<unknown>) => {
+      let out = ""
+      for (let i = 0; i < strings.length; i++) {
+        out += strings[i]
+        if (i < values.length) out += String(values[i])
+      }
+      return out
+    }
+    const schema = Array.isArray(first) && Object.prototype.hasOwnProperty.call(first, "raw")
+      ? buildSchema(first as TemplateStringsArray, values)
+      : String(first)
+    // Delegate to crsql_automigrate. Fail fast on any error.
+    return sql`SELECT crsql_automigrate(${schema})`.pipe(Effect.asUnit, Effect.withSpan("CrSql.automigrate"))
+  }) as AutomigrateTag
+
   const fractAsOrdered = Effect.fn("@effect-native/crsql/CrSql#fractAsOrdered")(function* fractAsOrdered(
     tableName: string,
     orderColumn: string
@@ -406,6 +427,8 @@ const makeCrSql = Effect.gen(function*() {
     fractAsOrdered,
     /** Compute a fractional key between two keys. */
     fractKeyBetween,
+    /** Apply schema migrations via crsql_automigrate using a template tag. */
+    automigrate,
     /**
      * Sets or updates the tracked version for a peer site in `crsql_tracked_peers`.
      *
