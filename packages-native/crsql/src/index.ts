@@ -1,20 +1,31 @@
 /**
  * CR-SQLite service for conflict-free replicated database operations.
  *
- * This module provides a high-level service interface for working with CR-SQLite
- * databases, including operations for:
- * - Getting site identifiers and database versions
- * - Pulling and applying change sets for synchronization
- * - Managing peer tracking for distributed replication
+ * This module provides a high-level Effect service interface for working with CR-SQLite
+ * (Conflict-free Replicated SQLite) databases. CR-SQLite enables multi-master replication
+ * with automatic conflict resolution, allowing seamless data synchronization across
+ * distributed systems without manual conflict handling.
  *
- * All operations are Effect-based for composable error handling and dependency injection.
+ * **Core Capabilities:**
+ * - **Site Management**: Getting unique site identifiers and database versions
+ * - **Change Synchronization**: Pulling and applying change sets between replicas
+ * - **Peer Tracking**: Managing replication cursors for distributed peers
+ * - **Schema Migration**: Automated schema evolution with crsql_automigrate
+ * - **Fractional Indexing**: Ordered list support for collaborative editing
+ *
+ * **Multi-Master Replication**: All operations support CR-SQLite's CRDT (Conflict-free
+ * Replicated Data Type) semantics, enabling partition-tolerant systems where multiple
+ * replicas can accept writes independently and later converge to a consistent state.
+ *
+ * All operations are Effect-based for composable error handling, dependency injection,
+ * and integration with the broader Effect ecosystem.
  *
  * **Security Note**: This module uses Effect SQL's tagged template literals,
  * which automatically handle parameterization and SQL injection protection.
  * The `${variable}` syntax is safe - Effect SQL converts these to proper
  * parameterized queries under the hood.
  *
- * @since 0.0.0
+ * @since 0.1.0
  */
 export * as CrSql from "./CrSql.js"
 
@@ -24,7 +35,7 @@ export * as CrSql from "./CrSql.js"
  * This module defines tagged errors used throughout the CR-SQLite package
  * for handling various failure scenarios in a type-safe manner.
  *
- * @since 0.0.0
+ * @since 0.1.0
  * @example
  * ```typescript
  * import * as CrSqlErrors from "@effect-native/crsql/CrSqlErrors"
@@ -47,7 +58,7 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  * including change rows, tracked peers, and various identifier types used
  * throughout the CR-SQLite system.
  *
- * @since 0.0.0
+ * @since 0.1.0
  * @example
  * ```typescript
  * import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
@@ -85,7 +96,7 @@ export * as CrSqlSchema from "./CrSqlSchema.js"
  * - Querying extension information (SHA, site ID)
  * - Creating Effect services for dependency injection
  *
- * @since 0.0.0
+ * @since 0.1.0
  */
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 
@@ -101,6 +112,6 @@ export * as CrSqliteExtension from "./CrSqliteExtension.js"
  * a `loadExtension` method. This tag allows CR-SQLite helpers to depend on the
  * minimal capability needed across platforms.
  *
- * @since 0.0.0
+ * @since 0.1.0
  */
 export * as SqliteClient from "./SqliteClient.js"

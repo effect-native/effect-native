@@ -15,7 +15,7 @@ This package follows the Effect monorepo conventions for build, testing, and doc
 *   **`crsql_as_crr(table_name)`**: Converts an existing table into a CRR, setting up the necessary structures for tracking changes.
 *   **`crsql_as_table(table_name)`**: Downgrades a CRR back to a standard table, removing the change tracking mechanisms.
 *   **`crsql_begin_alter(table_name)`**: Prepares a CRR table for schema modification by temporarily removing its triggers.
-*   **`crsql_commit_alter(table_name)`**: Finalizes schema modifications on a CRR table, recreating triggers and optimizing the change log.
+*   **`crsql_commit_alter(table_name)`**: Finalizes schema modifications on a CRR table by recreating triggers and updating internal bookkeeping.
 *   **`crsql_automigrate(schema)`**: Applies schema migrations to the database, automatically creating or altering tables as defined in the provided schema.
 *   **`crsql_site_id()`**: Returns the unique identifier for the current database instance, essential for distinguishing between changes from different replicas.
 *   **`crsql_db_version()`**: Retrieves the current version of the database, which increments after each transaction.

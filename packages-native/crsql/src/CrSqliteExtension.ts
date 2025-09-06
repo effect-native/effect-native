@@ -11,7 +11,7 @@
  * - Querying extension information (SHA, site ID)
  * - Creating Effect services for dependency injection
  *
- * @since 0.0.0
+ * @since 0.1.0
  */
 import * as SqlClient from "@effect/sql/SqlClient"
 import * as DateTime from "effect/DateTime"
@@ -32,7 +32,7 @@ const importLibCrSql = Effect.tryPromise({
  * CR-SQLite functions `crsql_sha()` and `crsql_site_id()`. This requires
  * the extension to already be loaded into the SQLite connection.
  *
- * @since 0.0.0
+ * @since 0.1.0
  * @category Queries
  */
 export const sqlExtInfo = Effect.gen(function*() {
@@ -54,7 +54,7 @@ export const sqlExtInfo = Effect.gen(function*() {
  * 4. Queries the extension for SHA and site ID
  * 5. Returns complete information including loading metadata
  *
- * @since 0.0.0
+ * @since 0.1.0
  * @category Operations
  */
 export const loadLibCrSql = Effect.gen(function*() {
@@ -78,7 +78,7 @@ export const loadLibCrSql = Effect.gen(function*() {
  * access to the complete extension information including SHA, site ID,
  * filesystem path, and loading timestamp.
  *
- * @since 0.0.0
+ * @since 0.1.0
  * @category Services
  */
 export class ExtInfoLoaded extends Effect.Service<ExtInfoLoaded>()(
