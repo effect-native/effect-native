@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  dev-windows:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: effect-native-dev-windows
+    hostname: effect-native-windows
+    
+    # Keep container running
+    command: powershell -Command "while ($true) { Start-Sleep 30 }"
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=development
+      - EFFECT_NATIVE_DEV=true
+      - PNPM_HOME=C:/Users/ContainerUser/AppData/Local/pnpm
+    
+    # Volumes for Windows
+    volumes:
+      # Mount the project directory (using Windows-style paths)
+      - ../:C:/workspace
+      
+      # Persist pnpm store
+      - pnpm-store-windows:C:/Users/ContainerUser/AppData/Local/pnpm
+      
+      # Persist npm cache
+      - npm-cache-windows:C:/Users/ContainerUser/AppData/Local/npm-cache
+      
+      # Persist PowerShell history
+      - ps-history-windows:C:/Users/ContainerUser/AppData/Roaming/Microsoft/Windows/PowerShell/PSReadLine
+      
+      # VS Code extensions for Windows
+      - vscode-extensions-windows:C:/Users/ContainerUser/.vscode-server
+    
+    # Network configuration
+    networks:
+      - effect-native-network-windows
+    
+    # Resource limits for Windows containers
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 6G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    
+    # Windows container isolation
+    isolation: process
+    
+    # Keep stdin open and allocate pseudo-TTY
+    stdin_open: true
+    tty: true
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Optional: SQL Server for Windows testing
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: effect-native-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Password123
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:C:/var/opt/mssql
+    networks:
+      - effect-native-network-windows
+    restart: unless-stopped
+    profiles:
+      - with-sqlserver
+
+# Networks
+networks:
+  effect-native-network-windows:
+    driver: nat
+
+# Volumes for Windows containers
+volumes:
+  # Development environment volumes
+  pnpm-store-windows:
+    name: effect-native-windows-pnpm-store
+  npm-cache-windows:
+    name: effect-native-windows-npm-cache
+  ps-history-windows:
+    name: effect-native-windows-ps-history
+  vscode-extensions-windows:
+    name: effect-native-windows-vscode-extensions
+  
+  # Database volumes
+  sqlserver-data:
+    name: effect-native-windows-sqlserver-data
