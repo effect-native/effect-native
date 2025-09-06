@@ -1,8 +1,9 @@
 import { CrSql } from "@effect-native/crsql"
+import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
-import { assert, describe, it } from "@effect/vitest"
-import { Effect } from "effect"
+import { assert, layer } from "@effect/vitest"
+import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
@@ -14,8 +15,8 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // The __experimental__schemaFromChanges feature is implemented but these integration
 // tests remain red/skipped until the feature is fully validated and stabilized.
 
-describe("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
-  it.scoped.skip("can recreate schema for exported changes and apply them", () =>
+layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
+  it.scoped.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED): can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {
