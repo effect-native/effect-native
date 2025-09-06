@@ -30,14 +30,14 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       const layerB = NodeSqlite.SqliteClient.layer({ filename: dbFile("B1") })
 
       // Get B's site id first (used for exclude when pulling from A)
-      const siteB = yield* Effect.gen(function* () {
+      const siteB = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         return yield* crsql.getSiteIdHex
       }).pipe(Effect.provide(layerB))
 
       // A: init schema, insert, export changes excluding B
-      const fromA = yield* Effect.gen(function* () {
+      const fromA = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -55,7 +55,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       }).pipe(Effect.provide(layerA))
 
       // B: init schema, apply, verify, update cursor
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -71,7 +71,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
           { id: fromA.id1, text: "one" },
           { id: fromA.id2, text: "two" }
         ])
-        const { version, seq } = maxVersionAndSeq(fromA.changes)
+        const { seq, version } = maxVersionAndSeq(fromA.changes)
         yield* crsql.setPeerVersion({ siteId: fromA.siteA, version, seq })
         const cursor = yield* crsql.getPeerVersion(fromA.siteA)
         assert.ok(cursor !== null && cursor.version === version)
@@ -84,14 +84,14 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       const layerB = NodeSqlite.SqliteClient.layer({ filename: dbFile("B2") })
 
       // B's site id (exclude)
-      const siteB = yield* Effect.gen(function* () {
+      const siteB = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         return yield* crsql.getSiteIdHex
       }).pipe(Effect.provide(layerB))
 
       // A: initial write and export
-      const first = yield* Effect.gen(function* () {
+      const first = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -107,7 +107,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       }).pipe(Effect.provide(layerA))
 
       // B: apply first, store cursor
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -116,12 +116,12 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
         )`
         yield* crsql.asCrr("items")
         yield* crsql.applyChanges(first.changes)
-        const { version, seq } = maxVersionAndSeq(first.changes)
+        const { seq, version } = maxVersionAndSeq(first.changes)
         yield* crsql.setPeerVersion({ siteId: first.siteA, version, seq })
       }).pipe(Effect.provide(layerB))
 
       // A: new change and export since stored cursor
-      const next = yield* Effect.gen(function* () {
+      const next = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         const id2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
@@ -132,7 +132,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       }).pipe(Effect.provide(layerA))
 
       // B: apply next and verify
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.applyChanges(next.changes)
@@ -147,7 +147,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       const layerB = NodeSqlite.SqliteClient.layer({ filename: dbFile("B3") })
 
       // Site ids and schema init
-      const siteA = yield* Effect.gen(function* () {
+      const siteA = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -157,7 +157,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
         yield* crsql.asCrr("items")
         return yield* crsql.getSiteIdHex
       }).pipe(Effect.provide(layerA))
-      const siteB = yield* Effect.gen(function* () {
+      const siteB = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
@@ -169,7 +169,7 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
       }).pipe(Effect.provide(layerB))
 
       // A writes and B syncs
-      const a1 = yield* Effect.gen(function* () {
+      const a1 = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         const id1 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
@@ -177,16 +177,16 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
         const changes = yield* crsql.pullChanges("0", [siteB])
         return changes
       }).pipe(Effect.provide(layerA))
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.applyChanges(a1)
-        const { version, seq } = maxVersionAndSeq(a1)
+        const { seq, version } = maxVersionAndSeq(a1)
         yield* crsql.setPeerVersion({ siteId: siteA, version, seq })
       }).pipe(Effect.provide(layerB))
 
       // B writes and A syncs (exclude siteA, so A doesn't re-receive its own changes)
-      const b1 = yield* Effect.gen(function* () {
+      const b1 = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         const id2 = "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
@@ -194,20 +194,20 @@ describe("Whole CRR Sync via crsql_changes + crsql_tracked_peers", () => {
         const changes = yield* crsql.pullChanges("0", [siteA])
         return changes
       }).pipe(Effect.provide(layerB))
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         yield* crsql.applyChanges(b1)
       }).pipe(Effect.provide(layerA))
 
       // Verify convergence
-      const rowsA = yield* Effect.gen(function* () {
+      const rowsA = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
         return rows.map((r) => r.t)
       }).pipe(Effect.provide(layerA))
-      const rowsB = yield* Effect.gen(function* () {
+      const rowsB = yield* Effect.gen(function*() {
         const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
         const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
