@@ -99,3 +99,14 @@ This project uses Nix for dependency management and reproducible builds. All dev
 - **Rationale**: The Nix shell ensures consistent Node.js versions, native dependencies, and build tools across all environments, preventing "works on my machine" issues.
 
 - **CI Alignment**: This matches the CI environment which also runs commands within the Nix development shell.
+
+### Native Modules (better-sqlite3) ABI Mismatch
+
+- Symptom: Errors like "was compiled against a different Node.js version" or mismatched `NODE_MODULE_VERSION` (e.g., 131 vs 137) when running tests that use `better-sqlite3`.
+- Cause: Running install/build/test outside the Nix shell compiles native addons against the wrong Node version/ABI.
+- Resolution: Always run installs and tests inside the Nix dev shell. When in doubt, clean and rebuild inside `nix develop`:
+  - `nix develop --command pnpm -w install`
+  - `nix develop --command pnpm -w rebuild better-sqlite3`
+  - Then re-run tests: `nix develop --command pnpm test`
+
+In practice: relying on `nix develop` 100% of the time avoids ABI mismatches and “everything just works.”
