@@ -1,9 +1,6 @@
 {
   "name": "Effect Native Development",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "dev",
   "workspaceFolder": "/workspace",
-  
   // Configure the runtime environment
   "remoteUser": "developer",
   "containerEnv": {
@@ -14,15 +11,32 @@
     "NODE_ENV": "development",
     "EFFECT_NATIVE_LIBSQLITE_DEBUG": "1"
   },
-
   // Forward ports for development servers
-  "forwardPorts": [3000, 3001, 4000, 5000, 5173, 5174, 8000, 8080, 9000],
+  "forwardPorts": [
+    3000,
+    3001,
+    4000,
+    5000,
+    5173,
+    5174,
+    8000,
+    8080,
+    9000
+  ],
   "portsAttributes": {
-    "3000": { "label": "Dev Server", "onAutoForward": "notify" },
-    "5173": { "label": "Vite", "onAutoForward": "notify" },
-    "8080": { "label": "API", "onAutoForward": "notify" }
+    "3000": {
+      "label": "Dev Server",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "API",
+      "onAutoForward": "notify"
+    }
   },
-
   // VS Code customizations
   "customizations": {
     "vscode": {
@@ -38,21 +52,24 @@
           },
           "nix-shell": {
             "path": "/bin/zsh",
-            "args": ["-c", "nix develop"]
+            "args": [
+              "-c",
+              "nix develop"
+            ]
           }
         },
-        
         // Editor settings
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.fixAll.eslint": "explicit",
           "source.organizeImports": "never"
         },
-        "editor.rulers": [100],
+        "editor.rulers": [
+          100
+        ],
         "editor.tabSize": 2,
         "editor.insertSpaces": true,
         "editor.detectIndentation": false,
-        
         // File settings
         "files.eol": "\n",
         "files.insertFinalNewline": true,
@@ -63,13 +80,11 @@
           "**/build/**": true,
           "**/.git/**": true
         },
-        
         // TypeScript settings
         "typescript.tsdk": "node_modules/typescript/lib",
         "typescript.enablePromptUseWorkspaceTsdk": true,
         "typescript.preferences.importModuleSpecifier": "relative",
         "typescript.preferences.quoteStyle": "double",
-        
         // ESLint settings
         "eslint.validate": [
           "javascript",
@@ -78,17 +93,16 @@
           "typescriptreact"
         ],
         "eslint.workingDirectories": [
-          { "mode": "auto" }
+          {
+            "mode": "auto"
+          }
         ],
-        
         // Effect settings
         "effect.language-service.enabled": true,
-        
         // Git settings
         "git.autofetch": true,
         "git.confirmSync": false,
         "git.enableSmartCommit": true,
-        
         // Search settings
         "search.exclude": {
           "**/node_modules": true,
@@ -99,19 +113,15 @@
           "**/.nix-profile": true,
           "**/.nix-defexpr": true
         },
-        
         // Nix settings
         "nix.enableLanguageServer": true,
         "nix.serverPath": "nil",
-        
         // SQLite settings
         "sqlite.logLevel": "DEBUG",
-        
         // Other settings
         "npm.packageManager": "pnpm",
         "debug.javascript.autoAttachFilter": "disabled"
       },
-      
       // VS Code extensions to install
       "extensions": [
         // TypeScript and JavaScript
@@ -119,23 +129,18 @@
         "esbenp.prettier-vscode",
         "ms-vscode.vscode-typescript-next",
         "effect.effect-vscode",
-        
         // Nix support
         "jnoortheen.nix-ide",
         "arrterian.nix-env-selector",
-        
         // Database
         "qwtel.sqlite-viewer",
         "alexcvzz.vscode-sqlite",
-        
         // Git
         "eamodio.gitlens",
         "mhutchie.git-graph",
         "donjayamanne.githistory",
-        
         // Docker
         "ms-azuretools.vscode-docker",
-        
         // Development utilities
         "streetsidesoftware.code-spell-checker",
         "wayou.vscode-todo-highlight",
@@ -144,23 +149,18 @@
         "yzhang.markdown-all-in-one",
         "davidanson.vscode-markdownlint",
         "bierner.markdown-mermaid",
-        
         // Testing
         "vitest.explorer",
         "zixuanchen.vitest-explorer",
-        
         // File utilities
         "sleistner.vscode-fileutils",
         "christian-kohler.path-intellisense",
-        
         // Themes and icons
         "pkief.material-icon-theme",
         "zhuangtongfa.material-theme",
-        
         // Remote development
         "ms-vscode-remote.remote-containers",
         "ms-vscode-remote.remote-ssh",
-        
         // Other
         "editorconfig.editorconfig",
         "mikestead.dotenv",
@@ -169,7 +169,6 @@
       ]
     }
   },
-
   // Features to add (these install additional tools)
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {
@@ -188,16 +187,12 @@
       "version": "latest"
     }
   },
-
   // Commands to run after creating the container
   "postCreateCommand": "bash .devcontainer/scripts/post-create.sh",
-  
   // Commands to run after starting the container
   "postStartCommand": "bash .devcontainer/scripts/post-start.sh",
-  
   // Commands to run after attaching to the container
   "postAttachCommand": "pnpm install && git config --global --add safe.directory /workspace",
-
   // Mount points
   "mounts": [
     // Persist Nix store between rebuilds
@@ -211,20 +206,17 @@
     // Share Git config from host
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/developer/.gitconfig,type=bind,readonly"
   ],
-
   // Security options
   "runArgs": [
     "--cap-add=SYS_PTRACE",
-    "--security-opt", "seccomp=unconfined",
+    "--security-opt",
+    "seccomp=unconfined",
     "--network=host"
   ],
-
   // Update content command
   "updateContentCommand": "pnpm install",
-
   // Shutdown action
   "shutdownAction": "stopContainer",
-
   // Host requirements
   "hostRequirements": {
     "cpus": 2,
