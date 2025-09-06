@@ -167,7 +167,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       })
 
       // A writes and B syncs
-      const a1 = yield* Effect.gen(function*() {
+      const changesA1 = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         const id1 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
         yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'fromA')`
@@ -176,13 +176,13 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       })
       yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
-        yield* crsql.applyChanges(a1)
-        const { seq, version } = maxVersionAndSeq(a1)
+        yield* crsql.applyChanges(changesA1)
+        const { seq, version } = maxVersionAndSeq(changesA1)
         yield* crsql.setPeerVersion({ siteId: siteA, version, seq })
       })
 
       // B writes and A syncs (exclude siteA, so A doesn't re-receive its own changes)
-      const b1 = yield* Effect.gen(function*() {
+      const changesB1 = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         const id2 = "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
         yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id2}), 'fromB')`
@@ -191,7 +191,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       })
       yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
-        yield* crsql.applyChanges(b1)
+        yield* crsql.applyChanges(changesB1)
       })
 
       // Verify convergence
