@@ -5,6 +5,7 @@
     "context": ".."
   },
   "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   // Configure the runtime environment
   "remoteUser": "developer",
   "containerEnv": {
