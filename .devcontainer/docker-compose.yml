@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+      args:
+        USERNAME: developer
+        USER_UID: 1000
+        USER_GID: 1000
+    
+    container_name: effect-native-dev
+    hostname: effect-native
+    
+    # Override the default command to keep container running
+    command: sleep infinity
+    
+    # Environment variables
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - SHELL=/bin/zsh
+      - TERM=xterm-256color
+      - NODE_ENV=development
+      - DOCKER_BUILDKIT=1
+      - COMPOSE_DOCKER_CLI_BUILD=1
+      - PNPM_HOME=/home/developer/.local/share/pnpm
+      - NIX_PATH=/home/developer/.nix-defexpr/channels
+      - EFFECT_NATIVE_DEV=true
+    
+    # Volumes for persistence and sharing
+    volumes:
+      # Mount the project directory
+      - ..:/workspace:cached
+      
+      # Persist Nix store
+      - nix-store:/nix
+      
+      # Persist pnpm store
+      - pnpm-store:/home/developer/.pnpm-store
+      
+      # Persist npm/pnpm globals
+      - npm-global:/home/developer/.npm
+      - pnpm-global:/home/developer/.local/share/pnpm
+      
+      # Persist shell history
+      - zsh-history:/home/developer/.zsh_history_dir
+      - bash-history:/home/developer/.bash_history_dir
+      
+      # Persist VS Code extensions (when using CLI)
+      - vscode-extensions:/home/developer/.vscode-server/extensions
+      - vscode-insiders:/home/developer/.vscode-server-insiders
+      
+      # Persist Git credentials
+      - git-credentials:/home/developer/.git-credentials
+      
+      # Docker socket for Docker-in-Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    # Network configuration
+    networks:
+      - effect-native-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    
+    # Security options
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    
+    # Shared memory size for databases
+    shm_size: '2gb'
+    
+    # Keep stdin open and allocate pseudo-TTY
+    stdin_open: true
+    tty: true
+    
+    # Restart policy
+    restart: unless-stopped
+
+  # Optional: SQLite database service for testing
+  sqlite-db:
+    image: nouchka/sqlite3:latest
+    container_name: effect-native-sqlite
+    volumes:
+      - sqlite-data:/data
+    networks:
+      - effect-native-network
+    restart: unless-stopped
+    profiles:
+      - with-db
+
+  # Optional: Redis service for caching (if needed in future)
+  redis:
+    image: redis:7-alpine
+    container_name: effect-native-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - effect-native-network
+    restart: unless-stopped
+    profiles:
+      - with-cache
+    command: redis-server --appendonly yes
+
+# Networks
+networks:
+  effect-native-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# Volumes
+volumes:
+  # Development environment volumes
+  nix-store:
+    name: effect-native-nix-store
+  pnpm-store:
+    name: effect-native-pnpm-store
+  npm-global:
+    name: effect-native-npm-global
+  pnpm-global:
+    name: effect-native-pnpm-global
+  zsh-history:
+    name: effect-native-zsh-history
+  bash-history:
+    name: effect-native-bash-history
+  vscode-extensions:
+    name: effect-native-vscode-extensions
+  vscode-insiders:
+    name: effect-native-vscode-insiders
+  git-credentials:
+    name: effect-native-git-credentials
+  
+  # Database volumes
+  sqlite-data:
+    name: effect-native-sqlite-data
+  redis-data:
+    name: effect-native-redis-data
