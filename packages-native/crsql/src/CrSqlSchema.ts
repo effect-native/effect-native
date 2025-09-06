@@ -186,6 +186,14 @@ export const ChangeRowSerialized = S.Struct({
  * @category Models
  */
 export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
+/**
+ * Fast guard that checks an unknown value has the object shape of
+ * {@link ChangeRowSerialized} by verifying the presence of all expected keys.
+ * This does not perform deep type validation; use the schema for that.
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
 export const isChangeRowSerializedQuick = (it: unknown): it is ChangeRowSerialized =>
   typeof it === "object" &&
   it !== null &&
@@ -242,9 +250,27 @@ export const ChangeArray = S.Tuple(
       "CR-SQLite change row as a positional tuple [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]"
   })
 )
+/**
+ * @since 0.1.0
+ * @category Models
+ */
 export type ChangeArray = typeof ChangeArray.Type
 
+/**
+ * Fast guard that checks an unknown value is a tuple of length 10 in the
+ * order defined by {@link ChangeArray}. This does not validate element types.
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
 export const isChangeArrayQuick = (it: unknown): it is ChangeArray => Array.isArray(it) && it.length === 10
+/**
+ * Converts either an object-shaped change ({@link ChangeRowSerialized}) or a
+ * tuple-shaped change ({@link ChangeArray}) into the tuple form.
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
 export const toChangeArray = (
   c: ChangeRowSerialized | ChangeArray
 ): ChangeArray => {
