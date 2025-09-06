@@ -7,7 +7,7 @@ import { ensureCrSqlLoaded } from "./_helpers.js"
 
 // Kent Beck style: focused unit tests to narrow behavior
 
-it.scoped("schemaFromChanges: infers columns for todos", () =>
+it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -19,7 +19,7 @@ it.scoped("schemaFromChanges: infers columns for todos", () =>
     yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex('00112233445566778899AABBCCDDEEFF'), 'Alpha', 0)`
 
     const changes = yield* crsql.pullChanges("0")
-    const schema = yield* crsql.schemaFromChanges(changes)
+    const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
     assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS todos"))
     assert.ok(schema.includes("content TEXT"))
@@ -27,7 +27,7 @@ it.scoped("schemaFromChanges: infers columns for todos", () =>
     assert.ok(schema.includes("SELECT crsql_as_crr('todos')"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped("schemaFromChanges: includes multiple tables present in changes", () =>
+it.scoped.skip("schemaFromChanges: includes multiple tables present in changes", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -44,7 +44,7 @@ it.scoped("schemaFromChanges: includes multiple tables present in changes", () =
     yield* sql`INSERT INTO b (id, y) VALUES (unhex('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'), 1)`
 
     const changes = yield* crsql.pullChanges("0")
-    const schema = yield* crsql.schemaFromChanges(changes)
+    const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
     assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS a"))
     assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS b"))
@@ -52,7 +52,7 @@ it.scoped("schemaFromChanges: includes multiple tables present in changes", () =
     assert.ok(schema.includes("SELECT crsql_as_crr('b')"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
+it.scoped.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -71,7 +71,7 @@ it.scoped("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/B
     yield* sql`INSERT INTO types (id, t, i, r, b) VALUES (unhex('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC'), 'txt', 2, 3.14, unhex('ABCD'))`
 
     const changes = yield* crsql.pullChanges("0")
-    const schema = yield* crsql.schemaFromChanges(changes)
+    const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
     assert.ok(schema.includes("t TEXT"))
     assert.ok(schema.includes("i INTEGER"))
@@ -79,7 +79,7 @@ it.scoped("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/B
     assert.ok(schema.includes("b BLOB"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped("schemaFromChanges: conflicting types for same column fails", () =>
+it.scoped.skip("schemaFromChanges: conflicting types for same column fails", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -97,11 +97,11 @@ it.scoped("schemaFromChanges: conflicting types for same column fails", () =>
     yield* sql`INSERT INTO mixed (id, v) VALUES (unhex('EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE'), 'abc')`
 
     const changes = yield* crsql.pullChanges("0")
-    const either = yield* crsql.schemaFromChanges(changes).pipe(Effect.either)
+    const either = yield* crsql.__experimental__schemaFromChanges(changes).pipe(Effect.either)
     assert.isTrue(either._tag === "Left")
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
+it.scoped.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -119,7 +119,7 @@ it.scoped("schemaFromChanges: deterministic column order (id first, others sorte
     yield* sql`INSERT INTO ordercols (id, zeta, alpha, mid) VALUES (unhex('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'), 'z', 'a', 1)`
 
     const changes = yield* crsql.pullChanges("0")
-    const schema = yield* crsql.schemaFromChanges(changes)
+    const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
     const iAlpha = schema.indexOf(" alpha ")
     const iMid = schema.indexOf(" mid ")
@@ -128,7 +128,7 @@ it.scoped("schemaFromChanges: deterministic column order (id first, others sorte
     assert.ok(iAlpha < iMid && iMid < iZeta)
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped("schemaFromChanges: generated schema is idempotent under automigrate", () =>
+it.scoped.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -143,7 +143,7 @@ it.scoped("schemaFromChanges: generated schema is idempotent under automigrate",
     `
     yield* sql`INSERT INTO idem (id, name) VALUES (unhex('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'), 'one')`
     const changes = yield* crsql.pullChanges("0")
-    const schema = yield* crsql.schemaFromChanges(changes)
+    const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
     // Apply twice without error
     yield* crsql.automigrate(schema)

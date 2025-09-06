@@ -385,82 +385,84 @@ const makeCrSql = Effect.gen(function*() {
    * @param changes - exported change rows to analyze
    * @returns schema DDL suitable for crsql_automigrate
    */
-  const schemaFromChanges = Effect.fn("@effect-native/crsql/CrSql#schemaFromChanges")(function* schemaFromChanges(
-    changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
-  ) {
-    type SqlType = "TEXT" | "INTEGER" | "REAL" | "BLOB"
-    const mapType = (t: CrSqlSchema.ChangeRowSerialized["val_type"]): SqlType | null => {
-      if (t === "null") return null
-      const mapping: { readonly [K in Exclude<CrSqlSchema.SqlValueType, "null">]: SqlType } = {
-        text: "TEXT",
-        integer: "INTEGER",
-        real: "REAL",
-        blob: "BLOB"
+  const __experimental__schemaFromChanges = Effect.fn("@effect-native/crsql/CrSql#schemaFromChanges")(
+    function* schemaFromChanges(
+      changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
+    ) {
+      type SqlType = "TEXT" | "INTEGER" | "REAL" | "BLOB"
+      const mapType = (t: CrSqlSchema.ChangeRowSerialized["val_type"]): SqlType | null => {
+        if (t === "null") return null
+        const mapping: { readonly [K in Exclude<CrSqlSchema.SqlValueType, "null">]: SqlType } = {
+          text: "TEXT",
+          integer: "INTEGER",
+          real: "REAL",
+          blob: "BLOB"
+        }
+        return mapping[t]
       }
-      return mapping[t]
-    }
 
-    // Collect per-table column type info from observed changes
-    const byTable = new Map<string, Map<string, SqlType>>()
-    for (const c of changes) {
-      let cols = byTable.get(c.table)
-      if (!cols) {
-        cols = new Map()
-        byTable.set(c.table, cols)
-      }
-      if (c.cid === "id") continue // we'll always declare `id` explicitly as PK first
-      const observed = mapType(c.val_type)
-      if (observed === null) {
-        // Skip null here; we will validate after aggregation to ensure at least one non-null sample per column
-        continue
-      }
-      const prev = cols.get(c.cid)
-      if (prev && prev !== observed) {
-        // Conflicting type inference for the same column => fail fast
-        return yield* Effect.fail(
-          new SqlError.SqlError({
-            message: `Conflicting types for ${c.table}.${c.cid}: ${prev} vs ${observed}`,
-            cause: undefined
-          })
-        )
-      }
-      cols.set(c.cid, observed)
-    }
-
-    // Validate columns that only had null observations (no concrete type seen)
-    for (const [table, cols] of byTable) {
-      for (const [cid, typ] of cols) {
-        if (!typ) {
+      // Collect per-table column type info from observed changes
+      const byTable = new Map<string, Map<string, SqlType>>()
+      for (const c of changes) {
+        let cols = byTable.get(c.table)
+        if (!cols) {
+          cols = new Map()
+          byTable.set(c.table, cols)
+        }
+        if (c.cid === "id") continue // we'll always declare `id` explicitly as PK first
+        const observed = mapType(c.val_type)
+        if (observed === null) {
+          // Skip null here; we will validate after aggregation to ensure at least one non-null sample per column
+          continue
+        }
+        const prev = cols.get(c.cid)
+        if (prev && prev !== observed) {
+          // Conflicting type inference for the same column => fail fast
           return yield* Effect.fail(
             new SqlError.SqlError({
-              message: `Unable to infer type for ${table}.${cid} (only null values observed)`,
+              message: `Conflicting types for ${c.table}.${c.cid}: ${prev} vs ${observed}`,
               cause: undefined
             })
           )
         }
+        cols.set(c.cid, observed)
       }
-    }
 
-    // Build DDL
-    const chunks: Array<string> = []
-    const tables = Array.from(byTable.keys()).sort()
-    for (const table of tables) {
-      const cols = byTable.get(table)!
-      // Deterministic order: id first, then other columns sorted by name
-      const parts: Array<string> = ["id BLOB PRIMARY KEY"]
-      const others = Array.from(cols.entries())
-        .filter(([name]) => name !== "id")
-        .sort((a, b) => a[0].localeCompare(b[0]))
-      for (const [name, typ] of others) {
-        parts.push(`${name} ${typ}`)
+      // Validate columns that only had null observations (no concrete type seen)
+      for (const [table, cols] of byTable) {
+        for (const [cid, typ] of cols) {
+          if (!typ) {
+            return yield* Effect.fail(
+              new SqlError.SqlError({
+                message: `Unable to infer type for ${table}.${cid} (only null values observed)`,
+                cause: undefined
+              })
+            )
+          }
+        }
       }
-      const create = `CREATE TABLE IF NOT EXISTS ${table} (\n  ${parts.join(",\n  ")}\n);`
-      const asCrrStmt = `SELECT crsql_as_crr('${table}');`
-      chunks.push(create, asCrrStmt)
-    }
 
-    return chunks.join("\n")
-  })
+      // Build DDL
+      const chunks: Array<string> = []
+      const tables = Array.from(byTable.keys()).sort()
+      for (const table of tables) {
+        const cols = byTable.get(table)!
+        // Deterministic order: id first, then other columns sorted by name
+        const parts: Array<string> = ["id BLOB PRIMARY KEY"]
+        const others = Array.from(cols.entries())
+          .filter(([name]) => name !== "id")
+          .sort((a, b) => a[0].localeCompare(b[0]))
+        for (const [name, typ] of others) {
+          parts.push(`${name} ${typ}`)
+        }
+        const create = `CREATE TABLE IF NOT EXISTS ${table} (\n  ${parts.join(",\n  ")}\n);`
+        const asCrrStmt = `SELECT crsql_as_crr('${table}');`
+        chunks.push(create, asCrrStmt)
+      }
+
+      return chunks.join("\n")
+    }
+  )
 
   const setPeerVersion = Effect.fn("@effect-native/crsql/CrSql#setPeerVersion")(function* setPeerVersion(
     props: {
@@ -665,7 +667,7 @@ const makeCrSql = Effect.gen(function*() {
     /** Compute a fractional key between two keys. */
     fractKeyBetween,
     /** Infer a schema DDL string from exported changes. */
-    schemaFromChanges,
+    __experimental__schemaFromChanges,
     /** Apply schema migrations via crsql_automigrate using a template tag. */
     automigrate,
     /**

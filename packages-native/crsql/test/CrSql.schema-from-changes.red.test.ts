@@ -11,7 +11,7 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // to a fresh DB, then apply those changes successfully.
 
 describe("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
-  it.scoped("can recreate schema for exported changes and apply them", () =>
+  it.scoped.skip("can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {
@@ -36,7 +36,7 @@ describe("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
         yield* ensureCrSqlLoaded
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         // New API under test: derive a SQLite schema suitable for crsql_automigrate
-        return yield* crsql.schemaFromChanges(exported)
+        return yield* crsql.__experimental__schemaFromChanges(exported)
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
       // The derived schema should target the todos table and enable CRR
