@@ -1,6 +1,7 @@
 import { CrSql } from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
@@ -139,78 +140,71 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       )
     }))
 
-  it.scoped.skip("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
+  it.scoped("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
     Effect.gen(function*() {
-      const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-      const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+      // Use one in-memory connection per replica and reuse it across steps
+      const clientA = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
+      const clientB = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
 
       // Site ids and schema init
       const siteA = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         yield* crsql.sql`CREATE TABLE items (
           id BLOB NOT NULL PRIMARY KEY,
           text TEXT NOT NULL DEFAULT ''
         )`
         yield* crsql.asCrr("items")
         return yield* crsql.getSiteIdHex
-      }).pipe(Effect.provide(layerA))
+      })
       const siteB = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         yield* crsql.sql`CREATE TABLE items (
           id BLOB NOT NULL PRIMARY KEY,
           text TEXT NOT NULL DEFAULT ''
         )`
         yield* crsql.asCrr("items")
         return yield* crsql.getSiteIdHex
-      }).pipe(Effect.provide(layerB))
+      })
 
       // A writes and B syncs
       const a1 = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         const id1 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
         yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'fromA')`
         const changes = yield* crsql.pullChanges("0", [siteB])
         return changes
-      }).pipe(Effect.provide(layerA))
+      })
       yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         yield* crsql.applyChanges(a1)
         const { seq, version } = maxVersionAndSeq(a1)
         yield* crsql.setPeerVersion({ siteId: siteA, version, seq })
-      }).pipe(Effect.provide(layerB))
+      })
 
       // B writes and A syncs (exclude siteA, so A doesn't re-receive its own changes)
       const b1 = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         const id2 = "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
         yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id2}), 'fromB')`
         const changes = yield* crsql.pullChanges("0", [siteA])
         return changes
-      }).pipe(Effect.provide(layerB))
+      })
       yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         yield* crsql.applyChanges(b1)
-      }).pipe(Effect.provide(layerA))
+      })
 
       // Verify convergence
       const rowsA = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
         return rows.map((r) => r.t)
-      }).pipe(Effect.provide(layerA))
+      })
       const rowsB = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
         return rows.map((r) => r.t)
-      }).pipe(Effect.provide(layerB))
+      })
       assert.deepEqual(rowsA, ["fromA", "fromB"])
       assert.deepEqual(rowsB, ["fromA", "fromB"])
     }))
