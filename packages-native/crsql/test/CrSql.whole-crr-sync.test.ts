@@ -1,7 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
@@ -96,11 +95,13 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
           const sql = yield* NodeSqlite.SqliteClient.SqliteClient
           const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
           // init
-          yield* crsql.sql`CREATE TABLE items (
-            id BLOB NOT NULL PRIMARY KEY,
-            text TEXT NOT NULL DEFAULT ''
-          )`
-          yield* crsql.sql`SELECT crsql_as_crr('items')`
+          yield* crsql.automigrate`
+            CREATE TABLE items (
+              id BLOB NOT NULL PRIMARY KEY,
+              text TEXT NOT NULL DEFAULT ''
+            );
+            SELECT crsql_as_crr('items');
+          `
           const id1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
           yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'first')`
           const siteA = yield* crsql.getSiteIdHex
@@ -122,11 +123,13 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
           const sql = yield* NodeSqlite.SqliteClient.SqliteClient
           const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
           // init
-          yield* crsql.sql`CREATE TABLE items (
-            id BLOB NOT NULL PRIMARY KEY,
-            text TEXT NOT NULL DEFAULT ''
-          )`
-          yield* crsql.sql`SELECT crsql_as_crr('items')`
+          yield* crsql.automigrate`
+            CREATE TABLE items (
+              id BLOB NOT NULL PRIMARY KEY,
+              text TEXT NOT NULL DEFAULT ''
+            );
+            SELECT crsql_as_crr('items');
+          `
           // apply first & set cursor
           yield* crsql.applyChanges(a.first)
           const { seq, version } = maxVersionAndSeq(a.first)
