@@ -192,11 +192,11 @@
     }
   },
   // Commands to run after creating the container
-  "postCreateCommand": "bash .devcontainer/scripts/post-create.sh",
+  "postCreateCommand": "nix develop --command bash -lc 'corepack enable pnpm && bash .devcontainer/scripts/post-create.sh'",
   // Commands to run after starting the container
-  "postStartCommand": "bash .devcontainer/scripts/post-start.sh",
+  "postStartCommand": "nix develop --command bash -lc 'corepack enable pnpm || true; bash .devcontainer/scripts/post-start.sh'",
   // Commands to run after attaching to the container
-  "postAttachCommand": "pnpm install && git config --global --add safe.directory /workspace",
+  "postAttachCommand": "nix develop --command bash -lc 'corepack enable pnpm && pnpm install && git config --global --add safe.directory /workspace'",
   // Mount points
   "mounts": [
     // Persist Nix store between rebuilds
@@ -218,7 +218,7 @@
     "--network=host"
   ],
   // Update content command
-  "updateContentCommand": "pnpm install",
+  "updateContentCommand": "nix develop --command bash -lc 'corepack enable pnpm && pnpm install'",
   // Shutdown action
   "shutdownAction": "stopContainer",
   // Host requirements
