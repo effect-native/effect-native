@@ -5,7 +5,7 @@ import { assert, it } from "@effect/vitest"
 import { Effect } from "effect"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
-// Kent Beck style: focused unit tests to narrow behavior
+// TDD style: focused unit tests to narrow behavior
 //
 // NOTE: These tests are intentionally skipped for v0.0.0 release.
 // The __experimental__schemaFromChanges feature is implemented but these unit

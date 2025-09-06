@@ -6,7 +6,7 @@ import { Effect } from "effect"
 import * as Console from "effect/Console"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
-// Kent Beck style TDD: red test first for a feature we wish existed.
+// TDD style: red test first for a feature we wish existed.
 // Goal: derive a schema from exported CR-SQLite changes, apply it via automigrate
 // to a fresh DB, then apply those changes successfully.
 //
