@@ -150,7 +150,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const siteA = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
         yield* crsql.sql`CREATE TABLE items (
-          id BLOB NOT NULL PRIMARY KEY,
+          id TEXT NOT NULL PRIMARY KEY,
           text TEXT NOT NULL DEFAULT ''
         )`
         yield* crsql.asCrr("items")
@@ -159,7 +159,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const siteB = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
         yield* crsql.sql`CREATE TABLE items (
-          id BLOB NOT NULL PRIMARY KEY,
+          id TEXT NOT NULL PRIMARY KEY,
           text TEXT NOT NULL DEFAULT ''
         )`
         yield* crsql.asCrr("items")
@@ -169,8 +169,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // A writes and B syncs
       const changesA1 = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientA })
-        const id1 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
-        yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'fromA')`
+        const id1 = "id1"
+        yield* crsql.sql`INSERT INTO items (id, text) VALUES (${id1}, 'fromA')`
         const changes = yield* crsql.pullChanges("0", [siteB])
         return changes
       })
@@ -184,8 +184,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // B writes and A syncs (exclude siteA, so A doesn't re-receive its own changes)
       const changesB1 = yield* Effect.gen(function*() {
         const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: clientB })
-        const id2 = "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
-        yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id2}), 'fromB')`
+        const id2 = "id2"
+        yield* crsql.sql`INSERT INTO items (id, text) VALUES (${id2}, 'fromB')`
         const changes = yield* crsql.pullChanges("0", [siteA])
         return changes
       })
