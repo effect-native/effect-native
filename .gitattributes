@@ -1,0 +1,27 @@
+# Enforce consistent line endings across platforms
+
+# Default: treat files as text and checkout with LF
+* text=auto eol=lf
+
+# Windows batch scripts should use CRLF to play nicely in cmd.exe
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Mark common binary formats explicitly
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.svg -text
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
