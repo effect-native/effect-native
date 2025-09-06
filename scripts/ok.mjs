@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* global console */
 import { spawnSync } from "node:child_process"
 import process from "node:process"
 
@@ -13,10 +14,12 @@ function have(cmd, args = ["--version"]) {
   }
 }
 
-const haveNix = !isWin && have("nix", ["--version"]) 
+const haveNix = !isWin && have("nix", ["--version"])
 
 if (!isWin && !haveNix) {
-  console.error("error: Nix is required on macOS/Linux. Run inside `nix develop`.\nSee AGENTS.md > Nix Development Environment.")
+  console.error(
+    "error: Nix is required on macOS/Linux. Run inside `nix develop`.\nSee AGENTS.md > Nix Development Environment."
+  )
   process.exit(1)
 }
 
@@ -63,4 +66,3 @@ if (total === 0) {
 }
 
 process.exit(total)
-

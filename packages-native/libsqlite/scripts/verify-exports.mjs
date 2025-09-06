@@ -41,9 +41,23 @@ try {
 }
 assert(pkgJson.exports && pkgJson.exports["./effect"], "exports[\"./effect\"] not present")
 
-await import(pathToFileURL(distEsm).href).catch((e) => {
-  console.error("verify-exports: ESM import failed:", e)
-  process.exit(1)
-})
+// Check if platform is supported before attempting import
+const isSupportedPlatform = () => {
+  const platform = process.platform
+  const arch = process.arch
+  return (
+    (platform === "darwin" && (arch === "arm64" || arch === "x64")) ||
+    (platform === "linux" && (arch === "x64" || arch === "arm64"))
+  )
+}
+
+if (isSupportedPlatform()) {
+  await import(pathToFileURL(distEsm).href).catch((e) => {
+    console.error("verify-exports: ESM import failed:", e)
+    process.exit(1)
+  })
+} else {
+  console.log("verify-exports: Skipping import test on unsupported platform")
+}
 
 console.log("verify-exports: OK")

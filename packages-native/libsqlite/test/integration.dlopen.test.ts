@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process"
 import { expect, it } from "vitest"
-import { getLibSqlitePathSync } from "../src/index"
+import { isSupportedPlatform } from "./test-utils"
 
 /**
  * INTEGRATION TEST: System Dynamic Loader Recognition
@@ -23,7 +23,7 @@ import { getLibSqlitePathSync } from "../src/index"
  * LEGITIMACY: This approach validates SUPERIOR architecture - self-contained libraries
  * with no external SQLite dependencies, enabling simple deployment and version control.
  */
-it("library is recognized by the system loader (otool/ldd)", () => {
+it.skipIf(!isSupportedPlatform)("library is recognized by the system loader (otool/ldd)", async () => {
   // Step 1: Detect current runtime environment to select appropriate library
   const platform = process.platform // "darwin" | "linux" | "win32" | etc
   const arch = process.arch // "arm64" | "x64" | etc
@@ -44,6 +44,7 @@ it("library is recognized by the system loader (otool/ldd)", () => {
   if (!target) return // Test runner will mark as skipped, not failed
 
   // Step 4: Get the absolute path to our prebuilt library for this platform
+  const { getLibSqlitePathSync } = await import("../src/index")
   const path = getLibSqlitePathSync(target) // e.g., "/path/to/lib/darwin-aarch64/libsqlite3.dylib"
 
   // Step 5: Platform-specific validation using system dynamic loader inspection tools
