@@ -41,6 +41,7 @@ const makeCrSql = Effect.gen(function*() {
   const { sha } = yield* CrSqliteExtension.ExtInfoLoaded
   if (!sha) return yield* new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql extension SHA missing" })
 
+  // NOTE: finalizer runs only after closing the current scope, after this instance of crsql has been disposed
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
   const getSiteIdHex = sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`.pipe(
