@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "openai.chatgpt",
+    "anthropic.claude-code",
+    "dbaeumer.vscode-eslint",
+    "effectful-tech.effect-vscode",
+    "vitest.explorer"
+  ]
+}
