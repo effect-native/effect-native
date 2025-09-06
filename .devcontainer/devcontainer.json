@@ -1,5 +1,9 @@
 {
   "name": "Effect Native Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
   "workspaceFolder": "/workspace",
   // Configure the runtime environment
   "remoteUser": "developer",
