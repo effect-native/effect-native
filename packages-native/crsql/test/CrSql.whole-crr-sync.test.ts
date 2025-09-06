@@ -74,67 +74,69 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       }).pipe(Effect.provide(layerB))
     }))
 
-  it.scoped.skip("Whole CRR Sync via crsql_changes + crsql_tracked_peers: incremental sync A→B using tracked cursor", () =>
+  it.scoped("Whole CRR Sync via crsql_changes + crsql_tracked_peers: incremental sync A→B using tracked cursor", () =>
     Effect.gen(function*() {
       const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
       // B's site id (exclude)
-      const siteB = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
-        return yield* crsql.getSiteIdHex
-      }).pipe(Effect.provide(layerB))
+      const siteB = yield* Effect.provide(
+        Effect.gen(function*() {
+          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+          const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+          return yield* crsql.getSiteIdHex
+        }),
+        layerB
+      )
 
-      // A: initial write and export
-      const first = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
-        yield* crsql.sql`CREATE TABLE items (
-          id BLOB NOT NULL PRIMARY KEY,
-          text TEXT NOT NULL DEFAULT ''
-        )`
-        yield* crsql.asCrr("items")
-        const id1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'first')`
-        const siteA = yield* crsql.getSiteIdHex
-        const changes = yield* crsql.pullChanges("0", [siteB])
-        return { changes, siteA }
-      }).pipe(Effect.provide(layerA))
+      // A: do both writes & exports on the SAME connection
+      const a = yield* Effect.provide(
+        Effect.gen(function*() {
+          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+          const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+          // init
+          yield* crsql.sql`CREATE TABLE items (
+            id BLOB NOT NULL PRIMARY KEY,
+            text TEXT NOT NULL DEFAULT ''
+          )`
+          yield* crsql.sql`SELECT crsql_as_crr('items')`
+          const id1 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id1}), 'first')`
+          const siteA = yield* crsql.getSiteIdHex
+          const first = yield* crsql.pullChanges("0", [siteB])
 
-      // B: apply first, store cursor
-      yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
-        yield* crsql.sql`CREATE TABLE items (
-          id BLOB NOT NULL PRIMARY KEY,
-          text TEXT NOT NULL DEFAULT ''
-        )`
-        yield* crsql.asCrr("items")
-        yield* crsql.applyChanges(first.changes)
-        const { seq, version } = maxVersionAndSeq(first.changes)
-        yield* crsql.setPeerVersion({ siteId: first.siteA, version, seq })
-      }).pipe(Effect.provide(layerB))
+          // next write
+          const id2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+          yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id2}), 'second')`
+          const since = maxVersionAndSeq(first).version
+          const next = yield* crsql.pullChanges(since, [siteB])
+          return { siteA, first, next }
+        }),
+        layerA
+      )
 
-      // A: new change and export since stored cursor
-      const next = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
-        const id2 = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-        yield* crsql.sql`INSERT INTO items (id, text) VALUES (unhex(${id2}), 'second')`
-        const since = maxVersionAndSeq(first.changes).version
-        const changes = yield* crsql.pullChanges(since, [siteB])
-        return { changes }
-      }).pipe(Effect.provide(layerA))
-
-      // B: apply next and verify
-      yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
-        yield* crsql.applyChanges(next.changes)
-        const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
-        assert.deepEqual(rows.map((r) => r.t), ["first", "second"])
-      }).pipe(Effect.provide(layerB))
+      // B: apply both sets on the SAME connection and verify
+      yield* Effect.provide(
+        Effect.gen(function*() {
+          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+          const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
+          // init
+          yield* crsql.sql`CREATE TABLE items (
+            id BLOB NOT NULL PRIMARY KEY,
+            text TEXT NOT NULL DEFAULT ''
+          )`
+          yield* crsql.sql`SELECT crsql_as_crr('items')`
+          // apply first & set cursor
+          yield* crsql.applyChanges(a.first)
+          const { seq, version } = maxVersionAndSeq(a.first)
+          yield* crsql.setPeerVersion({ siteId: a.siteA, version, seq })
+          // apply next
+          yield* crsql.applyChanges(a.next)
+          const rows = yield* crsql.sql<{ t: string }>`SELECT text as t FROM items ORDER BY t`
+          assert.deepEqual(rows.map((r) => r.t), ["first", "second"])
+        }),
+        layerB
+      )
     }))
 
   it.scoped.skip("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
