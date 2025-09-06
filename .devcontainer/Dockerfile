@@ -9,7 +9,7 @@ ENV NIX_CONFIG="experimental-features = nix-command flakes"
 ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=1000
-RUN nix profile install nixpkgs#shadow \
+RUN nix profile install --impure nixpkgs#shadow \
  && groupadd --gid ${USER_GID} ${USERNAME} \
  && useradd --uid ${USER_UID} --gid ${USER_GID} --create-home --shell /bin/sh ${USERNAME}
 
@@ -19,7 +19,7 @@ WORKDIR /workspace
 
 # Install a minimal interactive shell (zsh) for VS Code terminal
 # Keep it lean; use the flake devShell for all other tooling
-RUN nix profile install nixpkgs#zsh nixpkgs#git \
+RUN nix profile install --impure nixpkgs#zsh nixpkgs#git \
  && ln -sf "$(readlink -f /root/.nix-profile/bin/zsh)" /bin/zsh
 
 # Warm the Nix store using the repo flake to speed up first attach
