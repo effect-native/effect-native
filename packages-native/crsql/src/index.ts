@@ -14,7 +14,7 @@
  * The `${variable}` syntax is safe - Effect SQL converts these to proper
  * parameterized queries under the hood.
  *
- * @since 1.0.0
+ * @since 0.0.0
  */
 export * as CrSql from "./CrSql.js"
 
@@ -24,7 +24,7 @@ export * as CrSql from "./CrSql.js"
  * This module defines tagged errors used throughout the CR-SQLite package
  * for handling various failure scenarios in a type-safe manner.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @example
  * ```typescript
  * import * as CrSqlErrors from "@effect-native/crsql/CrSqlErrors"
@@ -47,7 +47,7 @@ export * as CrSqlErrors from "./CrSqlErrors.js"
  * including change rows, tracked peers, and various identifier types used
  * throughout the CR-SQLite system.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @example
  * ```typescript
  * import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
@@ -85,7 +85,7 @@ export * as CrSqlSchema from "./CrSqlSchema.js"
  * - Querying extension information (SHA, site ID)
  * - Creating Effect services for dependency injection
  *
- * @since 1.0.0
+ * @since 0.0.0
  */
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 

@@ -14,7 +14,7 @@
  * The `${variable}` syntax is safe - Effect SQL converts these to proper
  * parameterized queries under the hood.
  *
- * @since 1.0.0
+ * @since 0.0.0
  */
 // NOTE: avoid static import of libcrsql here to keep docgen example compilation
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
@@ -529,7 +529,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     getSiteIdHex,
@@ -551,7 +551,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     getDbVersion,
@@ -583,7 +583,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     pullChanges,
@@ -619,7 +619,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     finalize,
@@ -647,7 +647,7 @@ const makeCrSql = Effect.gen(function*() {
      *   CrSql.CrSql.applyChanges(rows)
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     applyChanges,
@@ -691,7 +691,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     setPeerVersion,
@@ -717,7 +717,7 @@ const makeCrSql = Effect.gen(function*() {
      * })
      * ```
      *
-     * @since 1.0.0
+     * @since 0.0.0
      * @category Operations
      */
     getPeerVersion,
@@ -744,7 +744,7 @@ const makeCrSql = Effect.gen(function*() {
  * Use `CrSql` accessors in Effects to interact with the CR-SQLite-backed
  * database via the provided `SqlClient`.
  *
- * @since 1.0.0
+ * @since 0.0.0
  */
 export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   accessors: true,

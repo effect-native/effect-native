@@ -9,6 +9,10 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // Kent Beck style TDD: red test first for a feature we wish existed.
 // Goal: derive a schema from exported CR-SQLite changes, apply it via automigrate
 // to a fresh DB, then apply those changes successfully.
+//
+// NOTE: This test is intentionally skipped for v0.0.0 release.
+// The __experimental__schemaFromChanges feature is implemented but these integration
+// tests remain red/skipped until the feature is fully validated and stabilized.
 
 describe("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED)", () => {
   it.scoped.skip("can recreate schema for exported changes and apply them", () =>

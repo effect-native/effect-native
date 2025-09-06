@@ -5,7 +5,7 @@
  * including change rows, tracked peers, and various identifier types used
  * throughout the CR-SQLite system.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @example
  * ```typescript
  * import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
@@ -33,7 +33,7 @@ import * as S from "effect/Schema"
 /**
  * Basic hex string pattern (uppercase or lowercase) used for site_id and pk values.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
@@ -41,13 +41,13 @@ export const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
 /**
  * Site ID as a 32-character hex string (16 bytes).
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const SiteIdHex = S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/))
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type SiteIdHex = typeof SiteIdHex.Type
@@ -68,7 +68,7 @@ export type SiteIdHex = typeof SiteIdHex.Type
  *
  * In "Serialized" schemas we use strings to faithfully represent boundary data.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const VersionString = S.String.pipe(
@@ -77,7 +77,7 @@ export const VersionString = S.String.pipe(
 )
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type VersionString = typeof VersionString.Type
@@ -91,10 +91,18 @@ export type VersionString = typeof VersionString.Type
 /**
  * SQLite column value type from typeof() function.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const SqlValueType = S.Literal("null", "text", "integer", "real", "blob")
+/**
+ * Type alias for SQLite column value types.
+ *
+ * Mirrors the encoded type of `typeof(SqlValueType).Type`.
+ *
+ * @since 0.0.0
+ * @category Models
+ */
 export type SqlValueType = typeof SqlValueType.Type
 
 /**
@@ -102,7 +110,7 @@ export type SqlValueType = typeof SqlValueType.Type
  *
  * Must start with letter or underscore, followed by letters, digits, or underscores.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
@@ -122,7 +130,7 @@ export const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
  * - `site_id`: hex string for site identity
  * - `cl`/`seq`: non-negative integers
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const ChangeRowSerialized = S.Struct({
@@ -174,7 +182,7 @@ export const ChangeRowSerialized = S.Struct({
 )
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
@@ -187,7 +195,7 @@ export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
  * - `version`: bigint encoded as base-10 string (CAST AS TEXT in SQL)
  * - `seq`: non-negative integer
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const TrackedPeerSerialized = S.Struct({
@@ -197,7 +205,7 @@ export const TrackedPeerSerialized = S.Struct({
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type TrackedPeerSerialized = typeof TrackedPeerSerialized.Type
@@ -209,7 +217,7 @@ export type TrackedPeerSerialized = typeof TrackedPeerSerialized.Type
  * (filesystem path, timestamp). Used when the extension has been successfully
  * loaded and is ready for use.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const ExtInfo = S.Struct({
@@ -220,7 +228,7 @@ export const ExtInfo = S.Struct({
 }).annotations({ description: "Info about the cr-sqlite extension" })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type ExtInfo = typeof ExtInfo.Type
@@ -232,7 +240,7 @@ export type ExtInfo = typeof ExtInfo.Type
  * extension directly via SQL functions like `crsql_sha()` and `crsql_site_id()`.
  * Does not include loading metadata like filesystem path or timestamp.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const ExtInfoSql = ExtInfo.pick("sha", "siteId").annotations({
@@ -240,7 +248,7 @@ export const ExtInfoSql = ExtInfo.pick("sha", "siteId").annotations({
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type ExtInfoSql = typeof ExtInfoSql.Type
@@ -252,7 +260,7 @@ export type ExtInfoSql = typeof ExtInfoSql.Type
  * but not the SQL-queryable information like SHA or site ID. Useful for
  * debugging and auditing extension loading operations.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Schema
  */
 export const ExtInfoLoaded = ExtInfo.pick("path", "loadedAt").annotations({
@@ -260,7 +268,7 @@ export const ExtInfoLoaded = ExtInfo.pick("path", "loadedAt").annotations({
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category Models
  */
 export type ExtInfoLoaded = typeof ExtInfoLoaded.Type

@@ -6,6 +6,10 @@ import { Effect } from "effect"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
 // Kent Beck style: focused unit tests to narrow behavior
+//
+// NOTE: These tests are intentionally skipped for v0.0.0 release.
+// The __experimental__schemaFromChanges feature is implemented but these unit
+// tests remain red/skipped until the feature is fully validated and stabilized.
 
 it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
   Effect.gen(function*() {

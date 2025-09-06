@@ -4,7 +4,7 @@
  * This module defines tagged errors used throughout the CR-SQLite package
  * for handling various failure scenarios in a type-safe manner.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @example
  * ```typescript
  * import * as CrSqlErrors from "@effect-native/crsql/CrSqlErrors"
@@ -27,7 +27,7 @@ import * as Schema from "effect/Schema"
  * that requires the `unhex()` function, but it's not available in the
  * current SQLite installation or version.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Errors
  */
 export class UnhexUnavailable extends Schema.TaggedError<UnhexUnavailable>(
@@ -44,7 +44,7 @@ export class UnhexUnavailable extends Schema.TaggedError<UnhexUnavailable>(
  * This typically happens when the extension file is missing or when
  * `LOAD EXTENSION` has not been called.
  *
- * @since 1.0.0
+ * @since 0.0.0
  * @category Errors
  */
 export class CrSqliteExtensionMissing extends Schema.TaggedError<CrSqliteExtensionMissing>(
