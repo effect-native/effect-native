@@ -186,6 +186,126 @@ export const ChangeRowSerialized = S.Struct({
  * @category Models
  */
 export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
+export const isChangeRowSerializedQuick = (it: unknown): it is ChangeRowSerialized =>
+  typeof it === "object" &&
+  it !== null &&
+  "table" in it &&
+  "pk" in it &&
+  "cid" in it &&
+  "val" in it &&
+  "val_type" in it &&
+  "col_version" in it &&
+  "db_version" in it &&
+  "site_id" in it &&
+  "cl" in it &&
+  "seq" in it &&
+  Object.keys(it).length === 10
+
+/**
+ * Tuple (array) form of a serialized crsql_changes row.
+ *
+ * Same fields and order as {@link ChangeRowSerialized}, but represented as a
+ * positional array instead of an object. Useful for compact transport formats
+ * or drivers that emit rows as arrays.
+ *
+ * Field order:
+ * [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
+export const ChangeArray = S.Tuple(
+  // table
+  Identifier,
+  // pk (hex-encoded BLOB)
+  HexString,
+  // cid (column name)
+  Identifier,
+  // val (serialized via SQL rules)
+  S.Union(S.Null, S.String, S.Number),
+  // val_type (typeof(val))
+  SqlValueType,
+  // col_version (bigint as base-10 string)
+  VersionString,
+  // db_version (bigint as base-10 string)
+  VersionString,
+  // site_id (hex-encoded BLOB)
+  SiteIdHex,
+  // cl (causal length)
+  S.NonNegativeInt,
+  // seq (within-version ordering)
+  S.NonNegativeInt
+).pipe(
+  S.annotations({
+    identifier: "ChangeArray",
+    description:
+      "CR-SQLite change row as a positional tuple [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]"
+  })
+)
+export type ChangeArray = typeof ChangeArray.Type
+
+export const isChangeArrayQuick = (it: unknown): it is ChangeArray => Array.isArray(it) && it.length === 10
+export const toChangeArray = (
+  c: ChangeRowSerialized | ChangeArray
+): ChangeArray => {
+  if (isChangeArrayQuick(c)) return c
+  // eslint-disable-next-line sort-destructure-keys/sort-destructure-keys
+  const { table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq } = c
+  return [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]
+}
+
+/**
+ * Convenience schemas for batches of changes in both shapes.
+ *
+ * These mirror the two common transport encodings:
+ * - Array of objects: `ChangeRowSerialized[]`
+ * - Array of arrays: `ChangeArray[]`
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
+export const ChangesObjects = S.Array(ChangeRowSerialized).annotations({
+  identifier: "ChangesObjects",
+  description: "Array of object-shaped CR-SQLite change rows"
+})
+
+/**
+ * @since 0.1.0
+ * @category Models
+ */
+export type ChangesObjects = typeof ChangesObjects.Type
+
+/**
+ * @since 0.1.0
+ * @category Schema
+ */
+export const ChangesArray = S.Array(ChangeArray).annotations({
+  identifier: "ChangesArray",
+  description: "Array of tuple-shaped CR-SQLite change rows"
+})
+
+/**
+ * @since 0.1.0
+ * @category Models
+ */
+export type ChangesArray = typeof ChangesArray.Type
+
+/**
+ * Union schema accepting either array-of-objects or array-of-arrays encodings.
+ *
+ * @since 0.1.0
+ * @category Schema
+ */
+export const Changes = S.Union(ChangesObjects, ChangesArray).annotations({
+  identifier: "Changes",
+  description: "Changes encoded as either objects or tuples"
+})
+
+/**
+ * @since 0.1.0
+ * @category Models
+ */
+export type Changes = typeof Changes.Type
 
 /**
  * Pre-serialized crsql_tracked_peers row for transport (per-peer cursor).

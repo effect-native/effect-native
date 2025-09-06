@@ -5,12 +5,12 @@ import { Effect } from "effect"
 
 describe("CrSql.applyChanges decodes BLOB values", () => {
   it.scoped("applies blob change rows (pk and val) losslessly", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       // Stage 1: Produce a change with BLOB PK and BLOB value
-      const source = yield* Effect.gen(function* () {
+      const source = yield* Effect.gen(function*() {
         const layer = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
-        return yield* Effect.gen(function* () {
+        return yield* Effect.gen(function*() {
           const sql = yield* NodeSqlite.SqliteClient.SqliteClient
           const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
 
@@ -40,10 +40,10 @@ describe("CrSql.applyChanges decodes BLOB values", () => {
       )
 
       // Stage 2: Apply to a fresh DB and verify round-trip via hex()
-      yield* Effect.gen(function* () {
+      yield* Effect.gen(function*() {
         const layer = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
-        yield* Effect.gen(function* () {
+        yield* Effect.gen(function*() {
           const sql = yield* NodeSqlite.SqliteClient.SqliteClient
           const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql })
 
@@ -63,6 +63,5 @@ describe("CrSql.applyChanges decodes BLOB values", () => {
           assert.deepEqual(rows, [{ id: source.idHex, bin: source.binHex }])
         }).pipe(Effect.provide(layer))
       })
-    })
-  )
+    }))
 })

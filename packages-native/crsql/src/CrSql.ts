@@ -331,7 +331,7 @@ const makeCrSql = Effect.gen(function*() {
     Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.UnhexUnavailable({ cause })))
   )
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
-    changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
+    changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized> | ReadonlyArray<CrSqlSchema.ChangeArray>
   ) {
     // TODO(effect-native): Wrap with Reactivity.mutation and invalidate keys
     // - Invalidate ["crsql:dbVersion", "crsql:changes"] after successful apply
@@ -342,27 +342,27 @@ const makeCrSql = Effect.gen(function*() {
     const APPLY_CONCURRENCY = 64 as const
     yield* sql.withTransaction(
       Effect.forEach(
-        changes,
-        (change) =>
-          // Product decision: use unhex() to decode transport hex into BLOBs
-          // (pk, site_id, and val when val_type='blob'), instead of pushing this
-          // responsibility into application code. Tests assume unhex() presence.
+        changes.map(CrSqlSchema.toChangeArray),
+        // Product decision: use unhex() to decode transport hex into BLOBs
+        // (pk, site_id, and val when val_type='blob'), instead of pushing this
+        // responsibility into application code. Tests assume unhex() presence.
+        ([table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]) =>
           sql`
             INSERT INTO crsql_changes ("table", pk, cid, val, col_version, db_version, site_id, cl, seq)
             VALUES (
-              ${change.table},
-              unhex(${change.pk}),
-              ${change.cid},
+              ${table},
+              unhex(${pk}),
+              ${cid},
               CASE
-                WHEN ${change.val_type} = 'null' THEN NULL
-                WHEN ${change.val_type} = 'blob' THEN unhex(${change.val})
-                ELSE ${change.val}
+                WHEN ${val_type} = 'null' THEN NULL
+                WHEN ${val_type} = 'blob' THEN unhex(${val})
+                ELSE ${val}
               END,
-              CAST(${change.col_version} AS INTEGER),
-              CAST(${change.db_version} AS INTEGER),
-              unhex(${change.site_id}),
-              ${change.cl},
-              ${change.seq}
+              CAST(${col_version} AS INTEGER),
+              CAST(${db_version} AS INTEGER),
+              unhex(${site_id}),
+              ${cl},
+              ${seq}
             )
           `,
         { concurrency: APPLY_CONCURRENCY, discard: true }
@@ -767,7 +767,9 @@ const makeCrSql = Effect.gen(function*() {
      * CR-SQLite resolves write conflicts using its internal versioning and
      * column-level metadata, ensuring deterministic convergence across replicas.
      *
-     * @param changes - Array of pre-serialized change rows to apply (from a peer)
+     * @param changes - Array of pre-serialized change rows to apply (from a peer).
+     *   Accepts either object-shaped rows (`ChangeRowSerialized[]`) or tuple-shaped rows
+     *   (`ChangeArray[]`).
      * @returns Effect that completes when all changes have been successfully applied
      * @throws {CrSqliteExtensionMissing} When the CR-SQLite extension is not loaded
      * @throws {UnhexUnavailable} When SQLite lacks the unhex() function
