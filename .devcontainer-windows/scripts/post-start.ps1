@@ -64,6 +64,8 @@ Write-Host "=============" -ForegroundColor Yellow
 Write-Host "Working directory: $(Get-Location)"
 Write-Host "Node.js: $(node --version)"
 Write-Host "pnpm: $(pnpm --version)"
+$cr = $env:CRSQLITE_PATH
+if ($cr) { Write-Host "CRSQLITE_PATH: $cr" } else { Write-Host "CRSQLITE_PATH: (not set)" -ForegroundColor Yellow }
 $currentBranch = try { git branch --show-current 2>$null } catch { 'Not in git repo' }
 Write-Host "Branch: $currentBranch"
 Write-Host ""

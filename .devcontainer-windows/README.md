@@ -86,6 +86,10 @@ Windows-specific environment variables:
 - `PNPM_HOME=C:/Users/ContainerUser/AppData/Local/pnpm`
 - `NODE_ENV=development`
 - `EFFECT_NATIVE_DEV=true`
+- `CRSQLITE_PATH=C:/tools/crsqlite/crsqlite.dll` (matches flake.nix devShell semantics)
+
+Additionally, this image installs key CLI tools to mirror the Nix devShell:
+- `jq`, `yq`, `ripgrep`, `fd`, `bat`, `gh`, `deno`
 
 ## 📊 Resource Requirements
 
