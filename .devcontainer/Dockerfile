@@ -54,9 +54,9 @@ RUN . "$HOME/.nix-profile/etc/profile.d/nix.sh" \
 # Auto-load the flake dev environment for every shell session (bash and zsh)
 # This makes all devShell tools and env (e.g., CRSQLITE_PATH) globally available
 RUN printf '\n# Effect Native: load flake dev env on shell start\n' >> "$HOME/.bashrc" \
- && printf 'if [ -f /workspace/flake.nix ]; then\n  eval "$(nix --extra-experimental-features \"nix-command flakes\" print-dev-env --accept-flake-config /workspace)"\nfi\n' >> "$HOME/.bashrc" \
+ && printf "if [ -f /workspace/flake.nix ]; then\n  eval \"\$(nix --extra-experimental-features 'nix-command flakes' print-dev-env --accept-flake-config /workspace)\"\nfi\n" >> "$HOME/.bashrc" \
  && printf '\n# Effect Native: load flake dev env on shell start\n' >> "$HOME/.zshrc" \
- && printf 'if [ -f /workspace/flake.nix ]; then\n  eval "$(nix --extra-experimental-features \"nix-command flakes\" print-dev-env --accept-flake-config /workspace)"\nfi\n' >> "$HOME/.zshrc"
+ && printf "if [ -f /workspace/flake.nix ]; then\n  eval \"\$(nix --extra-experimental-features 'nix-command flakes' print-dev-env --accept-flake-config /workspace)\"\nfi\n" >> "$HOME/.zshrc"
 
 # Workspace
 WORKDIR /workspace
