@@ -22,3 +22,4 @@ bun.lock
 file:*
 packages-native/*/file:*
 *.log
+.pnpm-store/
