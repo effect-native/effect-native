@@ -31,6 +31,16 @@ RUN choco install -y --no-progress --ignore-checksums \
     notepadplusplus \
     sysinternals
 
+# Mirror key tools from flake.nix devShell (CLI utilities)
+RUN choco install -y --no-progress --ignore-checksums \
+    jq \
+    yq \
+    deno \
+    ripgrep \
+    fd \
+    bat \
+    gh
+
 # Set environment variables
 ENV NODE_ENV=development
 ENV EFFECT_NATIVE_DEV=true
@@ -42,6 +52,20 @@ RUN $env:PATH += ';C:\\tools\\nodejs;C:\\tools\\python3;C:\\tools\\git\\bin;C:\\
 
 # Install pnpm globally
 RUN npm install -g pnpm node-gyp windows-build-tools
+
+# Provide CR-SQLite like flake.nix (set globally)
+# - Download prebuilt CR-SQLite for Windows and expose CRSQLITE_PATH
+ENV CRSQLITE_DIR="C:\\tools\\crsqlite"
+RUN New-Item -ItemType Directory -Path $env:CRSQLITE_DIR -Force | Out-Null; \
+    Invoke-WebRequest -Uri 'https://github.com/vlcn-io/cr-sqlite/releases/download/v0.16.3/crsqlite-win-x86_64.zip' -OutFile 'C:\\crsqlite.zip'; \
+    & 'C:\\Program Files\\7-Zip\\7z.exe' x -y -o$env:CRSQLITE_DIR 'C:\\crsqlite.zip'; \
+    Remove-Item 'C:\\crsqlite.zip'; \
+    if (Test-Path (Join-Path $env:CRSQLITE_DIR 'crsqlite.dll')) { \
+      [Environment]::SetEnvironmentVariable('CRSQLITE_PATH', (Join-Path $env:CRSQLITE_DIR 'crsqlite.dll'), [EnvironmentVariableTarget]::Machine) \
+    } else { \
+      Write-Error 'CR-SQLite DLL not found after extraction.' \
+    }
+ENV CRSQLITE_PATH="C:\\tools\\crsqlite\\crsqlite.dll"
 
 # Install NVM for Windows
 RUN Invoke-WebRequest -Uri 'https://github.com/coreybutler/nvm-windows/releases/latest/download/nvm-setup.exe' -OutFile 'nvm-setup.exe'; \
