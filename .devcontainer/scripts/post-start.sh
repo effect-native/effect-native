@@ -26,7 +26,7 @@ if [ -f package.json ]; then
     # Check if node_modules exists and is not empty
     if [ ! -d node_modules ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
         log_info "Installing dependencies..."
-        pnpm install || log_warn "Failed to install dependencies"
+        corepack pnpm install --force --frozen-lockfile=false || log_warn "Failed to install dependencies"
     else
         log_info "Dependencies already installed"
     fi
@@ -59,7 +59,7 @@ echo "Quick status:"
 echo "============="
 echo "Working directory: $(pwd)"
 echo "Node.js: $(node --version)"
-echo "pnpm: $(pnpm --version)"
+echo "pnpm: $(corepack pnpm --version)"
 echo "Branch: $(git branch --show-current 2>/dev/null || echo 'Not in git repo')"
 echo ""
 echo "Run 'pnpm test' to run tests"

@@ -197,7 +197,7 @@
   // Commands to run after starting the container
   "postStartCommand": "nix develop --command bash -lc 'bash .devcontainer/scripts/post-start.sh'",
   // Commands to run after attaching to the container
-  "postAttachCommand": "nix develop --command bash -lc 'corepack pnpm install && git config --global --add safe.directory /workspace'",
+  "postAttachCommand": "nix develop --command bash -lc 'corepack pnpm install --force --frozen-lockfile=false && git config --global --add safe.directory /workspace'",
   // Mount points
   "mounts": [
     // Persist Nix store between rebuilds
@@ -219,7 +219,7 @@
     "--network=host"
   ],
   // Update content command
-  "updateContentCommand": "nix develop --command bash -lc 'corepack pnpm install'",
+  "updateContentCommand": "nix develop --command bash -lc 'corepack pnpm install --force --frozen-lockfile=false'",
   // Shutdown action
   "shutdownAction": "stopContainer",
   // Host requirements

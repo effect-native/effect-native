@@ -56,11 +56,13 @@ ln -sf /home/developer/.bash_history_dir/.bash_history /home/developer/.bash_his
 
 # 4. Set up pnpm
 log_info "Configuring pnpm..."
-pnpm config set store-dir /home/developer/.pnpm-store
-pnpm config set virtual-store-dir node_modules/.pnpm
-pnpm config set symlink true
-pnpm config set auto-install-peers true
-pnpm config set strict-peer-dependencies false
+# Use Corepack-managed pnpm since the Nix store is read-only
+corepack pnpm --version >/dev/null 2>&1 || true
+corepack pnpm config set store-dir /home/developer/.pnpm-store
+corepack pnpm config set virtual-store-dir node_modules/.pnpm
+corepack pnpm config set symlink true
+corepack pnpm config set auto-install-peers true
+corepack pnpm config set strict-peer-dependencies false
 
 # 5. Install global npm packages
 log_info "Installing global npm packages..."
@@ -120,7 +122,7 @@ fi
 log_info "Installing project dependencies..."
 cd /workspace
 if [ -f package.json ]; then
-    pnpm install --frozen-lockfile || pnpm install || log_error "Failed to install dependencies"
+    corepack pnpm install --force --frozen-lockfile=false || log_error "Failed to install dependencies"
 else
     log_warn "No package.json found in workspace"
 fi
@@ -128,7 +130,7 @@ fi
 # 10. Build the project (if build script exists)
 if [ -f package.json ] && grep -q '"build"' package.json; then
     log_info "Building the project..."
-    pnpm build || log_warn "Build failed"
+    corepack pnpm build || log_warn "Build failed"
 fi
 
 # 11. Set up direnv (if .envrc exists)
@@ -152,7 +154,7 @@ cat > /home/developer/.welcome << 'EOF'
 ║                                                              ║
 ║  Services:                                                   ║
 ║  - Node.js version : $(node --version 2>/dev/null || echo "Not installed")                          ║
-║  - pnpm version    : $(pnpm --version 2>/dev/null || echo "Not installed")                            ║
+║  - pnpm version    : $(corepack pnpm --version 2>/dev/null || echo "Not installed")                            ║
 ║  - Nix available   : $(command -v nix &> /dev/null && echo "Yes ✓" || echo "No ✗")                 ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -178,6 +180,7 @@ alias gl='git log --oneline --graph --decorate'
 alias gd='git diff'
 
 # pnpm aliases
+alias pnpm='corepack pnpm'
 alias pi='pnpm install'
 alias pt='pnpm test'
 alias pb='pnpm build'
@@ -212,7 +215,7 @@ echo "Environment Check:"
 echo "=================="
 echo "Node.js: $(node --version 2>/dev/null || echo 'Not found')"
 echo "npm: $(npm --version 2>/dev/null || echo 'Not found')"
-echo "pnpm: $(pnpm --version 2>/dev/null || echo 'Not found')"
+echo "pnpm: $(corepack pnpm --version 2>/dev/null || echo 'Not found')"
 echo "Git: $(git --version 2>/dev/null || echo 'Not found')"
 echo "Nix: $(nix --version 2>/dev/null || echo 'Not found')"
 echo "TypeScript: $(tsc --version 2>/dev/null || echo 'Not found')"
@@ -220,4 +223,4 @@ echo ""
 
 log_info "Post-create setup completed successfully! 🎉"
 echo ""
-echo "To get started, run: pnpm install && pnpm test"
+echo "To get started, run: corepack pnpm install && corepack pnpm test"
