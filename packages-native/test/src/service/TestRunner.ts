@@ -55,6 +55,12 @@ export const setDefaultLayer = (l: Layer.Layer<TestRunner>) => {
 }
 
 /**
+ * Returns the currently installed default Layer, if any.
+ * @since 0.0.1
+ */
+export const getDefaultLayer = (): Layer.Layer<TestRunner> | null => defaultLayer
+
+/**
  * Provides the default TestRunner layer to an Effect if configured.
  * @since 0.0.1
  */
