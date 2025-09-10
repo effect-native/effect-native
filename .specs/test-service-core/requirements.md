@@ -7,11 +7,12 @@
 - FR1.4: Provide manifest generation helpers (programmatic API) to import discovered modules and normalize exported shapes (function(TestRunner) vs Effect).
 - FR1.5: Provide transport message schema and utilities for host<->runtime bridges (WS) used by Browser and RN.
 - FR1.6: Expose minimal adapter SDK helpers (e.g., mapExports(module) → Array<TestCaseDef>) to keep adapters thin.
- - FR1.7: Provide compatibility shim modules for common runner APIs to enable no‑export tests in Browser/RN:
-   - `@effect-native/test-core/compat/vitest` (exports describe/it(test)/hooks/expect)
-   - `@effect-native/test-core/compat/effect-vitest` (compatible subset of `@effect/vitest`)
-   - `@effect-native/test-core/compat/bun-test` (exports test/describe/expect/hooks)
-   These forward to the SPI `TestRunner`.
+- FR1.7: Provide compatibility shim modules for common runner APIs to enable no‑export tests in Browser/RN:
+  - `@effect-native/test-core/compat/vitest` (exports describe/it(test)/hooks/expect)
+  - `@effect-native/test-core/compat/effect-vitest` (compatible subset of `@effect/vitest`)
+  - `@effect-native/test-core/compat/bun-test` (exports test/describe/expect/hooks)
+  These forward to the SPI `TestRunner`.
+ - FR1.8: Provide a universal minimal assertion library (Jest/Bun‑style) consumed by TestRunner and compat shims with initial matchers: `toBe`, `toEqual` (deep structural), `toBeTruthy`, `toBeFalsy`, `toThrow`. Include extension points for future matchers and Effect equality integration.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Pure ESM, no Node/RN/DOM globals; side‑effect free entry points.
@@ -32,6 +33,7 @@
 - IR5.1: Browser and RN adapters MUST use core’s scheduler/executor, event protocol, and reporters.
 - IR5.2: Vitest and Bun adapters MAY bypass scheduler/executor and rely on native runners, but SHOULD reuse event protocol types and JSON reporter when emitting SPI events.
 - IR5.3: Provide small adapter SDK functions to reduce duplication across adapters.
+ - IR5.4: Ensure the universal `expect` can coexist with native runner `expect` (Vitest/Bun) without collisions; prefer namespaced `TestRunner.expect` by default and only set `globalThis.expect` in Browser/RN harness/shims.
 
 ## DEP6 — Dependencies
 - DEP6.1: `@effect-native/test` (SPI types and TestRunner interface).

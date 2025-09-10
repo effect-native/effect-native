@@ -16,7 +16,7 @@
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Hard‑Fail: if runtime‑specific imports/services are missing, fail loudly (no silent skip).
 - NFR2.2: Deterministic time via TestServices/TestClock where applicable; document limitations.
-- NFR2.3: Integrate `@effect/vitest` equality testers for vitest; comparable equality for Bun.
+- NFR2.3: Prefer the universal `TestRunner.expect` for portability; when using native expects, integrate `@effect/vitest` equality testers for Vitest and provide comparable equality for Bun.
 - NFR2.4: Work with or without local `bunfig.toml`; CLI may pass `--preload`.
 
 ## TC3 — Technical Constraints

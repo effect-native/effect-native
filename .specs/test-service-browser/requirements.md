@@ -17,6 +17,7 @@
 - NFR2.2: Headless operation stable on CI; deterministic timing within practical limits.
 - NFR2.3: Minimal harness page; no Node shims.
  - NFR2.4: Serve mode security: include a per‑run random token in the URL; bind address and port configurable; avoid exposing beyond localhost by default.
+ - NFR2.5: Use the universal `TestRunner.expect` for assertions; expose it via compat shims as a global `expect` in the harness.
 
 ## TC3 — Technical Constraints
 - TC3.1: Use Playwright or Puppeteer; Chromium required, Firefox/WebKit optional v1.

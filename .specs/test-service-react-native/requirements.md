@@ -12,7 +12,8 @@
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Hard‑Fail: loud errors when Metro, simulators/emulators, or RN deps are missing; no silent skips.
 - NFR2.2: Deterministic where feasible; document timing caveats.
-- NFR2.3: No Node shims in RN; portable tests avoid Node globals.
+ - NFR2.3: No Node shims in RN; portable tests avoid Node globals.
+ - NFR2.4: Use the universal `TestRunner.expect` for assertions; expose it via compat shims as a global `expect` inside the RN bundle when needed.
 
 ## TC3 — Technical Constraints
 - TC3.1: iOS requires Xcode + simulators; Android requires SDK/NDK + emulator images.

@@ -7,6 +7,7 @@
 - FR1.4: Define `TestEvent` protocol: `runStart`, `suiteStart`, `testStart`, `testEnd`, `suiteEnd`, `runEnd`, `log`.
 - FR1.5: Provide `TestReporter` interface and reference reporters: dot, verbose, JSON.
 - FR1.6: Provide optional `register(manifest)(registry)` convention for adapters to populate the registry.
+- FR1.7: `TestRunner.expect` exposes the universal minimal Jest/Bun‑style assertion API to ensure portability across all adapters.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: No Node/RN/DOM globals; pure ESM modules.
@@ -27,6 +28,7 @@
 ## IR5 — Integration Requirements
 - IR5.1: Provide minimal adapter hooks; delegate execution/scheduling, event protocol, reporters to `@effect-native/test-core` where applicable.
 - IR5.2: Ensure TestRunner functions compose with `@effect/vitest` expectations semantics.
+- IR5.3: Under Vitest/Bun, `TestRunner.expect` MAY delegate to the native `expect` if semantics align; otherwise use the universal implementation to avoid divergence.
 
 ## DEP6 — Dependencies
 - DEP6.1: effect (runtime, TestServices types); no runtime deps beyond effect.

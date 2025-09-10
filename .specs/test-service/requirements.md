@@ -6,9 +6,10 @@
 - FR1.3: Standardize event protocol: run/suite/test start/end, log, summary with timing and status.
 - FR1.4: Provide dot, verbose, and JSON reporters with non‑zero exit on any failure.
 - FR1.5: Adapters integrate with native runners (vitest, bun:test, browser, RN) rather than replacing them.
- - FR1.6: Support legacy tests with no exports:
-   - Vitest/Bun: importing such modules must allow their native `test`/`describe` registrations to occur under the active runner.
-   - Browser/RN: provide compatibility shims (via `@effect-native/test-core/compat/*`) so `vitest`, `@effect/vitest`, and `bun:test` imports map to the SPI `TestRunner` APIs.
+- FR1.6: Support legacy tests with no exports:
+  - Vitest/Bun: importing such modules must allow their native `test`/`describe` registrations to occur under the active runner.
+  - Browser/RN: provide compatibility shims (via `@effect-native/test-core/compat/*`) so `vitest`, `@effect/vitest`, and `bun:test` imports map to the SPI `TestRunner` APIs.
+ - FR1.7: Universal assertions: provide a minimal, Jest/Bun‑style `expect` API that works identically across all adapters (Node, Bun, Browser, RN). Tests can always rely on `TestRunner.expect` and, in Browser/RN shims, a global `expect`.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Fail‑fast policy: never hide missing deps/runtimes behind guards; fail loudly with remediation.
@@ -47,3 +48,4 @@
 - SC7.2: Stage B parity: same suite passes headless in Chromium with matching outcomes (timing allowed to vary).
 - SC7.3: Stage C parity: same suite passes on iOS Simulator and Android Emulator without RN mocks.
 - SC7.4: CI durations: Node/Bun ≤ ~5m, Browser ≤ ~7m, RN ≤ ~10m (post‑cache); flake rate < 1%.
+ - SC7.5: The initial universal `expect` supports at least: `toBe`, `toEqual` (deep structural), `toBeTruthy`, `toBeFalsy`, `toThrow`. Additional matchers may be added in follow‑ups without breaking API.
