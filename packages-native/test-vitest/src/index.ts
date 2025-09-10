@@ -1,2 +1,5 @@
-export { layer } from "./layer"
-export { setup } from "./setup"
+/**
+ * @since 0.0.1
+ */
+export { layer } from "./layer.js"
+export { setup } from "./setup.js"

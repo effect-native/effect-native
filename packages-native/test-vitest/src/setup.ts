@@ -1,3 +1,6 @@
+/**
+ * @since 0.0.1
+ */
 import { layer, setDefaultLayer } from "@effect-native/test/service/TestRunner"
 import type { Tester, TesterContext } from "@vitest/expect"
 import * as Equal from "effect/Equal"

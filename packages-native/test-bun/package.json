@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "effect": "^3.17.13",
-    "@effect-native/test": "workspace:^"
+    "@effect-native/test": "workspace:^",
+    "@types/bun": "^1.2.21"
   }
 }
