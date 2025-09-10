@@ -7,7 +7,7 @@ Provide two adapters that implement the `portable-test-spi`:
 2) A bun:test adapter that executes the same portable tests using Bun’s test runner (leveraging or aligning with `@effect-native/bun-test`).
 
 - Feature name: `test-runners-vitest-bun`
-- Primary value: Prove the SPI by running the same tests on Node (vitest) and RN without code changes; zero RN mocks.
+- Primary value: Prove the SPI by running the same tests on Node (vitest) and Bun without code changes.
 
 Package Names:
 - Vitest adapter: `@effect-native/test-vitest` (depends on `@effect-native/test`)
@@ -37,7 +37,9 @@ Package Names:
   - Exit non‑zero on failures; optional JSON summary.
 
 - Test discovery & invocation:
-  - Discover `**/*.test.{js,jsx,ts,tsx}`. For each matched module, import it and call every exported function (default and named) with a `TestRunner` instance from `@effect-native/test`.
+  - Discover `**/*.test.{js,jsx,ts,tsx}`. For each matched module:
+    - If an export is a function, call it with a `TestRunner` instance from `@effect-native/test`.
+    - If an export is an `Effect`, run it by providing the appropriate environment.
   - Support `@effect/vitest`-style helpers available on the provided `TestRunner` (e.g., `it.effect`).
 
 - Shared semantics:
@@ -68,7 +70,7 @@ Package Names:
   - Under Bun (`bun test`), producing matching events and correct exit code.
 
 - Environment verification:
-  - For vitest and Bun, tests must not rely on RN or browser globals unless capability‑tagged accordingly.
+  - For vitest and Bun, tests that import runtime‑specific services or modules not present MUST fail loudly (Hard‑Fail). Portable tests must not assume RN or browser globals.
 
 - Reporting & DX:
   - Dot and Verbose reporters implemented; optional JSON artifact.
@@ -85,7 +87,7 @@ Package Names:
 
 ## Success Metrics
 
-- Identical test suite runs on vitest and RN without changes.
+- Identical test suite runs on vitest and Bun without changes.
 - Node/Bun runs complete on CI within ~5 minutes (post‑cache) and are stable (<1% flakes) for v1 scope.
 - Minimal adapter surfaces; low maintenance burden.
 
@@ -98,10 +100,10 @@ Package Names:
 
 - Unit tests (Node side):
   - Vitest adapter: mapping from SPI registration to vitest tests; modifiers; property tests; reporter bridging.
-  - RN CLI: discovery, manifest generation, message protocol, reporter formatting.
+  - Bun adapter: mapping from SPI registration to Bun tests; modifiers; property tests; reporter bridging.
 
 - Integration tests (end‑to‑end):
-  - Run the demo suite via vitest and via RN and compare event streams (allow timing variance).
+  - Run the demo suite via vitest and via Bun and compare event streams (allow timing variance).
 
 - Validation (inside Nix):
   - `nix develop --command pnpm -w install`
@@ -110,7 +112,7 @@ Package Names:
 
 ## Guardrails & Policies Alignment
 
-- Hard‑Fail Policy: Never hide missing simulators/emulators or Metro behind guards; fail loudly with explicit remediation.
+- Hard‑Fail Policy: Never hide missing runtimes behind guards; fail loudly with explicit remediation.
 - Evidence‑First: Document reproduction commands and environment checks in docs for both adapters.
 - Type Assertions Policy: Avoid unsafe assertions; `as const` allowed.
 - Modern Effect Patterns: Permit `yield* new Error()` style; forbid `try/catch` in `Effect.gen`.

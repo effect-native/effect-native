@@ -26,7 +26,9 @@ Package Name:
 - RN runtime execution:
   - Run tests inside a normal RN app runtime using Metro and Hermes/JSC.
   - No Node shims in RN; portable tests must not assume Node globals.
-  - Discover and import `**/*.test.{js,jsx,ts,tsx}` modules and call every exported function with a `TestRunner` instance from `@effect-native/test`.
+  - Discover and import `**/*.test.{js,jsx,ts,tsx}` modules:
+    - If an export is a function, call it with a `TestRunner` instance from `@effect-native/test`.
+    - If an export is an `Effect`, run it by providing the appropriate environment.
 
 - CLI + bundling:
   - Discover files (globs), generate manifest, produce a Metro entry importing the manifest.
@@ -38,7 +40,7 @@ Package Name:
   - Forward RN console logs and errors to host.
 
 - Capabilities & RN tools:
-  - Respect `requires: ["rn"]`; fail loudly if a selected test requires RN and the runner is not RN.
+  - No new capability tags; tests express RN requirements via imports and Effect environment.
   - RN‑specific tests can import `react-native` and `@testing-library/react-native` directly (no custom wrappers). If these deps are missing when selected, the run fails loudly.
 
 ## Technical Specifications

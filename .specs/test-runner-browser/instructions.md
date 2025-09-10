@@ -27,15 +27,17 @@ Package Name:
   - Bundle the portable test manifest for the browser (Vite/esbuild/rollup acceptable) and load in a minimal harness page.
   - Use a headless automation controller (e.g., Playwright/Puppeteer) to launch the browser and host page.
   - Establish a bidirectional channel (WebSocket or `window.postMessage` + exposed endpoint) to stream SPI events.
-  - Discover and import `**/*.test.{js,jsx,ts,tsx}` modules and call every exported function with a `TestRunner` instance from `@effect-native/test`.
+  - Discover and import `**/*.test.{js,jsx,ts,tsx}` modules:
+    - If an export is a function, call it with a `TestRunner` instance from `@effect-native/test`.
+    - If an export is an `Effect`, run it by providing the appropriate environment.
 
 - Reporters and exit behavior:
   - Dot, verbose, and JSON reporters on the Node side; non-zero exit on failures.
   - Forward browser console logs and unhandled errors to the host.
 
-- Capabilities:
-  - Respect SPI capability tags (e.g., `requires: ["browser"]`).
-  - Fail loudly if a selected test requires `browser` and the adapter is not a browser adapter.
+- Capabilities & requirements:
+  - No new capability tags; tests express requirements via imports and Effect environment.
+  - If a selected test imports browser‑specific modules or requires services not provided, the run fails loudly (Hard‑Fail).
 
 ## Technical Specifications
 
@@ -54,7 +56,7 @@ Package Name:
 ## Acceptance Criteria
 
 - A single portable suite runs headless in Chromium and matches Node/Bun results (modulo timing).
-- Browser adapter honors capability tags and fails loudly when dependencies are unmet.
+- Browser adapter fails loudly when imports/services are unmet; no silent skips.
 - Console/error forwarding visible in host logs.
 - Repo quality gates pass: `pnpm ok`, lint, typecheck, docgen, build.
 
