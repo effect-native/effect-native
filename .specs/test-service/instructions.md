@@ -42,6 +42,17 @@ Package Names:
   - The init prompts you to select one or more runners to configure now: `vitest`, `bun:test`, `browser`, `react-native`.
   - For each selection, it scaffolds minimal, non-destructive config and a package.json script.
 
+- Universal CLI (runs or fails fast):
+  - Command: pnpm dlx github:effect-native/test
+  - Behavior:
+    - Detects an installed adapter/config and runs tests with it. If multiple are present, use --runner <vitest|bun|browser|react-native> to choose.
+    - If no adapter/config is found, it fails fast with a clear message to run pnpm dlx github:effect-native/test --init.
+  - Default detection order (overridable): vitest -> bun:test -> browser -> react-native.
+  - Example fail-fast messages:
+    - No test adapter detected. Run: pnpm dlx github:effect-native/test --init
+    - React Native selected but Xcode/Android SDK not found. Install the platform toolchain or choose another runner.
+    - Browser runner selected but Playwright not installed. Run: pnpm i -D @playwright/test && npx playwright install chromium
+
 - Per‑runner scaffolding (what `--init` sets up):
   - Vitest:
     - Native default: nothing breaks `pnpm vitest run` — it Just Works with native discovery.
