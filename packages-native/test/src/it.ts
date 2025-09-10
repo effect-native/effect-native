@@ -2,7 +2,7 @@
  * @since 0.0.1
  */
 import * as Effect from "effect/Effect"
-import { TestRunner, getDefaultLayer } from "./service/TestRunner.js"
+import { getDefaultLayer, TestRunner } from "./service/TestRunner.js"
 
 /**
  * Runs an Effect as a test using the underlying runner's `it` implementation.
