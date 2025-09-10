@@ -66,6 +66,8 @@ This workflow is **ONLY** for substantial new features. For other types of work:
   - **Code Examples**: Demonstrating key implementations
   - **Integration Points**: How feature fits with existing codebase
 
+Avoid writing the code here. This is for defining the system design needed for the planning phase.
+
 **🔒 AUTHORIZATION GATE**: Present design.md and request user approval to proceed to Plan Phase
 
 #### Phase 4: Plan Phase  
@@ -79,6 +81,8 @@ This workflow is **ONLY** for substantial new features. For other types of work:
   - **Risk Mitigation Strategies**
   - **Success Criteria Validation**
   - **Progress Tracking System**
+
+Avoid writing the code here. This is for defining the plans that the code writers will follow to write the code.
 
 **🔒 AUTHORIZATION GATE**: Present plan.md and request user approval to proceed to Implementation Phase
 
