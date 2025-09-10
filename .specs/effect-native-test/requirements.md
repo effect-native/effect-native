@@ -1,10 +1,9 @@
 # @effect-native/test — Phase 2 Requirements
 
 ## FR1 — Functional Requirements
-- FR1.1: Export bindings for `describe`, `it`, `expect` that map to the active runner or harness; do not implement a new runner or assertion engine.
-- FR1.2: Provide Effect helpers on `it`: `it.effect` (run Effect via `Effect.runPromise`), plus placeholders for `it.scoped` and `it.live` to add later.
-- FR1.3: Provide a tiny SPI for adapters to supply the bound primitives (e.g., `bind(): { describe, it, expect }`).
-- FR1.4: Ship an optional ambient types template (`test-env.d.ts`) so tests can use global `describe`/`it`/`expect` types without imports.
+- FR1.1: Define an Effect Service `TestApi` providing `{ it, expect }` abstractions sourced from the active runner or harness; do not implement a new runner or assertion engine.
+- FR1.2: Provide Effect helpers: `itEffect(name, Effect)` that reads `TestApi` from the environment and runs with `Effect.runPromise`. Leave `scoped`/`live` for later.
+- FR1.3: Ship an optional ambient types template (`test-env.d.ts`) so tests can use global `describe`/`it`/`expect` types without imports; adapters may extend the runner’s `it` with an `effect` method in setup/preload.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: “No new runner” guarantee — this package does not schedule tests or create globals at runtime.
@@ -21,9 +20,9 @@
 - DR4.2: Optional `test-env.d.ts` template content documented for init scripts.
 
 ## IR5 — Integration Requirements
-- IR5.1: Works with `@effect-native/test-vitest` and `@effect-native/test-bun` adapters by re‑exporting their bound primitives.
-- IR5.2: Provides a minimal adapter hook (`setBindings` or equivalent) that Browser/RN harnesses can call during bootstrap.
- - IR5.3: Semantics alignment: mirror the proven patterns in `packages/vitest/src/internal/internal.ts` for Effect test execution where applicable (e.g., runPromise/exit handling, interrupt fibers on test finish via onTestFinished, and optional TestEnv provisioning).
+- IR5.1: Adapters provide `Layer<TestApi>` sourced from the underlying runner (Vitest/Bun) or harness (Browser/RN).
+- IR5.2: Helper functions in this package read `TestApi` via Effect.provide to run Effect‑based tests.
+- IR5.3: Semantics alignment: mirror `packages/vitest/src/internal/internal.ts` patterns (runPromise/exit handling, interrupt fibers on test finish, optional TestEnv provisioning) within adapter layers.
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11`.
