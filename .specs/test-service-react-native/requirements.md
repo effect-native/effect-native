@@ -6,7 +6,8 @@
 - FR1.3: Provide CLI to discover → generate manifest → start Metro → launch simulator/emulator → stream SPI events.
 - FR1.4: Provide dot/verbose/JSON reporters on host; non‑zero exit on failures.
 - FR1.5: Allow RN‑specific tests to import `react-native` and `@testing-library/react-native` directly.
- - FR1.6: MUST use `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
+- FR1.6: MUST use `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
+ - FR1.7: Support legacy, no‑export tests by providing compatibility shims so code that imports `vitest`, `@effect/vitest`, or `bun:test` can run in the RN harness. The shims map common APIs (`describe`, `it`/`test`, hooks, `expect`) to the `@effect-native/test` TestRunner.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Hard‑Fail: loud errors when Metro, simulators/emulators, or RN deps are missing; no silent skips.
@@ -17,6 +18,7 @@
 - TC3.1: iOS requires Xcode + simulators; Android requires SDK/NDK + emulator images.
  - TC3.2: In this repository, development and CI use the Nix dev shell for install/build/test; end users of the published adapter are not required to use Nix and can run under standard Node with the RN toolchain installed.
 - TC3.3: WebSocket transport between RN app and host process.
+ - TC3.4: Provide Metro resolver aliases to redirect `vitest`, `@effect/vitest`, and `bun:test` to `@effect-native/test-core/compat/*` modules in the RN bundle. Document any unsupported APIs.
 
 ## DR4 — Data Requirements
 - DR4.1: Reporter JSON matches SPI schema; include platform/device name and RN runtime (Hermes/JSC).
@@ -27,6 +29,12 @@
 - IR5.2: CLI flags: `--platform ios|android`, `--device <name/id>`, `--include/--exclude`, `--reporter`, `--timeout`.
 - IR5.3: Integrate with Metro and simulator/emulator tooling. In‑repo development/CI use Nix; end users run without Nix provided platform toolchains are installed.
 - IR5.4: Use `@effect-native/test-core` adapter SDK helpers to normalize module exports and build suite tree.
+ - IR5.5: Compatibility shims:
+   - Metro resolver maps:
+     - `vitest` → `@effect-native/test-core/compat/vitest`
+     - `@effect/vitest` → `@effect-native/test-core/compat/effect-vitest`
+     - `bun:test` → `@effect-native/test-core/compat/bun-test`
+   - The compat modules export the minimal surface used by typical tests (test/it/describe/hooks/expect) and forward to the TestRunner.
 
 ## DEP6 — Dependencies
 - DEP6.1: `@effect-native/test` (SPI), `@effect-native/test-core` (executor/reporters/transport), `react-native`, `@testing-library/react-native` (for RN‑specific tests), Metro, WebSocket.
@@ -36,3 +44,4 @@
 - SC7.1: Demo suite passes on iOS Simulator and Android Emulator; outcomes match Node/Bun modulo timing.
 - SC7.2: RN API test (e.g., `Dimensions.get("window")`) passes without mocks.
 - SC7.3: RN test using `@testing-library/react-native` runs without custom wrappers.
+ - SC7.4: A legacy test with no exports that imports `vitest` or `@effect/vitest` runs in the RN harness via shims and passes.

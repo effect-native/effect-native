@@ -7,6 +7,11 @@
 - FR1.4: Provide manifest generation helpers (programmatic API) to import discovered modules and normalize exported shapes (function(TestRunner) vs Effect).
 - FR1.5: Provide transport message schema and utilities for host<->runtime bridges (WS) used by Browser and RN.
 - FR1.6: Expose minimal adapter SDK helpers (e.g., mapExports(module) → Array<TestCaseDef>) to keep adapters thin.
+ - FR1.7: Provide compatibility shim modules for common runner APIs to enable no‑export tests in Browser/RN:
+   - `@effect-native/test-core/compat/vitest` (exports describe/it(test)/hooks/expect)
+   - `@effect-native/test-core/compat/effect-vitest` (compatible subset of `@effect/vitest`)
+   - `@effect-native/test-core/compat/bun-test` (exports test/describe/expect/hooks)
+   These forward to the SPI `TestRunner`.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Pure ESM, no Node/RN/DOM globals; side‑effect free entry points.
@@ -17,6 +22,7 @@
 ## TC3 — Technical Constraints
 - TC3.1: Target Node ≥ 18 for host utilities; runtime side must also build for browser/RN bundles.
 - TC3.2: No dependency on specific runners; adapters depend on core, not vice versa.
+ - TC3.3: Compat layers are tree‑shakeable and only brought in via bundler/Metro aliases for Browser/RN builds.
 
 ## DR4 — Data Requirements
 - DR4.1: Canonical `TestEvent` TS types and a versioned JSON schema for reporter output.
@@ -35,4 +41,3 @@
 - SC7.1: Browser and RN adapters share core executor/reporters with minimal glue code.
 - SC7.2: Vitest and Bun adapters compile against core’s types and can optionally emit core‑compatible JSON reports.
 - SC7.3: No duplicated scheduler/executor logic across adapters.
-

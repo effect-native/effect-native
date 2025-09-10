@@ -4,6 +4,7 @@
 - FR1.1: Discover `**/*.test.{js,jsx,ts,tsx}`; import each module and for each export:
   - If function: call with `TestRunner` instance from SPI.
   - If Effect: run by providing environment.
+  - If a module has no exports but imports `vitest`, `@effect/vitest`, or `bun:test`, load it to allow the native runner to register tests in the current process context.
 - FR1.2: Generate a manifest module for each runner:
   - Vitest: `./.effect-test/manifest.vitest.test.ts`
   - Bun: `./.effect-test/manifest.bun.test.ts`

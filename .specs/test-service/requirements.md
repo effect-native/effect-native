@@ -6,6 +6,9 @@
 - FR1.3: Standardize event protocol: run/suite/test start/end, log, summary with timing and status.
 - FR1.4: Provide dot, verbose, and JSON reporters with non‑zero exit on any failure.
 - FR1.5: Adapters integrate with native runners (vitest, bun:test, browser, RN) rather than replacing them.
+ - FR1.6: Support legacy tests with no exports:
+   - Vitest/Bun: importing such modules must allow their native `test`/`describe` registrations to occur under the active runner.
+   - Browser/RN: provide compatibility shims (via `@effect-native/test-core/compat/*`) so `vitest`, `@effect/vitest`, and `bun:test` imports map to the SPI `TestRunner` APIs.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Fail‑fast policy: never hide missing deps/runtimes behind guards; fail loudly with remediation.
@@ -30,6 +33,7 @@
 - IR5.2: Browser and RN adapters MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport.
 - IR5.3: Vitest and Bun adapters MUST map SPI tests to native `describe/it`/`test` primitives; they MAY bypass core’s executor but SHOULD reuse core’s event protocol types and JSON reporter when emitting SPI events.
 - IR5.4: Reporters compatible across adapters; identical event semantics modulo timing.
+ - IR5.5: Provide resolver/alias machinery per adapter to enable legacy no‑export test support as described in FR1.6.
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11` (SPI and all adapters).
