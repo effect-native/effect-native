@@ -9,33 +9,36 @@
 - Ambient types (`test-env.d.ts`) are optional and limited to declaring globals for authoring convenience; they do not add runtime globals.
 
 ## Module Architecture
-- src/service/TestApi.ts
+- src/service/TestRunner.ts
   - Define an Effect Service describing the runner API exposed to helpers:
-    - `TestApi` with fields `{ readonly it: RunnerIt; readonly expect: ExpectAPI }`.
+    - `TestRunner` service with fields `{ readonly it: RunnerIt; readonly expect: ExpectAPI }`.
     - `RunnerIt` is the underlying runner’s `it` API surface that adapters supply.
-  - Provide constructor and Tag for `TestApi`.
+  - Export Tag for `TestRunner` and helpers:
+    - `TestRunner.layer({ it, expect })` → `Layer<TestRunner>`
+    - `TestRunner.setDefaultLayer(layer)` to configure a default Layer used by helpers when none is explicitly provided (DX convenience; optional).
 - src/it.ts
-  - Implement `itEffect(name, effect)` as a function that reads `TestApi` via Effect environment and delegates to the underlying runner `it`, wrapping the Effect with `Effect.runPromise` (cancellation semantics owned by adapter layer).
+  - Implement `itEffect(name, effect)` as a function that reads `TestRunner` via Effect environment and delegates to the underlying runner `it`, wrapping the Effect with `Effect.runPromise` (cancellation semantics owned by adapter layer).
   - Export helpers (functions) rather than mutating the runner’s `it`. Adapters may also choose to extend the runner’s `it` with an `effect` method in their setup files for ergonomics.
 - src/index.ts
-  - Export types and helpers: `itEffect`, `TestApi` Tag, and convenience combinators to build adapter Layers.
+  - Export types and helpers: `itEffect`, `TestRunner` Tag + helpers, and convenience combinators to build adapter Layers.
 - templates/test-env.d.ts
   - Ambient declarations for global `describe`/`it`/`expect` (type-only) and a global declaration for `it.effect` that points to the adapter-extended `it` when present.
 
 ## Error Handling Strategy
-- Fail fast if `TestApi` is not provided in the environment when helper functions are used: “No test adapter detected. Run: pnpm dlx github:effect-native/test --init”.
+- If no Layer is provided explicitly, helpers use the `TestRunner` default Layer when set.
+- If neither an explicit nor a default Layer is available, fail fast: “No test adapter detected. Run: pnpm dlx github:effect-native/test --init”.
 - Adapters own cancellation and equality semantics; helper code stays minimal and defers to the provided Layer.
 
 ## Testing Strategy
 - Unit tests with Vitest (in this monorepo):
-  - Registry sets/gets, fallbacks to Node/Bun globals in a simulated environment.
+  - Default Layer behavior: helpers use default when set; otherwise require explicit provide.
   - `it.effect` propagates Effect failures as test failures.
 - Integration smoke:
   - Sample suite importing from `@effect-native/test` runs via Vitest and Bun adapters.
 
 ## JSDoc Plan
 - Document public API in `src/index.ts` with `@since` and `@example` (authoring example with `it.effect`).
-- Document adapter contract (`setBindings`) and the meaning of the registry.
+- Document adapter contract as Layer provisioning: `TestRunner.layer({...})` and optional `TestRunner.setDefaultLayer(...)`.
 
 ## Code Examples
 - Authoring (works in all environments):
@@ -50,23 +53,25 @@
   ```
 - Adapter bootstrap (Vitest setup/preload pseudo-code):
   ```ts
-  import { setBindings } from "@effect-native/test"
-  import { describe, it, expect } from "vitest"
-  setBindings({ describe, it, expect })
+  import { TestRunner } from "@effect-native/test"
+  import { it, expect } from "vitest"
+  TestRunner.setDefaultLayer(TestRunner.layer({ it, expect }))
   ```
 
 ## Integration Points
-- Vitest/Bun adapters provide a `Layer<TestApi>` that supplies `{ it, expect }` from the underlying runner and, in setup/preload, may also extend the runner’s `it` with an `effect` method for global ergonomics.
-- Browser/RN harnesses provide a `Layer<TestApi>` after bootstrapping Jasmine/Mocha and bind it during manifest execution.
+- Vitest/Bun adapters provide a `Layer<TestRunner>` that supplies `{ it, expect }` from the underlying runner and, in setup/preload, may also extend the runner’s `it` with an `effect` method for global ergonomics.
+- Browser/RN harnesses provide a `Layer<TestRunner>` after bootstrapping Jasmine/Mocha and bind it during manifest execution.
 
-### Example: provide TestApi via Layer.succeed
+### Example: provide TestRunner via Layer.succeed
 ```ts
 import * as Layer from "effect/Layer"
-import { TestApi } from "@effect-native/test/service/TestApi"
-import { describe, it, expect } from "vitest" // or bun:test / harness API
+import { TestRunner } from "@effect-native/test/service/TestRunner"
+import { it, expect } from "vitest" // or bun:test / harness API
 
-export const testApiLayer = Layer.succeed(TestApi, { it, expect })
+export const testLayer = Layer.succeed(TestRunner, { it, expect })
 
-// Later, helpers like itEffect read TestApi from the environment:
-// Effect.provide(itEffect(name, eff), testApiLayer)
+// Later, helpers like itEffect read TestRunner from the environment:
+// Effect.provide(itEffect(name, eff), testLayer)
+// Or set a default layer for convenience:
+// TestRunner.setDefaultLayer(TestRunner.layer({ it, expect }))
 ```
