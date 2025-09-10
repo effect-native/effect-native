@@ -34,7 +34,10 @@
     "vitest": "*"
   },
   "devDependencies": {
-    "effect": "^3.17.13",
-    "@effect-native/test": "workspace:^"
+    "@effect-native/test": "workspace:^",
+    "effect": "^3.17.13"
+  },
+  "dependencies": {
+    "@effect/vitest": "^0.25.1"
   }
 }

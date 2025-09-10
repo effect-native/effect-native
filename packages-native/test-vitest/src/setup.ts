@@ -1,13 +1,14 @@
 /**
  * @since 0.0.1
  */
-import { layer, setDefaultLayer } from "@effect-native/test/service/TestRunner"
-import type { Tester, TesterContext } from "@vitest/expect"
+import * as TestRunner from "@effect-native/test/service/TestRunner"
+import type { Tester } from "@vitest/expect"
 import * as Equal from "effect/Equal"
 import * as Utils from "effect/Utils"
-import { expect, it as vitestIt } from "vitest"
+import * as vitest from "vitest"
+import * as VitestRunner from "./index.js"
 
-function customTester(this: TesterContext, a: unknown, b: unknown, customTesters: Array<Tester>) {
+const customTester: Tester = function(a, b, customTesters) {
   if (!Equal.isEqual(a) || !Equal.isEqual(b)) {
     return undefined
   }
@@ -20,9 +21,9 @@ function customTester(this: TesterContext, a: unknown, b: unknown, customTesters
 
 export const setup = () => {
   // add equality testers once
-  expect.addEqualityTesters([customTester])
+  vitest.expect.addEqualityTesters([customTester])
   // set default TestRunner layer for helpers
-  setDefaultLayer(layer({ it: vitestIt as any, expect }))
+  TestRunner.setDefaultLayer(TestRunner.layer(VitestRunner.layer))
 }
 
 setup()
