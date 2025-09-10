@@ -38,6 +38,27 @@ Package Names:
   - Node/Vitest and Bun provide these at runtime already.
   - Browser/RN harness will bind `describe`/`it`/`expect` at runtime to match the ambient types (via Jasmine by default). No new runner is introduced; we bind to existing engines.
 
+- Runner selection (prompted):
+  - The init prompts you to select one or more runners to configure now: `vitest`, `bun:test`, `browser`, `react-native`.
+  - For each selection, it scaffolds minimal, non-destructive config and a package.json script.
+
+- Per‑runner scaffolding (what `--init` sets up):
+  - Vitest:
+    - Adds `test:vitest` script (e.g., `vitest run` or adapter CLI if used).
+    - Ensures `vitest.config.ts` includes a setup file that wires Effect equality (e.g., `@effect-native/test-vitest/setup`).
+    - Optionally adds a generated manifest entry under `./.config/effect-test/manifest.vitest.test.ts` if you choose manifest mode.
+  - Bun:
+    - Adds `test:bun` script (`bun test ./.config/effect-test/manifest.bun.test.ts`).
+    - Creates/updates `bunfig.toml` with `[test].preload = ["@effect-native/test-bun/preload"]` and optionally sets `root = ".config/effect-test"` when using manifest mode.
+  - Browser:
+    - Adds `test:browser` script(s): headless (Playwright Chromium) and serve mode.
+    - Generates a minimal harness (Jasmine by default) and a Vite config under `./.config/effect-test/browser/`.
+    - Emits a manifest that imports your tests and calls into the harness `run()`.
+  - React Native:
+    - Adds `test:rn` scripts (e.g., `ios`/`android` variants).
+    - Generates a minimal RN harness (Jasmine default) and Metro config stubs under `./.config/effect-test/rn/`.
+    - Leaves device selection to CLI flags; no mocking of native modules.
+
 ## Runner Landscape (Browser‑Native)
 
 - Mocha: Browser‑ready BDD/TDD; needs an assertion lib (commonly Chai). Mature and flexible.
@@ -116,7 +137,7 @@ Avoid trying to embed Vitest/Jest/Bun’s runner inside Hermes; they assume Node
 - Vitest adapter (`@effect-native/test-vitest`):
   - Integration, not replacement: map SPI-registered tests to real vitest `describe/it` (prefer `@effect/vitest`).
   - Manifest strategy:
-    - CLI generates `./.effect-test/manifest.vitest.test.ts` that imports discovered test modules and registers them via `TestRunner` into vitest.
+    - CLI generates `./.config/effect-test/manifest.vitest.test.ts` that imports discovered test modules and registers them via `TestRunner` into vitest.
     - Option B: vitest plugin/setup provides a virtual module (e.g., `virtual:effect-test-manifest`) auto‑loaded via `setupFiles`.
   - Property tests map to `fast-check` or run an internal property loop and emit a single vitest test.
   - Setup integrates `@effect/vitest` equality helpers.
@@ -124,13 +145,13 @@ Avoid trying to embed Vitest/Jest/Bun’s runner inside Hermes; they assume Node
 - Bun adapter (`@effect-native/test-bun`):
   - Integration with Bun’s `test` API, aligning with `@effect-native/bun-test` patterns.
   - Manifest strategy:
-    - CLI generates `./.effect-test/manifest.bun.test.ts` that imports discovered modules and registers tests using `TestRunner` -> Bun `test`.
-    - Run with `bun test ./.effect-test/manifest.bun.test.ts` to avoid duplicate discovery.
+    - CLI generates `./.config/effect-test/manifest.bun.test.ts` that imports discovered modules and registers tests using `TestRunner` -> Bun `test`.
+    - Run with `bun test ./.config/effect-test/manifest.bun.test.ts` to avoid duplicate discovery.
     - Optional `bunfig.toml`:
       ```toml
       [test]
       preload = ["@effect-native/test-bun/preload"]
-      root = ".effect-test"
+      root = ".config/effect-test"
       ```
   - Preload sets up TestServices and equality helpers; MUST NOT hide missing deps (Hard‑Fail).
 
