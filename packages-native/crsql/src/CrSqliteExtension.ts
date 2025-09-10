@@ -56,7 +56,17 @@ export const sqlExtInfo = Effect.gen(function*() {
  * @category Operations
  */
 export const loadLibCrSql = Effect.gen(function*() {
-  const path = yield* LibCrSqlPath
+  // Prefer explicit config when provided; otherwise, fall back to dynamic detection
+  const path = yield* LibCrSqlPath.pipe(
+    Effect.catchAll(() =>
+      Effect.gen(function*() {
+        // Dynamic import to avoid static dependency (keeps docgen simple)
+        const mod: any = yield* Effect.promise(() => import("@effect-native/libcrsql/effect"))
+        const detected = yield* mod.getCrSqliteExtensionPath()
+        return detected as string
+      })
+    )
+  )
   yield* SqliteClient.loadExtension(path)
   return CrSqlSchema.ExtInfo.make({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
 }).pipe(

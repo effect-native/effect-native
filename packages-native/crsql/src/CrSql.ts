@@ -34,6 +34,7 @@ import * as SqlClient from "@effect/sql/SqlClient"
 import * as SqlError from "@effect/sql/SqlError"
 import * as Statement from "@effect/sql/Statement"
 import * as ConfigProvider from "effect/ConfigProvider"
+import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
@@ -1604,7 +1605,7 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
       params:
         | {
           sql: SqliteClient.SqliteClient
-          pathToCrSqliteExtension: Effect.Effect<string>
+          pathToCrSqliteExtension?: Effect.Effect<string>
           loadedExtensionInfo?: never
         }
         | {
@@ -1622,18 +1623,18 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
         Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded),
         Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
         Effect.withSpan("params.loadedExtensionInfo")
-      ) ??
-        CrSqliteExtension.loadLibCrSql.pipe(
+      ) ?? Effect.gen(function*() {
+        // If a path effect was provided, use it to set CRSQLITE_LIB_PATH.
+        // Otherwise, rely on loadLibCrSql's own fallback (env or dynamic detection).
+        return yield* CrSqliteExtension.loadLibCrSql.pipe(
           Effect.provide(layerSqlClient),
-          Effect.withConfigProvider(
-            ConfigProvider.fromJson({
-              CRSQLITE_LIB_PATH: yield* params.pathToCrSqliteExtension ??
-                new CrSqlErrors.CrSqliteExtensionMissing({
-                  cause: `[fromSqliteClient] invalid pathToCrSqliteExtension param`
-                })
-            })
-          )
+          params.pathToCrSqliteExtension ?
+            Effect.withConfigProvider(
+              ConfigProvider.fromJson({ CRSQLITE_LIB_PATH: yield* params.pathToCrSqliteExtension })
+            ) :
+            Effect.tap(() => Console.debug("pathToCrSqliteExtension not provided, relying on dynamic detection"))
         )
+      })
 
       // proves that the extension has loaded
       const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
