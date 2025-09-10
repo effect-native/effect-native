@@ -8,14 +8,14 @@
 - Use Bun’s `test`/`describe`/`expect` types where exposed; provide minimal facades otherwise.
 - Avoid unsafe assertions.
 
-## Module Architecture
+- ## Module Architecture
 - src/preload.ts
   - Adds Effect equality to Bun’s expect (mirrors Vitest’s custom tester using `effect/Equal`).
-  - Calls `setBindings({ describe, it: wrappedIt, expect })` from `@effect-native/test`.
+  - Optionally extends Bun’s `test` (`it`) with an `effect` method for ergonomics.
+- src/layer.ts
+  - Exports a `Layer<TestApi>` using `Layer.succeed(TestApi, { it: bunTest, expect: bunExpect })`. Effect cancellation is best‑effort in v0.
 - src/runtime.ts
-  - `wrappedIt(name, fnOrEffect, opts)`
-    - Function form delegates to Bun’s `test`.
-    - Effect form runs `Effect.runPromise(effect)`.
+  - Exposes a helper `itEffect(name, effect)` built against `TestApi`.
 - Optional: src/manifest.ts generator for manifest mode (not used by default).
 
 ## Error Handling Strategy
@@ -51,5 +51,4 @@
   ```
 
 ## Integration Points
-- `@effect-native/test` — consumes `setBindings`.
-
+- `@effect-native/test` — consumes `Layer<TestApi>` to implement its helpers; authors can also use Bun primitives directly.

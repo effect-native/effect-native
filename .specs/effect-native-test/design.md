@@ -9,25 +9,22 @@
 - Ambient types (`test-env.d.ts`) are optional and limited to declaring globals for authoring convenience; they do not add runtime globals.
 
 ## Module Architecture
-- src/internal/registry.ts
-  - A tiny mutable registry (module-local) that holds the active bindings:
-    - type Bindings = { describe: Fn; it: ItAPI; expect: ExpectAPI }
-    - setBindings(bindings: Bindings): void — called by adapters (setup/preload).
-    - getBindings(): Bindings — throws a clear error if not initialized and no safe fallback exists.
-    - Fallback: On Node/Bun if not initialized, attempt to read from globalThis (`describe`, `it`, `expect`) to avoid double setup.
+- src/service/TestApi.ts
+  - Define an Effect Service describing the runner API exposed to helpers:
+    - `TestApi` with fields `{ readonly it: RunnerIt; readonly expect: ExpectAPI }`.
+    - `RunnerIt` is the underlying runner’s `it` API surface that adapters supply.
+  - Provide constructor and Tag for `TestApi`.
 - src/it.ts
-  - Implements `it.effect` by delegating to the active `it` and wrapping Effects with `Effect.runPromise`.
-  - Exports placeholders `it.scoped`, `it.live` for later extensions (type-only in v0).
+  - Implement `itEffect(name, effect)` as a function that reads `TestApi` via Effect environment and delegates to the underlying runner `it`, wrapping the Effect with `Effect.runPromise` (cancellation semantics owned by adapter layer).
+  - Export helpers (functions) rather than mutating the runner’s `it`. Adapters may also choose to extend the runner’s `it` with an `effect` method in their setup files for ergonomics.
 - src/index.ts
-  - Re-exports bound `describe`, `it`, `expect` as accessors over the registry.
-  - Re-exports `setBindings` (or `bind`) for adapters.
-  - Re-exports types for `Bindings`, `TestRunner` shape.
+  - Export types and helpers: `itEffect`, `TestApi` Tag, and convenience combinators to build adapter Layers.
 - templates/test-env.d.ts
-  - Ambient declarations for `describe`, `it`, `expect`, hooks, and `it.effect` (type-only).
+  - Ambient declarations for global `describe`/`it`/`expect` (type-only) and a global declaration for `it.effect` that points to the adapter-extended `it` when present.
 
 ## Error Handling Strategy
-- Fail fast when bindings are missing: `getBindings()` throws with actionable remediation: “No test adapter detected. Run: pnpm dlx github:effect-native/test --init”.
-- When falling back to Node/Bun globals and those are missing, fail fast with “Runner globals not found; configure a runner via --init”.
+- Fail fast if `TestApi` is not provided in the environment when helper functions are used: “No test adapter detected. Run: pnpm dlx github:effect-native/test --init”.
+- Adapters own cancellation and equality semantics; helper code stays minimal and defers to the provided Layer.
 
 ## Testing Strategy
 - Unit tests with Vitest (in this monorepo):
@@ -59,6 +56,17 @@
   ```
 
 ## Integration Points
-- Vitest/Bun adapters call `setBindings` during their setup/preload and return wrappers for `it` that handle Effect execution.
-- Browser/RN harnesses call `setBindings` once the embedded engine (Jasmine/Mocha) is bootstrapped.
+- Vitest/Bun adapters provide a `Layer<TestApi>` that supplies `{ it, expect }` from the underlying runner and, in setup/preload, may also extend the runner’s `it` with an `effect` method for global ergonomics.
+- Browser/RN harnesses provide a `Layer<TestApi>` after bootstrapping Jasmine/Mocha and bind it during manifest execution.
 
+### Example: provide TestApi via Layer.succeed
+```ts
+import * as Layer from "effect/Layer"
+import { TestApi } from "@effect-native/test/service/TestApi"
+import { describe, it, expect } from "vitest" // or bun:test / harness API
+
+export const testApiLayer = Layer.succeed(TestApi, { it, expect })
+
+// Later, helpers like itEffect read TestApi from the environment:
+// Effect.provide(itEffect(name, eff), testApiLayer)
+```
