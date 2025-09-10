@@ -1,0 +1,20 @@
+{
+  "name": "@effect-native/test-vitest",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "MIT",
+  "description": "Adapter binding @effect-native/test to Vitest primitives",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/test-vitest"
+  },
+  "bugs": { "url": "https://github.com/effect-native/effect-native/issues" },
+  "publishConfig": { "access": "public", "provenance": true, "directory": "dist", "linkDirectory": false },
+  "exports": { ".": "./src/index.ts", "./setup": "./src/setup.ts", "./layer": "./src/layer.ts" },
+  "scripts": { "codegen": "echo '@effect-native/test-vitest: skip codegen'", "build": "tsc -b tsconfig.build.json && build-utils pack-v3", "check": "tsc -b tsconfig.json" },
+  "peerDependencies": { "effect": "*", "vitest": "*", "@effect-native/test": "*" },
+  "devDependencies": { "effect": "latest" }
+}
+
