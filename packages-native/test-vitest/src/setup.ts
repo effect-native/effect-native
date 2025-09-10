@@ -1,8 +1,8 @@
+import { layer, setDefaultLayer } from "@effect-native/test/service/TestRunner"
+import type { Tester, TesterContext } from "@vitest/expect"
 import * as Equal from "effect/Equal"
 import * as Utils from "effect/Utils"
-import type { Tester, TesterContext } from "@vitest/expect"
 import { expect, it as vitestIt } from "vitest"
-import { layer, setDefaultLayer } from "@effect-native/test/service/TestRunner"
 
 function customTester(this: TesterContext, a: unknown, b: unknown, customTesters: Array<Tester>) {
   if (!Equal.isEqual(a) || !Equal.isEqual(b)) {

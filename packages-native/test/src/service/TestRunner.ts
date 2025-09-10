@@ -1,6 +1,6 @@
 import * as Context from "effect/Context"
-import * as Layer from "effect/Layer"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 
 export type RunnerIt = (
   name: string,
@@ -32,4 +32,3 @@ export const withDefaultLayer = <A, E, R>(
   if (!defaultLayer) return effect
   return Effect.provide(effect, defaultLayer)
 }
-

@@ -1,3 +1,2 @@
-export { TestRunner, layer, setDefaultLayer } from "./service/TestRunner"
 export { itEffect } from "./it"
-
+export { layer, setDefaultLayer, TestRunner } from "./service/TestRunner"

@@ -11,9 +11,9 @@ export const itEffect = (
   effect: Effect.Effect<unknown, unknown, unknown>,
   options?: unknown
 ) => {
-  const program = Effect.flatMap(TestRunner, (api) =>
-    Effect.sync(() => api.it(name, () => Effect.runPromise(effect), options))
+  const program = Effect.flatMap(
+    TestRunner,
+    (api) => Effect.sync(() => api.it(name, () => Effect.runPromise(effect), options))
   )
   Effect.runSync(withDefaultLayer(program))
 }
-
