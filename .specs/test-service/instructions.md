@@ -28,6 +28,38 @@ Package Names:
 - Core: `@effect-native/test-core`
 - Adapters: `@effect-native/test-vitest`, `@effect-native/test-bun`, `@effect-native/test-browser`, `@effect-native/test-react-native`
 
+## Integration
+
+- Quick init:
+  - Run: `pnpm dlx github:effect-native/test --init`
+  - Creates `test-env.d.ts` with ambient type declarations for `describe`, `it`, `expect`, hooks, and Effect helpers (e.g., `it.effect`).
+  - Updates your TypeScript config include if needed so tests compile without importing `describe`/`it`/`expect`.
+- Runtime globals:
+  - Node/Vitest and Bun provide these at runtime already.
+  - Browser/RN harness will bind `describe`/`it`/`expect` at runtime to match the ambient types (via Jasmine by default). No new runner is introduced; we bind to existing engines.
+
+## Runner Landscape (Browser‑Native)
+
+- Mocha: Browser‑ready BDD/TDD; needs an assertion lib (commonly Chai). Mature and flexible.
+- Jasmine: Self‑contained describe/it/expect; browser‑first; minimal shims.
+- QUnit: Simple, browser‑native; assertion API differs (wrap if needed).
+- Web Test Runner: Modern harness to run tests in real browsers; Mocha‑syntax by default.
+- Intern: Enterprise runner; browser + Node; heavier.
+- Karma (launcher): Pairs with Mocha/Jasmine to drive real browsers.
+- Tape / uvu / zora: Small, TAP‑style; can run in browsers with bundling; wrap to expose BDD names.
+- E2E (Cypress/Playwright Test): Bring own runner; not a fit for in‑app RN.
+
+Recommendation for in‑app Browser/RN adapters: prefer Jasmine (standalone) as default; provide Mocha + Chai as an alternative binding.
+
+## RN Hermes Feasibility (Ranked)
+
+1) Jasmine (standalone): builtin expect; no DOM/Node required; minimal shims.
+2) Mocha (core) + Chai: works with small `process.nextTick`/`performance.now` shims; avoid HTML reporter.
+3) Zora (ESM): tiny TAP‑like; wrap to BDD if desired.
+4) QUnit: runs without Node; wrap to BDD labels if desired.
+
+Avoid trying to embed Vitest/Jest/Bun’s runner inside Hermes; they assume Node worker/process/fake‑timers internals.
+
 ## Personas & User Stories
 
 1) Library Author — “One suite, many runtimes”
@@ -51,7 +83,10 @@ Package Names:
   - Minimal, Effect‑centric registration API and helpers: `describe`, `it`, modifiers (`skip`, `only`, `todo`, `failing`, `each`), property tests (`prop`), and Effect helpers (`it.effect`, `it.scoped`, `it.live`).
   - Deterministic time guidance via Effect TestClock.
   - Requirement‑oriented tests: encode preconditions, actions, and expectations as Effects with precise error channels.
-  - Express runtime requirements via existing Effect mechanisms (environment `R`, Layers, imported services); no new capability metadata or DSL.
+- Express runtime requirements via existing Effect mechanisms (environment `R`, Layers, imported services); no new capability metadata or DSL.
+
+- No new runner: bind to existing engines per environment. SPI exposes describe/it/expect as bindings, not an engine.
+- Authoring ergonomics: with `test-env.d.ts`, authors may omit imports and use global names in tests. Under the hood, Node/Bun runners supply these; Browser/RN harness binds them at runtime to the embedded engine.
 
 - Test entry contract & discovery (all adapters):
   - Discover `**/*.test.{js,jsx,ts,tsx}` (ESM).
@@ -73,10 +108,10 @@ Package Names:
 ## Technical Specifications
 
 - SPI/DSL package (`@effect-native/test`):
-  - Exports: `TestRunner` service, `TestRuntime`, `TestReporter`, `TestCase`, `TestSuite`, `TestEvent`, and registration helpers.
+  - Exports: `describe`, `it`, `expect` bindings (re‑exported from the active adapter), plus Effect helpers (`it.effect`, `it.scoped`, `it.live`). Also `TestRunner` service, `TestRuntime`, `TestReporter`, `TestCase`, `TestSuite`, `TestEvent`, and registration helpers.
   - Implementation uses modern Effect patterns (v3.17+): allow `yield* new Error()`, forbid `try/catch` in generators, no unsafe `as any`.
   - Manifest API: a conventional manifest module can `register(registry)` to collect tests; adapters may generate or load a manifest.
-  - Suggested type import for authors: `import * as TestRunner from "@effect-native/test/TestRunner"`.
+  - Authoring imports: `import { describe, it, expect } from "@effect-native/test"` (no globals). Effect helpers come from the same import.
 
 - Vitest adapter (`@effect-native/test-vitest`):
   - Integration, not replacement: map SPI-registered tests to real vitest `describe/it` (prefer `@effect/vitest`).
@@ -97,18 +132,20 @@ Package Names:
       preload = ["@effect-native/test-bun/preload"]
       root = ".effect-test"
       ```
-    - Preload sets up TestServices and equality helpers; MUST NOT hide missing deps (Hard‑Fail).
+  - Preload sets up TestServices and equality helpers; MUST NOT hide missing deps (Hard‑Fail).
 
 - Browser adapter (`@effect-native/test-browser`):
-  - Real browser execution (Chromium first) using a harness page and headless automation (Playwright/Puppeteer).
-  - Bundle the manifest for the browser (Vite/esbuild/rollup); establish a WS/bridge to stream events to the host.
-  - Import discovered test modules; for each export: call function with `TestRunner` or run exported Effect with provided env.
+  - Harness embeds an existing browser runner (default: Jasmine; optional: Mocha + Chai) and binds `{ describe, it, expect }` to the SPI.
+  - Real browser execution (Chromium first) using a harness page and headless automation (Playwright/Puppeteer); `--mode serve` serves a URL for manual browsers.
+  - Bundle the manifest for the browser (Vite); establish a WS/bridge to stream events to the host.
+  - Import discovered test modules; for each export: call function with `{ describe, it, expect }` or run exported Effect with provided env.
   - Fail loudly if browser‑specific imports/services are missing.
   - MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
 
 - React Native adapter (`@effect-native/test-react-native`):
-  - Real RN runtime (Hermes preferred, JSC acceptable). Bundle via Metro, launch simulator/emulator, stream events over WS.
-  - Import discovered modules; call function exports with `TestRunner` or run exported Effects with provided env.
+  - Hermes‑friendly harness embeds Jasmine by default (or Mocha + Chai with tiny shims) and binds `{ describe, it, expect }` to the SPI.
+  - Bundle via Metro, launch simulator/emulator, stream events over WS.
+  - Import discovered modules; call function exports with `{ describe, it, expect }` or run exported Effects with provided env.
   - RN‑specific tests can directly use `react-native` and `@testing-library/react-native`; fail loudly if missing.
   - CLI flags: `--platform ios|android`, `--device <name/id>`, `--include/--exclude`, `--reporter`, `--timeout`.
   - MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
@@ -126,7 +163,7 @@ Stage A — vitest + bun:
 - Fail‑loud if runtime‑specific imports/services are missing.
 
 Stage B — browser:
-- Portable suite runs headless in Chromium; event streams match Node/Bun modulo timing.
+- Portable suite runs headless in Chromium; event streams match Node/Bun modulo timing. Serve mode allows manual browsers.
 - Console/error forwarding visible; fail‑loud on missing browser deps.
 
 Stage C — React Native:
@@ -143,12 +180,38 @@ Repo gates (all stages):
 - Watch mode and multi‑device parallelism.
 - Physical device orchestration (USB).
 - RN Web/Expo; advanced browser matrix flake mitigation.
+- Legacy no‑exports compat shims.
 
 ## Success Metrics
 
 - Identical pass/fail semantics across adapters for portable tests.
 - CI durations: Node/Bun ≤ ~5 min; Browser ≤ ~7 min; RN ≤ ~10 min (post‑cache).
 - Flake rate < 1% for v1 scope.
+
+## Minimal Authoring Example
+
+import { describe, it, expect } from "@effect-native/test"
+import * as Effect from "effect/Effect"
+
+describe("add", () => {
+  it("adds numbers", () => {
+    expect(1 + 2).toBe(3)
+  })
+
+  it.effect("works in Effect", () =>
+    Effect.gen(function* () {
+      const n = 5
+      expect(n).toBe(5)
+    }))
+})
+
+## Initial Tasks
+
+- Scaffold `@effect-native/test` bindings and Effect helpers (no globals).
+- Ship thin Node adapters: `@effect-native/test-vitest`, `@effect-native/test-bun`.
+- Implement Browser harness (Jasmine default) with headless + serve modes; Vite + Playwright.
+- Implement RN harness (Jasmine default) for Hermes; Metro + WS; tiny shims only.
+- Wire manifest/discovery; keep reporters minimal on Browser/RN; use runner‑native reporters on Node/Bun.
 
 ## Future Considerations
 
