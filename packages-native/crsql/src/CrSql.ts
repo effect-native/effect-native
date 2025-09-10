@@ -1623,18 +1623,14 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
         Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded),
         Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
         Effect.withSpan("params.loadedExtensionInfo")
-      ) ?? Effect.gen(function*() {
-        // If a path effect was provided, use it to set CRSQLITE_LIB_PATH.
-        // Otherwise, rely on loadLibCrSql's own fallback (env or dynamic detection).
-        return yield* CrSqliteExtension.loadLibCrSql.pipe(
-          Effect.provide(layerSqlClient),
-          params.pathToCrSqliteExtension ?
-            Effect.withConfigProvider(
-              ConfigProvider.fromJson({ CRSQLITE_LIB_PATH: yield* params.pathToCrSqliteExtension })
-            ) :
-            Effect.tap(() => Console.debug("pathToCrSqliteExtension not provided, relying on dynamic detection"))
-        )
-      })
+      ) ?? CrSqliteExtension.loadLibCrSql.pipe(
+        Effect.provide(layerSqlClient),
+        params.pathToCrSqliteExtension ?
+          Effect.withConfigProvider(
+            ConfigProvider.fromJson({ CRSQLITE_LIB_PATH: yield* params.pathToCrSqliteExtension })
+          ) :
+          Effect.tap(() => Console.debug("pathToCrSqliteExtension not provided, relying on dynamic detection"))
+      )
 
       // proves that the extension has loaded
       const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
