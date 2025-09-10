@@ -15,7 +15,7 @@ Goals: Write tests once, run them across Node, Bun, Browser, and React Native wi
 - Feature name: `test-service`
 - Primary value: One standard to author requirement‑oriented tests in Effect; adapters integrate with native runners for real runtime execution.
 - Hard‑Fail: Never hide misconfigurations or missing deps behind optional guards; fail loudly with remediation guidance.
-- Nix dev shell: All install/build/test commands run inside `nix develop` to avoid ABI/version drift.
+- Nix dev shell (dev/CI only): In this repository we run install/build/test inside `nix develop` for reproducibility. Published packages/adapters MUST run for end users without Nix, using their standard Node/Bun environments.
 
 Implementation Order:
 - Phase A: vitest + bun:test adapters
@@ -110,7 +110,8 @@ Package Names:
   - CLI flags: `--platform ios|android`, `--device <name/id>`, `--include/--exclude`, `--reporter`, `--timeout`.
 
 - Environment & Tooling:
-  - All commands run within Nix: `nix develop --command <cmd>`.
+  - Development/CI in this repo uses Nix: `nix develop --command <cmd>`.
+  - End users do not need Nix; adapters/CLIs run under standard Node/Bun with required platform SDKs where applicable.
   - CI uses separate jobs per adapter/platform; exclude unsupported jobs rather than weakening tests.
 
 ## Acceptance Criteria
@@ -164,7 +165,7 @@ Repo gates (all stages):
 - Evidence‑First: Document reproduction commands and environment setup for each adapter.
 - Type Assertions Policy: Avoid unsafe assertions; `as const` allowed. No `as any` or double assertions without explicit, reviewed justification.
 - Modern Effect Patterns: Allow `yield* new Error()`; forbid `try/catch` in `Effect.gen`.
-- Nix Dev Environment: Always run inside `nix develop` to avoid ABI/version mismatches (e.g., native addons).
+- Nix Dev Environment: For this repository's development and CI, run inside `nix develop` to avoid ABI/version mismatches (e.g., native addons). End users of the published packages/adapters are not required to use Nix.
 
 ---
 
@@ -175,4 +176,3 @@ This combined Instructions spec supersedes earlier per‑adapter Instructions fo
   - `@effect-native/test-browser`
   - `@effect-native/test-react-native`
 - Optionally keep a top‑level `test-service/requirements.md` to capture cross‑cutting constraints and shared success criteria.
-
