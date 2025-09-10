@@ -5,12 +5,35 @@
   "license": "MIT",
   "description": "Adapter binding @effect-native/test to bun:test primitives",
   "homepage": "https://github.com/effect-native/effect-native",
-  "repository": { "type": "git", "url": "https://github.com/effect-native/effect-native.git", "directory": "packages-native/test-bun" },
-  "bugs": { "url": "https://github.com/effect-native/effect-native/issues" },
-  "publishConfig": { "access": "public", "provenance": true, "directory": "dist", "linkDirectory": false },
-  "exports": { ".": "./src/index.ts", "./preload": "./src/preload.ts", "./layer": "./src/layer.ts" },
-  "scripts": { "codegen": "echo '@effect-native/test-bun: skip codegen'", "build": "tsc -b tsconfig.build.json && build-utils pack-v3", "check": "tsc -b tsconfig.json" },
-  "peerDependencies": { "effect": "*", "@effect-native/test": "*" },
-  "devDependencies": { "effect": "latest" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/test-bun"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./preload": "./src/preload.ts",
+    "./layer": "./src/layer.ts"
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/test-bun: skip codegen'",
+    "build": "tsc -b tsconfig.build.json && build-utils pack-v3",
+    "check": "tsc -b tsconfig.json"
+  },
+  "peerDependencies": {
+    "effect": "*"
+  },
+  "devDependencies": {
+    "effect": "^3.17.13",
+    "@effect-native/test": "workspace:^"
+  }
 }
-
