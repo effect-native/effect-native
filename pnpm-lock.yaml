@@ -240,6 +240,9 @@ importers:
       '@effect-native/test':
         specifier: workspace:^
         version: link:../test
+      '@types/bun':
+        specifier: ^1.2.21
+        version: 1.2.21(@types/react@19.1.8)
       effect:
         specifier: ^3.17.11
         version: 3.17.11
