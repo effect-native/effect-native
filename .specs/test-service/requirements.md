@@ -26,16 +26,17 @@
 - DR4.3: Manifest metadata (if used) is derived; no custom capability tags stored.
 
 ## IR5 — Integration Requirements
-- IR5.1: Vitest and Bun adapters must map SPI tests to native `describe/it`/`test` with modifiers and property tests.
-- IR5.2: Browser adapter executes in real headless browser via harness page + WS/bridge.
-- IR5.3: RN adapter executes in real RN runtime via Metro + simulator/emulator + WS transport.
+- IR5.1: Introduce `@effect-native/test-core` for shared executor, event protocol, reporters, manifest/transport helpers.
+- IR5.2: Browser and RN adapters MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport.
+- IR5.3: Vitest and Bun adapters MUST map SPI tests to native `describe/it`/`test` primitives; they MAY bypass core’s executor but SHOULD reuse core’s event protocol types and JSON reporter when emitting SPI events.
 - IR5.4: Reporters compatible across adapters; identical event semantics modulo timing.
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11` (SPI and all adapters).
 - DEP6.2: `@effect/vitest` (vitest integration), `fast-check` (property testing).
 - DEP6.3: Playwright/Puppeteer (browser), React Native toolchain (RN), Metro (RN), WebSocket.
- - DEP6.4: Nix (dev/CI only), pnpm (workspace).
+- DEP6.4: `@effect-native/test-core` (shared, required by Browser/RN, optional for Vitest/Bun).
+- DEP6.5: Nix (dev/CI only), pnpm (workspace).
 
 ## SC7 — Success Criteria
 - SC7.1: Stage A parity: same portable suite passes under vitest and Bun with identical outcomes.

@@ -2,7 +2,7 @@
 
 ## FR1 — Functional Requirements
 - FR1.1: Provide `TestRunner` service exposing `{ describe, it, expect, skip, only, todo, failing, each, prop }` and Effect helpers (`it.effect`, `it.scoped`, `it.live`).
-- FR1.2: Provide registration/builders to collect suites/tests in a `TestRegistry` without coupling to a specific runner.
+- FR1.2: Provide minimal registration/builders to collect suites/tests; heavy runtime execution belongs in `@effect-native/test-core`.
 - FR1.3: Support two exported test shapes: function(TestRunner) and parameterless Effect program.
 - FR1.4: Define `TestEvent` protocol: `runStart`, `suiteStart`, `testStart`, `testEnd`, `suiteEnd`, `runEnd`, `log`.
 - FR1.5: Provide `TestReporter` interface and reference reporters: dot, verbose, JSON.
@@ -17,7 +17,7 @@
 
 ## TC3 — Technical Constraints
 - TC3.1: `effect@^3.17.11`; ESM; Node ≥ 18 for local tooling.
-- TC3.2: No dependency on adapters; adapters depend on SPI.
+- TC3.2: No dependency on adapters; adapters depend on SPI. Shared runtime logic resides in `@effect-native/test-core` which depends on SPI.
 - TC3.3: Property testing integrates with `fast-check` through adapter mapping (no hard dependency in SPI).
 
 ## DR4 — Data Requirements
@@ -25,7 +25,7 @@
 - DR4.2: JSON reporter schema stable and documented; include version field.
 
 ## IR5 — Integration Requirements
-- IR5.1: Provide minimal adapter hooks to iterate registered tests and invoke them.
+- IR5.1: Provide minimal adapter hooks; delegate execution/scheduling, event protocol, reporters to `@effect-native/test-core` where applicable.
 - IR5.2: Ensure TestRunner functions compose with `@effect/vitest` expectations semantics.
 
 ## DEP6 — Dependencies
@@ -34,4 +34,3 @@
 ## SC7 — Success Criteria
 - SC7.1: A demo suite defined via SPI runs unmodified on vitest, Bun, Browser, and RN adapters.
 - SC7.2: JSON reporter output validates against schema across adapters.
-

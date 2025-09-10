@@ -9,6 +9,7 @@ Unified, portable testing system for Effect-based projects consisting of:
   - `@effect-native/test-bun` (Bun + bun:test)
   - `@effect-native/test-browser` (real browser via Playwright/Puppeteer)
   - `@effect-native/test-react-native` (real RN runtime via Metro + simulator/emulator)
+  - Shared core used by Browser/RN: `@effect-native/test-core` (executor, events, reporters, manifest/transport helpers)
 
 Goals: Write tests once, run them across Node, Bun, Browser, and React Native with consistent semantics, zero custom mock environments, and fail‑fast behavior.
 
@@ -24,6 +25,7 @@ Implementation Order:
 
 Package Names:
 - SPI/DSL: `@effect-native/test`
+- Core: `@effect-native/test-core`
 - Adapters: `@effect-native/test-vitest`, `@effect-native/test-bun`, `@effect-native/test-browser`, `@effect-native/test-react-native`
 
 ## Personas & User Stories
@@ -102,12 +104,14 @@ Package Names:
   - Bundle the manifest for the browser (Vite/esbuild/rollup); establish a WS/bridge to stream events to the host.
   - Import discovered test modules; for each export: call function with `TestRunner` or run exported Effect with provided env.
   - Fail loudly if browser‑specific imports/services are missing.
+  - MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
 
 - React Native adapter (`@effect-native/test-react-native`):
   - Real RN runtime (Hermes preferred, JSC acceptable). Bundle via Metro, launch simulator/emulator, stream events over WS.
   - Import discovered modules; call function exports with `TestRunner` or run exported Effects with provided env.
   - RN‑specific tests can directly use `react-native` and `@testing-library/react-native`; fail loudly if missing.
   - CLI flags: `--platform ios|android`, `--device <name/id>`, `--include/--exclude`, `--reporter`, `--timeout`.
+  - MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport helpers.
 
 - Environment & Tooling:
   - Development/CI in this repo uses Nix: `nix develop --command <cmd>`.

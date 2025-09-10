@@ -10,6 +10,7 @@
 - FR1.3: Map SPI tests to native APIs with modifiers (`skip`, `only`, `todo`, `failing`, `each`) and property tests.
 - FR1.4: Emit SPI events and support dot/verbose/JSON reporters; exit non‑zero on any failure.
 - FR1.5: Provide CLIs or scripts to generate manifest and invoke native runners.
+ - FR1.6: Reuse `@effect-native/test-core` types (event protocol) and JSON reporter where feasible; executor may be bypassed in favor of native runner scheduling.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Hard‑Fail: if runtime‑specific imports/services are missing, fail loudly (no silent skip).
@@ -32,6 +33,7 @@
 - IR5.1: Vitest adapter uses `@effect/vitest` expectation semantics.
 - IR5.2: Bun adapter aligns with `@effect-native/bun-test` interfaces.
 - IR5.3: Provide small CLI(s) to discover → manifest → run native runner. In this repository, development and CI use Nix; end users must be able to run these CLIs without Nix under standard Node/Bun.
+- IR5.4: Prefer native runner features (assertions, reporters, snapshot infra) over reimplementing them when integrating; only use core where it adds portability or shared behavior.
 
 ## DEP6 — Dependencies
 - DEP6.1: `@effect-native/test` (SPI), `@effect/vitest`, `vitest`, `fast-check`.
