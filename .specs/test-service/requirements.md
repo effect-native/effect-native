@@ -9,7 +9,7 @@
 - FR1.6: Support legacy tests with no exports:
   - Vitest/Bun: importing such modules must allow their native `test`/`describe` registrations to occur under the active runner.
   - Browser/RN: provide compatibility shims (via `@effect-native/test-core/compat/*`) so `vitest`, `@effect/vitest`, and `bun:test` imports map to the SPI `TestRunner` APIs.
- - FR1.7: Universal assertions: provide a minimal, Jest/Bun‑style `expect` API that works identically across all adapters (Node, Bun, Browser, RN). Tests can always rely on `TestRunner.expect` and, in Browser/RN shims, a global `expect`.
+ - FR1.7: Assertions policy: no global `expect`. Tests may use runner-native `expect` where available (vitest, bun:test) or obtain `expect` via the TestRunner (either `const { expect } = yield* TestRunner` or function param `{ expect }`). For Browser/RN, adapters supply a robust, existing `expect` implementation under the TestRunner; no reimplementation in v0.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Fail‑fast policy: never hide missing deps/runtimes behind guards; fail loudly with remediation.
@@ -33,7 +33,7 @@
 - IR5.1: Introduce `@effect-native/test-core` for shared executor, event protocol, reporters, manifest/transport helpers.
 - IR5.2: Browser and RN adapters MUST reuse `@effect-native/test-core` executor, event protocol, reporters, and transport.
 - IR5.3: Vitest and Bun adapters MUST map SPI tests to native `describe/it`/`test` primitives; they MAY bypass core’s executor but SHOULD reuse core’s event protocol types and JSON reporter when emitting SPI events.
-- IR5.4: Reporters compatible across adapters; identical event semantics modulo timing.
+ - IR5.4: Reporters: use native reporters for Vitest and Bun; for Browser/RN ship one minimal, least‑surprising default reporter in v0. Event semantics remain identical across adapters.
  - IR5.5: Provide resolver/alias machinery per adapter to enable legacy no‑export test support as described in FR1.6.
 
 ## DEP6 — Dependencies
@@ -48,4 +48,4 @@
 - SC7.2: Stage B parity: same suite passes headless in Chromium with matching outcomes (timing allowed to vary).
 - SC7.3: Stage C parity: same suite passes on iOS Simulator and Android Emulator without RN mocks.
 - SC7.4: CI durations: Node/Bun ≤ ~5m, Browser ≤ ~7m, RN ≤ ~10m (post‑cache); flake rate < 1%.
- - SC7.5: The initial universal `expect` supports at least: `toBe`, `toEqual` (deep structural), `toBeTruthy`, `toBeFalsy`, `toThrow`. Additional matchers may be added in follow‑ups without breaking API.
+- SC7.5: Assertions v0: across all adapters, `expect` supports at least `toBe`, `toEqual` (deep), `toBeTruthy`, `toBeFalsy`, `toThrow`. Node/Bun use runner native; Browser/RN use a proven third‑party implementation surfaced via TestRunner.

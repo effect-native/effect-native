@@ -7,12 +7,7 @@
 - FR1.4: Provide manifest generation helpers (programmatic API) to import discovered modules and normalize exported shapes (function(TestRunner) vs Effect).
 - FR1.5: Provide transport message schema and utilities for host<->runtime bridges (WS) used by Browser and RN.
 - FR1.6: Expose minimal adapter SDK helpers (e.g., mapExports(module) → Array<TestCaseDef>) to keep adapters thin.
-- FR1.7: Provide compatibility shim modules for common runner APIs to enable no‑export tests in Browser/RN:
-  - `@effect-native/test-core/compat/vitest` (exports describe/it(test)/hooks/expect)
-  - `@effect-native/test-core/compat/effect-vitest` (compatible subset of `@effect/vitest`)
-  - `@effect-native/test-core/compat/bun-test` (exports test/describe/expect/hooks)
-  These forward to the SPI `TestRunner`.
- - FR1.8: Provide a universal minimal assertion library (Jest/Bun‑style) consumed by TestRunner and compat shims with initial matchers: `toBe`, `toEqual` (deep structural), `toBeTruthy`, `toBeFalsy`, `toThrow`. Include extension points for future matchers and Effect equality integration.
+ - FR1.7: Assertions: do not implement a new assertion library. For Browser/RN, surface a proven, existing `expect` implementation via the TestRunner; integrate Effect equality. For Vitest/Bun, prefer runner native `expect`.
 
 ## NFR2 — Non‑Functional Requirements
 - NFR2.1: Pure ESM, no Node/RN/DOM globals; side‑effect free entry points.
@@ -23,7 +18,7 @@
 ## TC3 — Technical Constraints
 - TC3.1: Target Node ≥ 18 for host utilities; runtime side must also build for browser/RN bundles.
 - TC3.2: No dependency on specific runners; adapters depend on core, not vice versa.
- - TC3.3: Compat layers are tree‑shakeable and only brought in via bundler/Metro aliases for Browser/RN builds.
+ - TC3.3: Avoid global state (no `globalThis.expect`). Assertions are injected via TestRunner or available from the runner in Node/Bun.
 
 ## DR4 — Data Requirements
 - DR4.1: Canonical `TestEvent` TS types and a versioned JSON schema for reporter output.

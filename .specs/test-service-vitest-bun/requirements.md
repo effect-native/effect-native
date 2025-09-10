@@ -34,7 +34,8 @@
 - IR5.1: Vitest adapter uses `@effect/vitest` expectation semantics.
 - IR5.2: Bun adapter aligns with `@effect-native/bun-test` interfaces.
 - IR5.3: Provide small CLI(s) to discover → manifest → run native runner. In this repository, development and CI use Nix; end users must be able to run these CLIs without Nix under standard Node/Bun.
-- IR5.4: Prefer native runner features (assertions, reporters, snapshot infra) over reimplementing them when integrating; only use core where it adds portability or shared behavior.
+ - IR5.4: Prefer native runner features (assertions, reporters, snapshot infra) over reimplementing them when integrating; only use core where it adds portability or shared behavior.
+ - IR5.5: Reporters: use the runner’s native reporters in v0; no custom reporters for these adapters initially.
 
 ## DEP6 — Dependencies
 - DEP6.1: `@effect-native/test` (SPI), `@effect/vitest`, `vitest`, `fast-check`.
