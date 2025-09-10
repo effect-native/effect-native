@@ -23,6 +23,7 @@
 ## IR5 — Integration Requirements
 - IR5.1: Works with `@effect-native/test-vitest` and `@effect-native/test-bun` adapters by re‑exporting their bound primitives.
 - IR5.2: Provides a minimal adapter hook (`setBindings` or equivalent) that Browser/RN harnesses can call during bootstrap.
+ - IR5.3: Semantics alignment: mirror the proven patterns in `packages/vitest/src/internal/internal.ts` for Effect test execution where applicable (e.g., runPromise/exit handling, interrupt fibers on test finish via onTestFinished, and optional TestEnv provisioning).
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11`.
@@ -30,4 +31,3 @@
 ## SC7 — Success Criteria
 - SC7.1: Authoring example compiles and runs unchanged under vitest and bun using adapter packages.
 - SC7.2: `it.effect` properly propagates Effect failures as test failures in both runners.
-

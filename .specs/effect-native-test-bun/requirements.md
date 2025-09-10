@@ -21,6 +21,7 @@
 ## IR5 — Integration Requirements
 - IR5.1: Preload wires equality testers and any necessary extensions (non‑destructive).
 - IR5.2: Optional CLI/script can generate a manifest entry `./.config/effect-native-test/manifest.bun.test.ts` without changing the native command.
+- IR5.3: Execution semantics mirror the Vitest adapter: wrap Effect tests with a runPromise‑like helper, ensure fibers are interrupted/cancelled when the test completes, and optionally provide a TestEnv for `it.effect`/scoped helpers.
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11` (peer), Bun runtime.
@@ -28,4 +29,3 @@
 ## SC7 — Success Criteria
 - SC7.1: Sample tests using `describe/it/expect` and `it.effect` pass under `bun test`.
 - SC7.2: Equality helpers enable useful comparisons for Effect types without extra user code.
-

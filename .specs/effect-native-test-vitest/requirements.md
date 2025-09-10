@@ -21,6 +21,7 @@
 ## IR5 — Integration Requirements
 - IR5.1: Setup module wires equality testers and any necessary patching (non‑destructive).
 - IR5.2: Optional CLI/script can generate a manifest entry `./.config/effect-native-test/manifest.vitest.test.ts` without changing the native command.
+- IR5.3: Execution semantics align with `packages/vitest/src/internal/internal.ts`: run Effect tests via a runPromise pattern, interrupt spawned fibers on test finish (using `ctx.onTestFinished`), and provide TestEnv for `it.effect`/scoped helpers.
 
 ## DEP6 — Dependencies
 - DEP6.1: `effect@^3.17.11` (peer), `vitest` (peer), `@effect/vitest` (peer optional).
@@ -28,4 +29,3 @@
 ## SC7 — Success Criteria
 - SC7.1: Sample tests using `describe/it/expect` and `it.effect` pass under `pnpm vitest run`.
 - SC7.2: Equality helpers enable useful comparisons for Effect types without extra user code.
-
