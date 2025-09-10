@@ -46,18 +46,20 @@ Package Names:
   - Vitest:
     - Native default: nothing breaks `pnpm vitest run` — it Just Works with native discovery.
     - Ensures `vitest.config.ts` includes a setup file to wire Effect equality (e.g., `@effect-native/test-vitest/setup`).
-    - Optional: adds `test:vitest:manifest` and generates `./.config/effect-test/manifest.vitest.test.ts` if you opt into manifest mode.
+    - Optional: adds `test:vitest:manifest` and generates `./.config/effect-native-test/manifest.vitest.test.ts` if you opt into manifest mode.
   - Bun:
     - Native default: nothing breaks `bun test` — it Just Works with native discovery.
     - Creates/updates `bunfig.toml` with `[test].preload = ["@effect-native/test-bun/preload"]` to install equality helpers (non‑destructive).
-    - Optional: adds `test:bun:manifest` and generates `./.config/effect-test/manifest.bun.test.ts` if you opt into manifest mode (does not change `bun test`).
+    - Optional: adds `test:bun:manifest` and generates `./.config/effect-native-test/manifest.bun.test.ts` if you opt into manifest mode (does not change `bun test`).
   - Browser:
     - Adds `test:browser` script(s): headless (Playwright Chromium) and serve mode.
-    - Generates a minimal harness (Jasmine by default) and a Vite config under `./.config/effect-test/browser/`.
+    - Generates a minimal harness (Jasmine by default) and a Vite config under `./.config/effect-native-test/browser/`.
     - Emits a manifest that imports your tests and calls into the harness `run()`.
   - React Native:
     - Adds `test:rn` scripts (e.g., `ios`/`android` variants).
-    - Generates a minimal RN harness (Jasmine default) and Metro config stubs under `./.config/effect-test/rn/`.
+    - Generates a minimal RN harness (Jasmine default) and Metro config stubs under `./.config/effect-native-test/rn/`.
+    - If an Expo Router app is detected, also scaffolds a `__DEV__`-only route under your Expo Router `app/` folder (e.g., `app/__tests/index.tsx`) that mounts the RN test harness. The route is only active in development and is excluded from production builds.
+    - Creates a Maestro flow at `./.config/effect-native-test/maestro/run.yaml` that opens the app via deep link to the test route for iOS and Android. You can run it in CI or locally after the app is installed.
     - Leaves device selection to CLI flags; no mocking of native modules.
 
 ## Runner Landscape (Browser‑Native)
@@ -138,21 +140,21 @@ Avoid trying to embed Vitest/Jest/Bun’s runner inside Hermes; they assume Node
 - Vitest adapter (`@effect-native/test-vitest`):
   - Integration, not replacement: map SPI-registered tests to real vitest `describe/it` (prefer `@effect/vitest`).
   - Manifest strategy:
-    - CLI generates `./.config/effect-test/manifest.vitest.test.ts` that imports discovered test modules and registers them via `TestRunner` into vitest.
-    - Option B: vitest plugin/setup provides a virtual module (e.g., `virtual:effect-test-manifest`) auto‑loaded via `setupFiles`.
+    - CLI generates `./.config/effect-native-test/manifest.vitest.test.ts` that imports discovered test modules and registers them via `TestRunner` into vitest.
+    - Option B: vitest plugin/setup provides a virtual module (e.g., `virtual:effect-native-test-manifest`) auto‑loaded via `setupFiles`.
   - Property tests map to `fast-check` or run an internal property loop and emit a single vitest test.
   - Setup integrates `@effect/vitest` equality helpers.
 
 - Bun adapter (`@effect-native/test-bun`):
   - Integration with Bun’s `test` API, aligning with `@effect-native/bun-test` patterns.
   - Manifest strategy:
-    - CLI generates `./.config/effect-test/manifest.bun.test.ts` that imports discovered modules and registers tests using `TestRunner` -> Bun `test`.
-    - Run with `bun test ./.config/effect-test/manifest.bun.test.ts` to avoid duplicate discovery.
+    - CLI generates `./.config/effect-native-test/manifest.bun.test.ts` that imports discovered modules and registers tests using `TestRunner` -> Bun `test`.
+    - Run with `bun test ./.config/effect-native-test/manifest.bun.test.ts` to avoid duplicate discovery.
     - Optional `bunfig.toml`:
       ```toml
       [test]
       preload = ["@effect-native/test-bun/preload"]
-      root = ".config/effect-test"
+      root = ".config/effect-native-test"
       ```
   - Preload sets up TestServices and equality helpers; MUST NOT hide missing deps (Hard‑Fail).
 
@@ -234,6 +236,7 @@ describe("add", () => {
 - Ship thin Node adapters: `@effect-native/test-vitest`, `@effect-native/test-bun`.
 - Implement Browser harness (Jasmine default) with headless + serve modes; Vite + Playwright.
 - Implement RN harness (Jasmine default) for Hermes; Metro + WS; tiny shims only.
+- If Expo Router is used, scaffold a `__DEV__`-only test route and a Maestro flow that deep-links to it.
 - Wire manifest/discovery; keep reporters minimal on Browser/RN; use runner‑native reporters on Node/Bun.
 
 ## Future Considerations
