@@ -44,12 +44,13 @@ Package Names:
 
 - Per‑runner scaffolding (what `--init` sets up):
   - Vitest:
-    - Adds `test:vitest` script (e.g., `vitest run` or adapter CLI if used).
-    - Ensures `vitest.config.ts` includes a setup file that wires Effect equality (e.g., `@effect-native/test-vitest/setup`).
-    - Optionally adds a generated manifest entry under `./.config/effect-test/manifest.vitest.test.ts` if you choose manifest mode.
+    - Native default: nothing breaks `pnpm vitest run` — it Just Works with native discovery.
+    - Ensures `vitest.config.ts` includes a setup file to wire Effect equality (e.g., `@effect-native/test-vitest/setup`).
+    - Optional: adds `test:vitest:manifest` and generates `./.config/effect-test/manifest.vitest.test.ts` if you opt into manifest mode.
   - Bun:
-    - Adds `test:bun` script (`bun test ./.config/effect-test/manifest.bun.test.ts`).
-    - Creates/updates `bunfig.toml` with `[test].preload = ["@effect-native/test-bun/preload"]` and optionally sets `root = ".config/effect-test"` when using manifest mode.
+    - Native default: nothing breaks `bun test` — it Just Works with native discovery.
+    - Creates/updates `bunfig.toml` with `[test].preload = ["@effect-native/test-bun/preload"]` to install equality helpers (non‑destructive).
+    - Optional: adds `test:bun:manifest` and generates `./.config/effect-test/manifest.bun.test.ts` if you opt into manifest mode (does not change `bun test`).
   - Browser:
     - Adds `test:browser` script(s): headless (Playwright Chromium) and serve mode.
     - Generates a minimal harness (Jasmine by default) and a Vite config under `./.config/effect-test/browser/`.
@@ -180,7 +181,8 @@ Avoid trying to embed Vitest/Jest/Bun’s runner inside Hermes; they assume Node
 
 Stage A — vitest + bun:
 - Same portable suite runs under vitest (Node) and bun:test; identical pass/fail outcomes and correct exits.
-- Works with and without local `bunfig.toml` (CLI can pass `--preload`).
+- Native commands Just Work: `pnpm vitest run` and `bun test` execute the suite after init.
+- Works with and without local `bunfig.toml` (preload adds equality helpers but is optional).
 - Fail‑loud if runtime‑specific imports/services are missing.
 
 Stage B — browser:
