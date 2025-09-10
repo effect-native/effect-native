@@ -195,6 +195,7 @@ Stage C — React Native:
 - Portable suite runs on iOS Simulator and Android Emulator; parity with Node/Bun modulo timing.
 - RN API test (e.g., `Dimensions.get("window")`) passes without mocks.
 - RN tests can use `@testing-library/react-native` directly; fail‑loud if missing.
+ - If Expo Router is present, the generated `__DEV__` test route renders and runs the harness; the Maestro flow in `./.config/effect-native-test/maestro/run.yaml` can deep link into the route and observe passing output.
 
 Repo gates (all stages):
 - `nix develop --command pnpm ok` green (outside intentional RED in TDD), plus lint, typecheck, docgen, build.
