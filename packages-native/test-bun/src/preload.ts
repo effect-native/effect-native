@@ -1,10 +1,8 @@
 /**
  * @since 0.0.1
  */
-import { layer as mkLayer, setDefaultLayer } from "@effect-native/test/service/TestRunner"
+import * as TestRunner from "@effect-native/test/service/TestRunner"
 
-import { expect, test as bunTest } from "bun:test"
+import { layer } from "./layer.js"
 
-const it = bunTest as unknown as (name: string, fn: () => unknown, options?: unknown) => unknown
-
-setDefaultLayer(mkLayer({ it, expect }))
+TestRunner.setDefaultLayer(layer)

@@ -1,10 +1,8 @@
 /**
  * @since 0.0.1
  */
-import { layer as mkLayer } from "@effect-native/test/service/TestRunner"
+import * as TestRunner from "@effect-native/test/service/TestRunner"
 
-import { expect, test as bunTest } from "bun:test"
+import * as BunTest from "bun:test"
 
-const it = bunTest as unknown as (name: string, fn: () => unknown, options?: unknown) => unknown
-
-export const layer = () => mkLayer({ it, expect })
+export const layer = TestRunner.layer(BunTest)
