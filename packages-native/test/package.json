@@ -22,7 +22,7 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./service/*": "./src/service/*.ts",
+    "./services/*": "./src/services/*.ts",
     "./templates/*": "./templates/*.d.ts",
     "./internal/*": null
   },

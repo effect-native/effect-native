@@ -1,7 +1,7 @@
 /**
  * @since 0.0.1
  */
-import * as TestRunner from "@effect-native/test/service/TestRunner"
+import * as TestRunner from "@effect-native/test/services/TestRunner"
 import * as EffectVitest from "@effect/vitest"
 
 /**

@@ -1,7 +1,7 @@
 /**
  * @since 0.0.1
  */
-import * as TestRunner from "@effect-native/test/service/TestRunner"
+import * as TestRunner from "@effect-native/test/services/TestRunner"
 import * as EffectVitest from "@effect/vitest"
 import type { Tester } from "@vitest/expect"
 import * as Equal from "effect/Equal"
@@ -31,7 +31,7 @@ export const setup = () => {
   // add equality testers once
   vitest.expect.addEqualityTesters([customTester])
   // set default TestRunner layer for helpers
-  TestRunner.setDefaultLayer(TestRunner.layer(VitestRunner.layer))
+  TestRunner.setDefaultLayer(VitestRunner.layer)
 }
 
 setup()

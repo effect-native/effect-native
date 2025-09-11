@@ -12,10 +12,17 @@ import * as Layer from "effect/Layer"
  */
 export type Test = {
   (
-    name: string,
-    fn: () => unknown,
-    options?: unknown
-  ): unknown
+    label: string,
+    fn: (() => void | Promise<unknown>) | ((done: (err?: unknown) => void) => void),
+    /**
+     * - If a `number`, sets the timeout for the test in milliseconds.
+     * - If an `object`, sets the options for the test.
+     *   - `timeout` sets the timeout for the test in milliseconds.
+     *   - `retry` sets the number of times to retry the test if it fails.
+     *   - `repeats` sets the number of times to repeat the test, regardless of whether it passed or failed.
+     */
+    options?: any // FIXME: type this more goodly later
+  ): void
 }
 
 type Expect = {

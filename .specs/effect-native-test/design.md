@@ -65,7 +65,7 @@
 ### Example: provide TestRunner via Layer.succeed
 ```ts
 import * as Layer from "effect/Layer"
-import { TestRunner } from "@effect-native/test/service/TestRunner"
+import { TestRunner } from "@effect-native/test/services/TestRunner"
 import { it, expect } from "vitest" // or bun:test / harness API
 
 export const testLayer = Layer.succeed(TestRunner, { it, expect })
