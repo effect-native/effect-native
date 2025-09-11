@@ -20,6 +20,12 @@ const customTester: Tester = function(a, b, customTesters) {
   )
 }
 
+/**
+ * Installs custom equality testers and sets the default `TestRunner` layer for Vitest.
+ * Call once in your test setup.
+ *
+ * @since 0.0.1
+ */
 export const setup = () => {
   EffectVitest.addEqualityTesters()
   // add equality testers once
