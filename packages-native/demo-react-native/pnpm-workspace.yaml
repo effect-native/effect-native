@@ -1,0 +1,11 @@
+ignorePatchFailures: false
+
+onlyBuiltDependencies:
+  - esbuild
+  - unrs-resolver
+
+patchedDependencies:
+  metro: patches/metro.patch
+  react-native-reanimated: patches/react-native-reanimated.patch
+
+nodeLinker: hoisted
