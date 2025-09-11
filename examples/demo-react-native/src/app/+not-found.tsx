@@ -1,11 +1,11 @@
-import { Link, Stack } from 'expo-router';
-import { View } from 'react-native';
-import Text from 'src/ui/Text.tsx';
+import { Link, Stack } from "expo-router"
+import { View } from "react-native"
+import Text from "src/ui/Text.tsx"
 
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
+      <Stack.Screen options={{ title: "Oops!" }} />
       <View className="flex-1 items-center justify-center p-5">
         <Text className="text-lg font-bold">
           <fbt desc="Screen not found title">
@@ -19,5 +19,5 @@ export default function NotFoundScreen() {
         </Link>
       </View>
     </>
-  );
+  )
 }

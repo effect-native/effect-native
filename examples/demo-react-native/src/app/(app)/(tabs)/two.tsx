@@ -1,9 +1,9 @@
-import { VStack } from '@nkzw/stack';
-import Text from 'src/ui/Text.tsx';
-import useViewerContext from 'src/user/useViewerContext.tsx';
+import { VStack } from "@nkzw/stack"
+import Text from "src/ui/Text.tsx"
+import useViewerContext from "src/user/useViewerContext.tsx"
 
 export default function Two() {
-  const { logout } = useViewerContext();
+  const { logout } = useViewerContext()
 
   return (
     <VStack flex1 padding={16}>
@@ -11,5 +11,5 @@ export default function Two() {
         <fbt desc="Two header title">Logout</fbt>
       </Text>
     </VStack>
-  );
+  )
 }

@@ -1,15 +1,15 @@
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { Redirect, Stack } from 'expo-router';
-import { useLocaleContext } from 'fbtee';
-import { Fragment } from 'react/jsx-runtime';
-import useViewerContext from 'src/user/useViewerContext.tsx';
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet"
+import { Redirect, Stack } from "expo-router"
+import { useLocaleContext } from "fbtee"
+import { Fragment } from "react/jsx-runtime"
+import useViewerContext from "src/user/useViewerContext.tsx"
 
 export default function TabLayout() {
-  const { locale } = useLocaleContext();
-  const { isAuthenticated } = useViewerContext();
+  const { locale } = useLocaleContext()
+  const { isAuthenticated } = useViewerContext()
 
   if (!isAuthenticated) {
-    return <Redirect href="/login" />;
+    return <Redirect href="/login" />
   }
 
   return (
@@ -20,13 +20,13 @@ export default function TabLayout() {
             name="(tabs)"
             options={{
               contentStyle: {
-                backgroundColor: 'transparent',
+                backgroundColor: "transparent"
               },
-              headerShown: false,
+              headerShown: false
             }}
           />
         </Stack>
       </BottomSheetModalProvider>
     </Fragment>
-  );
+  )
 }

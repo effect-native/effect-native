@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest';
+import { expect, test } from "vitest"
 
-test('App', () => {
-  expect('apple').not.toBe('banana');
-});
+test("App", () => {
+  expect("apple").not.toBe("banana")
+})
