@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "NKZW App",
-    "slug": "nkzw-app",
+    "name": "Effect Native Demo",
+    "slug": "effect-native-demo",
     "version": "1.0.0",
-    "scheme": "nkzw-app",
+    "scheme": "effect-native-demo",
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -47,10 +47,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.nkzw.www",
+      "bundleIdentifier": "dev.effectnative.demo-rn",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -60,7 +62,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.nkzw.www",
+      "package": "dev.effectnative.demo-rn",
       "predictiveBackGestureEnabled": true
     },
     "newArchEnabled": true,
