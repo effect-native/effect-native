@@ -1627,9 +1627,9 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
         Effect.provide(layerSqlClient),
         params.pathToCrSqliteExtension ?
           Effect.withConfigProvider(
-            ConfigProvider.fromJson({ CRSQLITE_LIB_PATH: yield* params.pathToCrSqliteExtension })
+            ConfigProvider.fromJson({ [CrSqliteExtension.LibCrSqlPathKey]: yield* params.pathToCrSqliteExtension })
           ) :
-          Effect.tap(() => Console.debug("pathToCrSqliteExtension not provided, relying on dynamic detection"))
+          Effect.tap(noop)
       )
 
       // proves that the extension has loaded
@@ -1647,6 +1647,8 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
     }
   )
 }
+
+const noop = () => {}
 
 function isTemplateStringsArray(first: string | TemplateStringsArray): first is TemplateStringsArray {
   return Array.isArray(first) && Object.hasOwn(first, "raw")

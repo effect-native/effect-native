@@ -21,7 +21,18 @@ import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
 import * as SqliteClient from "./SqliteClient.js"
 
-const LibCrSqlPath = Config.nonEmptyString("CRSQLITE_LIB_PATH")
+/**
+ * Configuration key for the CR-SQLite extension library path.
+ *
+ * This key is used to retrieve the filesystem path to the CR-SQLite
+ * extension library from the configuration. It is expected that the
+ * path points to a valid shared library file (e.g., `.so`, `.dylib`, `.dll`).
+ *
+ * @since 0.1.1
+ * @category Configuration
+ */
+export const LibCrSqlPathKey = "CRSQLITE_PATH" as const
+const LibCrSqlPath = Config.nonEmptyString(LibCrSqlPathKey)
 
 /**
  * Query CR-SQLite extension information via SQL functions.
@@ -56,17 +67,7 @@ export const sqlExtInfo = Effect.gen(function*() {
  * @category Operations
  */
 export const loadLibCrSql = Effect.gen(function*() {
-  // Prefer explicit config when provided; otherwise, fall back to dynamic detection
-  const path = yield* LibCrSqlPath.pipe(
-    Effect.catchAll(() =>
-      Effect.gen(function*() {
-        // Dynamic import to avoid static dependency (keeps docgen simple)
-        const mod: any = yield* Effect.promise(() => import("@effect-native/libcrsql/effect"))
-        const detected = yield* mod.getCrSqliteExtensionPath()
-        return detected as string
-      })
-    )
-  )
+  const path = yield* LibCrSqlPath
   yield* SqliteClient.loadExtension(path)
   return CrSqlSchema.ExtInfo.make({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
 }).pipe(
