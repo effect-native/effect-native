@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/bun-test",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "type": "module",
   "license": "MIT",
   "description": "Helpers for testing every Effect with bun:test",
@@ -26,6 +26,7 @@
     "./internal/*": null
   },
   "scripts": {
+    "codegen": "echo '@effect-native/bun-test: skip codegen'",
     "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
     "build-esm": "tsc -b tsconfig.build.json",
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
@@ -35,12 +36,13 @@
     "coverage": "bun test --coverage"
   },
   "peerDependencies": {
-    "effect": "workspace:^",
     "@types/bun": "*",
-    "bun": "^1.1.0"
+    "effect": "*"
   },
   "devDependencies": {
-    "effect": "workspace:^",
-    "bun": "^1.1.38"
+    "@types/bun": "^1.2.21",
+    "bun": "^1.1.38",
+    "effect": "latest",
+    "fast-check": "^3.23.2"
   }
 }

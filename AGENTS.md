@@ -1,149 +1,112 @@
-# CLAUDE.md
+# Agent Contribution Rules
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This repository enforces a fail-fast, evidence-first workflow. Agents and contributors must not hide defects behind optional guards or conditional logic in tests.
 
-## Repository Overview
+## Hard-Fail Policy (Never Hide Defects)
 
-This is the **effect-native fork** of the Effect TypeScript framework. It maintains custom packages while allowing contributions back to upstream Effect-TS/effect.
+- NEVER add conditional wrappers (feature-detection, try/catch fallbacks, dynamic-import guards, environment sniffing, etc.) to silence or skip integration tests. If a dependency is missing or misconfigured (e.g., native modules like `better-sqlite3`), tests MUST FAIL LOUDLY.
+- NEVER convert hard failures into no-ops (e.g., returning `Effect.void` or “skip” behavior) without an explicit repository decision recorded in a PR description and this file. The default is fail-fast.
+- NEVER obfuscate errors or swallow exceptions in test setup. Prefer explicit, early failures that surface configuration issues.
 
-### Fork-Specific Setup
+## Rationale
 
-- **Git remotes**: `origin` points to `effect-native/effect`, `upstream` points to `Effect-TS/effect`
-- **Branch strategy**: 
-  - `main`: Clean mirror of upstream for contributions
-  - `effect-native/main`: Fork's branch with custom packages
-- **Custom packages**: Located in `packages-native/`, use `@effect-native/` namespace
-- **Pre-push hook**: Prevents accidentally pushing custom packages to upstream
+Failing fast makes defects visible early, prevents silent regressions, and aligns local behavior with CI. Any environment constraints should be resolved by fixing the environment or adjusting the build matrix — not by weakening tests.
 
-## Development Commands
+## Evidence-First Expectations
 
-### Building
-```bash
-pnpm build              # Build all packages
-pnpm codegen           # Re-generate package entrypoints
-pnpm clean             # Clean build artifacts
-```
+- When changing tests or infrastructure:
+  - Provide concrete file paths and code references for the behavior being asserted.
+  - If a failure requires an environment change, document the exact steps to reproduce and remediate (e.g., reinstall `better-sqlite3` for the current Node version).
+- All changes must keep `pnpm ok` green unless a failing test is intentionally introduced as part of a RED phase in a TDD cycle (and is clearly marked as such in the PR).
 
-### Testing
-```bash
-pnpm test              # Run all tests
-pnpm test <pattern>    # Run tests matching pattern
-pnpm coverage          # Run tests with coverage
+## Examples of Disallowed Patterns
 
-# Run single test file
-pnpm vitest test/Effect.test.ts
+- Dynamic import guards to skip tests when a module is missing:
+  ```ts
+  // ❌ Do not do this
+  Effect.tryPromise(() => import("better-sqlite3")).pipe(
+    Effect.flatMap((ok) => (ok ? test : Effect.void))
+  )
+  ```
 
-# Run tests for specific package
-cd packages/effect && pnpm test
-```
+- Swallowing initialization failures:
+  ```ts
+  // ❌ Do not do this
+  client.loadExtension(ext).pipe(Effect.orDie) // hides misconfiguration
+  ```
 
-### Code Quality
-```bash
-pnpm check             # TypeScript type checking
-pnpm lint              # ESLint
-pnpm lint-fix          # Auto-fix lint issues
-pnpm circular          # Check for circular dependencies
-pnpm test-types        # Run type-level tests (tstyche)
-```
+## Positive Patterns
 
-### Documentation
-```bash
-pnpm docgen            # Generate API documentation
-pnpm changeset         # Create changeset for changes
-```
+- Ensure native dependencies match the current runtime. If installing is not possible in a given matrix, mark tests with a clear CI job exclusion rather than weakening test logic.
+- Keep integration tests using the real drivers and environments; prefer realistic failure modes over mocks for critical paths.
 
-## Architecture
+## TypeScript Type Assertions (`as`) Policy
 
-### Package Structure
+- Prefer type inference and precise types. Avoid assertions that "lie about reality" by widening or narrowing without proof.
+- "as const" is explicitly allowed and encouraged: it narrows values (e.g., tuples and object literals) and increases strictness. This does not misrepresent runtime values.
+- "as any" is explicitly banned. It disables type safety and is a foot cannon.
+- Double assertions (e.g., `as unknown as T`) and other unsafe up/down casts are banned by default unless narrowly justified.
+- Rare exceptions must be explicitly justified:
+  - Place a one‑line comment immediately above the assertion with:
+    - `Justification:` short, concrete rationale explaining why the assertion is safe and unavoidable.
+    - `Approved‑by:` the handle of a specific engineer who reviewed the line (not an agent; do not impersonate anyone). Include a link to the PR or issue.
+  - Example (allowed):
+    ```ts
+    // Justification: upstream API returns branded string at runtime; Approved-by: @eng-handle (PR #123)
+    const id = value as Brand<Id>
+    ```
+  - Example (forbidden):
+    ```ts
+    // "works on my machine"
+    const x = foo as any // ❌ banned
+    ```
+- Agents MUST NOT self‑approve or forge approvals. Do not use the repository owner's name or identity; never impersonate a human reviewer.
 
-The monorepo uses pnpm workspaces with packages organized in:
-- `packages/`: Upstream Effect packages (effect, platform, cli, etc.)
-- `packages/ai/`: AI-related packages (openai, anthropic, etc.)
-- `packages-native/`: Fork-specific custom packages
+## Modern Effect Patterns (v3.17+)
 
-### Core Design Patterns
+This project uses the latest Effect `^3.17.11` which supports modern error handling patterns. Code reviews and agents should expect and accept these patterns:
 
-1. **Effect System**: All async operations use the Effect type for composable error handling and dependency injection
-2. **Layers**: Dependencies are provided through Layer composition
-3. **Services**: Use Context.Tag for type-safe dependency injection
-4. **Schemas**: Data validation and serialization via Schema module
-5. **Pipeable API**: All modules follow pipe-first functional programming style
+- **Error Creation**: Effect v3.17+ supports direct yielding of Error constructors:
+  ```ts
+  // ✅ Modern Effect v3.17+ (preferred)
+  return yield* new SqliteClientError({ cause: "..." })
 
-### Key Modules
+  // ✅ Legacy syntax (technically valid but unnecessarily verbose)
+  return yield* Effect.fail(new SqliteClientError({ cause: "..." }))
+  ```
 
-- **Effect**: Core effect system for async operations, error handling, and concurrency
-- **Stream**: Streaming data processing with backpressure
-- **Layer**: Dependency injection and resource management
-- **Schema**: Runtime type validation and serialization
-- **Platform**: Cross-platform I/O operations (HTTP, FileSystem, etc.)
+- **Rationale**: Modern Effect Error classes implement the necessary protocols to be yielded directly, making code more concise while maintaining full type safety and error propagation.
 
-### Testing Approach
+- **Review Expectation**: Contributors and automated reviews should NOT flag the modern `yield* new Error()` syntax as incorrect. It is the current standard for this project's Effect version.
 
-- Tests use Vitest with custom configuration in `vitest.shared.ts`
-- Test files located in `test/` directories
-- Use `Effect.gen` for readable async test code
-- Prefer property-based testing with FastCheck where applicable
+## Nix Development Environment
 
-### Build System
+This project uses Nix for dependency management and reproducible builds. All development commands should be run within the Nix development shell:
 
-- TypeScript project references for incremental compilation
-- `@effect/build-utils` handles package bundling
-- Each package has standard tsconfig files:
-  - `tsconfig.json`: Main config
-  - `tsconfig.src.json`: Source compilation
-  - `tsconfig.test.json`: Test compilation
-  - `tsconfig.build.json`: Build references
+- **Command Prefix**: Always prefix package manager and build commands with `nix develop --command` or run `nix develop` first to enter the shell:
+  ```bash
+  # ✅ Preferred
+  nix develop --command pnpm install
+  nix develop --command pnpm ok
+  nix develop --command pnpm test
 
-## Fork Workflows
+  # ✅ Alternative (enter shell first)
+  nix develop
+  pnpm install
+  pnpm ok
+  ```
 
-### Contributing to Upstream
-```bash
-git checkout main
-git pull upstream main
-git checkout -b feature/my-contribution
-# Work in packages/ only
-git push origin feature/my-contribution
-# Create PR to Effect-TS/effect
-```
+- **Rationale**: The Nix shell ensures consistent Node.js versions, native dependencies, and build tools across all environments, preventing "works on my machine" issues.
 
-### Working on Custom Packages
-```bash
-git checkout effect-native/main
-# Work in packages-native/
-git push origin effect-native/main
-```
+- **CI Alignment**: This matches the CI environment which also runs commands within the Nix development shell.
 
-### Syncing with Upstream
-```bash
-git checkout main
-git pull upstream main
-git checkout effect-native/main
-git merge main
-```
+### Native Modules (better-sqlite3) ABI Mismatch
 
-## Package Conventions
+- Symptom: Errors like "was compiled against a different Node.js version" or mismatched `NODE_MODULE_VERSION` (e.g., 131 vs 137) when running tests that use `better-sqlite3`.
+- Cause: Running install/build/test outside the Nix shell compiles native addons against the wrong Node version/ABI.
+- Resolution: Always run installs and tests inside the Nix dev shell. When in doubt, clean and rebuild inside `nix develop`:
+  - `nix develop --command pnpm -w install`
+  - `nix develop --command pnpm -w rebuild better-sqlite3`
+  - Then re-run tests: `nix develop --command pnpm test`
 
-### Creating New Packages
-
-Custom packages in `packages-native/` should:
-1. Use `@effect-native/` namespace in package.json
-2. Follow same structure as packages in `packages/`
-3. Include standard configs (tsconfig, vitest, docgen)
-4. Use `@effect/build-utils` for building
-5. Depend on `effect` as peer dependency
-
-### JSDoc Requirements
-
-All public APIs must include:
-- `@since` tag with version
-- `@example` tag with usage example
-- Brief description of functionality
-- `@category` tag for documentation organization (optional)
-
-### Changeset Process
-
-Before committing features:
-1. Run `pnpm changeset`
-2. Select appropriate semver level (patch/minor/major)
-3. Write clear changeset description
-4. Reference issues with "closes #123" in commit messages
+In practice: relying on `nix develop` 100% of the time avoids ABI mismatches and “everything just works.”

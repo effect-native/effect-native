@@ -78,9 +78,21 @@ export interface Workflow<
       readonly discard?: Discard
     }
   ) => Effect.Effect<
-    Discard extends true ? void : Success["Type"],
+    Discard extends true ? string : Success["Type"],
     Discard extends true ? never : Error["Type"],
     WorkflowEngine | Payload["Context"] | Success["Context"] | Error["Context"]
+  >
+
+  /**
+   * Poll a workflow execution for its current status.
+   *
+   * If the workflow has not run yet, it will return `undefined`, otherwise it
+   * will return the current `Workflow.Result`.
+   */
+  readonly poll: (executionId: string) => Effect.Effect<
+    Result<Success["Type"], Error["Type"]> | undefined,
+    never,
+    WorkflowEngine | Success["Context"] | Error["Context"]
   >
 
   /**
@@ -258,12 +270,13 @@ export const make = <
         const executionId = yield* makeExecutionId(payload)
         yield* Effect.annotateCurrentSpan({ executionId })
         if (opts?.discard) {
-          return yield* engine.execute({
+          yield* engine.execute({
             workflow: self,
             executionId,
             payload,
             discard: true
           })
+          return executionId
         }
         const parentInstance = yield* Effect.serviceOption(InstanceTag)
         const run = engine.execute({
@@ -296,6 +309,17 @@ export const make = <
       },
       Effect.withSpan(`${options.name}.execute`, { captureStackTrace: false })
     ),
+    poll: Effect.fnUntraced(
+      function*(executionId: string) {
+        const engine = yield* EngineTag
+        return yield* engine.poll({ workflow: self, executionId })
+      },
+      (effect, executionId) =>
+        Effect.withSpan(effect, `${options.name}.poll`, {
+          captureStackTrace: false,
+          attributes: { executionId }
+        })
+    ),
     interrupt: Effect.fnUntraced(
       function*(executionId: string) {
         const engine = yield* EngineTag
@@ -323,7 +347,7 @@ export const make = <
         const context = yield* Effect.context<WorkflowEngine>()
         const engine = Context.get(context, EngineTag)
         yield* engine.register(self, (payload, executionId) =>
-          execute(payload, executionId).pipe(
+          Effect.suspend(() => execute(payload, executionId)).pipe(
             Effect.mapInputContext((input) => Context.merge(context, input))
           ) as any)
         return EngineTag.context(engine)
@@ -562,11 +586,33 @@ export const wrapActivityResult = <A, E, R>(
  * @category Compensation
  */
 export const withCompensation: {
+  /**
+   * Add compensation logic to an effect inside a Workflow. The compensation finalizer will be
+   * called if the entire workflow fails, allowing you to perform cleanup or
+   * other actions based on the success value and the cause of the workflow failure.
+   *
+   * NOTE: Compensation will not work for nested activities. Compensation
+   * finalizers are only registered for top-level effects in the workflow.
+   *
+   * @since 1.0.0
+   * @category Compensation
+   */
   <A, R2>(
     compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>
   ): <E, R>(
     effect: Effect.Effect<A, E, R>
   ) => Effect.Effect<A, E, R | R2 | WorkflowInstance | Scope.Scope>
+  /**
+   * Add compensation logic to an effect inside a Workflow. The compensation finalizer will be
+   * called if the entire workflow fails, allowing you to perform cleanup or
+   * other actions based on the success value and the cause of the workflow failure.
+   *
+   * NOTE: Compensation will not work for nested activities. Compensation
+   * finalizers are only registered for top-level effects in the workflow.
+   *
+   * @since 1.0.0
+   * @category Compensation
+   */
   <A, E, R, R2>(
     effect: Effect.Effect<A, E, R>,
     compensation: (value: A, cause: Cause.Cause<unknown>) => Effect.Effect<void, never, R2>

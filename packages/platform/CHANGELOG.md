@@ -1,5 +1,23 @@
 # @effect/platform
 
+## 0.90.9
+
+### Patch Changes
+
+- [#5492](https://github.com/Effect-TS/effect/pull/5492) [`0421c8c`](https://github.com/Effect-TS/effect/commit/0421c8ce2ee614ae46b5684c850ab6aab8fa02e9) Thanks @tim-smart! - provide http span to global middleware
+
+## 0.90.8
+
+### Patch Changes
+
+- [#5481](https://github.com/Effect-TS/effect/pull/5481) [`333be04`](https://github.com/Effect-TS/effect/commit/333be046b50e8300f5cb70b871448e0628b7b37c) Thanks @jpowersdev! - Allow user to set extension of file created using `FileSystem.makeTempFile`
+
+## 0.90.7
+
+### Patch Changes
+
+- [#5466](https://github.com/Effect-TS/effect/pull/5466) [`75dffc8`](https://github.com/Effect-TS/effect/commit/75dffc877b1fa8c95fc026747b9060b7eba44232) Thanks @tim-smart! - ensure HttpApiClient adds encoding contentType to headers
+
 ## 0.90.6
 
 ### Patch Changes
