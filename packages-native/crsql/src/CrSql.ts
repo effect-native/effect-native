@@ -1600,18 +1600,18 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   dependencies: [CrSqliteExtension.ExtInfoLoaded.Default]
 }) {
   static fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-    function*(
+    function*<E, R>(
       params:
         | {
           sql: SqliteClient.SqliteClient
-          pathToCrSqliteExtension?: Effect.Effect<string>
+          pathToCrSqliteExtension?: Effect.Effect<string, E, R>
           loadedExtensionInfo?: never
         }
         | {
           sql: SqlClient.SqlClient
           pathToCrSqliteExtension?: never
           /** when you want to take ownership of extension loading, provide this */
-          loadedExtensionInfo: Effect.Effect<CrSqlSchema.ExtInfoLoaded>
+          loadedExtensionInfo: Effect.Effect<CrSqlSchema.ExtInfoLoaded, E, R>
         }
     ) {
       // reuse the same SqlClient layer everywhere
@@ -1619,7 +1619,7 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
 
       // load the extension via params or default to our standard loader
       const loadInfo = yield* params.loadedExtensionInfo?.pipe(
-        Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded),
+        Effect.flatMap(Schema.validate(CrSqlSchema.ExtInfoLoaded)),
         Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
         Effect.withSpan("params.loadedExtensionInfo")
       ) ?? CrSqliteExtension.loadLibCrSql.pipe(
