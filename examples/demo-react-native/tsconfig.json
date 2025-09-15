@@ -1,5 +1,6 @@
 {
-  "extends": "expo/tsconfig.base",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "allowJs": true,
@@ -9,18 +10,22 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "noEmit": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
+
+    "jsx": "react-native",
+    "lib": ["DOM", "ESNext"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "customConditions": ["react-native"],
+    "target": "ESNext"
   },
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "babel.config.*", "metro.config.*", "jest.config.*"],
   "include": [
     "**/*.ts",
     "**/*.tsx",
