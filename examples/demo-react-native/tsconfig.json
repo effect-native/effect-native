@@ -10,15 +10,15 @@
     "incremental": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "noEmit": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "es2022"
+    "target": "ES2022"
   },
   "exclude": ["node_modules"],
   "include": [
