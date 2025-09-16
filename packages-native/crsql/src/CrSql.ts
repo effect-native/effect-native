@@ -1515,6 +1515,53 @@ const makeCrSql = Effect.gen(function*() {
   return crsql
 })
 
+export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
+  function* fromSqliteClient<E, R>(
+    params:
+      | {
+        sql: SqlClient.SqlClient
+        pathToCrSqliteExtension?: Effect.Effect<string, E, R>
+        loadedExtensionInfo?: never
+      }
+      | {
+        sql: SqlClient.SqlClient
+        pathToCrSqliteExtension?: never
+        /** when you want to take ownership of extension loading, provide this */
+        loadedExtensionInfo: Effect.Effect<CrSqlSchema.ExtInfoLoaded, E, R>
+      }
+  ) {
+    // reuse the same SqlClient layer everywhere
+    const layerSqlClient = Layer.succeed(SqlClient.SqlClient, params.sql)
+
+    // load the extension via params or default to our standard loader
+    const loadInfo = yield* params.loadedExtensionInfo?.pipe(
+      Effect.flatMap(Schema.validate(CrSqlSchema.ExtInfoLoaded)),
+      Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
+      Effect.withSpan("params.loadedExtensionInfo")
+    ) ?? CrSqliteExtension.loadLibCrSql.pipe(
+      Effect.provide(layerSqlClient),
+      params.pathToCrSqliteExtension ?
+        Effect.withConfigProvider(
+          ConfigProvider.fromJson({ [CrSqliteExtension.LibCrSqlPathKey]: yield* params.pathToCrSqliteExtension })
+        ) :
+        Effect.tap(noop)
+    )
+
+    // proves that the extension has loaded
+    const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
+
+    const layers = Layer.mergeAll(
+      layerSqlClient,
+      Layer.succeed(
+        CrSqliteExtension.ExtInfoLoaded,
+        CrSqliteExtension.ExtInfoLoaded.make(CrSqlSchema.ExtInfo.make({ ...loadInfo, ...dbInfo }))
+      )
+    )
+
+    return yield* makeCrSql.pipe(Effect.provide(layers))
+  }
+)
+
 /**
  * CR-SQLite service accessor class for conflict-free replicated database operations.
  *
@@ -1599,52 +1646,7 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   effect: makeCrSql,
   dependencies: [CrSqliteExtension.ExtInfoLoaded.Default]
 }) {
-  static fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-    function*<E, R>(
-      params:
-        | {
-          sql: SqlClient.SqlClient
-          pathToCrSqliteExtension?: Effect.Effect<string, E, R>
-          loadedExtensionInfo?: never
-        }
-        | {
-          sql: SqlClient.SqlClient
-          pathToCrSqliteExtension?: never
-          /** when you want to take ownership of extension loading, provide this */
-          loadedExtensionInfo: Effect.Effect<CrSqlSchema.ExtInfoLoaded, E, R>
-        }
-    ) {
-      // reuse the same SqlClient layer everywhere
-      const layerSqlClient = Layer.succeed(SqlClient.SqlClient, params.sql)
-
-      // load the extension via params or default to our standard loader
-      const loadInfo = yield* params.loadedExtensionInfo?.pipe(
-        Effect.flatMap(Schema.validate(CrSqlSchema.ExtInfoLoaded)),
-        Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
-        Effect.withSpan("params.loadedExtensionInfo")
-      ) ?? CrSqliteExtension.loadLibCrSql.pipe(
-        Effect.provide(layerSqlClient),
-        params.pathToCrSqliteExtension ?
-          Effect.withConfigProvider(
-            ConfigProvider.fromJson({ [CrSqliteExtension.LibCrSqlPathKey]: yield* params.pathToCrSqliteExtension })
-          ) :
-          Effect.tap(noop)
-      )
-
-      // proves that the extension has loaded
-      const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
-
-      const layers = Layer.mergeAll(
-        layerSqlClient,
-        Layer.succeed(
-          CrSqliteExtension.ExtInfoLoaded,
-          CrSqliteExtension.ExtInfoLoaded.make(CrSqlSchema.ExtInfo.make({ ...loadInfo, ...dbInfo }))
-        )
-      )
-
-      return yield* makeCrSql.pipe(Effect.provide(layers))
-    }
-  )
+  static fromSqliteClient = fromSqliteClient
 }
 
 const noop = () => {}
