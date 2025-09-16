@@ -3,11 +3,12 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import * as SqlClient from "@effect/sql/SqlClient"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 const createTodosCrr = Effect.gen(function*() {
-  const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+  const sql = yield* SqlClient.SqlClient
   yield* sql`CREATE TABLE IF NOT EXISTS todos (
     id BLOB NOT NULL PRIMARY KEY,
     content TEXT NOT NULL DEFAULT '',
@@ -30,7 +31,7 @@ layer(DbMem)((it) => {
 
   it.scoped("crsql_sha missing before load; present after fromSqliteClient", () =>
     Effect.gen(function*() {
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
 
       // Before loading the extension, calling crsql_sha() should error.
       const before = yield* sql`SELECT crsql_sha() as sha`.pipe(Effect.exit)
@@ -48,7 +49,7 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       // Ensure CR-SQLite is loaded via the product code (no duplication).
       // Calling the service loader initializes the extension on this connection.
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       yield* CrSql.fromSqliteClient({ sql })
       yield* createTodosCrr
       const pk = "00112233445566778899AABBCCDDEEFF"
@@ -60,7 +61,7 @@ layer(DbMem)((it) => {
 
   it.scoped("pullChanges returns inserted columns (content, completed)", () =>
     Effect.gen(function*() {
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       yield* CrSql.fromSqliteClient({ sql })
       yield* createTodosCrr
       const pk = "11223344556677889900AABBCCDDEEFF"
@@ -81,7 +82,7 @@ layer(DbMem)((it) => {
   it.scoped("db version increments; since-cursor filters earlier changes", () =>
     Effect.gen(function*() {
       // Ensure extension is loaded via product API
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient({ sql })
       yield* createTodosCrr
       const pk1 = "AA11223344556677889900AABBCCDDEE"
@@ -102,7 +103,7 @@ layer(DbMem)((it) => {
 
   it.scoped("finalize does not fail", () =>
     Effect.gen(function*() {
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient({ sql })
       // Should be safe and idempotent
       yield* crsql.finalize

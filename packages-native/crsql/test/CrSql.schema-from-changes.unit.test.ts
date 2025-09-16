@@ -1,5 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, it } from "@effect/vitest"
 import { Effect } from "effect"
 import { ensureCrSqlLoaded } from "./_helpers.js"
@@ -13,7 +14,7 @@ import { ensureCrSqlLoaded } from "./_helpers.js"
 it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     // Create a simple CRR and insert a row
@@ -33,7 +34,7 @@ it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
 it.scoped.skip("schemaFromChanges: includes multiple tables present in changes", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     // Define two CRRs and insert into both
@@ -58,7 +59,7 @@ it.scoped.skip("schemaFromChanges: includes multiple tables present in changes",
 it.scoped.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     yield* crsql.automigrate`
@@ -85,7 +86,7 @@ it.scoped.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/R
 it.scoped.skip("schemaFromChanges: conflicting types for same column fails", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     yield* crsql.automigrate`
@@ -107,7 +108,7 @@ it.scoped.skip("schemaFromChanges: conflicting types for same column fails", () 
 it.scoped.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     yield* crsql.automigrate`
@@ -134,7 +135,7 @@ it.scoped.skip("schemaFromChanges: deterministic column order (id first, others 
 it.scoped.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
-    const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+    const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient({ sql })
 
     yield* crsql.automigrate`

@@ -1,5 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as os from "node:os"
@@ -12,7 +13,7 @@ layer(DbMem)((it) => {
   it.scoped("automigrate: initial apply creates CRR and tracks changes", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient({ sql })
 
       yield* crsql.automigrate`
@@ -40,7 +41,7 @@ layer(DbMem)((it) => {
       // Stage 1 on connection A
       const stage1 = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* SqlClient.SqlClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
 
         // Initial schema (no note column)
@@ -71,14 +72,15 @@ layer(DbMem)((it) => {
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))
 
       // Stage 2 on connection B (fresh handle to the same shared-memory DB)
+      const layers = CrSql.layerFromSqliteClient({ sql: NodeSqlite.SqliteClient.make({ filename: uri })})
       const delta = yield* Effect.gen(function*() {
-        const sql2 = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql2 = yield* SqlClient.SqlClient
         const crsql2 = yield* CrSql.fromSqliteClient({ sql: sql2 })
         const pk2 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
         yield* sql2`INSERT INTO items2 (id, name, qty, note) VALUES (unhex(${pk2}), 'Beta', 2, 'n')`
         const out = yield* crsql2.pullChanges(stage1.v1)
         return { out, pk2 }
-      }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))
+      }).pipe(Effect.provide(layers))
       // Extract pk2 and changes
       const { out: changes2, pk2 } = delta
       const forPk2 = changes2.filter((c) => c.pk.toUpperCase().endsWith(pk2))
@@ -91,7 +93,7 @@ layer(DbMem)((it) => {
   it.scoped("automigrate call is parameterized; injection cannot break out", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient({ sql })
 
       // Create a victim table to assert that it cannot be dropped via injection

@@ -1,6 +1,7 @@
 import { CrSql } from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
@@ -20,7 +21,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const exported = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* SqlClient.SqlClient
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkA}), 'Alpha', 0)`
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkB}), 'Beta', 1)`
         const crsql = yield* CrSql.fromSqliteClient({ sql })
@@ -32,7 +33,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* SqlClient.SqlClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         yield* crsql.applyChanges(exported)
 
@@ -61,7 +62,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         const pk = "00112233445566778899AABBCCDDEEFF"
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* SqlClient.SqlClient
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk}), 'Gamma', 0)`
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         const site2 = yield* crsql.getSiteIdHex
@@ -73,7 +74,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const tracked = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* SqlClient.SqlClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         yield* crsql.setPeerVersion({ siteId: info2.site2, version: info2.v2, seq: 0 })
         // Inspect stored peers to validate hex site id and version

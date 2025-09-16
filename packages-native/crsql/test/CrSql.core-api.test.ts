@@ -1,5 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
@@ -10,7 +11,7 @@ layer(DbMem)((it) => {
   it.scoped("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient({ sql })
 
       // sha via service
@@ -47,7 +48,7 @@ layer(DbMem)((it) => {
   it.scoped("crsql_changes virtual table accessible", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
       // Just touch the table to ensure it exists and is queryable
       const rows = yield* sql<{ n: number }>`SELECT COUNT(*) AS n FROM crsql_changes`
       assert.ok(rows[0]?.n >= 0)
@@ -56,7 +57,7 @@ layer(DbMem)((it) => {
   it.scoped("as_crr => tracked; as_table => tracking stops", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
 
       // Fresh table name to avoid clashes across tests
       yield* sql`CREATE TABLE IF NOT EXISTS xtodos (
@@ -89,7 +90,7 @@ layer(DbMem)((it) => {
   it.scoped("begin_alter/commit_alter: add column and capture thereafter", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* SqlClient.SqlClient
 
       // Fresh table
       yield* sql`DROP TABLE IF EXISTS utodos`
