@@ -1515,26 +1515,28 @@ const makeCrSql = Effect.gen(function*() {
   return crsql
 })
 
-export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-  function* fromSqliteClient<E = never, R = never>(
-    params:
-      | {
-        sql: SqlClient.SqlClient
-        pathToCrSqliteExtension?: Effect.Effect<string, E, R>
-        loadedExtensionInfo?: never
-      }
-      | {
-        sql: SqlClient.SqlClient
-        pathToCrSqliteExtension?: never
-        /** when you want to take ownership of extension loading, provide this */
-        loadedExtensionInfo: Effect.Effect<CrSqlSchema.ExtInfoLoaded, E, R>
-      }
-  ) {
+type MaybeEffect<A, E = never, R = never> = A | Effect.Effect<A, E, R>
+const DefinitelyEffect = <A, E = never, R = never>(self: MaybeEffect<A, E, R>): Effect.Effect<A, E, R> =>
+  Effect.isEffect(self) ? self : Effect.succeed(self)
+
+type FromSqliteClientParams<E = never, R = never> = MaybeEffect<
+  {
+    sql: MaybeEffect<SqlClient.SqlClient, E, R>
+    pathToCrSqliteExtension?: MaybeEffect<string, E, R>
+    loadedExtensionInfo: MaybeEffect<CrSqlSchema.ExtInfoLoaded, E, R>
+  },
+  E,
+  R
+>
+
+export const layerFromSqliteClient = <E = never, R = never>(_: FromSqliteClientParams<E, R>) => {
+  const layers = Layer.unwrapEffect(Effect.gen(function*() {
+    const params = yield* DefinitelyEffect(_)
     // reuse the same SqlClient layer everywhere
-    const layerSqlClient = Layer.succeed(SqlClient.SqlClient, params.sql)
+    const layerSqlClient = Layer.succeed(SqlClient.SqlClient, yield* DefinitelyEffect(params.sql))
 
     // load the extension via params or default to our standard loader
-    const loadInfo = yield* params.loadedExtensionInfo?.pipe(
+    const loadInfo = yield* DefinitelyEffect(params.loadedExtensionInfo)?.pipe(
       Effect.flatMap(Schema.validate(CrSqlSchema.ExtInfoLoaded)),
       Effect.catchTag("ParseError", (cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
       Effect.withSpan("params.loadedExtensionInfo")
@@ -1542,7 +1544,9 @@ export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqlite
       Effect.provide(layerSqlClient),
       params.pathToCrSqliteExtension ?
         Effect.withConfigProvider(
-          ConfigProvider.fromJson({ [CrSqliteExtension.LibCrSqlPathKey]: yield* params.pathToCrSqliteExtension })
+          ConfigProvider.fromJson({
+            [CrSqliteExtension.LibCrSqlPathKey]: yield* DefinitelyEffect(params.pathToCrSqliteExtension)
+          })
         ) :
         Effect.tap(noop)
     )
@@ -1550,14 +1554,22 @@ export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqlite
     // proves that the extension has loaded
     const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
 
-    const layers = Layer.mergeAll(
+    return Layer.mergeAll(
       layerSqlClient,
       Layer.succeed(
         CrSqliteExtension.ExtInfoLoaded,
         CrSqliteExtension.ExtInfoLoaded.make(CrSqlSchema.ExtInfo.make({ ...loadInfo, ...dbInfo }))
       )
     )
+  }))
+  return CrSql.Default.pipe(Layer.provide(layers))
+}
 
+export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
+  function* fromSqliteClient<E = never, R = never>(
+    params: FromSqliteClientParams<E, R>
+  ) {
+    const layers = layerFromSqliteClient(params)
     return yield* makeCrSql.pipe(Effect.provide(layers))
   }
 )
@@ -1646,6 +1658,7 @@ export class CrSql extends Effect.Service<CrSql>()("CrSql", {
   effect: makeCrSql,
   dependencies: [CrSqliteExtension.ExtInfoLoaded.Default]
 }) {
+  static layerFromSqliteClient = layerFromSqliteClient
   static fromSqliteClient = fromSqliteClient
 }
 
