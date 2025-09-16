@@ -2,6 +2,7 @@ import Stack, { VStack } from "@nkzw/stack"
 import { Stack as ExpoStack } from "expo-router"
 import { fbs } from "fbtee"
 import { View } from "react-native"
+import { Counter, CounterButton } from "src/ui/atomic/Counter"
 import Text from "src/ui/Text.tsx"
 
 export default function Index() {
@@ -27,7 +28,12 @@ export default function Index() {
               for live updates.
             </fbt>
           </Text>
+
+
         </Stack>
+
+        <Counter />
+        <CounterButton />
       </VStack>
     </>
   )
