@@ -1,6 +1,5 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as SqlClient from "@effect/sql/SqlClient"
 import { Effect } from "effect"
 
 export const layerMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -11,13 +10,13 @@ export const ensureCrSqlLoaded = Effect.gen(function*() {
 })
 
 export const createTodosCrr = Effect.gen(function*() {
-  const sql = yield* SqlClient.SqlClient
+  const sql = yield* NodeSqlite.SqliteClient.SqliteClient
   yield* sql`CREATE TABLE IF NOT EXISTS todos (
     id BLOB NOT NULL PRIMARY KEY,
     content TEXT NOT NULL DEFAULT '',
     completed INTEGER NOT NULL DEFAULT 0
   )`
-  const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+  const crsql = yield* CrSql.fromSqliteClient({ sql })
   yield* crsql.asCrr("todos")
 })
 

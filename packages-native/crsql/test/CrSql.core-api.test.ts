@@ -1,6 +1,5 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
@@ -11,8 +10,8 @@ layer(DbMem)((it) => {
   it.scoped("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
-      const sql = yield* SqlClient.SqlClient
+      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const crsql = yield* CrSql.fromSqliteClient({ sql })
 
       // sha via service
       const sha = yield* crsql.getSha
@@ -48,7 +47,7 @@ layer(DbMem)((it) => {
   it.scoped("crsql_changes virtual table accessible", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* SqlClient.SqlClient
+      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
       // Just touch the table to ensure it exists and is queryable
       const rows = yield* sql<{ n: number }>`SELECT COUNT(*) AS n FROM crsql_changes`
       assert.ok(rows[0]?.n >= 0)
@@ -57,7 +56,7 @@ layer(DbMem)((it) => {
   it.scoped("as_crr => tracked; as_table => tracking stops", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* SqlClient.SqlClient
+      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
 
       // Fresh table name to avoid clashes across tests
       yield* sql`CREATE TABLE IF NOT EXISTS xtodos (
@@ -65,14 +64,14 @@ layer(DbMem)((it) => {
         content TEXT NOT NULL DEFAULT '',
         completed INTEGER NOT NULL DEFAULT 0
       )`
-      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql })
       yield* crsql.asCrr("xtodos")
 
       const pk1 = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (unhex(${pk1}), 'A', 0)`
 
       // Verify changes captured
-      const crsql1 = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql1 = yield* CrSql.fromSqliteClient({ sql })
       const v1 = yield* crsql1.getDbVersion
       const all = yield* crsql1.pullChanges("0")
       assert.ok(all.some((c) => c.pk.toUpperCase().endsWith(pk1)))
@@ -90,7 +89,7 @@ layer(DbMem)((it) => {
   it.scoped("begin_alter/commit_alter: add column and capture thereafter", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const sql = yield* SqlClient.SqlClient
+      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
 
       // Fresh table
       yield* sql`DROP TABLE IF EXISTS utodos`
@@ -105,11 +104,11 @@ layer(DbMem)((it) => {
       const pk1 = "AA11223344556677889900AABBCCDDEE"
       yield* sql`INSERT INTO utodos (id, content, completed) VALUES (unhex(${pk1}), 'One', 0)`
 
-      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql })
       const v1 = yield* crsql.getDbVersion
 
       // Alter schema under begin/commit
-      const crsql2 = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql2 = yield* CrSql.fromSqliteClient({ sql })
       yield* crsql2.beginAlter("utodos")
       yield* sql`ALTER TABLE utodos ADD COLUMN note TEXT NOT NULL DEFAULT ''`
       yield* crsql2.commitAlter("utodos")

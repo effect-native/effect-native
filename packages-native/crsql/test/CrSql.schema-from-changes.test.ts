@@ -1,7 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
@@ -22,12 +21,12 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const exported = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
-        const sql = yield* SqlClient.SqlClient
+        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
         const pk1 = "00112233445566778899AABBCCDDEEFF"
         const pk2 = "FFEEDDCCBBAA99887766554433221100"
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk1}), 'Alpha', 0)`
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk2}), 'Beta', 1)`
-        const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        const crsql = yield* CrSql.fromSqliteClient({ sql })
         return yield* crsql.pullChanges("0")
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
@@ -39,7 +38,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // Stage 2: Derive schema from the exported changes
       const schema = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
-        const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const crsql = yield* CrSql.fromSqliteClient({ sql })
         // New API under test: derive a SQLite schema suitable for crsql_automigrate
         return yield* crsql.__experimental__schemaFromChanges(exported)
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
@@ -51,13 +51,13 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // Stage 3: Apply the derived schema to a fresh DB, then apply the changes
       yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
-        const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const crsql = yield* CrSql.fromSqliteClient({ sql })
         yield* Console.debug(schema)
         yield* crsql.automigrate(schema)
         yield* crsql.applyChanges(exported)
 
         // Verify both rows are present and match values
-        const sql = yield* SqlClient.SqlClient
         const rows = yield* sql<{ content: string; completed: number }>`
           SELECT content, completed FROM todos ORDER BY content ASC
         `
