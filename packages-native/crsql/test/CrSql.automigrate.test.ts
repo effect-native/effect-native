@@ -1,8 +1,10 @@
 import { CrSql } from "@effect-native/crsql"
+import * as Reactivity from "@effect/experimental/Reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
+import * as Layer from "effect/Layer"
 import * as os from "node:os"
 import * as path from "node:path"
 import { ensureCrSqlLoaded } from "./_helpers.js"
@@ -72,7 +74,9 @@ layer(DbMem)((it) => {
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))
 
       // Stage 2 on connection B (fresh handle to the same shared-memory DB)
-      const layers = CrSql.layerFromSqliteClient({ sql: NodeSqlite.SqliteClient.make({ filename: uri })})
+      const layers = CrSql.layerFromSqliteClient({ sql: NodeSqlite.SqliteClient.make({ filename: uri }) }).pipe(
+        Layer.provideMerge(Reactivity.layer)
+      )
       const delta = yield* Effect.gen(function*() {
         const sql2 = yield* SqlClient.SqlClient
         const crsql2 = yield* CrSql.fromSqliteClient({ sql: sql2 })
