@@ -57,9 +57,9 @@ const makeCrSql = Effect.gen(function*() {
   yield* Effect.addFinalizer(() => crsql.finalize.pipe(Effect.ignoreLogged))
 
   const getSiteIdHex = sql<{ site_id: CrSqlSchema.SiteIdHex }>`SELECT hex(crsql_site_id()) AS site_id`.pipe(
-    Effect.flatMap((rows) =>
-      rows.length > 0
-        ? Effect.succeed(rows[0].site_id)
+    Effect.flatMap(([info]) =>
+      info
+        ? Effect.succeed(info.site_id)
         : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_site_id() returned no rows" }))
     ),
     Effect.withSpan("CrSql.getSiteIdHex")
@@ -67,9 +67,9 @@ const makeCrSql = Effect.gen(function*() {
 
   const getDbVersion = sql<{ version: CrSqlSchema.VersionString }>`SELECT CAST(crsql_db_version() AS TEXT) AS version`
     .pipe(
-      Effect.flatMap((rows) =>
-        rows.length > 0
-          ? Effect.succeed(rows[0].version)
+      Effect.flatMap(([info]) =>
+        info
+          ? Effect.succeed(info.version)
           : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_db_version() returned no rows" }))
       ),
       Effect.withSpan("CrSql.getDbVersion")
@@ -77,18 +77,18 @@ const makeCrSql = Effect.gen(function*() {
 
   const getNextDbVersion = sql<{ v: CrSqlSchema.VersionString }>`SELECT CAST(crsql_next_db_version() AS TEXT) AS v`
     .pipe(
-      Effect.flatMap((rows) =>
-        rows.length > 0
-          ? Effect.succeed(rows[0].v)
+      Effect.flatMap(([info]) =>
+        info
+          ? Effect.succeed(info.v)
           : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_next_db_version() returned no rows" }))
       ),
       Effect.withSpan("CrSql.getNextDbVersion")
     )
 
   const getRowsImpacted = sql<{ n: number }>`SELECT crsql_rows_impacted() AS n`.pipe(
-    Effect.flatMap((rows) =>
-      rows.length > 0
-        ? Effect.succeed(rows[0].n)
+    Effect.flatMap(([info]) =>
+      info
+        ? Effect.succeed(info.n)
         : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_rows_impacted() returned no rows" }))
     ),
     Effect.withSpan("CrSql.getRowsImpacted")
@@ -173,7 +173,7 @@ const makeCrSql = Effect.gen(function*() {
   })
 
   const getSha = sql<{ sha: string }>`SELECT crsql_sha() as sha`.pipe(
-    Effect.map((rows) => rows[0].sha),
+    Effect.map(([info]) => info?.sha),
     Effect.withSpan("CrSql.getSha")
   )
 
@@ -318,7 +318,7 @@ const makeCrSql = Effect.gen(function*() {
    */
   const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")((key1: string, key2: string) =>
     sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`.pipe(
-      Effect.map((rows) => rows[0].key),
+      Effect.map(([info]) => info?.key),
       Effect.withSpan("CrSql.fractKeyBetween")
     )
   )
