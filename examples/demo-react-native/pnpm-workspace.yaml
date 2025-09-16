@@ -1,5 +1,7 @@
 ignorePatchFailures: false
 
+nodeLinker: hoisted
+
 onlyBuiltDependencies:
   - esbuild
   - unrs-resolver
@@ -8,5 +10,3 @@ patchedDependencies:
   '@effect/sql-sqlite-react-native': patches/@effect__sql-sqlite-react-native.patch
   metro: patches/metro.patch
   react-native-reanimated: patches/react-native-reanimated.patch
-
-nodeLinker: hoisted
