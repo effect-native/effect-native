@@ -1,0 +1,52 @@
+diff --git a/dist/cjs/SqliteClient.js b/dist/cjs/SqliteClient.js
+index 4a94d054894643652aa9a53d9b67dd01ccb2a824..7b8ac1794d9fd752c8a2070069d17549a2284c36 100644
+--- a/dist/cjs/SqliteClient.js
++++ b/dist/cjs/SqliteClient.js
+@@ -71,10 +71,10 @@ const make = options => Effect.gen(function* () {
+             cause,
+             message: "Failed to execute statement (async)"
+           })
+-        }), result => result.rows?._array ?? []);
++        }), result => result.rows ?? []);
+       }
+       return Effect.try({
+-        try: () => db.execute(sql, params).rows?._array ?? [],
++        try: () => db.executeSync(sql, params).rows ?? [],
+         catch: cause => new _SqlError.SqlError({
+           cause,
+           message: "Failed to execute statement"
+diff --git a/dist/esm/SqliteClient.js b/dist/esm/SqliteClient.js
+index 8b50c5d2ee35bdba088b2e62117e8d6a3f94e474..8224d89e0897e7b16d4728b8752aa64479f69b4f 100644
+--- a/dist/esm/SqliteClient.js
++++ b/dist/esm/SqliteClient.js
+@@ -62,10 +62,10 @@ export const make = options => Effect.gen(function* () {
+             cause,
+             message: "Failed to execute statement (async)"
+           })
+-        }), result => result.rows?._array ?? []);
++        }), result => result.rows ?? []);
+       }
+       return Effect.try({
+-        try: () => db.execute(sql, params).rows?._array ?? [],
++        try: () => db.executeSync(sql, params).rows ?? [],
+         catch: cause => new SqlError({
+           cause,
+           message: "Failed to execute statement"
+diff --git a/src/SqliteClient.ts b/src/SqliteClient.ts
+index 5bedcaefe24ef8177784b683c628a72b3e9ff5ac..7796da24ca3f35e3e3bba72f9ff33776a1796098 100644
+--- a/src/SqliteClient.ts
++++ b/src/SqliteClient.ts
+@@ -117,11 +117,11 @@ export const make = (
+                 try: () => db.executeAsync(sql, params as Array<any>),
+                 catch: (cause) => new SqlError({ cause, message: "Failed to execute statement (async)" })
+               }),
+-              (result) => result.rows?._array ?? []
++              (result) => result.rows ?? []
+             )
+           }
+           return Effect.try({
+-            try: () => db.execute(sql, params as Array<any>).rows?._array ?? [],
++            try: () => db.executeSync(sql, params as Array<any>).rows ?? [],
+             catch: (cause) => new SqlError({ cause, message: "Failed to execute statement" })
+           })
+         })
