@@ -13,7 +13,7 @@ layer(DbMem)((it) => {
   it.scoped("automigrate: initial apply creates CRR and tracks changes", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const sql = yield* SqlClient.SqlClient
 
       yield* crsql.automigrate`
@@ -41,7 +41,7 @@ layer(DbMem)((it) => {
       // Stage 1 on connection A
       const stage1 = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
-        const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         const sql = yield* SqlClient.SqlClient
 
         // Initial schema (no note column)
@@ -73,7 +73,7 @@ layer(DbMem)((it) => {
 
       // Stage 2 on connection B (fresh handle to the same shared-memory DB)
       const delta = yield* Effect.gen(function*() {
-        const crsql2 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+        const crsql2 = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
         const sql2 = yield* SqlClient.SqlClient
         const pk2 = "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
         yield* sql2`INSERT INTO items2 (id, name, qty, note) VALUES (unhex(${pk2}), 'Beta', 2, 'n')`
@@ -92,7 +92,7 @@ layer(DbMem)((it) => {
   it.scoped("automigrate call is parameterized; injection cannot break out", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const sql = yield* SqlClient.SqlClient
 
       // Create a victim table to assert that it cannot be dropped via injection

@@ -3,7 +3,7 @@ import * as NodeSqlite from "@effect/sql-sqlite-node"
 import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers"
+import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -11,7 +11,7 @@ layer(DbMem)((it) => {
   it.scoped("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const sql = yield* SqlClient.SqlClient
 
       // sha via service
@@ -65,14 +65,14 @@ layer(DbMem)((it) => {
         content TEXT NOT NULL DEFAULT '',
         completed INTEGER NOT NULL DEFAULT 0
       )`
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       yield* crsql.asCrr("xtodos")
 
       const pk1 = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO xtodos (id, content, completed) VALUES (unhex(${pk1}), 'A', 0)`
 
       // Verify changes captured
-      const crsql1 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql1 = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const v1 = yield* crsql1.getDbVersion
       const all = yield* crsql1.pullChanges("0")
       assert.ok(all.some((c) => c.pk.toUpperCase().endsWith(pk1)))
@@ -105,11 +105,11 @@ layer(DbMem)((it) => {
       const pk1 = "AA11223344556677889900AABBCCDDEE"
       yield* sql`INSERT INTO utodos (id, content, completed) VALUES (unhex(${pk1}), 'One', 0)`
 
-      const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       const v1 = yield* crsql.getDbVersion
 
       // Alter schema under begin/commit
-      const crsql2 = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+      const crsql2 = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
       yield* crsql2.beginAlter("utodos")
       yield* sql`ALTER TABLE utodos ADD COLUMN note TEXT NOT NULL DEFAULT ''`
       yield* crsql2.commitAlter("utodos")

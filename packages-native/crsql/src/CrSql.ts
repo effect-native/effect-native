@@ -1516,7 +1516,7 @@ const makeCrSql = Effect.gen(function*() {
 })
 
 export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-  function* fromSqliteClient<E, R>(
+  function* fromSqliteClient<E = never, R = never>(
     params:
       | {
         sql: SqlClient.SqlClient
@@ -1629,7 +1629,7 @@ export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqlite
  *
  * const program = Effect.gen(function* () {
  *   // Create CrSql service from existing client
- *   const crsql = yield* CrSql.CrSql.fromSqliteClient({
+ *   const crsql = yield* CrSql.fromSqliteClient({
  *     pathToCrSqliteExtension: yield* LibCrSql.getCrSqliteExtensionPath(),
  *     sql: yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" }),
  *   })

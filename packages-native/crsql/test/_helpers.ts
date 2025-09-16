@@ -7,7 +7,7 @@ export const layerMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 export const ensureCrSqlLoaded = Effect.gen(function*() {
   const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-  return yield* CrSql.CrSql.fromSqliteClient({ sql })
+  return yield* CrSql.fromSqliteClient({ sql })
 })
 
 export const createTodosCrr = Effect.gen(function*() {
@@ -17,7 +17,7 @@ export const createTodosCrr = Effect.gen(function*() {
     content TEXT NOT NULL DEFAULT '',
     completed INTEGER NOT NULL DEFAULT 0
   )`
-  const crsql = yield* CrSql.CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
+  const crsql = yield* CrSql.fromSqliteClient({ sql: yield* NodeSqlite.SqliteClient.SqliteClient })
   yield* crsql.asCrr("todos")
 })
 
