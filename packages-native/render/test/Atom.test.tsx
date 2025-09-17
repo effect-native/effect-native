@@ -373,6 +373,30 @@ describe("atom-react", () => {
     })
   })
 
+  describe("effect-render atoms", () => {
+    test("Atom.make effect can produce a ReactNode", async () => {
+      const nodeAtom = Atom.make(
+        Effect.sync(() => <div data-testid="effect-node">Hello from Effect</div>)
+      )
+
+      function NodeConsumer() {
+        const result = AtomHooks.useAtomSuspense(nodeAtom)
+        return result.value
+      }
+
+      render(
+        <Suspense fallback={<div data-testid="fallback">Loading...</div>}>
+          <NodeConsumer />
+        </Suspense>
+      )
+
+      expect(await screen.findByTestId("effect-node")).toHaveTextContent(
+        "Hello from Effect"
+      )
+      expect(screen.queryByTestId("fallback")).not.toBeInTheDocument()
+    })
+  })
+
   describe("SSR", () => {
     it("should run atom's during SSR by default", () => {
       const getCount = vi.fn(() => 0)
