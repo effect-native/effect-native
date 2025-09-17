@@ -41,7 +41,7 @@ import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
 import { MaybeEffect } from "./MaybeEffect.js"
-import type * as SqliteClient from "./SqliteClient.js"
+import type { AddR, ExcludeR } from "./types.js"
 
 // TODO(effect-native): Reactivity integration
 // - Define and export key helpers (dbVersion, changes, table, row, peer)
@@ -1576,15 +1576,11 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
   }
 )
 
-type ExcludeR<Self extends Effect.Effect<any, any, any>, UR> = Self extends Effect.Effect<infer A, infer E, infer R>
-  ? Effect.Effect<A, E, Exclude<R, UR>>
-  : never
-
 type _fromSqliteClient = {
   <E = never, R = never>(
     _: MaybeEffect<Partial<FromSqliteClientParams<E, R>>, E, R>
   ): ExcludeR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
-  <E = never, R = never>(_?: never): ReturnType<typeof _fromSqliteClient<E, R>>
+  <E = never, R = never>(_?: never): AddR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
 }
 
 export const fromSqliteClient = _fromSqliteClient as _fromSqliteClient

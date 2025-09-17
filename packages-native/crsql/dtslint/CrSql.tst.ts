@@ -33,7 +33,8 @@ describe("CrSql.fromSqliteClient", () => {
     it("requires SqlClient", () => {
       const program = fromSqliteClient()
       type EffectTypes = InferEffect<typeof program>
-      expect<EffectTypes["R"]>().type.toBeAssignableWith<SqlClient.SqlClient>()
+      type R = EffectTypes["R"]
+      expect<R>().type.toBeAssignableWith<SqlClient.SqlClient>()
     })
   })
 })
