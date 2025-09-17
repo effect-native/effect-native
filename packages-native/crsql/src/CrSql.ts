@@ -1516,17 +1516,13 @@ const makeCrSql = Effect.gen(function*() {
   return crsql
 })
 
-type FromSqliteClientParams<E = never, R = never> = MaybeEffect<
-  {
-    sql: MaybeEffect<SqlClient.SqlClient, E, R>
-    pathToCrSqliteExtension?: MaybeEffect<string, E, R>
-    loadedExtensionInfo?: MaybeEffect<CrSqlSchema.ExtInfoLoaded, E, R>
-  },
-  E,
-  R
->
+type FromSqliteClientParams<E = never, R = never> = {
+  sql: MaybeEffect<SqlClient.SqlClient, E, R>
+  pathToCrSqliteExtension?: MaybeEffect<string, E, R>
+  loadedExtensionInfo?: MaybeEffect<CrSqlSchema.ExtInfoLoaded, E, R>
+}
 
-export const layerFromSqliteClient = <E = never, R = never>(_: FromSqliteClientParams<E, R>) => {
+export const layerFromSqliteClient = <E = never, R = never>(_: MaybeEffect<FromSqliteClientParams<E, R>, E, R>) => {
   const layers = Layer.unwrapEffect(Effect.gen(function*() {
     const params = yield* MaybeEffect(_)
     // reuse the same SqlClient layer everywhere
@@ -1562,14 +1558,36 @@ export const layerFromSqliteClient = <E = never, R = never>(_: FromSqliteClientP
   return CrSql.Default.pipe(Layer.provideMerge(layers))
 }
 
-export const fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
-  function* fromSqliteClient<E = never, R = never>(
-    params: FromSqliteClientParams<E, R>
+const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient")(
+  function*<E = never, R = never>(
+    _: MaybeEffect<Partial<FromSqliteClientParams<E, R>>, E, R> = {}
   ) {
-    const layers = layerFromSqliteClient(params)
+    const params = yield* MaybeEffect(_)
+    let sql = yield* MaybeEffect(params.sql) ?? Effect.void
+    if (sql == null) sql = yield* SqlClient.SqlClient
+    if (sql == null) {
+      return yield* new CrSqlErrors.CrSqliteExtensionMissing({
+        cause: "[fromSqliteClient] No SqlClient instance provided"
+      })
+    }
+
+    const layers = layerFromSqliteClient({ sql, ...params })
     return yield* makeCrSql.pipe(Effect.provide(layers))
   }
 )
+
+type ExcludeR<Self extends Effect.Effect<any, any, any>, UR> = Self extends Effect.Effect<infer A, infer E, infer R>
+  ? Effect.Effect<A, E, Exclude<R, UR>>
+  : never
+
+type _fromSqliteClient = {
+  <E = never, R = never>(
+    _: MaybeEffect<Partial<FromSqliteClientParams<E, R>>, E, R>
+  ): ExcludeR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
+  <E = never, R = never>(_?: never): ReturnType<typeof _fromSqliteClient<E, R>>
+}
+
+export const fromSqliteClient = _fromSqliteClient as _fromSqliteClient
 
 /**
  * CR-SQLite service accessor class for conflict-free replicated database operations.
