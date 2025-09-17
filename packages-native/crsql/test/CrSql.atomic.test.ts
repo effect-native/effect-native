@@ -1,9 +1,9 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as SqlClient from "@effect/sql/SqlClient"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
-import * as SqlClient from "@effect/sql/SqlClient"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 

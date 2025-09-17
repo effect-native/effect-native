@@ -100,6 +100,9 @@ export * as CrSqlSchema from "./CrSqlSchema.js"
  */
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 
+
+export * as MaybeEffect from "./MaybeEffect.js"
+
 /**
  * CR-SQLite compatible Sqlite client tag and type.
  *
@@ -115,3 +118,6 @@ export * as CrSqliteExtension from "./CrSqliteExtension.js"
  * @since 0.1.0
  */
 export * as SqliteClient from "./SqliteClient.js"
+
+
+export * as types from "./types.js"
