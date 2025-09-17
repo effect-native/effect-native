@@ -4,7 +4,7 @@ import { pipe } from "effect/Function"
 import * as Layer from "effect/Layer"
 import * as Runtime from "effect/Runtime"
 import * as Scope from "effect/Scope"
-import type { ReactNode } from "react"
+import type * as React from "react"
 import type { RenderDriver } from "./Driver.js"
 
 export interface Render<Driver extends RenderDriver.Any = RenderDriver.Any> {
@@ -18,7 +18,7 @@ export interface Render<Driver extends RenderDriver.Any = RenderDriver.Any> {
   >
   readonly render: (
     root: RenderDriver.Root<Driver>,
-    element: ReactNode
+    element: React.ReactNode
   ) => Effect.Effect<
     void,
     RenderDriver.Error<Driver>,
@@ -29,9 +29,7 @@ export interface Render<Driver extends RenderDriver.Any = RenderDriver.Any> {
   ) => (event: Event) => void
 }
 
-export const RenderTag: Context.Tag<Render, Render> = Context.GenericTag<Render>(
-  "@effect-native/render/Render"
-)
+export class RenderTag extends Context.Tag("@effect-native/render/Render")<RenderTag, Render>() {}
 
 export const layer = <Driver extends RenderDriver.Any>(
   driver: Driver

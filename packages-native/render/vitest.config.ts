@@ -5,6 +5,7 @@ const config: ViteUserConfig = {
   test: {
     environment: "jsdom",
     include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
+    setupFiles: ["./vitest-setup.ts"],
     watch: false
   }
 }

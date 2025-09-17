@@ -1,18 +1,29 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["test"],
+  "include": [
+    "test"
+  ],
   "references": [
-    { "path": "tsconfig.src.json" }
+    {
+      "path": "tsconfig.src.json"
+    }
   ],
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "test",
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "vitest"],
+    "types": [
+      "vitest",
+      "@testing-library/jest-dom"
+    ],
     "paths": {
-      "@effect-native/render": ["./src/index.ts"],
-      "@effect-native/render/*": ["./src/*.ts"]
+      "@effect-native/render": [
+        "./src/index.ts"
+      ],
+      "@effect-native/render/*": [
+        "./src/*.ts"
+      ]
     }
   }
 }

@@ -3,16 +3,16 @@ import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Ref from "effect/Ref"
 import * as React from "react"
-import { RenderTag, layer } from "@effect-native/render"
-import { driver } from "@effect-native/render/dom"
+import * as Render from "@effect-native/render/Render"
+import * as RenderDOM from "@effect-native/render/dom"
 
 describe("DOM driver", () => {
-  const domLayer = layer(driver())
+  const domLayer = Render.layer(RenderDOM.driver())
 
   it.effect("renders into the provided container", () =>
     Effect.scoped(
-      Effect.gen(function*() {
-        const service = yield* RenderTag
+      Effect.gen(function* () {
+        const service = yield* Render.RenderTag
         const container = document.createElement("div")
         const root = yield* service.withRoot({ container })
 
@@ -25,12 +25,12 @@ describe("DOM driver", () => {
     ).pipe(Effect.provide(domLayer)))
 
   it.effect("unmounts the React tree when the scope ends", () =>
-    Effect.gen(function*() {
+    Effect.gen(function* () {
       const container = document.createElement("div")
 
       yield* Effect.scoped(
-        Effect.gen(function*() {
-          const service = yield* RenderTag
+        Effect.gen(function* () {
+          const service = yield* Render.RenderTag
           const root = yield* service.withRoot({ container })
           yield* service.render(root, <span>value</span>)
           expect(container.textContent).toBe("value")
@@ -42,15 +42,15 @@ describe("DOM driver", () => {
 
   it.effect("bridges DOM events through Effect handlers", () =>
     Effect.scoped(
-      Effect.gen(function*() {
-        const service = yield* RenderTag
+      Effect.gen(function* () {
+        const service = yield* Render.RenderTag
         const container = document.createElement("div")
         const root = yield* service.withRoot({ container })
         const count = yield* Ref.make(0)
         const done = yield* Deferred.make<void>()
 
         const onClick = service.event(() =>
-          Effect.gen(function*() {
+          Effect.gen(function* () {
             yield* Ref.update(count, (n) => n + 1)
             yield* Deferred.succeed(done, undefined)
           })
