@@ -119,7 +119,7 @@ describe("atom-react", () => {
           if (error instanceof Error && error.message === "test") {
             return
           }
-          // eslint-disable-next-line no-console
+
           console.error(error)
         }) // todo: fix idk why the types are weird
       } as unknown as undefined
@@ -244,7 +244,7 @@ describe("atom-react", () => {
     let start = 0
     let stop = 0
     const atom = Atom.make(
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         start = start + 1
         yield* latch.await
         stop = stop + 1
