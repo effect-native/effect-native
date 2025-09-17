@@ -40,7 +40,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       const schema = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         const sql = yield* SqlClient.SqlClient
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         // New API under test: derive a SQLite schema suitable for crsql_automigrate
         return yield* crsql.__experimental__schemaFromChanges(exported)
       }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
@@ -53,7 +53,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         const sql = yield* SqlClient.SqlClient
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         yield* Console.debug(schema)
         yield* crsql.automigrate(schema)
         yield* crsql.applyChanges(exported)

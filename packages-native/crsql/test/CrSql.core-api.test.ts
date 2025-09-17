@@ -12,7 +12,7 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
-      const crsql = yield* CrSql.fromSqliteClient({ sql })
+      const crsql = yield* CrSql.fromSqliteClient()
 
       // sha via service
       const sha = yield* crsql.getSha

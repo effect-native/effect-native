@@ -50,7 +50,7 @@ layer(DbMem)((it) => {
       // Ensure CR-SQLite is loaded via the product code (no duplication).
       // Calling the service loader initializes the extension on this connection.
       const sql = yield* SqlClient.SqlClient
-      yield* CrSql.fromSqliteClient({ sql })
+      yield* CrSql.fromSqliteClient()
       yield* createTodosCrr
       const pk = "00112233445566778899AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
@@ -62,7 +62,7 @@ layer(DbMem)((it) => {
   it.scoped("pullChanges returns inserted columns (content, completed)", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
-      yield* CrSql.fromSqliteClient({ sql })
+      yield* CrSql.fromSqliteClient()
       yield* createTodosCrr
       const pk = "11223344556677889900AABBCCDDEEFF"
       yield* sql`INSERT INTO todos (id, content, completed)
@@ -83,7 +83,7 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       // Ensure extension is loaded via product API
       const sql = yield* SqlClient.SqlClient
-      const crsql = yield* CrSql.fromSqliteClient({ sql })
+      const crsql = yield* CrSql.fromSqliteClient()
       yield* createTodosCrr
       const pk1 = "AA11223344556677889900AABBCCDDEE"
       yield* sql`INSERT INTO todos (id, content, completed)
@@ -104,7 +104,7 @@ layer(DbMem)((it) => {
   it.scoped("finalize does not fail", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
-      const crsql = yield* CrSql.fromSqliteClient({ sql })
+      const crsql = yield* CrSql.fromSqliteClient()
       // Should be safe and idempotent
       yield* crsql.finalize
     }))

@@ -16,7 +16,7 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
-      const crsql = yield* CrSql.fromSqliteClient({ sql })
+      const crsql = yield* CrSql.fromSqliteClient()
 
       yield* crsql.automigrate`
         CREATE TABLE IF NOT EXISTS items (
@@ -44,7 +44,7 @@ layer(DbMem)((it) => {
       const stage1 = yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         const sql = yield* SqlClient.SqlClient
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
 
         // Initial schema (no note column)
         yield* crsql.automigrate`
@@ -98,7 +98,7 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
-      const crsql = yield* CrSql.fromSqliteClient({ sql })
+      const crsql = yield* CrSql.fromSqliteClient()
 
       // Create a victim table to assert that it cannot be dropped via injection
       yield* sql`CREATE TABLE victim (name TEXT NOT NULL)`

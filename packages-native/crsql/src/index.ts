@@ -101,6 +101,14 @@ export * as CrSqlSchema from "./CrSqlSchema.js"
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 
 
+/**
+ * Helpers for accepting raw values or Effects interchangeably.
+ *
+ * Provides utilities that lift plain values into Effects only when needed,
+ * simplifying APIs that accept either eager values or lazy Effect programs.
+ *
+ * @since 0.1.0
+ */
 export * as MaybeEffect from "./MaybeEffect.js"
 
 /**
@@ -120,4 +128,12 @@ export * as MaybeEffect from "./MaybeEffect.js"
 export * as SqliteClient from "./SqliteClient.js"
 
 
+/**
+ * Publicly re-exported type utilities for environment manipulation.
+ *
+ * These helpers make it easier to add or exclude services from an
+ * `Effect.Effect` while keeping success and error channels intact.
+ *
+ * @since 0.1.0
+ */
 export * as types from "./types.js"

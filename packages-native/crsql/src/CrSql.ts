@@ -1522,6 +1522,15 @@ type FromSqliteClientParams<E = never, R = never> = {
   loadedExtensionInfo?: MaybeEffect<CrSqlSchema.ExtInfoLoaded, E, R>
 }
 
+/**
+ * Builds a `Layer` that wires CR-SQLite services from an existing `SqlClient`.
+ *
+ * The parameters can be provided eagerly or as Effects via `MaybeEffect`,
+ * allowing callers to defer expensive initialization until layer evaluation.
+ *
+ * @since 0.1.0
+ * @category Layer
+ */
 export const layerFromSqliteClient = <E = never, R = never>(_: MaybeEffect<FromSqliteClientParams<E, R>, E, R>) => {
   const layers = Layer.unwrapEffect(Effect.gen(function*() {
     const params = yield* MaybeEffect(_)
@@ -1583,6 +1592,17 @@ type _fromSqliteClient = {
   <E = never, R = never>(_?: never): AddR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
 }
 
+/**
+ * Creates a `CrSql` service from an existing `SqlClient` setup.
+ *
+ * Accepts optional parameters (each value or Effect via `MaybeEffect`) for
+ * providing the CR-SQLite extension path, precomputed extension metadata, or an
+ * alternative `SqlClient`. Missing dependencies are resolved from the ambient
+ * environment when available.
+ *
+ * @since 0.1.0
+ * @category Construction
+ */
 export const fromSqliteClient = _fromSqliteClient as _fromSqliteClient
 
 /**

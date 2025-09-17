@@ -34,7 +34,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         yield* crsql.applyChanges(exported)
 
         const rowsA = yield* sql<{ content: string; completed: number }>`
@@ -64,7 +64,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk}), 'Gamma', 0)`
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         const site2 = yield* crsql.getSiteIdHex
         const v2 = yield* crsql.getDbVersion
         return { site2, v2 }
@@ -75,7 +75,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* ensureCrSqlLoaded
         yield* createTodosCrr
         const sql = yield* SqlClient.SqlClient
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         yield* crsql.setPeerVersion({ siteId: info2.site2, version: info2.v2, seq: 0 })
         // Inspect stored peers to validate hex site id and version
         const rows = yield* sql<{ sid: string; v: string; seq: number }>`
