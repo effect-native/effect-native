@@ -44,9 +44,13 @@
     "@effect/workflow": "latest",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.2.0",
-    "effect": "latest"
+    "effect": "latest",
+    "react": "^19.1.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.13"
   }
 }

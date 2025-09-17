@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "jsx": "react",
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
