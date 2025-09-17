@@ -4,11 +4,11 @@ import { HydrationBoundary } from "@effect-atom/atom-react/ReactHydration"
 import * as Atom from "@effect-atom/atom/Atom"
 import * as Registry from "@effect-atom/atom/Registry"
 import { act, render, screen, waitFor } from "@testing-library/react"
-import { Effect, Schema } from "effect"
+import { Cause, Effect, Schema, Stream } from "effect"
 import { Suspense } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
-import { beforeEach, describe, expect, it, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest"
 
 describe("atom-react", () => {
   let registry: Registry.Registry
@@ -23,12 +23,12 @@ describe("atom-react", () => {
 
       function TestComponent() {
         const value = AtomHooks.useAtomValue(atom)
-        return <div data-testid="value">{value}</div>
+        return <div data-testid="simple-value">{value}</div>
       }
 
-      render(<TestComponent />)
+      const { getByTestId } = render(<TestComponent />)
 
-      expect(screen.getByTestId("value")).toHaveTextContent("42")
+      expect(getByTestId("simple-value")).toHaveTextContent("42")
     })
 
     test("should read value with transform function", () => {
@@ -36,12 +36,12 @@ describe("atom-react", () => {
 
       function TestComponent() {
         const value = AtomHooks.useAtomValue(atom, (x) => x * 2)
-        return <div data-testid="value">{value}</div>
+        return <div data-testid="transformed-value">{value}</div>
       }
 
-      render(<TestComponent />)
+      const { getByTestId } = render(<TestComponent />)
 
-      expect(screen.getByTestId("value")).toHaveTextContent("84")
+      expect(getByTestId("transformed-value")).toHaveTextContent("84")
     })
 
     test("should update when Atom value changes", async () => {
@@ -49,23 +49,23 @@ describe("atom-react", () => {
 
       function TestComponent() {
         const value = AtomHooks.useAtomValue(atom)
-        return <div data-testid="value">{value}</div>
+        return <div data-testid="updating-value">{value}</div>
       }
 
-      render(
-        <RegistryContext value={registry}>
+      const { getByTestId } = render(
+        <RegistryContext.Provider value={registry}>
           <TestComponent />
-        </RegistryContext>
+        </RegistryContext.Provider>
       )
 
-      expect(screen.getByTestId("value")).toHaveTextContent("initial")
+      expect(getByTestId("updating-value")).toHaveTextContent("initial")
 
       act(() => {
         registry.set(atom, "updated")
       })
 
       await waitFor(() => {
-        expect(screen.getByTestId("value")).toHaveTextContent("updated")
+        expect(getByTestId("updating-value")).toHaveTextContent("updated")
       })
     })
 
@@ -75,12 +75,12 @@ describe("atom-react", () => {
 
       function TestComponent() {
         const value = AtomHooks.useAtomValue(computedAtom)
-        return <div data-testid="value">{value}</div>
+        return <div data-testid="computed-value">{value}</div>
       }
 
-      render(<TestComponent />)
+      const { getByTestId } = render(<TestComponent />)
 
-      expect(screen.getByTestId("value")).toHaveTextContent("20")
+      expect(getByTestId("computed-value")).toHaveTextContent("20")
     })
 
     test("suspense success", () => {
@@ -194,7 +194,7 @@ describe("atom-react", () => {
 
     function Basic() {
       const value = AtomHooks.useAtomValue(atomBasic)
-      return <div data-testid="value">{value}</div>
+      return <div data-testid="hydration-basic-value">{value}</div>
     }
 
     function Result1() {
@@ -224,7 +224,7 @@ describe("atom-react", () => {
       })
     }
 
-    render(
+    const { getByTestId } = render(
       <HydrationBoundary state={dehydratedState}>
         <Basic />
         <Result1 />
@@ -233,10 +233,10 @@ describe("atom-react", () => {
       </HydrationBoundary>
     )
 
-    expect(screen.getByTestId("value")).toHaveTextContent("1")
-    expect(screen.getByTestId("value-1")).toHaveTextContent("123")
-    expect(screen.getByTestId("error-2")).toBeInTheDocument()
-    expect(screen.getByTestId("loading-3")).toBeInTheDocument()
+    expect(getByTestId("hydration-basic-value")).toHaveTextContent("1")
+    expect(getByTestId("value-1")).toHaveTextContent("123")
+    expect(getByTestId("error-2")).toBeInTheDocument()
+    expect(getByTestId("loading-3")).toBeInTheDocument()
   })
 
   test("hydration streaming", async () => {
@@ -270,10 +270,10 @@ describe("atom-react", () => {
 
     function TestComponent() {
       const value = AtomHooks.useAtomValue(atom)
-      return <div data-testid="value">{value._tag}</div>
+      return <div data-testid="hydration-stream-value">{value._tag}</div>
     }
 
-    render(
+    const { getByTestId } = render(
       // provide a fresh registry each time to simulate hydration
       <RegistryContext.Provider value={Registry.make()}>
         <HydrationBoundary state={dehydratedState}>
@@ -282,7 +282,7 @@ describe("atom-react", () => {
       </RegistryContext.Provider>
     )
 
-    expect(screen.getByTestId("value")).toHaveTextContent("Initial")
+    expect(getByTestId("hydration-stream-value")).toHaveTextContent("Initial")
 
     act(() => {
       Effect.runSync(latch.open)
@@ -295,9 +295,82 @@ describe("atom-react", () => {
       expect(test.value).toBe(1)
     }
 
-    expect(screen.getByTestId("value")).toHaveTextContent("Success")
+    expect(getByTestId("hydration-stream-value")).toHaveTextContent("Success")
     expect(start).toBe(1)
     expect(stop).toBe(1)
+  })
+
+  describe("stream atoms", () => {
+    test("Atom.make(Stream.make(1)) yields Success immediately after mount", () => {
+      const streamAtom = Atom.make(Stream.make(1))
+
+      registry.mount(streamAtom)
+
+      const state = registry.get(streamAtom)
+
+      expect(state._tag).toBe("Success")
+      if (state._tag === "Success") {
+        expect(state.value).toBe(1)
+        expect(state.waiting).toBe(false)
+      }
+    })
+
+    test("Atom.make(Stream.make(1, 2)) keeps the most recent element", () => {
+      const streamAtom = Atom.make(Stream.make(1, 2))
+
+      registry.mount(streamAtom)
+
+      const state = registry.get(streamAtom)
+
+      expect(state._tag).toBe("Success")
+      if (state._tag === "Success") {
+        expect(state.value).toBe(2)
+        expect(state.waiting).toBe(false)
+      }
+    })
+
+    test("Atom.pull(Stream.make(1, 2)) pulls the first chunk on mount", () => {
+      const pullAtom = Atom.pull(Stream.make(1, 2))
+
+      registry.mount(pullAtom)
+
+      const initial = registry.get(pullAtom)
+      expect(initial._tag).toBe("Success")
+      if (initial._tag === "Success") {
+        expect(initial.value.items).toEqual([1, 2])
+        expect(initial.value.done).toBe(false)
+        expect(initial.waiting).toBe(false)
+      }
+
+      registry.set(pullAtom, undefined as void)
+
+      const second = registry.get(pullAtom)
+
+      expect(second._tag).toBe("Success")
+      if (second._tag === "Success") {
+        expect(second.value.items).toEqual([1, 2])
+        expect(second.value.done).toBe(true)
+      }
+    })
+
+    test("Atom.pull keeps returning the final chunk when stream is exhausted", () => {
+      const pullAtom = Atom.pull(Stream.make(1))
+
+      registry.mount(pullAtom)
+
+      expect(registry.get(pullAtom)._tag).toBe("Success")
+
+      registry.set(pullAtom, undefined as void)
+
+      registry.set(pullAtom, undefined as void)
+
+      const exhausted = registry.get(pullAtom)
+      expect(exhausted._tag).toBe("Success")
+      if (exhausted._tag === "Success") {
+        expect(exhausted.value.items).toEqual([1])
+        expect(exhausted.value.done).toBe(true)
+      }
+    })
   })
 
   describe("SSR", () => {
