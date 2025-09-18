@@ -3,16 +3,18 @@ import * as AtomHooks from "@effect-atom/atom-react/Hooks"
 import { HydrationBoundary } from "@effect-atom/atom-react/ReactHydration"
 import * as Atom from "@effect-atom/atom/Atom"
 import * as Registry from "@effect-atom/atom/Registry"
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "@effect/vitest"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Cause, Effect, Schema, Stream } from "effect"
 import * as Console from "effect/Console"
+import * as Duration from "effect/Duration"
 import * as Layer from "effect/Layer"
 import * as Scope from "effect/Scope"
+import * as TestClock from "effect/TestClock"
 import * as React from "react"
 import { type Dispatch, type ReactNode, type SetStateAction, Suspense, useEffect, useState } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
-import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest"
 
 describe("atom-react", () => {
   let registry: Registry.Registry
@@ -426,35 +428,13 @@ describe("atom-react", () => {
       expect(screen.queryByTestId("fallback")).not.toBeInTheDocument()
     })
 
-    test("Atom.fn renders sequential ReactNodes", async () => {
-      const latch = Effect.runSync(Effect.makeLatch())
-
+    describe("atomic UI", () => {
       class UI extends Effect.Service<UI>()("UI", {
         accessors: true,
         succeed: {
           render: Effect.fn("UI.render")((node: ReactNode) => Console.debug("render not implemented", node))
         }
       }) {}
-
-      const program = Effect.gen(function*() {
-        yield* UI.render(<div data-testid="initial">Initial render</div>)
-        yield* latch.await
-        yield* UI.render(<div data-testid="latest">Latest render</div>)
-      })
-
-      const MyAtomicComponent = Atom.fn(
-        (UILive: UI) => program.pipe(Effect.provide(Layer.succeed(UI, UILive)))
-      )
-
-      render(<AtomicView component={MyAtomicComponent} />)
-
-      expect(await screen.findByTestId("initial")).toHaveTextContent("Initial render")
-      expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
-
-      act(() => Effect.runSync(latch.open))
-
-      expect(await screen.findByTestId("latest")).toHaveTextContent("Latest render")
-      expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
 
       type AtomicComponent = Atom.AtomResultFn<UI, void, never>
 
@@ -469,7 +449,7 @@ describe("atom-react", () => {
         } as const
       }
 
-      function AtomicView(props: { component: AtomicComponent }) {
+      function AtomicComponentView(props: { component: AtomicComponent }) {
         // Mount the atom to keep it active for the effect
         AtomHooks.useAtomValue(props.component)
         const startRendering = AtomHooks.useAtomSet(props.component)
@@ -481,6 +461,36 @@ describe("atom-react", () => {
 
         return atomic.ui
       }
+
+      function AtomicUI(props: { effect: Effect.Effect<void, never, UI> }) {
+        const MyAtomicComponent = Atom.fn(
+          (UILive: UI) => props.effect.pipe(Effect.provide(Layer.succeed(UI, UILive)))
+        )
+        return <AtomicComponentView component={MyAtomicComponent} />
+      }
+
+      it.scoped(
+        "Atom.fn renders sequential ReactNodes",
+        Effect.fnUntraced(function*({ expect }) {
+          const latch = yield* Effect.makeLatch()
+
+          const program = Effect.gen(function*() {
+            yield* UI.render(<div data-testid="initial">Initial render</div>)
+            yield* latch.await
+            yield* UI.render(<div data-testid="latest">Latest render</div>)
+          })
+
+          render(<AtomicUI effect={program} />)
+
+          expect(yield* Effect.promise(() => screen.findByTestId("initial"))).toHaveTextContent("Initial render")
+          expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
+
+          act(() => Effect.runSync(latch.open))
+
+          expect(yield* Effect.promise(() => screen.findByTestId("latest"))).toHaveTextContent("Latest render")
+          expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
+        })
+      )
     })
   })
 
