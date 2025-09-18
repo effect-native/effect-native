@@ -446,6 +446,16 @@ describe("atom-react", () => {
         (UILive: UI) => program.pipe(Effect.provide(Layer.succeed(UI, UILive)))
       )
 
+      render(<AtomicView component={MyAtomicComponent} />)
+
+      expect(await screen.findByTestId("initial")).toHaveTextContent("Initial render")
+      expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
+
+      act(() => Effect.runSync(latch.open))
+
+      expect(await screen.findByTestId("latest")).toHaveTextContent("Latest render")
+      expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
+
       type AtomicComponent = Atom.AtomResultFn<UI, void, never>
 
       function useAtomicUI() {
@@ -471,22 +481,6 @@ describe("atom-react", () => {
 
         return atomic.ui
       }
-
-      render(<AtomicView component={MyAtomicComponent} />)
-
-      expect(await screen.findByTestId("initial")).toHaveTextContent(
-        "Initial render"
-      )
-      expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
-
-      act(() => {
-        Effect.runSync(latch.open)
-      })
-
-      expect(await screen.findByTestId("latest")).toHaveTextContent(
-        "Latest render"
-      )
-      expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
     })
   })
 
