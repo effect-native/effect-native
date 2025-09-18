@@ -6,6 +6,7 @@ import * as Registry from "@effect-atom/atom/Registry"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Cause, Effect, Schema, Stream } from "effect"
 import * as Console from "effect/Console"
+import * as Layer from "effect/Layer"
 import * as Scope from "effect/Scope"
 import * as React from "react"
 import { type Dispatch, type ReactNode, type SetStateAction, Suspense, useEffect, useState } from "react"
@@ -435,15 +436,14 @@ describe("atom-react", () => {
         }
       }) {}
 
+      const program = Effect.gen(function*() {
+        yield* UI.render(<div data-testid="initial">Initial render</div>)
+        yield* latch.await
+        yield* UI.render(<div data-testid="latest">Latest render</div>)
+      })
+
       const MyAtomicComponent = Atom.fn(
-        Effect.fn("MyAtomicComponent")(
-          function*(UI: UI) {
-            yield* UI.render(<div data-testid="initial">Initial render</div>)
-            yield* latch.await
-            yield* UI.render(<div data-testid="latest">Latest render</div>)
-          },
-          (it) => it
-        )
+        (UILive: UI) => program.pipe(Effect.provide(Layer.succeed(UI, UILive)))
       )
 
       type AtomicComponent = Atom.AtomResultFn<UI, void, never>
@@ -453,7 +453,7 @@ describe("atom-react", () => {
         return {
           ui,
           UI: React.useMemo(() => {
-            const render = (node: React.ReactNode) => Effect.sync(() => set(node))
+            const render = Effect.fn("UI.render")((node: React.ReactNode) => Effect.sync(() => set(node)))
             return UI.make({ render })
           }, [set])
         } as const
