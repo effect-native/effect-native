@@ -1525,10 +1525,10 @@ type FromSqliteClientParams<E = never, R = never> = {
 /**
  * Builds a `Layer` that wires CR-SQLite services from an existing `SqlClient`.
  *
- * The parameters can be provided eagerly or as Effects via `MaybeEffect`,
+ * The parameters can be provided eagerly or as Effects,
  * allowing callers to defer expensive initialization until layer evaluation.
  *
- * @since 0.1.0
+ * @since 0.2.0
  * @category Layer
  */
 export const layerFromSqliteClient = <E = never, R = never>(_: MaybeEffect<FromSqliteClientParams<E, R>, E, R>) => {
@@ -1585,17 +1585,10 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
   }
 )
 
-type _fromSqliteClient = {
-  <E = never, R = never>(
-    _: MaybeEffect<Partial<FromSqliteClientParams<E, R>>, E, R>
-  ): ExcludeR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
-  <E = never, R = never>(_?: never): AddR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
-}
-
 /**
  * Creates a `CrSql` service from an existing `SqlClient` setup.
  *
- * Accepts optional parameters (each value or Effect via `MaybeEffect`) for
+ * Accepts optional parameters (each value or Effect) for
  * providing the CR-SQLite extension path, precomputed extension metadata, or an
  * alternative `SqlClient`. Missing dependencies are resolved from the ambient
  * environment when available.
@@ -1604,6 +1597,13 @@ type _fromSqliteClient = {
  * @category Construction
  */
 export const fromSqliteClient = _fromSqliteClient as _fromSqliteClient
+
+type _fromSqliteClient = {
+  <E = never, R = never>(
+    _: MaybeEffect<Partial<FromSqliteClientParams<E, R>>, E, R>
+  ): ExcludeR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
+  <E = never, R = never>(_?: never): AddR<ReturnType<typeof _fromSqliteClient<E, R>>, SqlClient.SqlClient>
+}
 
 /**
  * CR-SQLite service accessor class for conflict-free replicated database operations.
