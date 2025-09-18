@@ -5,7 +5,7 @@ import * as Atom from "@effect-atom/atom/Atom"
 import * as Registry from "@effect-atom/atom/Registry"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Cause, Effect, Schema, Stream } from "effect"
-import { Suspense } from "react"
+import { type Dispatch, type ReactNode, type SetStateAction, Suspense, useEffect, useState } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest"
@@ -420,6 +420,50 @@ describe("atom-react", () => {
       )
       expect(screen.queryByTestId("stream-node-initial")).not.toBeInTheDocument()
       expect(screen.queryByTestId("fallback")).not.toBeInTheDocument()
+    })
+
+    test("Atom.fn renders sequential ReactNodes", async () => {
+      const latch = Effect.runSync(Effect.makeLatch())
+
+      type UI = { render: <E = never, R = never>(node: ReactNode) => Effect.Effect<void, E, R> }
+
+      const fnAtom = Atom.fn(
+        Effect.fnUntraced(function*(UI: UI) {
+          yield* UI.render(<div data-testid="fn-node-initial">Initial render</div>)
+          yield* latch.await
+          yield* UI.render(<div data-testid="fn-node-latest">Latest render</div>)
+        })
+      )
+
+      function FnConsumer() {
+        // Mount the atom to keep it active for the effect
+        AtomHooks.useAtomValue(fnAtom)
+        const setFn = AtomHooks.useAtomSet(fnAtom)
+        const [ui, setUi] = useState<ReactNode>(null)
+
+        useEffect(() => {
+          const UI: UI = { render: (node) => Effect.sync(() => setUi(node)) }
+          setFn(() => UI)
+        }, [setFn])
+
+        return ui
+      }
+
+      render(<FnConsumer />)
+
+      expect(await screen.findByTestId("fn-node-initial")).toHaveTextContent(
+        "Initial render"
+      )
+      expect(screen.queryByTestId("fn-node-latest")).not.toBeInTheDocument()
+
+      act(() => {
+        Effect.runSync(latch.open)
+      })
+
+      expect(await screen.findByTestId("fn-node-latest")).toHaveTextContent(
+        "Latest render"
+      )
+      expect(screen.queryByTestId("fn-node-initial")).not.toBeInTheDocument()
     })
   })
 
