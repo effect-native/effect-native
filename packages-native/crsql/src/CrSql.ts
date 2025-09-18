@@ -174,7 +174,12 @@ const makeCrSql = Effect.gen(function*() {
   })
 
   const getSha = sql<{ sha: string }>`SELECT crsql_sha() as sha`.pipe(
-    Effect.map(([info]) => info?.sha),
+    Effect.flatMap(([info]) => {
+      const sha = info?.sha
+      return sha !== undefined
+        ? Effect.succeed(sha)
+        : Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_sha() returned no rows" }))
+    }),
     Effect.withSpan("CrSql.getSha")
   )
 
@@ -319,7 +324,13 @@ const makeCrSql = Effect.gen(function*() {
    */
   const fractKeyBetween = Effect.fn("@effect-native/crsql/CrSql#fractKeyBetween")((key1: string, key2: string) =>
     sql<{ key: string }>`SELECT crsql_fract_key_between(${key1}, ${key2}) AS key`.pipe(
-      Effect.map(([info]) => info?.key),
+      Effect.flatMap(([info]) =>
+        info?.key
+          ? Effect.succeed(info.key)
+          : Effect.fail(
+            new CrSqlErrors.CrSqliteExtensionMissing({ cause: "crsql_fract_key_between() returned no rows" })
+          )
+      ),
       Effect.withSpan("CrSql.fractKeyBetween")
     )
   )
@@ -1573,8 +1584,8 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
   ) {
     const params = yield* MaybeEffect(_)
     let sql = yield* MaybeEffect(params.sql) ?? Effect.void
-    if (sql == null) sql = yield* SqlClient.SqlClient
-    if (sql == null) {
+    if (!sql) sql = yield* SqlClient.SqlClient
+    if (!sql) {
       return yield* new CrSqlErrors.CrSqliteExtensionMissing({
         cause: "[fromSqliteClient] No SqlClient instance provided"
       })
