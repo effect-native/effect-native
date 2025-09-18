@@ -5,6 +5,9 @@ import * as Atom from "@effect-atom/atom/Atom"
 import * as Registry from "@effect-atom/atom/Registry"
 import { act, render, screen, waitFor } from "@testing-library/react"
 import { Cause, Effect, Schema, Stream } from "effect"
+import * as Console from "effect/Console"
+import * as Scope from "effect/Scope"
+import * as React from "react"
 import { type Dispatch, type ReactNode, type SetStateAction, Suspense, useEffect, useState } from "react"
 import { renderToString } from "react-dom/server"
 import { ErrorBoundary } from "react-error-boundary"
@@ -425,45 +428,65 @@ describe("atom-react", () => {
     test("Atom.fn renders sequential ReactNodes", async () => {
       const latch = Effect.runSync(Effect.makeLatch())
 
-      type UI = { render: <E = never, R = never>(node: ReactNode) => Effect.Effect<void, E, R> }
+      class UI extends Effect.Service<UI>()("UI", {
+        accessors: true,
+        succeed: {
+          render: Effect.fn("UI.render")((node: ReactNode) => Console.debug("render not implemented", node))
+        }
+      }) {}
 
-      const fnAtom = Atom.fn(
-        Effect.fnUntraced(function*(UI: UI) {
-          yield* UI.render(<div data-testid="fn-node-initial">Initial render</div>)
-          yield* latch.await
-          yield* UI.render(<div data-testid="fn-node-latest">Latest render</div>)
-        })
+      const MyAtomicComponent = Atom.fn(
+        Effect.fn("MyAtomicComponent")(
+          function*(UI: UI) {
+            yield* UI.render(<div data-testid="initial">Initial render</div>)
+            yield* latch.await
+            yield* UI.render(<div data-testid="latest">Latest render</div>)
+          },
+          (it) => it
+        )
       )
 
-      function FnConsumer() {
-        // Mount the atom to keep it active for the effect
-        AtomHooks.useAtomValue(fnAtom)
-        const setFn = AtomHooks.useAtomSet(fnAtom)
-        const [ui, setUi] = useState<ReactNode>(null)
+      type AtomicComponent = Atom.AtomResultFn<UI, void, never>
 
-        useEffect(() => {
-          const UI: UI = { render: (node) => Effect.sync(() => setUi(node)) }
-          setFn(() => UI)
-        }, [setFn])
-
-        return ui
+      function useAtomicUI() {
+        const [ui, set] = useState<ReactNode>(null)
+        return {
+          ui,
+          UI: React.useMemo(() => {
+            const render = (node: React.ReactNode) => Effect.sync(() => set(node))
+            return UI.make({ render })
+          }, [set])
+        } as const
       }
 
-      render(<FnConsumer />)
+      function AtomicView(props: { component: AtomicComponent }) {
+        // Mount the atom to keep it active for the effect
+        AtomHooks.useAtomValue(props.component)
+        const startRendering = AtomHooks.useAtomSet(props.component)
+        const atomic = useAtomicUI()
 
-      expect(await screen.findByTestId("fn-node-initial")).toHaveTextContent(
+        useEffect(() => {
+          startRendering(() => atomic.UI)
+        }, [startRendering])
+
+        return atomic.ui
+      }
+
+      render(<AtomicView component={MyAtomicComponent} />)
+
+      expect(await screen.findByTestId("initial")).toHaveTextContent(
         "Initial render"
       )
-      expect(screen.queryByTestId("fn-node-latest")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
 
       act(() => {
         Effect.runSync(latch.open)
       })
 
-      expect(await screen.findByTestId("fn-node-latest")).toHaveTextContent(
+      expect(await screen.findByTestId("latest")).toHaveTextContent(
         "Latest render"
       )
-      expect(screen.queryByTestId("fn-node-initial")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
     })
   })
 
