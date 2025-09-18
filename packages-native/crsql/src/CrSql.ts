@@ -40,7 +40,6 @@ import * as Schema from "effect/Schema"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
-import { MaybeEffect } from "./MaybeEffect.js"
 import type { AddR, ExcludeR } from "./types.js"
 
 // TODO(effect-native): Reactivity integration
@@ -1697,4 +1696,18 @@ const noop = () => {}
 
 function isTemplateStringsArray(first: string | TemplateStringsArray): first is TemplateStringsArray {
   return Array.isArray(first) && Object.hasOwn(first, "raw")
+}
+
+type MaybeEffect<A, E = never, R = never> = Effect.Effect<A, E, R> | A
+
+function MaybeEffect(self: null | undefined): null
+function MaybeEffect<A, E = never, R = never>(self: MaybeEffect<A, E, R>): Effect.Effect<A, E, R>
+function MaybeEffect<A, E = never, R = never>(self: MaybeEffect<A, E, R> | null | undefined) {
+  if (self == null) {
+    return null
+  }
+  if (Effect.isEffect(self)) {
+    return self
+  }
+  return Effect.succeed(self)
 }
