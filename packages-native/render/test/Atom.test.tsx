@@ -436,8 +436,6 @@ describe("atom-react", () => {
         }
       }) {}
 
-      type AtomicComponent = Atom.AtomResultFn<UI, void, never>
-
       function useAtomicUI() {
         const [ui, set] = useState<ReactNode>(null)
         return {
@@ -449,7 +447,7 @@ describe("atom-react", () => {
         } as const
       }
 
-      function AtomicComponentView(props: { component: AtomicComponent }) {
+      function AtomicComponentView(props: { component: Atom.AtomResultFn<UI, void, never> }) {
         // Mount the atom to keep it active for the effect
         AtomHooks.useAtomValue(props.component)
         const startRendering = AtomHooks.useAtomSet(props.component)
@@ -470,26 +468,33 @@ describe("atom-react", () => {
       }
 
       it.scoped(
-        "Atom.fn renders sequential ReactNodes",
-        Effect.fnUntraced(function*({ expect }) {
-          const latch = yield* Effect.makeLatch()
+        "renders sequential ReactNodes",
+        Effect.fnUntraced(
+          function*({ expect }) {
+            const fakeNetworkLatch = yield* Effect.makeLatch()
 
-          const program = Effect.gen(function*() {
-            yield* UI.render(<div data-testid="initial">Initial render</div>)
-            yield* latch.await
-            yield* UI.render(<div data-testid="latest">Latest render</div>)
-          })
+            const fetchedData = Effect.gen(function*() {
+              yield* fakeNetworkLatch.await
+              return "fetched data"
+            })
 
-          render(<AtomicUI effect={program} />)
+            const program = Effect.gen(function*() {
+              yield* UI.render(<div data-testid="initial">loading...</div>)
+              const data = yield* fetchedData
+              yield* UI.render(<div data-testid="latest">{data}</div>)
+            })
 
-          expect(yield* Effect.promise(() => screen.findByTestId("initial"))).toHaveTextContent("Initial render")
-          expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
+            render(<AtomicUI effect={program} />)
 
-          act(() => Effect.runSync(latch.open))
+            expect(yield* Effect.promise(() => screen.findByTestId("initial"))).toHaveTextContent(/loading/)
+            expect(screen.queryByTestId("latest")).not.toBeInTheDocument()
 
-          expect(yield* Effect.promise(() => screen.findByTestId("latest"))).toHaveTextContent("Latest render")
-          expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
-        })
+            act(() => Effect.runSync(fakeNetworkLatch.open))
+
+            expect(yield* Effect.promise(() => screen.findByTestId("latest"))).toHaveTextContent(/fetched data/)
+            expect(screen.queryByTestId("initial")).not.toBeInTheDocument()
+          }
+        )
       )
     })
   })
