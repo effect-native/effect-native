@@ -5,7 +5,7 @@
  * consume already-computed values or lazily evaluate an Effect, normalizing the
  * result into an `Effect` when needed.
  *
- * @since 0.1.0
+ * @internal
  */
 import { Effect } from "effect"
 
@@ -13,7 +13,7 @@ import { Effect } from "effect"
  * A value that may already be an `Effect` or a plain value that can be lifted
  * into one.
  *
- * @since 0.1.0
+ * @internal
  */
 export type MaybeEffect<A, E = never, R = never> = Effect.Effect<A, E, R> | A
 
@@ -25,7 +25,7 @@ export type MaybeEffect<A, E = never, R = never> = Effect.Effect<A, E, R> | A
  * Passing `null` or `undefined` preserves the nullable result to simplify
  * optional parameters while still embracing Effect-based workflows.
  *
- * @since 0.1.0
+ * @internal
  */
 export function MaybeEffect(self: null | undefined): null
 export function MaybeEffect<A, E = never, R = never>(self: MaybeEffect<A, E, R>): Effect.Effect<A, E, R>
