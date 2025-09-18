@@ -1592,7 +1592,7 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
     }
 
     const layers = layerFromSqliteClient({ sql, ...params })
-    return yield* makeCrSql.pipe(Effect.provide(layers))
+    return yield* CrSql.pipe(Effect.provide(layers))
   }
 )
 
