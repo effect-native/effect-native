@@ -5,10 +5,7 @@ import { Effect } from "effect"
 
 export const layerMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
-export const ensureCrSqlLoaded = Effect.gen(function*() {
-  const sql = yield* SqlClient.SqlClient
-  return yield* CrSql.fromSqliteClient()
-})
+export const ensureCrSqlLoaded = CrSql.fromSqliteClient()
 
 export const createTodosCrr = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient

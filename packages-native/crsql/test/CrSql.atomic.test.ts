@@ -103,7 +103,6 @@ layer(DbMem)((it) => {
 
   it.scoped("finalize does not fail", () =>
     Effect.gen(function*() {
-      const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient()
       // Should be safe and idempotent
       yield* crsql.finalize
