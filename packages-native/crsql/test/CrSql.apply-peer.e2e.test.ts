@@ -24,7 +24,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         const sql = yield* SqlClient.SqlClient
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkA}), 'Alpha', 0)`
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkB}), 'Beta', 1)`
-        const crsql = yield* CrSql.fromSqliteClient({ sql })
+        const crsql = yield* CrSql.fromSqliteClient()
         return yield* crsql.pullChanges("0")
       }).pipe(Effect.provide(Db1))
       assert.ok(exported.length > 0)
@@ -101,5 +101,58 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       }).pipe(Effect.provide(Db1))
 
       assert.deepEqual(tracked, { version: info2.v2, seq: 0 })
+    }))
+
+  it.scoped("fromSqliteClient: explicit sql handles multiple instances", () =>
+    Effect.gen(function*() {
+      const db1 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
+      const db2 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
+
+      const crsql1 = yield* CrSql.fromSqliteClient({ sql: db1 })
+      const crsql2 = yield* CrSql.fromSqliteClient({ sql: db2 })
+
+      const pkA = "AA11BB22CC33DD44EE55FF6677889900"
+      const pkB = "00998877665544332211FFEECCDDBBAA"
+
+      const createTodos = (crsql: typeof crsql1) =>
+        Effect.gen(function*() {
+          yield* crsql.automigrate`
+            CREATE TABLE IF NOT EXISTS todos (
+              id BLOB NOT NULL PRIMARY KEY,
+              content TEXT NOT NULL DEFAULT '',
+              completed INTEGER NOT NULL DEFAULT 0
+            )
+          `
+          yield* crsql.asCrr("todos")
+        })
+
+      yield* createTodos(crsql1)
+      yield* createTodos(crsql2)
+
+      yield* db1`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkA}), 'Scope Alpha', 0)`
+      yield* db1`INSERT INTO todos (id, content, completed) VALUES (unhex(${pkB}), 'Scope Beta', 1)`
+
+      const exported = yield* crsql1.pullChanges("0")
+      assert.ok(exported.length > 0)
+
+      yield* crsql2.applyChanges(exported)
+
+      const rowsA = yield* db2<{ content: string; completed: number }>`
+        SELECT content, completed FROM todos WHERE id = unhex(${pkA})
+      `
+      const rowsB = yield* db2<{ content: string; completed: number }>`
+        SELECT content, completed FROM todos WHERE id = unhex(${pkB})
+      `
+
+      assert.strictEqual(rowsA.length, 1)
+      assert.strictEqual(rowsA[0].content, "Scope Alpha")
+      assert.strictEqual(rowsA[0].completed, 0)
+      assert.strictEqual(rowsB.length, 1)
+      assert.strictEqual(rowsB[0].content, "Scope Beta")
+      assert.strictEqual(rowsB[0].completed, 1)
+
+      const site1 = yield* crsql1.getSiteIdHex
+      const site2 = yield* crsql2.getSiteIdHex
+      assert.notStrictEqual(site1.toUpperCase(), site2.toUpperCase())
     }))
 })

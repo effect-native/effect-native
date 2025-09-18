@@ -82,8 +82,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // B's site id (exclude)
       const siteB = yield* Effect.provide(
         Effect.gen(function*() {
-          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-          const crsql = yield* CrSql.fromSqliteClient({ sql })
+          const crsql = yield* CrSql.fromSqliteClient()
           return yield* crsql.getSiteIdHex
         }),
         layerB
@@ -92,8 +91,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // A: do both writes & exports on the SAME connection
       const a = yield* Effect.provide(
         Effect.gen(function*() {
-          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
-          const crsql = yield* CrSql.fromSqliteClient({ sql })
+          const crsql = yield* CrSql.fromSqliteClient()
           // init
           yield* crsql.automigrate`
             CREATE TABLE items (
