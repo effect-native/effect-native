@@ -1,5 +1,27 @@
 # @effect/cluster
 
+## 0.48.11
+
+### Patch Changes
+
+- [#5519](https://github.com/Effect-TS/effect/pull/5519) [`92c533f`](https://github.com/Effect-TS/effect/commit/92c533fb52d6d3869728071e92596f80b4c7aa36) Thanks @tim-smart! - improve SqlMessageStorage insert queries
+
+## 0.48.10
+
+### Patch Changes
+
+- [#5517](https://github.com/Effect-TS/effect/pull/5517) [`de07e58`](https://github.com/Effect-TS/effect/commit/de07e5805496b80226ba6a5efc2b4c05e1aba4b8) Thanks @tim-smart! - backport cluster improvements from effect 4
+
+- Updated dependencies [[`de07e58`](https://github.com/Effect-TS/effect/commit/de07e5805496b80226ba6a5efc2b4c05e1aba4b8)]:
+  - @effect/platform@0.90.10
+  - @effect/rpc@0.69.3
+
+## 0.48.9
+
+### Patch Changes
+
+- [#5512](https://github.com/Effect-TS/effect/pull/5512) [`934c1d9`](https://github.com/Effect-TS/effect/commit/934c1d9517a7c8bcac1b362908fa474371f7f0fa) Thanks @tim-smart! - backport active shard latch changes from effect 4
+
 ## 0.48.8
 
 ### Patch Changes

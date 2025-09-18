@@ -230,8 +230,10 @@ const make = Effect.gen(function*() {
 
     const releasingShards = MutableHashSet.empty<ShardId>()
     yield* Effect.gen(function*() {
+      activeShardsLatch.unsafeOpen()
       while (true) {
         yield* activeShardsLatch.await
+        activeShardsLatch.unsafeClose()
 
         // if a shard is no longer assigned to this runner, we release it
         for (const shardId of acquiredShards) {
@@ -252,7 +254,6 @@ const make = Effect.gen(function*() {
         }
 
         if (MutableHashSet.size(unacquiredShards) === 0) {
-          yield* activeShardsLatch.close
           continue
         }
 
@@ -266,10 +267,11 @@ const make = Effect.gen(function*() {
           yield* Effect.forkIn(syncSingletons, shardingScope)
         }
         yield* Effect.sleep(1000)
+        activeShardsLatch.unsafeOpen()
       }
     }).pipe(
       Effect.catchAllCause((cause) => Effect.logWarning("Could not acquire/release shards", cause)),
-      Effect.repeat(Schedule.spaced(config.entityMessagePollInterval)),
+      Effect.forever,
       Effect.annotateLogs({
         package: "@effect/cluster",
         module: "Sharding",
@@ -310,8 +312,7 @@ const make = Effect.gen(function*() {
           Effect.andThen(clearSelfShards)
         )
       ),
-      Effect.delay("4 seconds"),
-      Effect.forever,
+      Effect.schedule(Schedule.fixed(4000)),
       Effect.interruptible,
       Effect.forkIn(shardingScope)
     )
@@ -328,16 +329,14 @@ const make = Effect.gen(function*() {
               { concurrency: "unbounded", discard: true }
             ).pipe(
               Effect.andThen(shardStorage.release(selfAddress, shardId)),
-              Effect.annotateLogs({
-                runner: selfAddress
-              }),
+              Effect.annotateLogs({ runner: selfAddress }),
               Effect.andThen(() => {
                 MutableHashSet.remove(releasingShards, shardId)
               })
             ),
           { concurrency: "unbounded", discard: true }
         )
-      )
+      ).pipe(Effect.andThen(activeShardsLatch.open))
     )
   }
 
