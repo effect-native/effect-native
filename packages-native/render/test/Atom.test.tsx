@@ -395,6 +395,32 @@ describe("atom-react", () => {
       )
       expect(screen.queryByTestId("fallback")).not.toBeInTheDocument()
     })
+
+    test("Atom.make Stream emits ReactNodes that render", async () => {
+      const streamAtom = Atom.make(
+        Stream.make(
+          <div data-testid="stream-node-initial">Initial node</div>,
+          <div data-testid="stream-node-latest">Latest node</div>
+        )
+      )
+
+      function StreamConsumer() {
+        const result = AtomHooks.useAtomSuspense(streamAtom)
+        return result.value
+      }
+
+      render(
+        <Suspense fallback={<div data-testid="fallback">Loading...</div>}>
+          <StreamConsumer />
+        </Suspense>
+      )
+
+      expect(await screen.findByTestId("stream-node-latest")).toHaveTextContent(
+        "Latest node"
+      )
+      expect(screen.queryByTestId("stream-node-initial")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("fallback")).not.toBeInTheDocument()
+    })
   })
 
   describe("SSR", () => {
