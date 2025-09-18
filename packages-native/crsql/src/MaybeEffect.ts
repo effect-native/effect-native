@@ -5,7 +5,7 @@
  * consume already-computed values or lazily evaluate an Effect, normalizing the
  * result into an `Effect` when needed.
  *
- * @internal
+ * @since 0.3.0
  */
 import { Effect } from "effect"
 

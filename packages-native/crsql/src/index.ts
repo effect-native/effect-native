@@ -101,17 +101,6 @@ export * as CrSqlSchema from "./CrSqlSchema.js"
 export * as CrSqliteExtension from "./CrSqliteExtension.js"
 
 /**
- * Utilities for accepting either plain values or Effect computations.
- *
- * The helpers in this module make it straightforward to support APIs that can
- * consume already-computed values or lazily evaluate an Effect, normalizing the
- * result into an `Effect` when needed.
- *
- * @since 0.1.0
- */
-export * as MaybeEffect from "./MaybeEffect.js"
-
-/**
  * CR-SQLite compatible Sqlite client tag and type.
  *
  * This augments the base `@effect/sql` `SqlClient` with the SQLite-specific
