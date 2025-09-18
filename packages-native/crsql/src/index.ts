@@ -115,14 +115,3 @@ export * as CrSqliteExtension from "./CrSqliteExtension.js"
  * @since 0.1.0
  */
 export * as SqliteClient from "./SqliteClient.js"
-
-/**
- * Helper utilities for adjusting the environment (`R`) of Effect programs.
- *
- * These types make it ergonomic to add or remove services from an
- * `Effect.Effect` without altering its success or error channels, enabling
- * higher-order helpers to fine-tune dependency requirements.
- *
- * @since 0.1.0
- */
-export * as types from "./types.js"
