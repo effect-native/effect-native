@@ -7,7 +7,7 @@ This command enforces a rigorous **5-phase development process** for substantial
 ### ⚠️ IMPORTANT SCOPE LIMITATION
 This workflow is **ONLY** for substantial new features. For other types of work:
 - **Bug fixes**: Use standard development workflow
-- **Refactoring**: Use `/refactor` command  
+- **Refactoring**: Use `/refactor` command
 - **JSDoc enhancement**: Use `/add-jsdoc` command
 - **Test fixes**: Use `/fix-tests` command
 
@@ -68,7 +68,7 @@ This workflow is **ONLY** for substantial new features. For other types of work:
 
 **🔒 AUTHORIZATION GATE**: Present design.md and request user approval to proceed to Plan Phase
 
-#### Phase 4: Plan Phase  
+#### Phase 4: Plan Phase
 **Objective**: Implementation roadmap with progress tracking
 
 **Deliverables**:
@@ -107,7 +107,7 @@ pnpm docgen
 # 3. Run type checking
 pnpm check
 
-# 4. Run relevant tests  
+# 4. Run relevant tests
 pnpm test <test-file>
 
 # 5. Build project
