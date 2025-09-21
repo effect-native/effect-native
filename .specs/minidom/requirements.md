@@ -26,6 +26,9 @@ When the optional `happy-dom` dependency is present, the system shall expose `@e
 ### [Event-Driven] FR1.8 WindowMiniDom Adapter
 When provided `WindowMiniDom.layer({ window })` or `WindowMiniDom.make({ window })`, the system shall construct `Layer.Layer<MiniDom>` and `Effect.Effect<MiniDom>` instances bound to the supplied `window: Window`.
 
+### [State-Driven] FR1.9 Effect-Native API Surface
+While invoking any effectful MiniDom operation (e.g., document accessors, node creation, mutations, traversal), the system shall return `Effect.Effect` values so implementations can execute synchronously or asynchronously without exposing Promises.
+
 ## Non-Functional Requirements
 
 ### NFR2.1 Deterministic Behavior
@@ -84,7 +87,7 @@ The package shall list `happy-dom` as an optional peer and development dependenc
 ## Success Criteria
 
 ### SC7.1 Core API Validation
-Passing automated tests that exercise namespace-aware node operations shall demonstrate compliance with FR1.1 and FR1.5.
+Passing automated tests that exercise namespace-aware node operations shall demonstrate compliance with FR1.1, FR1.5, and FR1.9.
 
 ### SC7.2 Separation Verification
 Module-level smoke tests and documentation shall confirm that standard primitives and extension utilities remain independently consumable, satisfying FR1.2.
@@ -98,5 +101,8 @@ Type-checking and example compilation shall confirm JSX integration behavior, sa
 ### SC7.5 Adapter Coverage
 Tests shall confirm `HappyMiniDom` behavior when `happy-dom` is installed and validate `WindowMiniDom.layer`/`make` outputs, covering FR1.7 and FR1.8.
 
-### SC7.6 Non-Functional Compliance
+### SC7.6 Effect Integration Confidence
+Scenario tests and usage examples shall verify MiniDom APIs participate seamlessly in `Effect.gen` workflows without requiring manual Promise handling, satisfying FR1.9.
+
+### SC7.7 Non-Functional Compliance
 Build, lint, docgen, and test automation shall pass within the guardrail limits, demonstrating adherence to NFR2.1–NFR2.4.
