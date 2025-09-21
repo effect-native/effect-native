@@ -23,6 +23,13 @@
 
 # hypothesis
 
-- Node Identity Model decision is a false dichotomy. It is possible to move the responsibility to each concrete layer instead of imposing a single decision across every implementation. Take inspiration from react-reconciler host configuration
+- Hypothesis: Enforcing a single node identity strategy across all MiniDom implementations is required to keep interop coherent; allowing per-layer freedom will fracture host behavior.
+- Hypothesis: Relying exclusively on modern `ParentNode`/`ChildNode` helpers leaves essential reconciliation scenarios unsupported; we must reintroduce lower-level insertion primitives such as `insertBefore`.
+- Hypothesis: Making namespace-awareness mandatory across the core API adds needless overhead; a namespace-agnostic default with opt-in namespaces better serves the dominant workloads.
+- Hypothesis: Returning `Effect.Effect` from every MiniDom operation imposes avoidable latency and complexity; synchronous-first APIs with optional effect wrappers would integrate more cleanly with existing hosts.
+- Hypothesis: Separating MiniDom and MiniDomX into distinct layers fragments developer experience; a single integrated surface yields clearer ergonomics and adoption.
+- Hypothesis: The `AttributeBag` abstraction obscures element-specific typing guarantees; strongly typed attribute structs should replace the bag to ensure correctness.
+- Hypothesis: Building a bespoke schema DSL duplicates mature standards; adopting an external schema language (e.g., Relax NG) directly would lower long-term risk.
+- Hypothesis: Shipping only optional adapters like `HappyMiniDom` leaves teams without a dependable default runtime; the core package must include an official implementation out of the box.
 
 attempt to invalidate these hypothesis and update this document .specs/minidom/TODO.md with your findings.
