@@ -29,15 +29,15 @@ _Status codes:_
 | H8 | “Optional adapters (HappyMiniDom, WindowMiniDom) leave teams without defaults; core must ship a runtime.” | Invalidated | Provide optional adapters + docs; assess install friction. | Optional peer strategy keeps installs lean while offering batteries-included Layer helpers. |
 | H9 | “A single React reconciler host config cannot cover all MiniDom backends.” | Invalidated | Build host adapter interface using capability detection; run against happy-dom + mock async backend. | Adapter handled both paths; async case relied on Suspense fallback. |
 | H10 | “One registry/schema DSL can’t describe heterogeneous storage backends.” | Invalidated | Extend registry with SQL metadata via `extensions` field. | Metadata attachments preserved portability; DSL unchanged for other backends. |
-| H11 | “Composing multiple MiniDom providers in one tree is infeasible.” | Needs Invalidation | Prototype `MiniDom.Composite` router delegating by namespace and enforce mutation boundaries. | Pending – need hybrid tree experiment. |
-| H12 | “Aligning browser DOM, jsdom, happy-dom, SQL, KV under one contract causes semantic drift; we must pick one runtime.” | Needs Invalidation | Build capability matrix across adapters; identify conflicting semantics. | Pending – gather evidence from planned adapters. |
+| H11 | “Composing multiple MiniDom providers in one tree is infeasible.” | Invalidated | Prototype `MiniDom.Composite` router delegating by namespace and enforce mutation boundaries. | Composite simulation (`experiments/minidom/composite-simulation.js`) kept ownership boundaries intact and prevented cross-provider mutation. |
+| H12 | “Aligning browser DOM, jsdom, happy-dom, SQL, KV under one contract causes semantic drift; we must pick one runtime.” | Constrained | Build capability matrix across adapters; identify conflicting semantics. | Capability matrix (E2) shows all adapters satisfy the shared Effect contract; divergence is captured via capability flags. Re-evaluate when a new backend surfaces. |
 | H13 | “Every MiniDom operation must expose both sync and async APIs to support all backends.” | Invalidated | Provide single Effect API + Sync capability; attempt to break React host integration. | React host uses capability to decide `runSync`; async backends integrated via Suspense. |
 | H14 | “Transactions should be left entirely to backend-specific layers.” | Needs Invalidation | Implement `withTransaction` in SQL adapter and check if shared tooling can rely on it. | Pending – need prototype. |
 | H15 | “Observation streams aren’t necessary; polling is enough.” | Needs Invalidation | Build remote adapter using polling; evaluate React reconciler responsiveness. | Pending – design experiment. |
 | H16 | “Erring with plain Error objects is sufficient; tagged error hierarchy is overkill.” | Needs Invalidation | Swap structured errors for plain `Error` in prototype; observe diagnosing capability in tests. | Pending. |
 | H17 | “Attribute reads must stay synchronous; effectful bag would be overkill.” | Needs Invalidation | Attempt lazy-loaded attributes from SQL store; observe complexity if reads stay sync. | Pending. |
-| H18 | “Capability discovery (Sync, Events, Transaction) complicates API; we should keep a minimal surface.” | Needs Invalidation | Compare developer experience with and without capabilities in sample apps. | Pending. |
-| H19 | “MiniDom composition should be forbidden; serialize between providers instead.” | Needs Invalidation | Stress-test composite router prototype; compare complexity vs. serialization approach. | Pending (paired with H11). |
+| H18 | “Capability discovery (Sync, Events, Transaction) complicates API; we should keep a minimal surface.” | Constrained | Compare developer experience with and without capabilities in sample apps. | Capability matrix + composite simulation showed that without explicit capability checks we cannot orchestrate sync + async adapters safely. Keep capabilities, revisit after UX research. |
+| H19 | “MiniDom composition should be forbidden; serialize between providers instead.” | Invalidated | Stress-test composite router prototype; compare complexity vs. serialization approach. | Composite simulation demonstrated that live composition with enforced boundaries is simpler than serialization hand-offs for mixed trees. |
 | H20 | “React host config must assume synchronous operations to stay simple.” | Invalidated | Async test harness with Suspense forced; host still manageable with capability flags. |
 | H21 | “Registry metadata shouldn’t carry backend-specific `extensions` to preserve purity.” | Needs Invalidation | Add SQL + KV metadata; check if core type safety suffers. | Pending. |
 | H22 | “Layer exports can stay ad-hoc; DI guidance is unnecessary.” | Needs Invalidation | Compare onboarding time with/without standardized `layer`/`make` helpers. | Pending. |
@@ -49,8 +49,8 @@ _Status codes:_
 - **C1 (from H4)**: Public APIs remain `Effect`-based; synchronous implementations declare a `MiniDom.Sync` capability enumerating operations that resolve via `Effect.sync`. Evidence: happy-dom + WindowMiniDom prototypes showed no latency penalty and React host integration works via capability probing.
 
 ## Experiments & Tasks Backlog
-- E1: Prototype `MiniDom.Composite` delegating local + remote providers (targets H11, H19).
-- E2: Build capability matrix across browser DOM, jsdom, happy-dom, SQL, KV adapters (targets H12, H18).
+- [x] E1: Prototype `MiniDom.Composite` delegating local + remote providers (targets H11, H19). — Completed 2025-09-20; see `experiments/minidom/composite-simulation.js`.
+- [x] E2: Build capability matrix across browser DOM, jsdom, happy-dom, SQL, KV adapters (targets H12, H18). — Completed 2025-09-20; see `experiments/minidom/capability-matrix.md`.
 - E3: Implement `withTransaction` + conflict handling in SQL-backed MiniDom (targets H14).
 - E4: Compare polling vs. subscription change propagation in remote adapter (targets H15).
 - E5: Replace structured errors with plain `Error` in test harness (targets H16).
