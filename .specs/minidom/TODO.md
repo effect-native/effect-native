@@ -31,5 +31,9 @@
 - Hypothesis: The `AttributeBag` abstraction obscures element-specific typing guarantees; strongly typed attribute structs should replace the bag to ensure correctness.
 - Hypothesis: Building a bespoke schema DSL duplicates mature standards; adopting an external schema language (e.g., Relax NG) directly would lower long-term risk.
 - Hypothesis: Shipping only optional adapters like `HappyMiniDom` leaves teams without a dependable default runtime; the core package must include an official implementation out of the box.
+- Hypothesis: A universal React Reconciler host config cannot exist; each MiniDom backend will demand bespoke host methods to respect its operational semantics.
+- Hypothesis: Supporting heterogeneous storage backends through one registry/schema DSL is unrealistic; divergent SQL schemas will force backend-specific modeling that fractures portability.
+- Hypothesis: Composing multiple MiniDom implementations within a single document tree is untenable; cross-provider mutation and validation boundaries will collapse under real workloads.
+- Hypothesis: Aligning real browser DOM, jsdom, happy-dom, SQL, KV, and in-memory adapters under one contract will yield semantic drift; tightening scope to a single blessed runtime is the only way to ensure predictability.
 
 attempt to invalidate these hypothesis and update this document .specs/minidom/TODO.md with your findings.
