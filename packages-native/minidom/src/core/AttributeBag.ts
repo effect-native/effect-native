@@ -1,7 +1,9 @@
 /**
  * @since 1.0.0
  */
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 
 import type { Namespace } from "./Namespace.js"
@@ -40,6 +42,70 @@ export interface Service {
   readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>>
   readonly snapshot: () => Effect.Effect<View>
 }
+
+/**
+ * @since 1.0.0
+ * @category tags
+ */
+export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Service")<Tag, Service>() {}
+
+/**
+ * @since 1.0.0
+ * @category layers
+ */
+export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
+  Layer.effect(Tag, Effect.sync(() => service(options)))
+
+/**
+ * @since 1.0.0
+ * @category constructors
+ */
+export const asyncService = (options?: {
+  readonly initial?: Iterable<AttributeEntry>
+  readonly scheduler?: (task: () => void) => void
+}): Service => {
+  const schedule = options?.scheduler ?? ((task: () => void) => {
+    setTimeout(task, 0)
+  })
+
+  const store = new Map<string, AttributeEntry>()
+
+  if (options?.initial) {
+    for (const [namespace, name, value] of options.initial) {
+      store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
+    }
+  }
+
+  const run = <A>(evaluate: () => A): Effect.Effect<A> =>
+    Effect.async((resume) => {
+      schedule(() => {
+        resume(Effect.succeed(evaluate()))
+      })
+    })
+
+  const makeView = (): View => toView(Array.from(store.values(), copyEntry))
+
+  return {
+    get: (namespace, name) => run(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
+    has: (namespace, name) => run(() => store.has(NamespaceHelpers.key(namespace, name))),
+    set: (namespace, name, value) =>
+      run(() => {
+        store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
+      }),
+    delete: (namespace, name) => run(() => store.delete(NamespaceHelpers.key(namespace, name))),
+    entries: () => run(() => Array.from(store.values(), copyEntry)),
+    snapshot: () => run(makeView)
+  }
+}
+
+/**
+ * @since 1.0.0
+ * @category layers
+ */
+export const layerAsync = (options?: {
+  readonly initial?: Iterable<AttributeEntry>
+  readonly scheduler?: (task: () => void) => void
+}) => Layer.effect(Tag, Effect.sync(() => asyncService(options)))
 
 const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
   const index = new Map<string, AttributeEntry>()
@@ -119,6 +185,10 @@ export const service = (options?: { readonly initial?: Iterable<AttributeEntry> 
  * @category exports
  */
 export const AttributeBag = {
+  Tag,
+  layer,
+  layerAsync,
   service,
+  asyncService,
   viewFromEntries
 }

@@ -58,3 +58,18 @@ never conclude a response with "next steps" or similar planning-only notes while
 
 don't allow yourself to become blocked
 if anything requires attention, keep track of it somewhere and I shall follow up later
+
+### continuous iteration accounting
+- log the start time, iteration number, target plan item, and expected red test path in `experiments/minidom/log-*.md` **before** editing source files; keep the timer running and record the elapsed minutes when closing the entry.
+- track overlaps explicitly: if an iteration spills into the next task, duplicate the start data under a new heading and mark the prior entry as "rolled forward" so there is never ambiguity about which 30-minute window produced which artifacts.
+- whenever the log exceeds 200 lines, append a `Continued in <new-log-file>` notice pointing to the new file and carry over the active iteration details verbatim so the chain of custody stays intact.
+
+### evidence discipline
+- every validation braid invocation must capture command + exit code in the session log and in the commit trailer block (e.g., `Validation: pnpm lint --fix … ✅`). if a command fails, document the failure output, corrective action, and re-run evidence in the same log entry before moving on.
+- cross-reference hypotheses: when a test fails or succeeds, immediately note the impacted hypothesis IDs in `.specs/minidom/TODO.md` and the log entry so reviewers can trace evidence without guesswork.
+- do not defer documentation—update `.specs/minidom/plan.md`, the session log, and any impacted hypothesis rows in real time while the context is still warm; retroactive summaries are forbidden.
+
+### response protocol
+- each status update must cite the exact log filename and timestamped section that captures the work performed since the previous response; responses lacking these anchors violate the audit trail.
+- report concrete code or doc changes **and** state the next action already in flight (e.g., the file currently open for the following red test). there is no gap between observation and action.
+- ensure the pair-programming partner or reviewer can resume instantly: include open editor locations, failing test names, and running command contexts so no momentum is lost if hand-off becomes necessary.
