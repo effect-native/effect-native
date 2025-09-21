@@ -23,6 +23,7 @@
 
 # Hypothesis Review
 
+- **Invalidated:** There are no blockers and the team is ready for the next phase. Open decisions listed above (`Node Identity Model`, `Composition Strategy`, `Effect Contract Granularity`, etc.) remain unresolved, and the contract mismatch between `.specs/minidom/instructions.md` (Effect-only APIs) and `.specs/minidom/research.md` (synchronous method signatures) still needs reconciliation, so phase progression would violate the new-feature workflow guardrails.
 - **Invalidated:** Enforcing a single node identity strategy across all MiniDom implementations is required. React reconciler host configs prove backends can manage identity independently (opaque handles, IDs, object refs) so long as they satisfy a minimal comparison/lookup contract. MiniDom can follow the same pattern by defining capability hooks instead of mandating one approach.
 - **Invalidated:** Modern `ParentNode`/`ChildNode` helpers are insufficient for reconciliation. The combination of `before`, `after`, `append`, `replaceChildren`, and `replaceWith` covers all relative insertions (`insertBefore` === `reference.before(newNode)`), so lower-level primitives add redundancy without additional capability.
 - **Invalidated:** Mandatory namespace awareness adds needless overhead. Supporting HTML, SVG, MathML, and custom vocabularies requires namespaces in the core; omitting them makes mixed-content documents impossible. The cost is a nullable string per node—trivial compared to interoperability gains.
