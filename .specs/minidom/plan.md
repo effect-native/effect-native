@@ -70,7 +70,7 @@
 |------|-------|--------|
 | Package scaffolding & layers | TBD | Not started |
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts` and new vitest coverage |
-| Schema DSL & extensions | TBD | Not started |
+| Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers stubbed (`packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |
 | React host adapter | TBD | Not started |
