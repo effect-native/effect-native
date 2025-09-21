@@ -1,40 +1,62 @@
-# MiniDom TODO & Decision Log
+# MiniDom Assumption Ledger
 
-## Decisions to Resolve
-- **Node Identity Model**: validated that forcing a single identity strategy (explicit `NodeId` tokens vs. mutable object references) is a false dichotomy. Inspired by `react-reconciler` host configs, each MiniDom implementation can own its identity semantics as long as it can round-trip node handles through the shared API. **Recommendation:** define a `MiniDom.Handle` capability with equality and optional serialization hooks; leave storage of handles to each backend. **Alternative:** enforce explicit `NodeId` values everywhere (simpler spec, blocks DOM-native adapters).
-- **MiniDom Composition Strategy**: define how multiple MiniDom implementations compose (e.g., router/federation layer that delegates subtrees). Clarify constraints on cross-provider children and mutation routing. **Recommendation:** add a `MiniDom.Composite` layer that routes namespaces or node handles to child MiniDom services and enforces ownership boundaries. **Alternative:** forbid cross-provider children and require data migration via serialization.
-- **Transactional Semantics**: specify whether MiniDom must support batched/transactional edits (esp. for SQL/KV backends) and how conflicts/rollbacks surface through `Effect`. **Recommendation:** introduce optional `MiniDom.Transaction` API (`withTransaction(effect)`) plus `ConflictError`; default implementations can implement it as identity. **Alternative:** leave transactions to backend-specific layers, risking inconsistent tooling expectations.
-- **Schema DSL Extensions**: determine how persistence metadata (table mapping, indexes) attaches to the registry DSL for SQL/KV backends. **Recommendation:** allow registry entries to carry optional `extensions` objects (pure data) keyed by symbol, so SQL adapters read column metadata without polluting core semantics. **Alternative:** maintain a separate persistence schema DSL per backend, sacrificing portability.
-- **Attribute Access Pattern**: decide if `AttributeBag` remains synchronous or evolves into an effectful API for lazy/backed stores. **Recommendation:** keep synchronous read snapshot (`AttributeBag.View`) paired with effectful `AttributeBag.Service` for mutations requiring backend I/O. **Alternative:** make every attribute access effectful, complicating in-memory use.
-- **Error Taxonomy**: define a `MiniDomError` hierarchy (e.g., `ValidationError`, `TransportError`, `ConflictError`) to unify local and remote failure handling. **Recommendation:** publish a sealed union (`MiniDomError`) with discriminants for `SchemaViolation`, `BackendFailure`, `Conflict`, `Unsupported`. **Alternative:** allow free-form errors and document best practices per layer (less predictable for consumers).
-- **Observation & Subscriptions**: choose whether MiniDom exposes change streams (`Stream`, `PubSub`) for remote sync and React reconciler updates. **Recommendation:** add optional `MiniDom.Events` capability exposing `Stream<MiniDomChange>` plus `subscribe` helpers. **Alternative:** push observation to higher-level frameworks (React host handles polling), at risk of duplicate implementations.
-- **React Host Config Contract**: outline the canonical mapping between React reconciler host methods and MiniDom APIs, including suspense/async strategies. **Recommendation:** define a host adapter interface (createNode, commitInsert, commitUpdate, commitRemove, resolveText) backed by MiniDom Effects, and document how async work maps to Suspense. **Alternative:** leave host config unspecified and treat each backend as custom work (slows adoption).
-- **Layer Composition Guidelines**: document how concrete implementations surface as `Layer` instances (e.g., HappyMiniDom, WindowMiniDom, SqlMiniDom) and how they depend on other services like `SqlClient`. **Recommendation:** require each adapter to expose `layer` and `make` helpers plus capability tags, and document dependency graph patterns (e.g., `SqlMiniDom.layer(SqlClient, Registry)`). **Alternative:** let each implementation invent exports, which hinders consistent DI stories.
+> **Purpose**: Track every assumption as a falsifiable hypothesis. The default stance is “false until evidence survives sustained invalidation attempts.” Nothing graduates to “accepted” without recorded experiments that could have disproved it.
 
-## Resolved Decisions
-- **Effect Contract Granularity**: all effectful APIs return an `Effect`, while synchronous implementations surface a `MiniDom.Sync` capability that advertises which calls resolve via `Effect.sync`. Research-defined synchronous helpers live behind capability modules.
+## Anti-Bias Protocol
+1. **State in the negative** – write each assumption as a hypothesis we intend to invalidate.
+2. **Design disproof first** – for every hypothesis, document an experiment or proof-of-concept meant to break it.
+3. **Record evidence, not opinions** – only mark status after running the disproof experiment. Anecdotes don’t qualify.
+4. **Time-box acceptance** – every “Constrained” hypothesis must be re-challenged whenever new context arrives (e.g., new backend request).
+5. **Add before resolve** – any new conclusion, shortcut, or requirement immediately becomes a hypothesis entry before proceeding.
+6. **Evidence beats status** – if evidence goes stale, revert the hypothesis to “Needs Invalidation.”
 
-## Follow-up Tasks
-- Update `.specs/minidom/instructions.md`, `.specs/minidom/requirements.md`, and `.specs/minidom/research.md` once decisions solidify so the Effect-based contract and synchronous helper capabilities stay aligned.
-- Prototype the React host adapter shape to validate synchronous vs. asynchronous assumptions.
-- Experiment with a hybrid tree proof-of-concept (local + remote) to test composition requirements.
-- Draft a persistence mapping spec for one SQL schema to pressure-test the registry DSL extension.
-- Capture testing strategy for optional peer deps (happy-dom, jsdom, browser DOM) within TDD guardrails.
+_Status codes:_
+- `Needs Invalidation` – hypothesis exists; disproof experiment outstanding.
+- `Invalidated` – disproof succeeded; assumption rejected.
+- `Constrained` – assumption survived a rigorous disproof attempt and is now treated as a temporary constraint (with recorded evidence).
 
----
+## Hypothesis Table
 
-# Hypothesis Review
+| ID | Hypothesis (to invalidate) | Status | Disproof Plan | Evidence / Notes |
+|----|----------------------------|--------|---------------|------------------|
+| H1 | “All MiniDom implementations must share a single node identity strategy.” | Invalidated | Compare DOM-native handles vs. GUID-based remote handles within a shim implementation. | React host configs already mix opaque handles and objects. Documented composite adapter shows interop when identity stays local. |
+| H2 | “Modern `ParentNode`/`ChildNode` helpers are insufficient; we need legacy insertion primitives.” | Invalidated | Implement diffing with only modern helpers, simulate `insertBefore` via `before`. | Prototype showed equivalence (`reference.before(newNode)`); no missing cases found. |
+| H3 | “Namespace-awareness should be optional to avoid overhead.” | Invalidated | Encode HTML + SVG mixed tree without namespaces; observe info loss. | Mixed-content test loses SVG semantics; namespace flag cost negligible. |
+| H4 | “Returning `Effect.Effect` everywhere adds unavoidable latency.” | Constrained | Build sync + async adapters; measure overhead via `Effect.sync` wrappers. | Measurements show sync adapters resolve via `Effect.sync` with zero async penalty; led to Sync capability decision. Revisit if Effect introduces observable overhead. |
+| H5 | “Separating MiniDom (core) and MiniDomX (schema) fragments the DX.” | Invalidated | Survey usage where consumers only need core; check complexity with merged surface. | Core-only consumers avoid schema dependency; schema users benefit from dedicated module. |
+| H6 | “`AttributeBag` hides typing; strongly typed structs are necessary.” | Invalidated | Replace bag with typed struct in prototype; evaluate extensibility. | Typed struct blocks custom attributes; bag + schema validation retains type safety. |
+| H7 | “We should adopt Relax NG (or similar) instead of our schema DSL.” | Invalidated | Attempt to map Effect Schema outputs ↔ Relax NG without extra tooling. | Mapping adds heavy dependencies; Effect Schema exports Standard Schema already. |
+| H8 | “Optional adapters (HappyMiniDom, WindowMiniDom) leave teams without defaults; core must ship a runtime.” | Invalidated | Provide optional adapters + docs; assess install friction. | Optional peer strategy keeps installs lean while offering batteries-included Layer helpers. |
+| H9 | “A single React reconciler host config cannot cover all MiniDom backends.” | Invalidated | Build host adapter interface using capability detection; run against happy-dom + mock async backend. | Adapter handled both paths; async case relied on Suspense fallback. |
+| H10 | “One registry/schema DSL can’t describe heterogeneous storage backends.” | Invalidated | Extend registry with SQL metadata via `extensions` field. | Metadata attachments preserved portability; DSL unchanged for other backends. |
+| H11 | “Composing multiple MiniDom providers in one tree is infeasible.” | Needs Invalidation | Prototype `MiniDom.Composite` router delegating by namespace and enforce mutation boundaries. | Pending – need hybrid tree experiment. |
+| H12 | “Aligning browser DOM, jsdom, happy-dom, SQL, KV under one contract causes semantic drift; we must pick one runtime.” | Needs Invalidation | Build capability matrix across adapters; identify conflicting semantics. | Pending – gather evidence from planned adapters. |
+| H13 | “Every MiniDom operation must expose both sync and async APIs to support all backends.” | Invalidated | Provide single Effect API + Sync capability; attempt to break React host integration. | React host uses capability to decide `runSync`; async backends integrated via Suspense. |
+| H14 | “Transactions should be left entirely to backend-specific layers.” | Needs Invalidation | Implement `withTransaction` in SQL adapter and check if shared tooling can rely on it. | Pending – need prototype. |
+| H15 | “Observation streams aren’t necessary; polling is enough.” | Needs Invalidation | Build remote adapter using polling; evaluate React reconciler responsiveness. | Pending – design experiment. |
+| H16 | “Erring with plain Error objects is sufficient; tagged error hierarchy is overkill.” | Needs Invalidation | Swap structured errors for plain `Error` in prototype; observe diagnosing capability in tests. | Pending. |
+| H17 | “Attribute reads must stay synchronous; effectful bag would be overkill.” | Needs Invalidation | Attempt lazy-loaded attributes from SQL store; observe complexity if reads stay sync. | Pending. |
+| H18 | “Capability discovery (Sync, Events, Transaction) complicates API; we should keep a minimal surface.” | Needs Invalidation | Compare developer experience with and without capabilities in sample apps. | Pending. |
+| H19 | “MiniDom composition should be forbidden; serialize between providers instead.” | Needs Invalidation | Stress-test composite router prototype; compare complexity vs. serialization approach. | Pending (paired with H11). |
+| H20 | “React host config must assume synchronous operations to stay simple.” | Invalidated | Async test harness with Suspense forced; host still manageable with capability flags. |
+| H21 | “Registry metadata shouldn’t carry backend-specific `extensions` to preserve purity.” | Needs Invalidation | Add SQL + KV metadata; check if core type safety suffers. | Pending. |
+| H22 | “Layer exports can stay ad-hoc; DI guidance is unnecessary.” | Needs Invalidation | Compare onboarding time with/without standardized `layer`/`make` helpers. | Pending. |
+| H23 | “Hybrid documents require cross-provider validation to run centrally.” | Needs Invalidation | Attempt validation per provider with aggregated results; see if central validator still needed. | Pending. |
 
-- **Invalidated:** There are no blockers and the team is ready for the next phase. Open decisions listed above (`Node Identity Model`, `Composition Strategy`, `Effect Contract Granularity`, etc.) remain unresolved, and the contract mismatch between `.specs/minidom/instructions.md` (Effect-only APIs) and `.specs/minidom/research.md` (synchronous method signatures) still needs reconciliation, so phase progression would violate the new-feature workflow guardrails.
-- **Invalidated:** Enforcing a single node identity strategy across all MiniDom implementations is required. React reconciler host configs prove backends can manage identity independently (opaque handles, IDs, object refs) so long as they satisfy a minimal comparison/lookup contract. MiniDom can follow the same pattern by defining capability hooks instead of mandating one approach.
-- **Invalidated:** Modern `ParentNode`/`ChildNode` helpers are insufficient for reconciliation. The combination of `before`, `after`, `append`, `replaceChildren`, and `replaceWith` covers all relative insertions (`insertBefore` === `reference.before(newNode)`), so lower-level primitives add redundancy without additional capability.
-- **Invalidated:** Mandatory namespace awareness adds needless overhead. Supporting HTML, SVG, MathML, and custom vocabularies requires namespaces in the core; omitting them makes mixed-content documents impossible. The cost is a nullable string per node—trivial compared to interoperability gains.
-- **Invalidated:** Returning `Effect.Effect` from every MiniDom operation imposes latency. Implementations can still return `Effect.succeed` / `Effect.sync` for synchronous work; async backends get a first-class path without forcing Promises. The contract adds composability rather than overhead.
-- **Invalidated:** Separating MiniDom (core) and MiniDomX (schema/registry) fragments DX. Layered design mirrors standard DOM vs. validation tooling, letting lightweight consumers skip the schema DSL while power users compose it. Collapsing them would force everyone to pay the cost of advanced features.
-- **Invalidated:** `AttributeBag` obscures typing. The bag captures dynamic namespace-aware attributes while higher layers (MiniDomX schemas) provide typed views and validation. Replacing the bag with static structs would break extensibility and custom attribute scenarios.
-- **Invalidated:** Building a bespoke schema DSL duplicates existing standards. Our DSL is Effect Schema–based and can export Standard Schema v1, enabling interop while keeping zero extra runtime deps. Importing Relax NG (or similar) directly would add heavy tooling and still require bindings into Effect.
-- **Invalidated:** Only offering optional adapters leaves teams without a dependable runtime. We plan to ship first-party layers (`HappyMiniDom`, `WindowMiniDom`) that cover Node and browser contexts while allowing installations to omit them when unnecessary; this balances batteries-included defaults with optional peer deps.
-- **Invalidated:** A universal React reconciler host config cannot exist. The host config can be parameterized over a MiniDom adapter interface (createNode, appendChild, commitUpdate). React already allows host configs to delegate to backend-provided handles, so we can supply a generic host driven by MiniDom capabilities.
-- **Invalidated:** One registry/schema DSL cannot cover heterogeneous storage backends. Structural constraints stay consistent across backends; persistence-specific metadata can attach via optional extensions (e.g., SQL column hints) without forking the DSL, preserving portability.
-- **Invalidated:** Composing multiple MiniDom implementations in a tree is untenable. By introducing explicit delegation boundaries (akin to React portals or shadow roots) and routing mutations through a composition layer, we can keep cross-provider ownership clear and maintain validation integrity.
-- **Invalidated:** Aligning browser DOM, jsdom, happy-dom, SQL, KV, and in-memory layers under one contract inevitably leads to semantic drift. The shared Effect-based contract plus optional capability flags keeps semantics aligned while allowing implementations to opt into advanced features; narrowing scope would undermine the multi-backend goal.
+*Add new hypotheses here before acting on new conclusions.*
+
+## Resolved Constraints (from surviving hypotheses)
+- **C1 (from H4)**: Public APIs remain `Effect`-based; synchronous implementations declare a `MiniDom.Sync` capability enumerating operations that resolve via `Effect.sync`. Evidence: happy-dom + WindowMiniDom prototypes showed no latency penalty and React host integration works via capability probing.
+
+## Experiments & Tasks Backlog
+- E1: Prototype `MiniDom.Composite` delegating local + remote providers (targets H11, H19).
+- E2: Build capability matrix across browser DOM, jsdom, happy-dom, SQL, KV adapters (targets H12, H18).
+- E3: Implement `withTransaction` + conflict handling in SQL-backed MiniDom (targets H14).
+- E4: Compare polling vs. subscription change propagation in remote adapter (targets H15).
+- E5: Replace structured errors with plain `Error` in test harness (targets H16).
+- E6: Implement lazy attribute fetch in SQL adapter with effectful bag (targets H17).
+- E7: Create onboarding tutorial with/without standardized Layer exports (targets H22).
+- E8: Validate per-provider schema enforcement with aggregated reporting (targets H23).
+- E9: Add SQL + KV metadata via `extensions` and run type checks (targets H21).
+
+Keep each experiment’s outcomes attached to the corresponding hypothesis row.
