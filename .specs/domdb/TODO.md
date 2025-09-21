@@ -98,6 +98,19 @@ const doStuffWithElement = Effect.gen(function*(){
 })
 ```
 
+```ts
+Effect.gen(function*(){
+  const document = yield* MiniDom.Document
+  const root = yield* document.firstChild
+
+  const textNode = yield* document.createTextNode("ahoy")
+
+  const {nodeType, nodeName} = textNode // NOTE: no need for yield* for these fields since these are plain old javascript values
+
+  yield* root.append(textNode)
+})
+```
+
 ---
 
 based on this .specs/domdb/research.md
