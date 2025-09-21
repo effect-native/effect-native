@@ -41,8 +41,3 @@ export * from "./core/Nodes.js"
  * @category re-exports
  */
 export * as Schema from "./schema/index.js"
-/**
- * @since 1.0.0
- * @category re-exports
- */
-export * from "./core/Nodes.js"
