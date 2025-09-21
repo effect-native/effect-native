@@ -59,4 +59,21 @@ describe("MiniDom Sync capability", () => {
     const size = sync.run(program)
     expect(size).toBe(1)
   })
+
+  it("detects synchronous adapters", () => {
+    const capability = Sync.detect(() => Effect.sync(() => "ok"))
+
+    expect(Option.isSome(capability)).toBe(true)
+    expect(capability.pipe(Option.map((sync) => sync.run(Effect.succeed("ok"))))).toStrictEqual(Option.some("ok"))
+  })
+
+  it("flags asynchronous adapters as non-sync", () => {
+    const capability = Sync.detect(() =>
+      Effect.async<never, string, never>((resume) => {
+        setTimeout(() => resume(Effect.succeed("ok")), 0)
+      })
+    )
+
+    expect(Option.isNone(capability)).toBe(true)
+  })
 })
