@@ -18,7 +18,7 @@ When validating a node tree against a registry, the system shall raise structure
 While mutating MiniDom trees, the system shall provide the modern DOM mutation helpers (`append`, `prepend`, `replaceChildren`, `before`, `after`, `replaceWith`, `remove`) without exposing legacy insertion APIs.
 
 ### [Optional] FR1.6 JSX Integration Hooks
-When consumers opt into JSX usage, the system shall offer a factory-compatible node representation and optional code-generation hooks that tighten `JSX.IntrinsicElements` typings without bundling React.
+When consumers opt into JSX usage, the system shall offer a factory-compatible node representation and optional code-generation hooks that tighten `JSX.IntrinsicElements` typings without bundling React and without a hard package dependency on react.
 
 ### [Optional] FR1.7 HappyMiniDom Adapter
 When the optional `happy-dom` dependency is present, the system shall expose `@effect-native/minidom/HappyMiniDom` as a concrete MiniDom implementation powered by happy-dom.
