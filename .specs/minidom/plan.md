@@ -16,7 +16,7 @@
 - [ ] Stub additional adapters (sql, kv) with capability metadata placeholders
 
 ### 2. Core API & Attribute Handling
-- [ ] Implement namespace-aware node interfaces, AttributeBag view/service split, and Effect-only operations (`FR1.1`, `FR1.9`, `FR1.17`)
+- [ ] Implement namespace-aware node interfaces, AttributeBag view/service split, and Effect-only operations (`FR1.1`, `FR1.9`, `DR4.4`)
 - [ ] Add unit tests verifying sync vs async behavior through `MiniDom.Sync`
 - [ ] Document JSDoc @examples for core APIs
 
