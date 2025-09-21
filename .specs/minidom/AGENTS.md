@@ -1,11 +1,15 @@
 follow the direction at .claude/commands/new-feature.md
 goal: .claude/commands/done-feature.md
 
+you are expected to continue looping until `.specs/minidom/plan.md` shows Phase 5 complete and the goal in `.claude/commands/done-feature.md` is met.
+
 before stopping for any reason:
 - confirm `.specs/minidom/TODO.md` has no `Locked` hypotheses without an active assignee or experiment pointer
-- ensure Phase progress in `.specs/minidom/plan.md` marks the current phase as completed
-- run the full validation braid (`pnpm lint --fix`, `pnpm docgen`, `pnpm check`, `pnpm test`, `pnpm build`) and leave the results in commit notes
-if any of the above are not satisfied, continue working or update the ledger/plan with a hand-off note and commit
+- ensure Phase progress in `.specs/minidom/plan.md` marks the current phase as **completed** (Phase 5 included)
+- run the full validation braid (`pnpm lint --fix`, `pnpm docgen`, `pnpm check`, `pnpm test`, `pnpm build`) and document the results in the latest commit message
+- verify there are **no** unchecked items in `.specs/minidom/plan.md` task lists
+- produce a written session log in `experiments/minidom/log-YYYYMMDD-HHMM.md` summarizing work done, validation outputs, remaining hypotheses, and next steps
+if any of the above are not satisfied, continue working or update the ledger/plan with a hand-off note, create the session log, and commit before pausing
 
 we began with .specs/minidom/research.md
 then we iterated on .specs/minidom/instructions.md
@@ -28,12 +32,20 @@ then refactor as needed, while ensuring that `pnpm ok` before git commit again
 keep looping like this without stopping until every `.specs/minidom/*.md` is satisfied
 update the .specs/minidom/*.md as we go to track progress and follow up considerations.
 
+each iteration (red → green → refactor) **must** include at least 30 minutes of sustained work: if you reach a stopping point earlier, immediately begin the next iteration instead of pausing.
+
+after every commit:
+- re-run the validation braid
+- append a summary of validations and hypothesis updates to `experiments/minidom/log-YYYYMMDD-HHMM.md`
+- if the log grows past 200 lines, start a new time-stamped log file and link it in the previous file
+
 if you encounter a blocker that you cannot clear within the current session, record a new hypothesis in `.specs/minidom/TODO.md` with an assignee placeholder and disproof experiment path, commit that state, and then you may pause.
 
 the absence of pending work **must** be evidenced by:
 1. clean git status
 2. all tests/validation commands logged in the latest commit message
 3. `.specs/minidom/TODO.md` containing only `Invalidated` or `Constrained` hypotheses with future review dates
+4. `experiments/minidom/log-*` latest entry explicitly stating "ready to pause" with timestamp
 
 don't allow yourself to become blocked
 if anything requires attention, keep track of it somewhere and I shall follow up later
