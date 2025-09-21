@@ -119,3 +119,30 @@ following these instructions: .claude/commands/new-feature.md
 
 packages-native/minidom folder
 @effect-native/minidom package name
+
+---
+
+> We need a few explicit calls before design starts:
+
+- Core object model – I recommend “plain data + functions” (immutable records plus effectful helpers) to keep layering light. Alternative is mutable
+classes that mimic DOM; easier for happy-dom interop but drifts toward browser semantics and complicates layering. Decide whether MiniDom nodes have
+identity via refs or pure data snapshots.
+- Attribute storage – Suggest a small dedicated AttributeBag implementation backed by ReadonlyMap + structural sharing so async/sync backends can reuse it.
+Alternative is to defer to backend-specific bags (happy-dom’s own, window bag), which reduces reusability but lowers abstraction cost.
+- Effect contract granularity – I lean toward returning Effect from every method that can touch backend state (e.g., document.firstChild, node.append). We
+can keep invariants (like node.nodeType) as sync getters. Alternative is a mixed approach (only mutations are Effect), but then async sources break.
+- MiniDom service shape – Recommend a single tagged service (MiniDom) with capability functions (factories, traversal helpers). Alternative is multiple
+services (DocumentService, MutationService), giving finer DI at the cost of boilerplate.
+- Layer packaging – Prefer exporting a ready Layer.Layer<MiniDom> factory for HappyMiniDom and a Layer.layer builder for WindowMiniDom. Alternative: expose
+plain constructors and let consumers wrap them, but loses the “drop-in layer” ergonomics.
+- Schema DSL boundary – I’d keep the DSL in a sibling module (@effect-native/minidom/schema) built directly on Effect Schema primitives. Alternative is
+embedding DSL helpers in the core service, which tightens coupling but reduces imports.
+- Error taxonomy – Suggest MiniDomError with sub-tags (e.g., ValidationError, MutationError) aligned with Effect TaggedError. Alternative is free-form
+errors per module; faster now, harder to diagnose later.
+- JSX strategy – I favor “loose runtime + optional codegen for .d.ts”. Alternative is strict-by-default JSX runtime that requires codegen upfront; delivers
+types immediately but raises barrier to entry.
+- Happy-dom dependency handling – Recommended: optional peer + dev dep, but provide guards in tests so they skip when missing. Alternative is to hard
+require it for dev; easier locally, but violates optionality.
+- Testing split – Plan for unit tests per implementation plus behavior-driven integration tests using the Effect contract (e.g., Effect.gen snippet you
+provided). Alternative is to rely on happy-dom’s own test surface, but we need independent verification that our Effect wrappers behave.
+
