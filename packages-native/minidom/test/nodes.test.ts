@@ -10,8 +10,8 @@ const makeElement = (
   tagName: string
 ): MiniDom.Element => {
   const attributes = MiniDom.AttributeBag.viewFromEntries([])
-  const children: MiniDom.Element[] = []
-  const childNodes: MiniDom.Node[] = []
+  const children: Array<MiniDom.Element> = []
+  const childNodes: Array<MiniDom.Node> = []
 
   const element: MiniDom.Element = {
     nodeType: MiniDom.NodeType.Element,

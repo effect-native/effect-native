@@ -16,7 +16,7 @@
 - [ ] Stub additional adapters (sql, kv) with capability metadata placeholders
 
 ### 2. Core API & Attribute Handling
-- [ ] Implement namespace-aware node interfaces (`FR1.1`)
+- [x] Implement namespace-aware node interfaces (`FR1.1`)
 - [x] Ship AttributeBag view/service split with Effect-only operations (`FR1.9`, `DR4.4`)
 - [x] Introduce `MiniDom.Sync` capability wiring with unit coverage for synchronous runners (`FR1.9`, `SC7.6`)
 - [ ] Extend tests to cover async capability detection via synthetic delayed adapters
@@ -69,7 +69,7 @@
 | Task | Owner | Status |
 |------|-------|--------|
 | Package scaffolding & layers | TBD | Not started |
-| Core API & attributes | @codex | In progress — AttributeBag service + Sync capability tests (see packages-native/minidom/test/attribute-bag.test.ts) |
+| Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts` and new vitest coverage |
 | Schema DSL & extensions | TBD | Not started |
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |

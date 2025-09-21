@@ -25,4 +25,19 @@ export * as Namespace from "./core/Namespace.js"
  * @since 1.0.0
  * @category re-exports
  */
+export * as Nodes from "./core/Nodes.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
 export * as Sync from "./core/Sync.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
+export * from "./core/Nodes.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
+export * from "./core/Nodes.js"
