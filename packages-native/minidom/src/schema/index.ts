@@ -1,9 +1,9 @@
 /**
  * @since 1.0.0
  */
+import type { StandardSchemaV1 } from "@standard-schema/spec"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import type { StandardSchemaV1 } from "@standard-schema/spec"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
@@ -213,6 +213,53 @@ export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<st
 
 const standardSchemaVendor = "@effect-native/minidom/Schema"
 
+const HTML_NAMESPACE: Namespace = "http://www.w3.org/1999/xhtml"
+const KV_NAMESPACE: Namespace = "https://kv.example"
+
+const sqlArticleRegistry = registry([
+  element({
+    name: q(HTML_NAMESPACE, "article"),
+    content: content.sequence([
+      content.optional(content.element(q(HTML_NAMESPACE, "section")))
+    ]),
+    attributes: [
+      attribute({
+        name: q(null, "data-slug"),
+        required: true,
+        extensions: { sql: { column: "slug" } }
+      })
+    ],
+    extensions: { sql: { table: "articles" } }
+  }),
+  element({
+    name: q(HTML_NAMESPACE, "section"),
+    content: content.sequence([]),
+    attributes: [
+      attribute({
+        name: q(null, "data-order"),
+        required: true,
+        extensions: { sql: { column: "order" } }
+      })
+    ],
+    extensions: { sql: { table: "article_sections" } }
+  })
+])
+
+const kvFragmentRegistry = registry([
+  element({
+    name: q(KV_NAMESPACE, "fragment"),
+    content: content.sequence([]),
+    attributes: [
+      attribute({
+        name: q(null, "data-key"),
+        required: true,
+        extensions: { kv: { bucket: "fragments" } }
+      })
+    ],
+    extensions: { kv: { collection: "fragments" } }
+  })
+])
+
 /**
  * @since 1.0.0
  * @category standard-schema
@@ -247,6 +294,15 @@ export const toStandardSchemaV1 = (
     }
   }
 })
+
+/**
+ * @since 1.0.0
+ * @category samples
+ */
+export const samples = {
+  sqlArticleRegistry,
+  kvFragmentRegistry
+} as const
 
 /**
  * @since 1.0.0
@@ -352,5 +408,6 @@ export const Schema = {
   registry,
   validate,
   extensionsByAdapter,
-  toStandardSchemaV1
+  toStandardSchemaV1,
+  samples
 }
