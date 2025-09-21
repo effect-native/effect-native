@@ -1,29 +1,44 @@
-# MiniDom Assumption Ledger
+# MiniDom Hypothesis Ledger (Skeptic Locked)
 
-> Track only the hypotheses that remain unresolved. Treat each as “false until disproved,” and tie every conclusion to an explicit invalidation experiment.
+> **Objective**: enumerate every working assumption as a falsifiable hypothesis. Default belief is "false" until a documented disproof attempt survives.
 
-## Anti-Bias Protocol
-1. State the assumption in the negative and record it as a hypothesis before acting on it.
-2. Design a disproof experiment (or proof-of-concept) that would break the hypothesis.
-3. Run the experiment, capture the evidence, and update status. If the evidence goes stale, reset the hypothesis to "Needs Invalidation."
+## Anti-Bias & Lock Protocol
+1. **Invert the belief**: write each assumption as a hypothesis we expect to disprove.
+2. **Design the disproof first**: before implementation begins, record the experiment or proof-of-concept aimed at breaking the hypothesis.
+3. **Assign a Skeptic**: every hypothesis has an `Assignee` responsible for trying to invalidate it; no one may self-assign to confirm their own proposal.
+4. **Evidence before status**: the `Status` must remain `Locked` until a reproducible artifact (test, benchmark, design note) exists in `experiments/minidom/` and is referenced in `Evidence`.
+5. **Two-person rule**: promotion from `Locked` to any other state requires sign-off from a different engineer than the proposer (record in Evidence).
+6. **Regression safety**: if evidence grows stale (backend change, new capability), revert the status to `Locked` and schedule a new disproof.
+7. **No positive framing**: even if temporary acceptance is needed, record it as `Constrained` with a review date.
 
-_Status codes:_ `Needs Invalidation` (experiment outstanding), `In Progress` (experiment running), `Constrained` (survived, revisit on new context), `Invalidated` (assumption rejected).
+_Status values_: `Locked` (default, needs invalidation), `Invalidated` (disproof succeeded), `Constrained` (survived attempt; revisit by review date).
 
-## Open Hypotheses
+## Hypothesis Table
 
-| ID | Hypothesis (to invalidate) | Status | Disproof Plan | Evidence / Notes |
-|----|----------------------------|--------|---------------|------------------|
-| H24 | React host integration needs no additional scheduling primitives beyond capability checks. | Needs Invalidation | Build a MiniDom-powered React host config demo covering Suspense, transitions, and streaming SSR; verify no extra scheduler hooks are required. | Pending. |
-| H25 | Composite MiniDom transactions never require coordination across providers. | Needs Invalidation | Simulate a mutation that spans local + SQL MiniDom providers and observe whether two-phase commit / rollback orchestration is needed. | Pending. |
-| H26 | Event payloads can remain provider-specific without normalization. | Needs Invalidation | Aggregate change events from browser, SQL, and remote adapters into one consumer and confirm consumers can act without schema alignment. | Pending. |
-| H27 | Runtime capability detection is sufficient; static typing offers no extra safety. | Needs Invalidation | Prototype a typed capability helper and compare developer experience and failure modes against runtime-only detection. | Pending. |
-| H28 | Registry `extensions` metadata requires no schema validation. | Needs Invalidation | Define and enforce an Effect Schema for extensions; measure whether the validation catches integration defects that the free-form approach misses. | Pending. |
+| ID | Hypothesis (to invalidate) | Status | Disproof Plan | Assignee | Evidence / Notes |
+|----|----------------------------|--------|---------------|----------|------------------|
+| H1 | Capability-based node handles suffice for every backend; no global ID registry is required. | Locked | Prototype cross-process + remote serialization scenario; attempt to break handle comparison/serialization contract. | TBD |  |
+| H2 | A unified `MiniDom.Composite` router can safely mix providers without unforeseen mutation leaks. | Locked | Build hybrid tree (local + remote + SQL) with adversarial mutations; verify boundaries hold. | TBD |  |
+| H3 | Reusing the Effect Reactivity service covers all observation use cases; no bespoke channel is necessary. | Locked | Simulate large fan-out, high-frequency updates, and network partitions; measure latency vs. domain requirements. | TBD |  |
+| H4 | The `MiniDom.Sync` capability fully captures synchronous affordances needed by hosts. | Locked | Stress-test adapters that expose partially sync operations; attempt operations requiring finer granularity. | TBD |  |
+| H5 | Tagged `MiniDomError` variants provide enough diagnostics for all adapters (browser, SQL, KV, etc.). | Locked | Inject backend-specific failures; confirm taxonomy distinguishes root causes without custom exceptions. | TBD |  |
+| H6 | AttributeBag snapshot + effectful service model satisfies both eager and lazy attribute access patterns. | Locked | Implement streaming attribute source (e.g., remote KV) and attempt to read/modify attributes under load. | TBD |  |
+| H7 | Registry `extensions` metadata can remain type-safe while accommodating divergent persistence needs. | Locked | Extend registry with conflicting metadata requirements (SQL vs. KV) and run type-level + runtime checks. | TBD |  |
+| H8 | Canonical React host adapter can support every MiniDom adapter, including future async-only backends, via Suspense. | Locked | Build synthetic async-only adapter; ensure host adapter handles lifecycle without deadlocks or waterfalls. | TBD |  |
+| H9 | Optional adapters (HappyMiniDom, WindowMiniDom, SQL, KV) plus capability descriptors eliminate need for a "default" runtime. | Locked | Run onboarding study without default runtime; evaluate friction vs. providing bundled implementation. | TBD |  |
+| H10 | Shared Effect-based API (Effect.Effect return values) imposes no unacceptable latency overhead for synchronous adapters. | Locked | Benchmark tight loops using `Effect.sync` wrappers vs. direct imperative APIs. | TBD |  |
+| H11 | Composition validation can occur per-provider with aggregated reports; a central validator is unnecessary. | Locked | Force cross-provider schema violations and verify aggregated validation surfaces all errors. | TBD |  |
+| H12 | Capability descriptors are sufficient for downstream tooling; no hidden adapter-specific knowledge is required. | Locked | Attempt to build tooling (React host, CLI) relying exclusively on descriptors; identify missing signals. | TBD |  |
+| H13 | MiniDom.Events streams are adequate for React-induced render cycles; no extra buffering/queuing layer is needed. | Locked | Stress React integration with high-frequency updates; check for dropped frames or buffer overruns. | TBD |  |
+| H14 | `withTransaction` abstraction can express transactional semantics for all storage backends we target. | Locked | Model backend requiring multi-phase commit or snapshot isolation; verify abstraction can express it. | TBD |  |
+| H15 | Effect Schema-based registries can encode all structural rules (order, multiplicity, transparent content) needed for target vocabularies. | Locked | Model complex HTML/SVG blending with transparent content; attempt to encode; note any gaps. | TBD |  |
+| H16 | The layered package structure (core, schema, events, composite, host) remains maintainable as adapters grow. | Locked | Simulate growth to N=6 adapters; evaluate dependency graph complexity and build times. | TBD |  |
+| H17 | Standardized `layer`/`make` helpers are enough for DI; no additional configuration DSL is required. | Locked | Onboard a new adapter with complex dependencies; check for boilerplate or missing affordances. | TBD |  |
+| H18 | Reusing @effect/experimental Reactivity introduces no stability or versioning risks for the published package. | Locked | Audit Reactivity API stability, version drift, and upstream ownership; plan fallback if API changes. | TBD |  |
+| H19 | Single React host adapter will track future React releases without forked variants. | Locked | Review React roadmap; ensure host adapter abstraction can adapt to potential API shifts (e.g., partial hydration). | TBD |  |
+| H20 | Documentation requirements (JSDoc @example, docgen) are sufficient to prevent misuse without additional guides. | Locked | Conduct documentation review with fresh user; observe if misuse occurs despite docgen coverage. | TBD |  |
+| H21 | Capability detection can be implemented without runtime reflection, keeping tree-shaking intact. | Locked | Prototype capability discovery in bundler scenario; ensure no extra imports degrade tree-shaking. | TBD |  |
+| H22 | Hybrid MiniDom trees do not require eventual consistency resolution beyond provider-level enforcement. | Locked | Simulate asynchronous remote updates conflicting with local state; verify composite router behavior. | TBD |  |
+| H23 | Registry export to Standard Schema v1 plus extensions suffices for downstream tooling (docs, validators). | Locked | Attempt to integrate with third-party validator requiring extra metadata; note gaps. | TBD |  |
 
-## Experiments Backlog
-- E10: React host concurrency demo (targets H24).
-- E11: Cross-provider transaction simulation (targets H25).
-- E12: Multi-adapter event normalization spike (targets H26).
-- E13: Typed capability helper prototype (targets H27).
-- E14: Registry extensions schema validation comparison (targets H28).
-
-_Add new hypotheses immediately whenever fresh assumptions appear._
+_Add new hypotheses before committing to new conclusions. Update `Assignee` and `Evidence` as experiments run._
