@@ -48,6 +48,9 @@
   "optionalPeerDependencies": {
     "happy-dom": "^15.0.0"
   },
+  "dependencies": {
+    "@standard-schema/spec": "^1.0.0"
+  },
   "devDependencies": {
     "effect": "latest",
     "@effect/experimental": "latest",

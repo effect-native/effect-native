@@ -3,6 +3,7 @@
  */
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import type { StandardSchemaV1 } from "@standard-schema/spec"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
@@ -138,6 +139,20 @@ export interface AdapterExtensionGroup {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null
 
+const isExpandedName = (value: unknown): value is ExpandedName =>
+  isRecord(value) && typeof value.name === "string" && (value.ns === null || typeof value.ns === "string")
+
+const isAttributeSnapshot = (value: unknown): value is { readonly name: ExpandedName; readonly value?: string } =>
+  isRecord(value) && isExpandedName(value.name) && (value.value === undefined || typeof value.value === "string")
+
+const isNodeSnapshot = (value: unknown): value is NodeSnapshot =>
+  isRecord(value)
+  && isExpandedName(value.name)
+  && Array.isArray(value.children)
+  && Array.isArray(value.attributes)
+  && value.children.every(isNodeSnapshot)
+  && value.attributes.every(isAttributeSnapshot)
+
 /**
  * @since 1.0.0
  * @category introspection
@@ -195,6 +210,43 @@ export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<st
   }
   return result
 }
+
+const standardSchemaVendor = "@effect-native/minidom/Schema"
+
+/**
+ * @since 1.0.0
+ * @category standard-schema
+ */
+export const toStandardSchemaV1 = (
+  registryValue: Registry,
+  options?: { readonly vendor?: string }
+): StandardSchemaV1<NodeSnapshot> => ({
+  "~standard": {
+    version: 1,
+    vendor: options?.vendor ?? standardSchemaVendor,
+    types: {
+      input: undefined as unknown as NodeSnapshot,
+      output: undefined as unknown as NodeSnapshot
+    },
+    validate: (value: unknown) => {
+      if (!isNodeSnapshot(value)) {
+        return {
+          issues: [{ message: "invalid MiniDom NodeSnapshot input" }]
+        }
+      }
+
+      const validation = Effect.runSync(validate(registryValue, value))
+      if (validation.ok) {
+        return { value }
+      }
+
+      const messages = Option.getOrElse(validation.issues, () => [])
+      return {
+        issues: messages.map((message) => ({ message }))
+      }
+    }
+  }
+})
 
 /**
  * @since 1.0.0
@@ -299,5 +351,6 @@ export const Schema = {
   element,
   registry,
   validate,
-  extensionsByAdapter
+  extensionsByAdapter,
+  toStandardSchemaV1
 }

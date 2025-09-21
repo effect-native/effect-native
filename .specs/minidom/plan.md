@@ -26,6 +26,7 @@
 - [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries and grouped via `Schema.extensionsByAdapter` as of 2025-09-21 [`FR1.14`, `SC7.11`])
 - [ ] Create sample registries demonstrating metadata for SQL/KV backends
 - [ ] Provide Standard Schema export utilities
+  (in progress — `Schema.toStandardSchemaV1` exposes registry validator as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
 
 ### 4. Observation & Reactivity Integration
 - [ ] Wrap @effect/experimental Reactivity service (`MiniDom.Events`)
