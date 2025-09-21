@@ -40,5 +40,14 @@ _Status values_: `Locked` (default, needs invalidation), `Invalidated` (disproof
 | H21 | Capability detection can be implemented without runtime reflection, keeping tree-shaking intact. | Locked | Prototype capability discovery in bundler scenario; ensure no extra imports degrade tree-shaking. | TBD |  |
 | H22 | Hybrid MiniDom trees do not require eventual consistency resolution beyond provider-level enforcement. | Locked | Simulate asynchronous remote updates conflicting with local state; verify composite router behavior. | TBD |  |
 | H23 | Registry export to Standard Schema v1 plus extensions suffices for downstream tooling (docs, validators). | Locked | Attempt to integrate with third-party validator requiring extra metadata; note gaps. | TBD |  |
+| H24 | Phase 4 workstreams reference only existing FR/SC identifiers; no numbering drift is introduced. | Locked | Compare `plan.md` references (e.g., `FR1.17`) against `.specs/minidom/requirements.md`; update plan/requirements to restore traceability. | @zoe |  |
 
 _Add new hypotheses before committing to new conclusions. Update `Assignee` and `Evidence` as experiments run._
+
+## Experiments Backlog
+- E10: React host concurrency demo (targets H8, H19).
+- E11: Cross-provider transaction simulation (targets H2, H22).
+- E12: Capability-only tooling spike (targets H12, H21).
+- E13: Reactivity stability audit (targets H18).
+- E14: Registry extensions schema validation comparison (targets H7, H23).
+- E15: Plan traceability audit ensuring FR/SC alignment (targets H24).
