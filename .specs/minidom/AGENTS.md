@@ -32,12 +32,13 @@ then refactor as needed, while ensuring that `pnpm ok` before git commit again
 keep looping like this without stopping until every `.specs/minidom/*.md` is satisfied
 update the .specs/minidom/*.md as we go to track progress and follow up considerations.
 
-each iteration (red → green → refactor) **must** include at least 30 minutes of sustained work: if you reach a stopping point earlier, immediately begin the next iteration instead of pausing.
+each iteration (red → green → refactor) **must** include at least 30 minutes of sustained work: if you reach a stopping point earlier, immediately begin the next iteration instead of pausing. status-only updates are forbidden while there is remaining work in `.specs/minidom/plan.md`; report progress **and** immediately continue with the next concrete task.
 
 after every commit:
 - re-run the validation braid
 - append a summary of validations and hypothesis updates to `experiments/minidom/log-YYYYMMDD-HHMM.md`
 - if the log grows past 200 lines, start a new time-stamped log file and link it in the previous file
+- select the next unchecked item in `.specs/minidom/plan.md` and begin work **before** responding to the user (unless all items are complete)
 
 if you encounter a blocker that you cannot clear within the current session, record a new hypothesis in `.specs/minidom/TODO.md` with an assignee placeholder and disproof experiment path, commit that state, and then you may pause.
 
@@ -46,6 +47,8 @@ the absence of pending work **must** be evidenced by:
 2. all tests/validation commands logged in the latest commit message
 3. `.specs/minidom/TODO.md` containing only `Invalidated` or `Constrained` hypotheses with future review dates
 4. `experiments/minidom/log-*` latest entry explicitly stating "ready to pause" with timestamp
+
+never conclude a response with "next steps" or similar planning-only notes while outstanding plan items remain; instead, carry out the next action and report the results in the same response.
 
 don't allow yourself to become blocked
 if anything requires attention, keep track of it somewhere and I shall follow up later
