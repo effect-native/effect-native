@@ -4,7 +4,7 @@
 As framework maintainers building Effect-native tooling, we need a reusable MiniDom package that offers a browser-agnostic DOM subset plus an extensible schema layer so that teams implementing HTML, SVG, MathML, or custom DSLs can share infrastructure.
 
 ## Core Requirements (EARS)
-1. [Ubiquitous] MiniDom shall expose namespace-aware TypeScript interfaces for nodes, elements, documents, and fragments that mirror the modern DOM subset outlined in `.specs/domdb/research.md` while remaining environment-agnostic.
+1. [Ubiquitous] MiniDom shall expose namespace-aware TypeScript interfaces for nodes, elements, documents, and fragments that mirror the modern DOM subset outlined in `.specs/minidom/research.md` while remaining environment-agnostic.
 2. [Ubiquitous] MiniDom shall separate standard DOM-like primitives from non-standard extensions by delivering a composable "MiniDomX" layer that hosts registries, schema DSL, and validators.
 3. [Event-Driven] When defining a custom element (standard or user-defined), the system shall allow authors to declare valid parent/child relationships, required descendants, and attribute constraints using Effect Schema.
 4. [Event-Driven] When validating a node tree against a registry, the system shall raise structured Effect errors if structural, ordering, or attribute requirements are violated.
