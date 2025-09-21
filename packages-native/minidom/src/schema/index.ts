@@ -4,6 +4,7 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import * as S from "effect/Schema"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
@@ -216,6 +217,24 @@ const standardSchemaVendor = "@effect-native/minidom/Schema"
 const HTML_NAMESPACE: Namespace = "http://www.w3.org/1999/xhtml"
 const KV_NAMESPACE: Namespace = "https://kv.example"
 
+const expandedNameSchema = S.Struct({
+  ns: S.Union(S.String, S.Null),
+  name: S.String
+})
+
+const attributeSnapshotSchema = S.Struct({
+  name: expandedNameSchema,
+  value: S.optional(S.String)
+})
+
+const nodeSnapshotSchema: S.Schema<NodeSnapshot> = S.suspend(() => nodeSnapshotStruct)
+
+const nodeSnapshotStruct = S.Struct({
+  name: expandedNameSchema,
+  children: S.Array(nodeSnapshotSchema),
+  attributes: S.Array(attributeSnapshotSchema)
+})
+
 const sqlArticleRegistry = registry([
   element({
     name: q(HTML_NAMESPACE, "article"),
@@ -304,6 +323,34 @@ export const toStandardSchemaV1 = (
   }
 })
 
+const makeRegistryFilter = (registryValue: Registry) => (node: NodeSnapshot) => {
+  const validation = Effect.runSync(validate(registryValue, node))
+  if (validation.ok) {
+    return true
+  }
+  const issues = Option.getOrElse(validation.issues, () => [])
+  return issues.map((message) => ({ path: [], message }))
+}
+
+/**
+ * @since 1.0.0
+ * @category effect-schema
+ * @example
+ * import * as MiniDom from "@effect-native/minidom"
+ * import * as S from "effect/Schema"
+ * const decode = S.decodeUnknown(
+ *   MiniDom.Schema.toEffectSchema(MiniDom.Schema.samples.sqlArticleRegistry)
+ * )
+ *
+ * const result = decode({
+ *   name: MiniDom.Schema.q("http://www.w3.org/1999/xhtml", "article"),
+ *   attributes: [{ name: MiniDom.Schema.q(null, "data-slug"), value: "intro" }],
+ *   children: []
+ * })
+ */
+export const toEffectSchema = (registryValue: Registry) =>
+  S.filter(makeRegistryFilter(registryValue))(nodeSnapshotSchema)
+
 /**
  * @since 1.0.0
  * @category samples
@@ -326,7 +373,7 @@ export const samples = {
 export interface NodeSnapshot {
   readonly name: ExpandedName
   readonly children: ReadonlyArray<NodeSnapshot>
-  readonly attributes: ReadonlyArray<{ readonly name: ExpandedName; readonly value?: string }>
+  readonly attributes: ReadonlyArray<{ readonly name: ExpandedName; readonly value?: string | undefined }>
 }
 
 interface ValidationResult {
@@ -424,5 +471,6 @@ export const Schema = {
   validate,
   extensionsByAdapter,
   toStandardSchemaV1,
+  toEffectSchema,
   samples
 }

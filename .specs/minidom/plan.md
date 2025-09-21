@@ -23,7 +23,7 @@
 - [x] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions
-- [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries and grouped via `Schema.extensionsByAdapter` as of 2025-09-21 [`FR1.14`, `SC7.11`])
+- [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries, grouped via `Schema.extensionsByAdapter`, and bridged to Effect Schema via `Schema.toEffectSchema` as of 2025-09-21 [`FR1.3`, `FR1.14`, `SC7.3`, `SC7.11`])
 - [x] Create sample registries demonstrating metadata for SQL/KV backends (complete — `Schema.samples` exposes SQL/KV fixtures validated via docs/tests on 2025-09-21 [`FR1.14`, `SC7.11`])
 - [x] Provide Standard Schema export utilities
   (complete — `Schema.toStandardSchemaV1` plus README coverage as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
