@@ -28,5 +28,70 @@ describe("MiniDomX Schema extensions [FR1.14][SC7.11]", () => {
     const entries = Array.from(registry.elements.values())
     expect(entries).toHaveLength(1)
     expect(entries[0]!.extensions).toEqual({ sql: { table: "articles" } })
+
+    // @ts-expect-error registry should preserve typed element extensions
+    const elementExtensions: { sql: { table: string } } | undefined = entries[0]!.extensions
+    // @ts-expect-error registry should preserve typed attribute extensions
+    const attributeExtensions: { sql: { column: string } } | undefined = entries[0]!.attributes[0]!.extensions
+
+    expect(elementExtensions?.sql.table).toBe("articles")
+    expect(attributeExtensions?.sql.column).toBe("slug")
+  })
+
+  it("groups extensions by adapter namespace [FR1.14][SC7.11]", () => {
+    const registry = Schema.registry([
+      Schema.element({
+        name: Schema.q(HTML, "article"),
+        content: Schema.content.sequence([]),
+        attributes: [
+          Schema.attribute({
+            name: Schema.q(null, "data-slug"),
+            extensions: { sql: { column: "slug" } }
+          })
+        ],
+        extensions: { sql: { table: "articles" } }
+      }),
+      Schema.element({
+        name: Schema.q(HTML, "kv-resource"),
+        content: Schema.content.sequence([]),
+        attributes: [
+          Schema.attribute({
+            name: Schema.q(null, "data-key"),
+            extensions: { kv: { bucket: "docs" } }
+          })
+        ],
+        extensions: { kv: { collection: "resources" } }
+      })
+    ])
+
+    const grouped = Schema.extensionsByAdapter(registry)
+
+    expect(grouped.sql?.elements).toEqual([
+      {
+        name: Schema.q(HTML, "article"),
+        metadata: { table: "articles" }
+      }
+    ])
+    expect(grouped.sql?.attributes).toEqual([
+      {
+        element: Schema.q(HTML, "article"),
+        name: Schema.q(null, "data-slug"),
+        metadata: { column: "slug" }
+      }
+    ])
+
+    expect(grouped.kv?.elements).toEqual([
+      {
+        name: Schema.q(HTML, "kv-resource"),
+        metadata: { collection: "resources" }
+      }
+    ])
+    expect(grouped.kv?.attributes).toEqual([
+      {
+        element: Schema.q(HTML, "kv-resource"),
+        name: Schema.q(null, "data-key"),
+        metadata: { bucket: "docs" }
+      }
+    ])
   })
 })
