@@ -19,7 +19,7 @@
 - [x] Implement namespace-aware node interfaces (`FR1.1`)
 - [x] Ship AttributeBag view/service split with Effect-only operations (`FR1.9`, `DR4.4`)
 - [x] Introduce `MiniDom.Sync` capability wiring with unit coverage for synchronous runners (`FR1.9`, `SC7.6`)
-- [ ] Extend tests to cover async capability detection via synthetic delayed adapters
+- [x] Extend tests to cover async capability detection via synthetic delayed adapters
 - [ ] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions

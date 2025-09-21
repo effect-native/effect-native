@@ -1,7 +1,9 @@
 /**
  * @since 1.0.0
  */
-import type * as Effect from "effect/Effect"
+import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
+import * as Option from "effect/Option"
 
 /**
  * @since 1.0.0
@@ -35,12 +37,28 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
 
 /**
  * @since 1.0.0
+ * @category constructors
+ */
+export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync> => {
+  try {
+    const exit = Effect.runSyncExit(operation())
+    return Exit.isSuccess(exit)
+      ? Option.some(fromRunner((effect) => Effect.runSync(effect)))
+      : Option.none()
+  } catch {
+    return Option.none()
+  }
+}
+
+/**
+ * @since 1.0.0
  * @category exports
  */
 export const Sync = {
   TypeId: MiniDomSyncTypeId,
   is,
-  fromRunner
+  fromRunner,
+  detect
 }
 
 /**
