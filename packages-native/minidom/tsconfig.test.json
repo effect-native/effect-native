@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["test"],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
+    "rootDir": "test",
+    "outDir": "build/test",
+    "types": ["vitest/importMeta"]
+  },
+  "references": [
+    { "path": "tsconfig.src.json" }
+  ]
+}
