@@ -376,6 +376,22 @@ export interface NodeSnapshot {
   readonly attributes: ReadonlyArray<{ readonly name: ExpandedName; readonly value?: string | undefined }>
 }
 
+/**
+ * @since 1.0.0
+ * @category model
+ */
+export interface AttributeRecord {
+  readonly [key: string]: string | undefined
+}
+
+/**
+ * @since 1.0.0
+ * @category model
+ */
+export interface AttributeEffectSchema {
+  readonly decode: (input: AttributeRecord) => Effect.Effect<Record<string, string>>
+}
+
 interface ValidationResult {
   readonly ok: boolean
   readonly issues: Option.Option<ReadonlyArray<string>>
@@ -458,6 +474,33 @@ export const validate = (
       : { ok: false, issues: Option.some(issues) }
   })
 
+const attributeDecoder = (registryValue: Registry, name: ExpandedName) => (input: AttributeRecord) => {
+  const definition = registryValue.elements.get(key(name))
+  if (!definition) {
+    throw new Error(`unknown element ${name.name}`)
+  }
+  const output: Record<string, string> = {}
+  for (const attributeDefinition of definition.attributes) {
+    const attrName = attributeDefinition.name.name
+    const value = input[attrName]
+    if (attributeDefinition.required === true && value === undefined) {
+      throw new Error(`missing attribute ${attrName}`)
+    }
+    if (value !== undefined) {
+      output[attrName] = value
+    }
+  }
+  return output
+}
+
+/**
+ * @since 1.0.0
+ * @category effect-schema
+ */
+export const effectSchema = (registryValue: Registry, name: ExpandedName): AttributeEffectSchema => ({
+  decode: (input) => Effect.sync(() => attributeDecoder(registryValue, name)(input))
+})
+
 /**
  * @since 1.0.0
  * @category exports
@@ -469,6 +512,7 @@ export const Schema = {
   element,
   registry,
   validate,
+  effectSchema,
   extensionsByAdapter,
   toStandardSchemaV1,
   toEffectSchema,
