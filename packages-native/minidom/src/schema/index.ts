@@ -24,16 +24,18 @@ export const q = (ns: Namespace, name: string): ExpandedName => ({ ns, name })
  * @since 1.0.0
  * @category model
  */
-export interface AttributeDefinition {
+export interface AttributeDefinition<Extensions = unknown> {
   readonly name: ExpandedName
   readonly required?: boolean
+  readonly extensions?: Extensions
 }
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const attribute = (definition: AttributeDefinition): AttributeDefinition => definition
+export const attribute = <Extensions>(definition: AttributeDefinition<Extensions>): AttributeDefinition<Extensions> =>
+  definition
 
 /**
  * @since 1.0.0
@@ -73,24 +75,27 @@ export const content = {
  * @since 1.0.0
  * @category model
  */
-export interface ElementDefinition {
+export interface ElementDefinition<ElementExtensions = unknown> {
   readonly name: ExpandedName
   readonly content: ContentExpression
   readonly attributes: ReadonlyArray<AttributeDefinition>
+  readonly extensions?: ElementExtensions
 }
 
 /**
  * @since 1.0.0
  * @category constructors
  */
-export const element = (definition: {
+export const element = <ElementExtensions = unknown>(definition: {
   readonly name: ExpandedName
   readonly content: ContentExpression
   readonly attributes?: ReadonlyArray<AttributeDefinition>
-}): ElementDefinition => ({
+  readonly extensions?: ElementExtensions
+}): ElementDefinition<ElementExtensions> => ({
   name: definition.name,
   content: definition.content,
-  attributes: definition.attributes ?? []
+  attributes: definition.attributes ?? [],
+  ...(definition.extensions === undefined ? {} : { extensions: definition.extensions })
 })
 
 /**

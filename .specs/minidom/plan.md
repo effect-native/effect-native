@@ -23,7 +23,7 @@
 - [x] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions
-- [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions`
+- [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries as of 2025-09-21 [`FR1.14`, `SC7.11`])
 - [ ] Create sample registries demonstrating metadata for SQL/KV backends
 - [ ] Provide Standard Schema export utilities
 
@@ -70,7 +70,7 @@
 |------|-------|--------|
 | Package scaffolding & layers | TBD | Not started |
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts` and new vitest coverage |
-| Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers stubbed (`packages-native/minidom/src/schema/index.ts`) |
+| Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions` metadata persisted via `Schema.registry` (see `packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |
 | React host adapter | TBD | Not started |
