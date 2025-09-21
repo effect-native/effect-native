@@ -67,6 +67,27 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
 /**
  * @since 1.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { AttributeBag, Sync } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ * import * as Option from "effect/Option"
+ *
+ * const program = Effect.gen(function*() {
+ *   const bag = AttributeBag.service()
+ *   yield* bag.set("http://www.w3.org/1999/xhtml", "class", "hero")
+ *   yield* bag.set(null, "id", "root")
+ *   const snapshot = yield* bag.snapshot()
+ *   return Array.from(snapshot.entries())
+ * })
+ *
+ * const capability = Sync.detect(() => program)
+ *
+ * if (Option.isSome(capability)) {
+ *   const entries = capability.value.run(program)
+ *   console.log(entries)
+ * }
+ * ```
  */
 export const service = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service => {
   const store = new Map<string, AttributeEntry>()

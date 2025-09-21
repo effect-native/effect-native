@@ -39,6 +39,30 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
  * @since 1.0.0
  * @category constructors
  */
+/**
+ * @since 1.0.0
+ * @category constructors
+ * @example
+ * ```ts
+ * import { AttributeBag, Sync } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ * import * as Option from "effect/Option"
+ *
+ * const program = Effect.gen(function*() {
+ *   const bag = AttributeBag.service()
+ *   yield* bag.set(null, "id", "root")
+ *   const snapshot = yield* bag.snapshot()
+ *   return snapshot.size
+ * })
+ *
+ * const capability = Sync.detect(() => program)
+ *
+ * Option.match(capability, {
+ *   onNone: () => console.log("adapter is async"),
+ *   onSome: (sync) => console.log("size", sync.run(program))
+ * })
+ * ```
+ */
 export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync> => {
   try {
     const exit = Effect.runSyncExit(operation())

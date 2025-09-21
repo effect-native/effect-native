@@ -20,7 +20,7 @@
 - [x] Ship AttributeBag view/service split with Effect-only operations (`FR1.9`, `DR4.4`)
 - [x] Introduce `MiniDom.Sync` capability wiring with unit coverage for synchronous runners (`FR1.9`, `SC7.6`)
 - [x] Extend tests to cover async capability detection via synthetic delayed adapters
-- [ ] Document JSDoc @examples for core APIs
+- [x] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions
 - [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions`
