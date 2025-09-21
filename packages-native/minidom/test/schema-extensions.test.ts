@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, expectTypeOf, it } from "@effect/vitest"
 
 import * as Schema from "@effect-native/minidom/Schema"
 
@@ -29,10 +29,13 @@ describe("MiniDomX Schema extensions [FR1.14][SC7.11]", () => {
     expect(entries).toHaveLength(1)
     expect(entries[0]!.extensions).toEqual({ sql: { table: "articles" } })
 
-    // @ts-expect-error registry should preserve typed element extensions
-    const elementExtensions: { sql: { table: string } } | undefined = entries[0]!.extensions
-    // @ts-expect-error registry should preserve typed attribute extensions
-    const attributeExtensions: { sql: { column: string } } | undefined = entries[0]!.attributes[0]!.extensions
+    const elementExtensions = entries[0]!.extensions
+    expectTypeOf(elementExtensions).not.toBeAny()
+    expectTypeOf(elementExtensions).toEqualTypeOf<{ sql: { table: string } } | undefined>()
+
+    const attributeExtensions = entries[0]!.attributes[0]!.extensions
+    expectTypeOf(attributeExtensions).not.toBeAny()
+    expectTypeOf(attributeExtensions).toEqualTypeOf<{ sql: { column: string } } | undefined>()
 
     expect(elementExtensions?.sql.table).toBe("articles")
     expect(attributeExtensions?.sql.column).toBe("slug")

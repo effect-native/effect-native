@@ -124,6 +124,82 @@ export const registry = (elements: ReadonlyArray<ElementDefinition>): Registry =
  * @since 1.0.0
  * @category model
  */
+export interface AdapterExtensionGroup {
+  readonly elements: ReadonlyArray<{
+    readonly name: ExpandedName
+    readonly metadata: unknown
+  }>
+  readonly attributes: ReadonlyArray<{
+    readonly element: ExpandedName
+    readonly name: ExpandedName
+    readonly metadata: unknown
+  }>
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null
+
+/**
+ * @since 1.0.0
+ * @category introspection
+ */
+export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<string, AdapterExtensionGroup>> => {
+  const groups = new Map<
+    string,
+    {
+      elements: Array<{ readonly name: ExpandedName; readonly metadata: unknown }>
+      attributes: Array<{ readonly element: ExpandedName; readonly name: ExpandedName; readonly metadata: unknown }>
+    }
+  >()
+
+  const ensureGroup = (adapter: string) => {
+    let group = groups.get(adapter)
+    if (!group) {
+      group = { elements: [], attributes: [] }
+      groups.set(adapter, group)
+    }
+    return group
+  }
+
+  for (const definition of registryValue.elements.values()) {
+    if (isRecord(definition.extensions)) {
+      for (const [adapter, metadata] of Object.entries(definition.extensions)) {
+        const group = ensureGroup(adapter)
+        group.elements.push({
+          name: definition.name,
+          metadata
+        })
+      }
+    }
+
+    for (const attribute of definition.attributes) {
+      if (!isRecord(attribute.extensions)) {
+        continue
+      }
+      for (const [adapter, metadata] of Object.entries(attribute.extensions)) {
+        const group = ensureGroup(adapter)
+        group.attributes.push({
+          element: definition.name,
+          name: attribute.name,
+          metadata
+        })
+      }
+    }
+  }
+
+  const result: Record<string, AdapterExtensionGroup> = Object.create(null)
+  for (const [adapter, group] of groups) {
+    result[adapter] = {
+      elements: group.elements,
+      attributes: group.attributes
+    }
+  }
+  return result
+}
+
+/**
+ * @since 1.0.0
+ * @category model
+ */
 export interface NodeSnapshot {
   readonly name: ExpandedName
   readonly children: ReadonlyArray<NodeSnapshot>
@@ -222,5 +298,6 @@ export const Schema = {
   content,
   element,
   registry,
-  validate
+  validate,
+  extensionsByAdapter
 }
