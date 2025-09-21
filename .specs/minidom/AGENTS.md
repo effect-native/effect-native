@@ -32,6 +32,12 @@ then refactor as needed, while ensuring that `pnpm ok` before git commit again
 keep looping like this without stopping until every `.specs/minidom/*.md` is satisfied
 update the .specs/minidom/*.md as we go to track progress and follow up considerations.
 
+while we are building out MiniDomX (`.specs/minidom/plan.md` section 3), every schema iteration must:
+- introduce RED coverage in `packages-native/minidom/test/` before touching `src/schema`; tie the test description back to the specific FR / SC identifier in the plan or TODO ledger
+- surface new helpers through the public exports (`packages-native/minidom/src/index.ts`) and update `package.json` subpath mappings when new entry points are required
+- log the evidence and validation braid in `experiments/minidom/log-*.md` using the same timestamped file for the current day, adding cross-links if the log grows beyond 200 lines
+- refresh `.specs/minidom/plan.md` immediately after the GREEN commit so Schema tasks remain traceable and status stays accurate
+
 each iteration (red → green → refactor) **must** include at least 30 minutes of sustained work: if you reach a stopping point earlier, immediately begin the next iteration instead of pausing. status-only updates are forbidden while there is remaining work in `.specs/minidom/plan.md`; report progress **and** immediately continue with the next concrete task. do **not** assume that writing a session log completes an iteration — begin the following task before replying.
 
 after every commit:
