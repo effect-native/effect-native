@@ -50,4 +50,4 @@ _Add new hypotheses before committing to new conclusions. Update `Assignee` and 
 - E12: Capability-only tooling spike (targets H12, H21).
 - E13: Reactivity stability audit (targets H18).
 - E14: Registry extensions schema validation comparison (targets H7, H23).
-- E15: Plan traceability audit ensuring FR/SC alignment (targets H24).
+- [x] E15: Plan traceability audit ensuring FR/SC alignment (targets H24) — Completed 2025-03-10 by @zoe (see `experiments/minidom/plan-traceability-audit.md`).
