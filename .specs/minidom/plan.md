@@ -24,9 +24,9 @@
 
 ### 3. Schema DSL & Registry Extensions
 - [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries and grouped via `Schema.extensionsByAdapter` as of 2025-09-21 [`FR1.14`, `SC7.11`])
-- [ ] Create sample registries demonstrating metadata for SQL/KV backends (in progress — `Schema.samples.sqlArticleRegistry` and `Schema.samples.kvFragmentRegistry` defined 2025-09-21 [`FR1.14`, `SC7.11`])
-- [ ] Provide Standard Schema export utilities
-  (in progress — `Schema.toStandardSchemaV1` exposes registry validator as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
+- [x] Create sample registries demonstrating metadata for SQL/KV backends (complete — `Schema.samples` exposes SQL/KV fixtures validated via docs/tests on 2025-09-21 [`FR1.14`, `SC7.11`])
+- [x] Provide Standard Schema export utilities
+  (complete — `Schema.toStandardSchemaV1` plus README coverage as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
 
 ### 4. Observation & Reactivity Integration
 - [ ] Wrap @effect/experimental Reactivity service (`MiniDom.Events`)
@@ -75,6 +75,6 @@
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |
 | React host adapter | TBD | Not started |
-| Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1`; docs iteration underway |
+| Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
 
 Update the table after each milestone, referencing commit hashes and experiment evidence.
