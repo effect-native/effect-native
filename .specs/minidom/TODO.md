@@ -21,19 +21,17 @@
 
 ---
 
-# hypothesis
+# Hypothesis Review
 
-- Hypothesis: Enforcing a single node identity strategy across all MiniDom implementations is required to keep interop coherent; allowing per-layer freedom will fracture host behavior.
-- Hypothesis: Relying exclusively on modern `ParentNode`/`ChildNode` helpers leaves essential reconciliation scenarios unsupported; we must reintroduce lower-level insertion primitives such as `insertBefore`.
-- Hypothesis: Making namespace-awareness mandatory across the core API adds needless overhead; a namespace-agnostic default with opt-in namespaces better serves the dominant workloads.
-- Hypothesis: Returning `Effect.Effect` from every MiniDom operation imposes avoidable latency and complexity; synchronous-first APIs with optional effect wrappers would integrate more cleanly with existing hosts.
-- Hypothesis: Separating MiniDom and MiniDomX into distinct layers fragments developer experience; a single integrated surface yields clearer ergonomics and adoption.
-- Hypothesis: The `AttributeBag` abstraction obscures element-specific typing guarantees; strongly typed attribute structs should replace the bag to ensure correctness.
-- Hypothesis: Building a bespoke schema DSL duplicates mature standards; adopting an external schema language (e.g., Relax NG) directly would lower long-term risk.
-- Hypothesis: Shipping only optional adapters like `HappyMiniDom` leaves teams without a dependable default runtime; the core package must include an official implementation out of the box.
-- Hypothesis: A universal React Reconciler host config cannot exist; each MiniDom backend will demand bespoke host methods to respect its operational semantics.
-- Hypothesis: Supporting heterogeneous storage backends through one registry/schema DSL is unrealistic; divergent SQL schemas will force backend-specific modeling that fractures portability.
-- Hypothesis: Composing multiple MiniDom implementations within a single document tree is untenable; cross-provider mutation and validation boundaries will collapse under real workloads.
-- Hypothesis: Aligning real browser DOM, jsdom, happy-dom, SQL, KV, and in-memory adapters under one contract will yield semantic drift; tightening scope to a single blessed runtime is the only way to ensure predictability.
-
-attempt to invalidate these hypothesis and update this document .specs/minidom/TODO.md with your findings.
+- **Invalidated:** Enforcing a single node identity strategy across all MiniDom implementations is required. React reconciler host configs prove backends can manage identity independently (opaque handles, IDs, object refs) so long as they satisfy a minimal comparison/lookup contract. MiniDom can follow the same pattern by defining capability hooks instead of mandating one approach.
+- **Invalidated:** Modern `ParentNode`/`ChildNode` helpers are insufficient for reconciliation. The combination of `before`, `after`, `append`, `replaceChildren`, and `replaceWith` covers all relative insertions (`insertBefore` === `reference.before(newNode)`), so lower-level primitives add redundancy without additional capability.
+- **Invalidated:** Mandatory namespace awareness adds needless overhead. Supporting HTML, SVG, MathML, and custom vocabularies requires namespaces in the core; omitting them makes mixed-content documents impossible. The cost is a nullable string per node—trivial compared to interoperability gains.
+- **Invalidated:** Returning `Effect.Effect` from every MiniDom operation imposes latency. Implementations can still return `Effect.succeed` / `Effect.sync` for synchronous work; async backends get a first-class path without forcing Promises. The contract adds composability rather than overhead.
+- **Invalidated:** Separating MiniDom (core) and MiniDomX (schema/registry) fragments DX. Layered design mirrors standard DOM vs. validation tooling, letting lightweight consumers skip the schema DSL while power users compose it. Collapsing them would force everyone to pay the cost of advanced features.
+- **Invalidated:** `AttributeBag` obscures typing. The bag captures dynamic namespace-aware attributes while higher layers (MiniDomX schemas) provide typed views and validation. Replacing the bag with static structs would break extensibility and custom attribute scenarios.
+- **Invalidated:** Building a bespoke schema DSL duplicates existing standards. Our DSL is Effect Schema–based and can export Standard Schema v1, enabling interop while keeping zero extra runtime deps. Importing Relax NG (or similar) directly would add heavy tooling and still require bindings into Effect.
+- **Invalidated:** Only offering optional adapters leaves teams without a dependable runtime. We plan to ship first-party layers (`HappyMiniDom`, `WindowMiniDom`) that cover Node and browser contexts while allowing installations to omit them when unnecessary; this balances batteries-included defaults with optional peer deps.
+- **Invalidated:** A universal React reconciler host config cannot exist. The host config can be parameterized over a MiniDom adapter interface (createNode, appendChild, commitUpdate). React already allows host configs to delegate to backend-provided handles, so we can supply a generic host driven by MiniDom capabilities.
+- **Invalidated:** One registry/schema DSL cannot cover heterogeneous storage backends. Structural constraints stay consistent across backends; persistence-specific metadata can attach via optional extensions (e.g., SQL column hints) without forking the DSL, preserving portability.
+- **Invalidated:** Composing multiple MiniDom implementations in a tree is untenable. By introducing explicit delegation boundaries (akin to React portals or shadow roots) and routing mutations through a composition layer, we can keep cross-provider ownership clear and maintain validation integrity.
+- **Invalidated:** Aligning browser DOM, jsdom, happy-dom, SQL, KV, and in-memory layers under one contract inevitably leads to semantic drift. The shared Effect-based contract plus optional capability flags keeps semantics aligned while allowing implementations to opt into advanced features; narrowing scope would undermine the multi-backend goal.
