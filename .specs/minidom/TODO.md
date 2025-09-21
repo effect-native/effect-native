@@ -40,7 +40,7 @@ _Status values_: `Locked` (default, needs invalidation), `Invalidated` (disproof
 | H21 | Capability detection can be implemented without runtime reflection, keeping tree-shaking intact. | Locked | Prototype capability discovery in bundler scenario; ensure no extra imports degrade tree-shaking. | TBD |  |
 | H22 | Hybrid MiniDom trees do not require eventual consistency resolution beyond provider-level enforcement. | Locked | Simulate asynchronous remote updates conflicting with local state; verify composite router behavior. | TBD |  |
 | H23 | Registry export to Standard Schema v1 plus extensions suffices for downstream tooling (docs, validators). | Locked | Attempt to integrate with third-party validator requiring extra metadata; note gaps. | TBD |  |
-| H24 | Phase 4 workstreams reference only existing FR/SC identifiers; no numbering drift is introduced. | Locked | Compare `plan.md` references (e.g., `FR1.17`) against `.specs/minidom/requirements.md`; update plan/requirements to restore traceability. | @zoe |  |
+| H24 | Phase 4 workstreams reference only existing FR/SC identifiers; no numbering drift is introduced. | Constrained (review 2025-06) | Compare `plan.md` references (e.g., `FR1.17`) against `.specs/minidom/requirements.md`; update plan/requirements to restore traceability. | @zoe | E15 audit (`experiments/minidom/plan-traceability-audit.md`, 2025-03-10) confirms plan references valid identifiers (`FR1.1`, `FR1.9`, `DR4.4`, `SC7.1`–`SC7.13`). Re-run if requirements numbering changes. |
 
 _Add new hypotheses before committing to new conclusions. Update `Assignee` and `Evidence` as experiments run._
 
