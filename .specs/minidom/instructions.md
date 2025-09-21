@@ -10,6 +10,8 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 4. [Event-Driven] When validating a node tree against a registry, the system shall raise structured Effect errors if structural, ordering, or attribute requirements are violated.
 5. [State-Driven] While using MiniDom APIs to construct or mutate trees, the system shall support modern mutation helpers (`append`, `prepend`, `replaceChildren`, `before`, `after`, `replaceWith`, `remove`) without exposing historical DOM insertion APIs.
 6. [Optional] When consumers opt into JSX integration, the system shall provide a factory-compatible node representation and optional code generation hooks to tighten `JSX.IntrinsicElements` typings without adding React as a dependency.
+7. [Optional] When the optional `happy-dom` peer dependency is installed, the system shall expose `HappyMiniDom` as a ready-to-use implementation that satisfies the MiniDom interfaces using happy-dom under the hood.
+8. [Event-Driven] When provided a `window: Window`, the system shall expose `WindowMiniDom` whose layer constructor produces `Layer.Layer<MiniDom>` and factory constructor yields `Effect.Effect<MiniDom>` bound to that window instance.
 
 ## Technical Specifications
 - Package name: `@effect-native/minidom`; location: `packages-native/minidom` within the monorepo.
@@ -17,6 +19,8 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 - Provide clear separation between core data structures (nodes, attributes, documents) and the schema/registry layer to keep standard functionality minimal.
 - Ensure all public APIs are side-effect free, deterministic, and environment-neutral (no DOM globals, no browser detection).
 - Surfaces must export types and factory helpers that can participate in Effect-based workflows (Effect Schema, Document builders, validators).
+- Declare `happy-dom` as an optional peer dependency and a development dependency to support testing and the concrete `HappyMiniDom` adapter.
+- Export concrete adapters at `@effect-native/minidom/HappyMiniDom` and `@effect-native/minidom/WindowMiniDom`, with the latter exposing `layer({ window })` and `make({ window })` APIs satisfying the stated Layer/Effect contracts.
 
 ## Acceptance Criteria
 1. [Ubiquitous] AC1 mirrors CR1: The published package exposes namespace-aware core interfaces matching the documented minimal DOM subset.
@@ -25,6 +29,8 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 4. [Event-Driven] AC4 mirrors CR4: Tree validation against a registry produces deterministic Effect errors on invalid structures.
 5. [State-Driven] AC5 mirrors CR5: Mutation utilities follow the modern DOM method set without legacy insertion APIs.
 6. [Optional] AC6 mirrors CR6: JSX integration is available via factory adapters and optional typings/codegen without React dependency.
+7. [Optional] AC7 mirrors CR7: Installing the optional `happy-dom` peer dependency enables the `HappyMiniDom` implementation exported at `@effect-native/minidom/HappyMiniDom`.
+8. [Event-Driven] AC8 mirrors CR8: `WindowMiniDom.layer({ window })` returns a `Layer.Layer<MiniDom>` and `WindowMiniDom.make({ window })` returns an `Effect.Effect<MiniDom>` using the provided window.
 
 ## Out of Scope
 - Implementing concrete HTML/SVG/MathML registries beyond minimal illustrative fixtures.
@@ -37,6 +43,7 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 - SM2: Schema/registry layer demonstrates enforcement of parent/child/attribute rules with failing test evidence linked to AC3/AC4.
 - SM3: Separation of standard vs. extensions verified by module-level smoke tests and documentation referencing AC2.
 - SM4: JSX adapter sample compiles and validates against TypeScript checks aligning with AC6.
+- SM5: Optional adapters are validated via tests showing `HappyMiniDom` works with happy-dom and `WindowMiniDom` produces the required Layer/Effect outputs, covering AC7 and AC8.
 
 ## Future Considerations
 - Explore code generation to emit strict JSX intrinsic element declarations from registries.
@@ -48,3 +55,4 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 - Maintain fast feedback by keeping the MiniDom test suite within the 5-minute build guardrail.
 - Cover positive and negative scenarios for schema validation and node mutation.
 - Validate TypeScript typings via compiler tests or `@effect/vitest` type-level assertions where appropriate.
+- Exercise optional integrations by guarding tests that require `happy-dom` while ensuring they run when the dependency is present, and verify `WindowMiniDom` Layer/Effect behavior via effect-based tests.
