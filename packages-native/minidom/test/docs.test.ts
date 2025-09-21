@@ -9,5 +9,6 @@ describe("MiniDom documentation [FR1.3][FR1.14][SC7.11]", () => {
 
     expect(readme).toContain("Schema.samples.sqlArticleRegistry")
     expect(readme).toContain("Schema.toStandardSchemaV1")
+    expect(readme).toContain("Effect.gen")
   })
 })

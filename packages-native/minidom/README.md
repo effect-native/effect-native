@@ -38,3 +38,28 @@ if (result.issues) {
 For key-value backends, `Schema.samples.kvFragmentRegistry` applies the same
 capabilities while surfacing metadata such as bucket names. Both samples remain
 Effect-native and can be inspected via `Schema.extensionsByAdapter`.
+
+## Effect-first workflow
+
+MiniDom APIs are designed for `Effect.gen` so synchronous and asynchronous
+adapters remain interchangeable. A simple attribute read guarded by
+`MiniDom.Sync` looks like this:
+
+```ts
+import * as Effect from "effect/Effect"
+import * as MiniDom from "@effect-native/minidom"
+
+const program = Effect.gen(function*() {
+  const document = yield* myMiniDom.makeDocument()
+
+  const sync = MiniDom.Sync.detect(document)
+  if (!sync) {
+    return yield* Effect.fail(new Error("expected sync MiniDom"))
+  }
+
+  const nodes = yield* document.querySelectorAll("main")
+  return nodes.length
+})
+
+Effect.runPromise(program)
+```
