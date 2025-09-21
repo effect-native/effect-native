@@ -23,6 +23,7 @@
     "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./core/*": "./src/core/*.ts",
+    "./Schema": "./src/schema/index.ts",
     "./schema/*": "./src/schema/*.ts",
     "./events/*": "./src/events/*.ts",
     "./composite/*": "./src/composite/*.ts",
