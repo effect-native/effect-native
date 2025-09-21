@@ -1,11 +1,11 @@
 # MiniDom Plan
 
 ## Five-Phase Implementation Checklist
-- [ ] Phase 1 — Instructions (complete)
+- [x] Phase 1 — Instructions (documented)
 - [x] Phase 2 — Requirements (complete)
 - [x] Phase 3 — Design (complete)
-- [ ] Phase 4 — Plan (this document)
-- [ ] Phase 5 — Implementation & Validation
+- [x] Phase 4 — Plan (this document)
+- [ ] Phase 5 — Implementation & Validation (in progress: AttributeBag service + Sync capability)
 
 ## Task Hierarchies
 
@@ -16,8 +16,10 @@
 - [ ] Stub additional adapters (sql, kv) with capability metadata placeholders
 
 ### 2. Core API & Attribute Handling
-- [ ] Implement namespace-aware node interfaces, AttributeBag view/service split, and Effect-only operations (`FR1.1`, `FR1.9`, `DR4.4`)
-- [ ] Add unit tests verifying sync vs async behavior through `MiniDom.Sync`
+- [ ] Implement namespace-aware node interfaces (`FR1.1`)
+- [x] Ship AttributeBag view/service split with Effect-only operations (`FR1.9`, `DR4.4`)
+- [x] Introduce `MiniDom.Sync` capability wiring with unit coverage for synchronous runners (`FR1.9`, `SC7.6`)
+- [ ] Extend tests to cover async capability detection via synthetic delayed adapters
 - [ ] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions
@@ -67,7 +69,7 @@
 | Task | Owner | Status |
 |------|-------|--------|
 | Package scaffolding & layers | TBD | Not started |
-| Core API & attributes | TBD | Not started |
+| Core API & attributes | @codex | In progress — AttributeBag service + Sync capability tests (see packages-native/minidom/test/attribute-bag.test.ts) |
 | Schema DSL & extensions | TBD | Not started |
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |
