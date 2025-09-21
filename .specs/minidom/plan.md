@@ -75,6 +75,6 @@
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |
 | React host adapter | TBD | Not started |
-| Documentation & tooling | TBD | Not started |
+| Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1`; docs iteration underway |
 
 Update the table after each milestone, referencing commit hashes and experiment evidence.

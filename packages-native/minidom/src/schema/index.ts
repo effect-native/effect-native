@@ -263,6 +263,15 @@ const kvFragmentRegistry = registry([
 /**
  * @since 1.0.0
  * @category standard-schema
+ * @example
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const standard = MiniDom.Schema.toStandardSchemaV1(MiniDom.Schema.samples.sqlArticleRegistry)
+ * const result = await standard["~standard"].validate({
+ *   name: MiniDom.Schema.q("http://www.w3.org/1999/xhtml", "article"),
+ *   attributes: [{ name: MiniDom.Schema.q(null, "data-slug"), value: "intro" }],
+ *   children: []
+ * })
  */
 export const toStandardSchemaV1 = (
   registryValue: Registry,
@@ -298,6 +307,12 @@ export const toStandardSchemaV1 = (
 /**
  * @since 1.0.0
  * @category samples
+ * @example
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const registry = MiniDom.Schema.samples.kvFragmentRegistry
+ * const metadata = MiniDom.Schema.extensionsByAdapter(registry)
+ * console.log(metadata.kv?.elements[0]?.metadata)
  */
 export const samples = {
   sqlArticleRegistry,
