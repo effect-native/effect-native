@@ -102,4 +102,33 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
       const afterCommit = yield* composite.get(null, "title")
       expect(afterCommit).toEqual(Option.some("committed"))
     }))
+
+  it.effect("runs guard hooks before transactions", () =>
+    Effect.gen(function*() {
+      const guardInvocations: Array<Composite.GuardContext<string>> = []
+
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag: AttributeBag.make({ initial: [[null, "title", "draft"]] }),
+            transaction: AttributeBag.transaction(
+              AttributeBag.make({ initial: [[null, "title", "draft"]] })
+            )
+          }
+        },
+        resolve: () => "local",
+        guard: (context) =>
+          Effect.sync(() => {
+            guardInvocations.push(context)
+          })
+      })
+
+      yield* Composite.runTransaction(composite, {
+        namespace: null,
+        name: "title",
+        effect: composite.set(null, "title", "guarded")
+      })
+
+      expect(guardInvocations.some((entry) => entry.operation === "transaction")).toBe(true)
+    }))
 })
