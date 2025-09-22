@@ -35,7 +35,7 @@
 
 ### 5. Composition & Transactions
 - [x] Implement `MiniDom.Composite` router enforcing ownership boundaries (Iteration 24 — read-only enforcement via `packages-native/minidom/test/composite-boundary.test.ts`, evidence in `experiments/minidom/log-20250921-2052.md`)
-- [ ] Provide `withTransaction` API and tagged conflict errors
+- [ ] Provide `withTransaction` API and tagged conflict errors (Iteration 25 in progress — `Transaction` capability + conflict propagation test in `packages-native/minidom/test/transaction-conflict.test.ts`, see `experiments/minidom/log-20250921-2052.md`)
 - [ ] Create hybrid tree tests combining local, happy-dom, and mock remote adapters
 
 ### 6. React Host Adapter
@@ -73,7 +73,7 @@
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
 | Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |
-| Composition & transactions | @codex | In progress — Read-only ownership guard + capability propagation validated in Iteration 24 (`experiments/minidom/log-20250921-2052.md`), composite stress + transactions pending |
+| Composition & transactions | @codex | In progress — Ownership guard (Iteration 24) and Transaction capability introduced in Iteration 25 (`experiments/minidom/log-20250921-2052.md`); hybrid composites + adapter-backed transactions pending |
 | React host adapter | TBD | Not started |
 | Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
 
