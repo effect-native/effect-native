@@ -269,6 +269,10 @@ export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }):
   return service
 }
 
+const hasStore = (
+  service: Service
+): service is Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
+
 /**
  * @since 1.0.0
  * @category combinators
@@ -280,13 +284,13 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
  * @category capabilities
  */
 export const transaction = (service: Service): Transaction.Transaction => {
-  const store = (service as { readonly [k: symbol]: Map<string, AttributeEntry> })[StoreSymbol]
-
-  if (!store) {
+  if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"
     })
   }
+
+  const store = service[StoreSymbol]
 
   return Transaction.make((operation) => {
     const snapshot = new Map(store)
