@@ -73,3 +73,8 @@ if anything requires attention, keep track of it somewhere and I shall follow up
 - each status update must cite the exact log filename and timestamped section that captures the work performed since the previous response; responses lacking these anchors violate the audit trail.
 - report concrete code or doc changes **and** state the next action already in flight (e.g., the file currently open for the following red test). there is no gap between observation and action.
 - ensure the pair-programming partner or reviewer can resume instantly: include open editor locations, failing test names, and running command contexts so no momentum is lost if hand-off becomes necessary.
+
+### guardrail audits
+- schedule a guardrail self-audit every third iteration: review `.specs/minidom/AGENTS.md` against the latest log/bookkeeping and add a log entry confirming compliance gaps or fixes before starting new work.
+- if any guardrail is breached (missing validation trailer, absent log link), stop forward progress until the breach is documented and corrected; log the remediation steps with timestamps.
+- maintain a running checklist in the session log noting the last audit timestamp and upcoming audit deadline; missing audits are treated as blockers and must be resolved before responding to the user.
