@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
-import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 
 import { AttributeBag, Composite } from "@effect-native/minidom"
@@ -48,8 +47,8 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
         guard: () => Effect.fail(new Error("blocked"))
       })
 
-      const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.exit)
-      expect(Exit.isFailure(attempt)).toBe(true)
+      const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.either)
+      expect(attempt._tag).toBe("Left")
     }))
 
   it.effect("throws when resolver targets missing adapter", () =>
@@ -63,7 +62,10 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
         resolve: () => "remote"
       })
 
-      const exit = yield* composite.get(null, "missing").pipe(Effect.exit)
-      expect(Exit.isFailure(exit)).toBe(true)
+      const result = yield* composite.get(null, "missing").pipe(Effect.either)
+      expect(result._tag).toBe("Left")
+      if (result._tag === "Left") {
+        expect(result.left).toBeInstanceOf(Composite.CompositeAdapterMissing)
+      }
     }))
 })

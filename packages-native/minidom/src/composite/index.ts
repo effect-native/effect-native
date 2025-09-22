@@ -51,16 +51,19 @@ const resolveAdapter = <Adapters extends Record<PropertyKey, AdapterConfig>>(
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string
-): Effect.Effect<readonly [keyof Adapters, AttributeBag.Service]> =>
-  Effect.sync(() => {
-    const key = options.resolve(namespace, name)
-    const adapter = options.adapters[key]
+): Effect.Effect<readonly [keyof Adapters, AttributeBag.Service], CompositeAdapterMissing> =>
+  Effect.try({
+    try: () => {
+      const key = options.resolve(namespace, name)
+      const adapter = options.adapters[key]
 
-    if (!adapter) {
-      throw new CompositeAdapterMissing(key)
-    }
+      if (!adapter) {
+        throw new CompositeAdapterMissing(key)
+      }
 
-    return [key, adapter.bag]
+      return [key, adapter.bag]
+    },
+    catch: (error) => error as CompositeAdapterMissing
   })
 
 const guard = <Adapters extends Record<PropertyKey, AdapterConfig>>(
