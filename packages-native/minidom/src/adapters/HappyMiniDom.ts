@@ -3,6 +3,7 @@
  *
  * @since 0.0.0
  */
+import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { Window as HappyWindow } from "happy-dom"
@@ -10,6 +11,24 @@ import { Window as HappyWindow } from "happy-dom"
 import * as MiniDom from "../MiniDom.js"
 
 import { createService } from "./internal/createService.js"
+
+/**
+ * Error emitted when Happy DOM lifecycle operations fail.
+ *
+ * @since 0.0.0
+ * @category errors
+ */
+export class HappyMiniDomError extends Data.TaggedError("HappyMiniDomError")<{
+  readonly message: string
+  readonly cause?: unknown
+}> {
+  constructor(options?: { readonly message?: string; readonly cause?: unknown }) {
+    super({
+      message: options?.message ?? "HappyMiniDom adapter failed to finalize",
+      cause: options?.cause
+    })
+  }
+}
 
 /**
  * Options for creating the Happy DOM-backed MiniDom service.
@@ -68,7 +87,8 @@ export const layer = (options?: HappyMiniDomOptions) =>
               if (typeof window.close === "function") {
                 window.close()
               }
-            }
+            },
+            catch: (cause) => new HappyMiniDomError({ cause })
           })
           : Effect.void
     ).pipe(Effect.map((state) => state.service))
