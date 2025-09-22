@@ -78,3 +78,9 @@ if anything requires attention, keep track of it somewhere and I shall follow up
 - schedule a guardrail self-audit every third iteration: review `.specs/minidom/AGENTS.md` against the latest log/bookkeeping and add a log entry confirming compliance gaps or fixes before starting new work.
 - if any guardrail is breached (missing validation trailer, absent log link), stop forward progress until the breach is documented and corrected; log the remediation steps with timestamps.
 - maintain a running checklist in the session log noting the last audit timestamp and upcoming audit deadline; missing audits are treated as blockers and must be resolved before responding to the user.
+
+### transaction-specific discipline
+- when working on transactional features, every RED phase must include paired commit/rollback coverage: one test that commits successfully and one that forces rollback tied to the relevant FR/SC/Hypothesis in the log.
+- log entries for transaction iterations must explicitly cite the adapter or service providing the capability (e.g., "AttributeBag.transaction", "Composite.runTransaction") and record the observed behavior (commit result, rollback state) with Option/Effect outputs.
+- commit messages that touch transaction logic must include the impacted hypothesis identifiers (e.g., `H14`) and the specific validation commands run, matching the evidence recorded in `experiments/minidom/log-*.md`.
+- after wiring a new transactional hook, compare the guard invocation count before and after the change and document the delta in the session log so reviewers can confirm guard enforcement is preserved.
