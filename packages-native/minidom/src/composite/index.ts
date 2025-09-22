@@ -56,6 +56,7 @@ export type CompositeError = MiniDomError.Unsupported | CompositeAdapterMissing
  */
 export interface AdapterConfig {
   readonly bag: AttributeBag.Service
+  readonly transaction?: TransactionCapability
   readonly capabilities?: AdapterCapabilities
 }
 
@@ -274,7 +275,7 @@ export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
             ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
           }
 
-          const capability = adapter.capabilities?.transaction
+          const capability = adapter.transaction ?? adapter.capabilities?.transaction
 
           if (!capability) {
             return Effect.fail(
