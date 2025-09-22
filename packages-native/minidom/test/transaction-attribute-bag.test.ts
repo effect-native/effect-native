@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, MiniDomError, Transaction } from "@effect-native/minidom"
+import { AttributeBag, MiniDomError, TransactionCapability } from "@effect-native/minidom"
 
 describe("AttributeBag transaction capability (FR1.11 / H14)", () => {
   it.effect("commits successful effects", () =>
@@ -15,7 +15,7 @@ describe("AttributeBag transaction capability (FR1.11 / H14)", () => {
         return yield* bag.get(null, "title")
       })
 
-      const result = yield* Transaction.run(capability, program)
+      const result = yield* TransactionCapability.run(capability, program)
 
       expect(result).toEqual(Option.some("published"))
     }))
@@ -27,7 +27,7 @@ describe("AttributeBag transaction capability (FR1.11 / H14)", () => {
 
       const conflict = new MiniDomError.Conflict({ message: "write-write" })
 
-      const failure = yield* Transaction.run(
+      const failure = yield* TransactionCapability.run(
         capability,
         Effect.gen(function*() {
           yield* bag.set(null, "title", "conflicting")

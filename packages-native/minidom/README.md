@@ -23,7 +23,7 @@ import * as HappyMiniDom from "@effect-native/minidom/HappyMiniDom"
 
 const bootstrap = Effect.provide(
   Effect.gen(function*() {
-    const service = yield* MiniDom.Service.Tag
+    const service = yield* MiniDom.MiniDom
     const { document } = service
 
     const main = yield* document.createElementNS("http://www.w3.org/1999/xhtml", "main")
@@ -59,7 +59,7 @@ import * as WindowMiniDom from "@effect-native/minidom/WindowMiniDom"
 
 const program = Effect.provide(
   Effect.gen(function*() {
-    const service = yield* MiniDom.Service.Tag
+    const service = yield* MiniDom.MiniDom
 
     return {
       sameWindow: service.window === window,

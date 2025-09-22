@@ -6,8 +6,7 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
-import type { Service as MiniDomService } from "../core/Service.js"
-import * as Service from "../core/Service.js"
+import * as MiniDom from "../MiniDom.js"
 
 import { createService } from "./internal/createService.js"
 
@@ -27,8 +26,7 @@ export interface WindowMiniDomOptions {
  * @since 0.0.0
  * @category constructors
  */
-export const make = (options: WindowMiniDomOptions): Effect.Effect<MiniDomService> =>
-  Effect.sync(() => createService(options.window))
+export const make = (options: WindowMiniDomOptions) => Effect.sync(() => createService(options.window))
 
 /**
  * Layer that provides the MiniDom service using the current window.
@@ -36,12 +34,4 @@ export const make = (options: WindowMiniDomOptions): Effect.Effect<MiniDomServic
  * @since 0.0.0
  * @category layers
  */
-export const layer = (options: WindowMiniDomOptions) => Layer.effect(Service.Tag, make(options))
-
-/**
- * Alias to the MiniDom {@link Service.Tag} for direct adapter imports.
- *
- * @since 0.0.0
- * @category tags
- */
-export const Tag = Service.Tag
+export const layer = (options: WindowMiniDomOptions) => Layer.effect(MiniDom.MiniDom, make(options))

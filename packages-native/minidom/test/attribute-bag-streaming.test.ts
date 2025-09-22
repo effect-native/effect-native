@@ -31,7 +31,7 @@ describe("AttributeBag lazy streaming", () => {
       expect(second).toStrictEqual(Option.some("remote"))
       expect(classAttr).toStrictEqual(Option.some("article"))
 
-      const capability = MiniDom.Sync.detect(() => bag.get(null, "id"))
+      const capability = MiniDom.SyncCapability.detect(() => bag.get(null, "id"))
       expect(Option.isNone(capability)).toBe(true)
     }))
 
@@ -61,7 +61,7 @@ describe("AttributeBag lazy streaming", () => {
       expect(loadCount).toBe(2)
       expect(secondToken).toStrictEqual(Option.some("refresh-2"))
 
-      const capability = MiniDom.Sync.detect(() => bag.get(null, "token"))
+      const capability = MiniDom.SyncCapability.detect(() => bag.get(null, "token"))
       expect(Option.isNone(capability)).toBe(true)
     }))
 })

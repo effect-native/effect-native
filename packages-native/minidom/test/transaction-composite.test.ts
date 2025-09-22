@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, Composite, MiniDomError, Transaction } from "@effect-native/minidom"
+import { AttributeBag, Composite, MiniDomError, TransactionCapability } from "@effect-native/minidom"
 
 describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
   it.effect("delegates withTransaction to the owning adapter", () =>
@@ -13,7 +13,7 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
             bag: AttributeBag.make({ initial: [] }),
             capabilities: {
               composite: { ownership: "read-write" },
-              transaction: Transaction.make((operation) => operation)
+              transaction: TransactionCapability.make((operation) => operation)
             }
           }
         },

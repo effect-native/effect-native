@@ -18,7 +18,7 @@ describe("AttributeBag Sync integration", () => {
         MiniDom.AttributeBag.layer()
       )
 
-      const capability = MiniDom.Sync.detect(() => program)
+      const capability = MiniDom.SyncCapability.detect(() => program)
 
       expect(Option.isSome(capability)).toBe(true)
       expect(Option.map(capability, (sync) => sync.run(program))).toStrictEqual(Option.some(2))
@@ -35,7 +35,7 @@ describe("AttributeBag Sync integration", () => {
         MiniDom.AttributeBag.layerAsync()
       )
 
-      const capability = MiniDom.Sync.detect(() => program)
+      const capability = MiniDom.SyncCapability.detect(() => program)
 
       expect(Option.isNone(capability)).toBe(true)
       expect(yield* program).toStrictEqual(Option.some("remote"))

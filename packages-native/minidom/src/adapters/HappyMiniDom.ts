@@ -7,8 +7,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import { Window as HappyWindow } from "happy-dom"
 
-import type { Service as MiniDomService } from "../core/Service.js"
-import * as Service from "../core/Service.js"
+import * as MiniDom from "../MiniDom.js"
 
 import { createService } from "./internal/createService.js"
 
@@ -39,7 +38,7 @@ const createWindow = (options?: HappyMiniDomOptions): HappyWindow => {
  * @since 0.0.0
  * @category constructors
  */
-export const make = (options?: HappyMiniDomOptions): Effect.Effect<MiniDomService> =>
+export const make = (options?: HappyMiniDomOptions) =>
   Effect.sync(() => createService(createWindow(options) as unknown as Window))
 
 /**
@@ -50,7 +49,7 @@ export const make = (options?: HappyMiniDomOptions): Effect.Effect<MiniDomServic
  */
 export const layer = (options?: HappyMiniDomOptions) =>
   Layer.scoped(
-    Service.Tag,
+    MiniDom.MiniDom,
     Effect.acquireRelease(
       Effect.sync(() => {
         const provided = options?.window
@@ -74,11 +73,3 @@ export const layer = (options?: HappyMiniDomOptions) =>
           : Effect.void
     ).pipe(Effect.map((state) => state.service))
   )
-
-/**
- * Alias to the MiniDom {@link Service.Tag} for ergonomic adapter usage.
- *
- * @since 0.0.0
- * @category tags
- */
-export const Tag = Service.Tag

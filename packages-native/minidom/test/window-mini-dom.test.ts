@@ -12,7 +12,7 @@ describe("WindowMiniDom adapter (FR1.8 / FR1.13 / SC7.5)", () => {
       const service = yield* WindowMiniDom.make({ window: window as unknown as Window })
 
       expect(service.window).toBe(window)
-      expect(MiniDom.Sync.is(service.capabilities.sync)).toBe(true)
+      expect(MiniDom.SyncCapability.is(service.capabilities.sync)).toBe(true)
 
       const document = service.document
       const div = yield* document.createElementNS("http://www.w3.org/1999/xhtml", "div")
@@ -30,11 +30,11 @@ describe("WindowMiniDom adapter (FR1.8 / FR1.13 / SC7.5)", () => {
 
       const program = Effect.provide(
         Effect.gen(function*() {
-          const service = yield* MiniDom.Service.Tag
+          const service = yield* MiniDom.MiniDom.MiniDom
 
           return {
-            sameWindow: service.window === window,
-            hasSync: MiniDom.Sync.is(service.capabilities.sync)
+            sameWindow: service.window === window as unknown,
+            hasSync: MiniDom.SyncCapability.is(service.capabilities.sync)
           }
         }),
         WindowMiniDom.layer({ window: window as unknown as Window })

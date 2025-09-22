@@ -10,7 +10,7 @@ import * as AttributeBag from "../core/AttributeBag.js"
 import type { AttributeEntry } from "../core/AttributeBag.js"
 import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
-import type { Transaction as TransactionCapability } from "../core/Transaction.js"
+import type { TransactionCapability as TransactionCapability } from "../core/TransactionCapability.js"
 
 /**
  * Error thrown when a composite router cannot find the requested adapter.

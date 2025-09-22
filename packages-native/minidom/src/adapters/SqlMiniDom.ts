@@ -7,8 +7,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import * as MiniDomError from "../core/MiniDomError.js"
-import type { Service as MiniDomService } from "../core/Service.js"
-import * as Service from "../core/Service.js"
+import * as MiniDom from "../MiniDom.js"
 
 const unsupported = () =>
   new MiniDomError.Unsupported({
@@ -35,7 +34,7 @@ export const metadata = {
  * @since 0.0.0
  * @category constructors
  */
-export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> => Effect.fail(unsupported())
+export const make = (): Effect.Effect<MiniDom.MiniDom, MiniDomError.Unsupported> => Effect.fail(unsupported())
 
 /**
  * Layer that fails with {@link MiniDomError.Unsupported} until implementation lands.
@@ -43,7 +42,7 @@ export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> 
  * @since 0.0.0
  * @category layers
  */
-export const layer = Layer.effect(Service.Tag, make())
+export const layer = Layer.effect(MiniDom.MiniDom, make())
 
 /**
  * Namespace export collecting the SQL adapter stubs.

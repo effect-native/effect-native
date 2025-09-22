@@ -8,8 +8,8 @@ import * as Effect from "effect/Effect"
 import * as AttributeBag from "../../core/AttributeBag.js"
 import * as MiniDomError from "../../core/MiniDomError.js"
 import * as Nodes from "../../core/Nodes.js"
-import type { Service as MiniDomService } from "../../core/Service.js"
-import * as Sync from "../../core/Sync.js"
+import * as Sync from "../../core/SyncCapability.js"
+import * as MiniDom from "../../MiniDom.js"
 
 const NativeNodeSymbol: unique symbol = Symbol.for("@effect-native/minidom/adapter/NativeNode")
 
@@ -705,26 +705,15 @@ const createWrapNode = (_window: Window) => {
  * @since 0.0.0
  * @category constructors
  */
-export const createService = (window: Window): MiniDomService => {
+export const createService = (window: Window) => {
   const { wrapDocument } = createWrapNode(window)
   const document = wrapDocument(window.document)
 
-  return {
+  return MiniDom.MiniDom.of({
     window,
     document,
     capabilities: {
       sync: Sync.fromRunner((effect) => Effect.runSync(effect))
     }
-  }
-}
-
-/**
- * Namespace exposing internals used by adapter implementations.
- *
- * @since 0.0.0
- * @category exports
- */
-export const Internal = {
-  NativeNodeSymbol,
-  createService
+  })
 }

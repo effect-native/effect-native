@@ -30,18 +30,17 @@ export * as Nodes from "./core/Nodes.js"
  * @since 0.0.0
  * @category re-exports
  */
-// NOTE: legacy naming is retained for compatibility with earlier `Service` imports.
-export * as Service from "./core/Service.js"
+export * as MiniDom from "./MiniDom.js"
 /**
  * @since 0.0.0
  * @category re-exports
  */
-export * as Sync from "./core/Sync.js"
+export * as SyncCapability from "./core/SyncCapability.js"
 /**
  * @since 0.0.0
  * @category re-exports
  */
-export * as Transaction from "./core/Transaction.js"
+export * as TransactionCapability from "./core/TransactionCapability.js"
 /**
  * @since 0.0.0
  * @category re-exports

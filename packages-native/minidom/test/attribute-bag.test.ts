@@ -45,9 +45,9 @@ describe("MiniDom AttributeBag", () => {
 
 describe("MiniDom Sync capability", () => {
   it("runs MiniDom programs synchronously", () => {
-    const sync = MiniDom.Sync.fromRunner((effect) => Effect.runSync(effect))
+    const sync = MiniDom.SyncCapability.fromRunner((effect) => Effect.runSync(effect))
 
-    expect(MiniDom.Sync.is(sync)).toBe(true)
+    expect(MiniDom.SyncCapability.is(sync)).toBe(true)
 
     const program = Effect.gen(function*() {
       const bag = MiniDom.AttributeBag.make()
@@ -61,14 +61,14 @@ describe("MiniDom Sync capability", () => {
   })
 
   it("detects synchronous adapters", () => {
-    const capability = MiniDom.Sync.detect(() => Effect.sync(() => "ok"))
+    const capability = MiniDom.SyncCapability.detect(() => Effect.sync(() => "ok"))
 
     expect(Option.isSome(capability)).toBe(true)
     expect(capability.pipe(Option.map((sync) => sync.run(Effect.succeed("ok"))))).toStrictEqual(Option.some("ok"))
   })
 
   it("flags asynchronous adapters as non-sync", () => {
-    const capability = MiniDom.Sync.detect(() =>
+    const capability = MiniDom.SyncCapability.detect(() =>
       Effect.async<never, string, never>((resume) => {
         setTimeout(() => resume(Effect.succeed("ok")), 0)
       })

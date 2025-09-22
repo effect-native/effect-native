@@ -10,7 +10,7 @@ import * as Option from "effect/Option"
 
 import type { Namespace } from "./Namespace.js"
 import { Namespace as NamespaceHelpers } from "./Namespace.js"
-import * as Transaction from "./Transaction.js"
+import * as Transaction from "./TransactionCapability.js"
 
 const StoreSymbol: unique symbol = Symbol.for("@effect-native/minidom/AttributeBag/Store")
 
@@ -394,7 +394,7 @@ const hasStore = (
 export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => service.refresh()
 
 /**
- * Derives a {@link Transaction.Transaction} capability from an attribute bag service.
+ * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
  *
  * @since 0.0.0
  * @category capabilities
@@ -409,7 +409,7 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
  * const program = Transaction.run(capability, Effect.succeed("ok"))
  * ```
  */
-export const transaction = (service: Service): Transaction.Transaction => {
+export const transaction = (service: Service): Transaction.TransactionCapability => {
   if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"

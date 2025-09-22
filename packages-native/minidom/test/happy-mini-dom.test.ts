@@ -9,7 +9,7 @@ describe("HappyMiniDom adapter (FR1.7 / FR1.13 / SC7.5 / SC7.10)", () => {
     Effect.gen(function*() {
       const service = yield* HappyMiniDom.make()
 
-      expect(MiniDom.Sync.is(service.capabilities.sync)).toBe(true)
+      expect(MiniDom.SyncCapability.is(service.capabilities.sync)).toBe(true)
 
       const document = service.document
       const section = yield* document.createElementNS("http://www.w3.org/1999/xhtml", "section")
@@ -29,7 +29,7 @@ describe("HappyMiniDom adapter (FR1.7 / FR1.13 / SC7.5 / SC7.10)", () => {
     Effect.gen(function*() {
       const program = Effect.provide(
         Effect.gen(function*() {
-          const service = yield* MiniDom.Service.Tag
+          const service = yield* MiniDom.MiniDom.MiniDom
           const article = yield* service.document.createElementNS(
             "http://www.w3.org/1999/xhtml",
             "article"
@@ -41,7 +41,7 @@ describe("HappyMiniDom adapter (FR1.7 / FR1.13 / SC7.5 / SC7.10)", () => {
 
           return {
             url: service.document.URL,
-            hasSync: MiniDom.Sync.is(service.capabilities.sync),
+            hasSync: MiniDom.SyncCapability.is(service.capabilities.sync),
             hasArticle: html!.children.some((child) => child.localName === "article")
           }
         }),

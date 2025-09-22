@@ -21,7 +21,7 @@ export const MiniDomSyncTypeId: unique symbol = Symbol.for("@effect-native/minid
  * @since 0.0.0
  * @category model
  */
-export interface Sync {
+export interface SyncCapability {
   readonly [MiniDomSyncTypeId]: true
   readonly run: <A, E = never>(effect: Effect.Effect<A, E>) => A
 }
@@ -32,7 +32,7 @@ export interface Sync {
  * @since 0.0.0
  * @category guards
  */
-export const is = (u: unknown): u is Sync => typeof u === "object" && u !== null && MiniDomSyncTypeId in u
+export const is = (u: unknown): u is SyncCapability => typeof u === "object" && u !== null && MiniDomSyncTypeId in u
 
 /**
  * Wraps an arbitrary effect runner with the MiniDom sync brand.
@@ -40,7 +40,7 @@ export const is = (u: unknown): u is Sync => typeof u === "object" && u !== null
  * @since 0.0.0
  * @category constructors
  */
-export const fromRunner = (runner: Sync["run"]): Sync => ({
+export const fromRunner = (runner: SyncCapability["run"]): SyncCapability => ({
   [MiniDomSyncTypeId]: true,
   run: runner
 })
@@ -52,7 +52,7 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
  * @since 0.0.0
  * @category constructors
  */
-export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync> => {
+export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<SyncCapability> => {
   try {
     const exit = Effect.runSyncExit(operation())
     return Exit.isSuccess(exit)
@@ -70,7 +70,7 @@ export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync
  * @category exports
  */
 // NOTE: Keeping a namespace-style export preserves the existing public API surface.
-export const Sync = {
+export const SyncCapability = {
   TypeId: MiniDomSyncTypeId,
   is,
   fromRunner,

@@ -21,7 +21,7 @@ export const MiniDomTransactionTypeId: unique symbol = Symbol.for("@effect-nativ
  * @since 0.0.0
  * @category model
  */
-export interface Transaction<E = MiniDomError.Conflict> {
+export interface TransactionCapability<E = MiniDomError.Conflict> {
   readonly [MiniDomTransactionTypeId]: true
   readonly withTransaction: <R, A, EE>(
     effect: Effect.Effect<A, EE, R>
@@ -34,7 +34,8 @@ export interface Transaction<E = MiniDomError.Conflict> {
  * @since 0.0.0
  * @category guards
  */
-export const is = (u: unknown): u is Transaction => typeof u === "object" && u !== null && MiniDomTransactionTypeId in u
+export const is = (u: unknown): u is TransactionCapability =>
+  typeof u === "object" && u !== null && MiniDomTransactionTypeId in u
 
 /**
  * Wraps a `withTransaction` handler with the MiniDom transaction brand.
@@ -42,7 +43,7 @@ export const is = (u: unknown): u is Transaction => typeof u === "object" && u !
  * @since 0.0.0
  * @category constructors
  */
-export const make = <E>(handler: Transaction<E>["withTransaction"]): Transaction<E> => ({
+export const make = <E>(handler: TransactionCapability<E>["withTransaction"]): TransactionCapability<E> => ({
   [MiniDomTransactionTypeId]: true,
   withTransaction: handler
 })
@@ -54,7 +55,7 @@ export const make = <E>(handler: Transaction<E>["withTransaction"]): Transaction
  * @category combinators
  */
 export const run = <E, R, A, EE>(
-  transaction: Transaction<E>,
+  transaction: TransactionCapability<E>,
   effect: Effect.Effect<A, EE, R>
 ): Effect.Effect<A, EE | E, R> => transaction.withTransaction(effect)
 
@@ -65,8 +66,8 @@ export const run = <E, R, A, EE>(
  * @category combinators
  */
 export const withTransaction =
-  <E>(transaction: Transaction<E>) => <R, A, EE>(effect: Effect.Effect<A, EE, R>): Effect.Effect<A, EE | E, R> =>
-    transaction.withTransaction(effect)
+  <E>(transaction: TransactionCapability<E>) =>
+  <R, A, EE>(effect: Effect.Effect<A, EE, R>): Effect.Effect<A, EE | E, R> => transaction.withTransaction(effect)
 
 /**
  * Creates a capability that always fails with {@link MiniDomError.Unsupported}.
@@ -79,7 +80,7 @@ export const withTransaction =
 export const unsupported = (options?: {
   readonly message?: string
   readonly cause?: unknown
-}): Transaction<MiniDomError.Unsupported> =>
+}): TransactionCapability<MiniDomError.Unsupported> =>
   make(() =>
     Effect.fail(
       new MiniDomError.Unsupported({
@@ -95,7 +96,7 @@ export const unsupported = (options?: {
  * @since 0.0.0
  * @category exports
  */
-export const Transaction = {
+export const TransactionCapability = {
   TypeId: MiniDomTransactionTypeId,
   is,
   make,
