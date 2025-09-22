@@ -92,13 +92,18 @@ const streamImpl = <A, E, R>(
  * @category combinators
  */
 export const mutation: {
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
   <A, E, R>(keys: EventKeys): (
     effect: Effect.Effect<A, E, R>
   ) => Effect.Effect<A, E, R | Tag>
-  <A, E, R>(
-    effect: Effect.Effect<A, E, R>,
-    keys: EventKeys
-  ): Effect.Effect<A, E, R | Tag>
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
+  <A, E, R>(effect: Effect.Effect<A, E, R>, keys: EventKeys): Effect.Effect<A, E, R | Tag>
 } = dual(2, <A, E, R>(
   effect: Effect.Effect<A, E, R>,
   keys: EventKeys
@@ -109,13 +114,18 @@ export const mutation: {
  * @category combinators
  */
 export const query: {
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
   <A, E, R>(keys: EventKeys): (
     effect: Effect.Effect<A, E, R>
   ) => Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
-  <A, E, R>(
-    effect: Effect.Effect<A, E, R>,
-    keys: EventKeys
-  ): Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
+  <A, E, R>(effect: Effect.Effect<A, E, R>, keys: EventKeys): Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
 } = dual(2, <A, E, R>(
   effect: Effect.Effect<A, E, R>,
   keys: EventKeys
@@ -126,13 +136,18 @@ export const query: {
  * @category combinators
  */
 export const stream: {
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
   <A, E, R>(keys: EventKeys): (
     effect: Effect.Effect<A, E, R>
   ) => Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
-  <A, E, R>(
-    effect: Effect.Effect<A, E, R>,
-    keys: EventKeys
-  ): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
+  /**
+   * @since 1.0.0
+   * @category combinators
+   */
+  <A, E, R>(effect: Effect.Effect<A, E, R>, keys: EventKeys): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
 } = dual(2, <A, E, R>(
   effect: Effect.Effect<A, E, R>,
   keys: EventKeys
