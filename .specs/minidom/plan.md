@@ -58,6 +58,7 @@
 - [ ] Refactor `packages-native/minidom/test/**/*.ts` Effect-based specs to use the `@effect/vitest` `assert` helpers (no `expect`) and replace `Effect.runSync`/`Effect.runSyncExit` usages with pattern-compliant `Effect.exit` assertions, per `.patterns/testing-patterns.md`.
 - [ ] Remove unsafe cross-casts (`as unknown as`) from adapter and schema implementations (e.g. `src/adapters/HappyMiniDom.ts`, `src/adapters/internal/createService.ts`, `src/schema/index.ts`) by introducing typed wrappers or helper interfaces that preserve DOM typing without double assertions, aligning with `.patterns/effect-library-development.md` guidance on avoiding type assertions.
 - [ ] Wire `HappyMiniDom.layer` teardown through `Effect.try`/`return yield*` and surface `HappyMiniDomError` on failure so cleanup follows `.patterns/error-handling.md` (structured errors, no silent `Effect.sync`).
+- [ ] Rename `AttributeBag.Service` to `AttributeBag.AttributeBagShape` (and `Tag` accordingly) to better describe the public API surface once we exit the current milestone; document the rename plan in release notes.
 
 ## Validation Checkpoints
 - `nix develop --command pnpm lint --fix packages-native/minidom/**/*.ts`

@@ -8,29 +8,6 @@
  */
 import * as Data from "effect/Data"
 
-// NOTE: constructors explicitly add the MiniDom error brand for reliable runtime guards.
-
-/**
- * Unique symbol brand shared by all MiniDom error instances.
- *
- * The brand allows consumers to write defensive guards that accept any error
- * emitted from MiniDom regardless of the concrete tagged type.
- *
- * @since 0.0.0
- * @category symbols
- */
-export const MiniDomErrorTypeId: unique symbol = Symbol.for("@effect-native/minidom/MiniDomError")
-
-interface BaseErrorShape {
-  readonly message: string
-  readonly cause?: unknown
-}
-
-const withTypeId = <A extends BaseErrorShape>(fields: A): A & { readonly [MiniDomErrorTypeId]: true } => ({
-  [MiniDomErrorTypeId]: true,
-  ...fields
-})
-
 /**
  * Error emitted when DOM content violates a declared schema.
  *
@@ -49,18 +26,13 @@ const withTypeId = <A extends BaseErrorShape>(fields: A): A & { readonly [MiniDo
  * })
  * ```
  */
-export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
+export class SchemaViolation extends Data.TaggedError("MiniDomError.SchemaViolation")<
   {
     readonly message: string
     readonly cause?: unknown
     readonly issues?: ReadonlyArray<unknown>
-    readonly [MiniDomErrorTypeId]: true
   }
-> {
-  constructor(input: { readonly message: string; readonly cause?: unknown; readonly issues?: ReadonlyArray<unknown> }) {
-    super(withTypeId(input))
-  }
-}
+> {}
 
 /**
  * Error produced when adapters encounter a backend failure.
@@ -80,17 +52,12 @@ export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
  * console.error(error._tag) // "BackendFailure"
  * ```
  */
-export class BackendFailure extends Data.TaggedError("BackendFailure")<
+export class BackendFailure extends Data.TaggedError("MiniDomError.BackendFailure")<
   {
     readonly message: string
     readonly cause?: unknown
-    readonly [MiniDomErrorTypeId]: true
   }
-> {
-  constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(withTypeId(input))
-  }
-}
+> {}
 
 /**
  * Error raised whenever a transactional operation detects a conflict.
@@ -110,18 +77,13 @@ export class BackendFailure extends Data.TaggedError("BackendFailure")<
  * })
  * ```
  */
-export class Conflict extends Data.TaggedError("Conflict")<
+export class Conflict extends Data.TaggedError("MiniDomError.Conflict")<
   {
     readonly message: string
     readonly cause?: unknown
     readonly handle?: unknown
-    readonly [MiniDomErrorTypeId]: true
   }
-> {
-  constructor(input: { readonly message: string; readonly cause?: unknown; readonly handle?: unknown }) {
-    super(withTypeId(input))
-  }
-}
+> {}
 
 /**
  * Error used when an adapter lacks the capability required by the caller.
@@ -140,17 +102,12 @@ export class Conflict extends Data.TaggedError("Conflict")<
  * })
  * ```
  */
-export class Unsupported extends Data.TaggedError("Unsupported")<
+export class Unsupported extends Data.TaggedError("MiniDomError.Unsupported")<
   {
     readonly message: string
     readonly cause?: unknown
-    readonly [MiniDomErrorTypeId]: true
   }
-> {
-  constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(withTypeId(input))
-  }
-}
+> {}
 
 /**
  * Error triggered when the observation layer fails to deliver updates.
@@ -169,17 +126,12 @@ export class Unsupported extends Data.TaggedError("Unsupported")<
  * })
  * ```
  */
-export class ObservationFailure extends Data.TaggedError("ObservationFailure")<
+export class ObservationFailure extends Data.TaggedError("MiniDomError.ObservationFailure")<
   {
     readonly message: string
     readonly cause?: unknown
-    readonly [MiniDomErrorTypeId]: true
   }
-> {
-  constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(withTypeId(input))
-  }
-}
+> {}
 
 /**
  * Determines whether an unknown value originates from the MiniDom error family.
@@ -190,8 +142,9 @@ export class ObservationFailure extends Data.TaggedError("ObservationFailure")<
  * @since 0.0.0
  * @category guards
  */
-export const isMiniDomError = (u: unknown): u is MiniDomError =>
-  typeof u === "object" && u !== null && MiniDomErrorTypeId in u
+export const isMiniDomError = (it: unknown): it is MiniDomError =>
+  typeof it === "object" && it !== null && "_tag" in it && typeof it._tag === "string" &&
+  it._tag.startsWith("MiniDomError.")
 
 /**
  * Union type covering every error the MiniDom package may emit.
@@ -221,7 +174,6 @@ export type MiniDomError =
  * @category exports
  */
 export const MiniDomError = {
-  TypeId: MiniDomErrorTypeId,
   SchemaViolation,
   BackendFailure,
   Conflict,
@@ -229,11 +181,3 @@ export const MiniDomError = {
   ObservationFailure,
   is: isMiniDomError
 }
-
-/**
- * Alias export that mirrors {@link MiniDomErrorTypeId} for ergonomics.
- *
- * @since 0.0.0
- * @category symbols
- */
-export const TypeId = MiniDomErrorTypeId

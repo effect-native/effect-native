@@ -9,7 +9,7 @@ describe("AttributeBag Sync integration", () => {
     Effect.gen(function*() {
       const program = Effect.provide(
         Effect.gen(function*() {
-          const service = yield* MiniDom.AttributeBag.Tag
+          const service = yield* MiniDom.AttributeBag.AttributeBag
           yield* service.set(null, "id", "root")
           yield* service.set("http://www.w3.org/1999/xhtml", "class", "hero")
           const snapshot = yield* service.snapshot()
@@ -28,7 +28,7 @@ describe("AttributeBag Sync integration", () => {
     Effect.gen(function*() {
       const program = Effect.provide(
         Effect.gen(function*() {
-          const service = yield* MiniDom.AttributeBag.Tag
+          const service = yield* MiniDom.AttributeBag.AttributeBag
           yield* service.set(null, "id", "remote")
           return yield* service.get(null, "id")
         }),

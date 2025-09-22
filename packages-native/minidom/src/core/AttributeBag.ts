@@ -76,7 +76,7 @@ export interface View {
  * })
  * ```
  */
-export interface Service<E = never, R = never> {
+export interface AttributeBagShape<E = never, R = never> {
   readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E, R>
   readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E, R>
   readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E, R>
@@ -101,10 +101,12 @@ export interface Service<E = never, R = never> {
  * )
  * ```
  */
-export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Service")<Tag, Service<any, any>>() {}
+export class AttributeBag
+  extends Context.Tag("@effect-native/minidom/AttributeBag")<AttributeBag, AttributeBagShape<any, any>>()
+{}
 
 /**
- * Layer that provides a synchronous {@link Service} backed by an in-memory map.
+ * Layer that provides a synchronous {@link AttributeBag} backed by an in-memory map.
  *
  * @since 0.0.0
  * @category layers
@@ -117,10 +119,10 @@ export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Servic
  * ```
  */
 export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
-  Layer.effect(Tag, Effect.sync(() => makeSync(options)))
+  Layer.effect(AttributeBag, Effect.sync(() => makeSync(options)))
 
 /**
- * Constructs an asynchronous {@link Service} that lazily loads attributes.
+ * Constructs an asynchronous {@link AttributeBag} that lazily loads attributes.
  *
  * The returned service exposes the internal store via a symbol for transaction
  * support.
@@ -144,7 +146,7 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
 export const makeAsync = <E = never, R = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, R>
   readonly scheduler?: (task: () => void) => void
-}): Service<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => {
+}): AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
@@ -243,7 +245,7 @@ export const makeAsync = <E = never, R = never>(options?: {
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  const service: Service<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
+  const service: AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
     get: (namespace, name) => run(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => run(() => store.has(NamespaceHelpers.key(namespace, name))),
     set: (namespace, name, value) =>
@@ -287,7 +289,7 @@ export const makeAsync = <E = never, R = never>(options?: {
 export const layerAsync = <E = never, R = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, R>
   readonly scheduler?: (task: () => void) => void
-}) => Layer.effect(Tag, Effect.sync(() => makeAsync<E, R>(options)))
+}) => Layer.effect(AttributeBag, Effect.sync(() => makeAsync<E, R>(options)))
 
 const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
   const index = new Map<string, AttributeEntry>()
@@ -353,7 +355,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * })
  * ```
  */
-export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service & {
+export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): AttributeBag & {
   readonly [StoreSymbol]: Map<string, AttributeEntry>
 } => {
   const store = new Map<string, AttributeEntry>()
@@ -366,7 +368,7 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  const service: Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
+  return AttributeBag.of({
     get: (namespace, name) =>
       Effect.sync(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => Effect.sync(() => store.has(NamespaceHelpers.key(namespace, name))),
@@ -377,16 +379,14 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
     delete: (namespace, name) => Effect.sync(() => store.delete(NamespaceHelpers.key(namespace, name))),
     entries: () => Effect.sync(() => Array.from(store.values(), copyEntry)),
     snapshot: () => Effect.sync(makeView),
-    refresh: () => Effect.void,
-    [StoreSymbol]: store
-  }
-
-  return service
+    refresh: () => Effect.void
+  })
 }
 
 const hasStore = <E, R>(
-  service: Service<E, R>
-): service is Service<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
+  service: AttributeBagShape<E, R>
+): service is AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } =>
+  StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -402,7 +402,7 @@ const hasStore = <E, R>(
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = <E, R>(service: Service<E, R>): Effect.Effect<void, E, R> => service.refresh()
+export const refresh = <E, R>(service: AttributeBagShape<E, R>): Effect.Effect<void, E, R> => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
@@ -420,7 +420,7 @@ export const refresh = <E, R>(service: Service<E, R>): Effect.Effect<void, E, R>
  * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
  * ```
  */
-export const transaction = <E, R>(service: Service<E, R>): Transaction.TransactionCapability => {
+export const transaction = <E, R>(service: AttributeBagShape<E, R>): Transaction.TransactionCapability => {
   if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"
@@ -441,29 +441,4 @@ export const transaction = <E, R>(service: Service<E, R>): Transaction.Transacti
 
     return Effect.tapError(operation, () => restore)
   })
-}
-
-/**
- * Namespace export bundling the attribute bag helpers.
- *
- * @since 0.0.0
- * @category exports
- * @example
- * ```ts
- * import { AttributeBag } from "@effect-native/minidom"
- * import * as Effect from "effect/Effect"
- *
- * const bag = AttributeBag.makeSync()
- * Effect.runPromise(bag.entries()).then(console.log)
- * ```
- */
-export const AttributeBag = {
-  Tag,
-  layer,
-  layerAsync,
-  make: makeSync,
-  makeAsync,
-  refresh,
-  transaction,
-  viewFromEntries
 }

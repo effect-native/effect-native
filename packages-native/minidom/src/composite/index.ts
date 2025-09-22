@@ -10,7 +10,7 @@ import * as AttributeBag from "../core/AttributeBag.js"
 import type { AttributeEntry } from "../core/AttributeBag.js"
 import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
-import type { TransactionCapability as TransactionCapability } from "../core/TransactionCapability.js"
+import type { TransactionCapability } from "../core/TransactionCapability.js"
 
 /**
  * Error thrown when a composite router cannot find the requested adapter.
@@ -112,7 +112,7 @@ export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | 
  * ```
  */
 export interface AdapterConfig {
-  readonly bag: AttributeBag.Service
+  readonly bag: AttributeBag.AttributeBag
   readonly transaction?: TransactionCapability
   readonly capabilities?: AdapterCapabilities
 }
@@ -243,7 +243,7 @@ interface CompositeContext<Adapters extends AdapterRecord> {
   readonly options: RouterOptions<Adapters>
 }
 
-type CompositeService<Adapters extends AdapterRecord> = AttributeBag.Service<CompositeError> & {
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagShape<CompositeError> & {
   readonly [CompositeContextSymbol]: CompositeContext<Adapters>
 }
 
@@ -282,7 +282,7 @@ const delegate = <Adapters extends AdapterRecord, A>(params: {
   readonly namespace: Namespace
   readonly name: string
   readonly operation: Operation
-  readonly run: (bag: AttributeBag.Service) => Effect.Effect<A>
+  readonly run: (bag: AttributeBag.AttributeBag) => Effect.Effect<A>
 }): Effect.Effect<A, CompositeError> =>
   Effect.gen(function*() {
     const [key, adapter] = yield* resolveAdapter(
