@@ -47,6 +47,9 @@ export type ContentExpression =
   | { readonly type: "element"; readonly name: ExpandedName }
   | { readonly type: "sequence"; readonly of: ReadonlyArray<ContentExpression> }
   | { readonly type: "optional"; readonly of: ContentExpression }
+  | { readonly type: "zeroOrMore"; readonly of: ContentExpression }
+  | { readonly type: "oneOrMore"; readonly of: ContentExpression }
+  | { readonly type: "choice"; readonly of: ReadonlyArray<ContentExpression> }
 
 const elementContent = (name: ExpandedName): ContentExpression => ({
   type: "element",
@@ -63,6 +66,21 @@ const optionalContent = (of: ContentExpression): ContentExpression => ({
   of
 })
 
+const zeroOrMoreContent = (of: ContentExpression): ContentExpression => ({
+  type: "zeroOrMore",
+  of
+})
+
+const oneOrMoreContent = (of: ContentExpression): ContentExpression => ({
+  type: "oneOrMore",
+  of
+})
+
+const choiceContent = (of: ReadonlyArray<ContentExpression>): ContentExpression => ({
+  type: "choice",
+  of
+})
+
 /**
  * @since 1.0.0
  * @category namespaces
@@ -70,7 +88,10 @@ const optionalContent = (of: ContentExpression): ContentExpression => ({
 export const content = {
   element: elementContent,
   sequence: sequenceContent,
-  optional: optionalContent
+  optional: optionalContent,
+  zeroOrMore: zeroOrMoreContent,
+  oneOrMore: oneOrMoreContent,
+  choice: choiceContent
 } as const
 
 /**
@@ -420,6 +441,47 @@ const matchElement = (
         return { issues: [], remaining: children }
       }
       return attempt
+    }
+    case "zeroOrMore": {
+      let current: ReadonlyArray<NodeSnapshot> = children
+      while (current.length > 0) {
+        const attempt = matchElement(expression.of, current, registry)
+        if (attempt.issues.length > 0) {
+          return { issues: [], remaining: current }
+        }
+        current = attempt.remaining
+      }
+      return { issues: [], remaining: current }
+    }
+    case "oneOrMore": {
+      const firstAttempt = matchElement(expression.of, children, registry)
+      if (firstAttempt.issues.length > 0) {
+        return {
+          issues: firstAttempt.issues.length > 0 ? firstAttempt.issues : ["expected at least one occurrence"],
+          remaining: children
+        }
+      }
+      let current = firstAttempt.remaining
+      while (current.length > 0) {
+        const attempt = matchElement(expression.of, current, registry)
+        if (attempt.issues.length > 0) {
+          return { issues: [], remaining: current }
+        }
+        current = attempt.remaining
+      }
+      return { issues: [], remaining: current }
+    }
+    case "choice": {
+      for (const option of expression.of) {
+        const attempt = matchElement(option, children, registry)
+        if (attempt.issues.length === 0) {
+          return attempt
+        }
+      }
+      return {
+        issues: [`expected one of choices: ${expression.of.map((candidate) => candidate.type).join(",")}`],
+        remaining: children
+      }
     }
     case "sequence": {
       let current: ReadonlyArray<NodeSnapshot> = children
