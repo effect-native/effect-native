@@ -48,6 +48,33 @@ export const run = <E, R, A, EE>(
 
 /**
  * @since 1.0.0
+ * @category combinators
+ * @example
+ * ```ts
+ * import { AttributeBag, Transaction } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const program = Effect.gen(function*() {
+ *   const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+ *   const capability = AttributeBag.transaction(bag)
+ *
+ *   const publish = Transaction.withTransaction(capability)(
+ *     Effect.gen(function*() {
+ *       yield* bag.set(null, "title", "published")
+ *       return yield* bag.get(null, "title")
+ *     })
+ *   )
+ *
+ *   return yield* publish
+ * })
+ * ```
+ */
+export const withTransaction =
+  <E>(transaction: Transaction<E>) => <R, A, EE>(effect: Effect.Effect<A, EE, R>): Effect.Effect<A, EE | E, R> =>
+    transaction.withTransaction(effect)
+
+/**
+ * @since 1.0.0
  * @category constructors
  */
 export const unsupported = (options?: {
@@ -72,6 +99,7 @@ export const Transaction = {
   is,
   make,
   run,
+  withTransaction,
   unsupported
 }
 

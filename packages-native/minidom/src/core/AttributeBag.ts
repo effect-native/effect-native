@@ -68,7 +68,7 @@ export const asyncService = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
   readonly loadInitial?: () => Effect.Effect<Iterable<AttributeEntry>>
-}): Service => {
+}): Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
@@ -150,7 +150,7 @@ export const asyncService = (options?: {
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  return {
+  const service: Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
     get: (namespace, name) => run(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => run(() => store.has(NamespaceHelpers.key(namespace, name))),
     set: (namespace, name, value) =>
@@ -177,8 +177,11 @@ export const asyncService = (options?: {
         state = "idle"
         pending = undefined
         triggerLoad()
-      })
+      }),
+    [StoreSymbol]: store
   }
+
+  return service
 }
 
 /**

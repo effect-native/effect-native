@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 import * as Effect from "effect/Effect"
+import * as FiberRef from "effect/FiberRef"
 
 import * as AttributeBag from "../core/AttributeBag.js"
 import type { AttributeEntry } from "../core/AttributeBag.js"
@@ -48,7 +49,7 @@ export interface AdapterCapabilities {
  * @since 1.0.0
  * @category model
  */
-export type CompositeError = MiniDomError.Unsupported | CompositeAdapterMissing
+export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | CompositeAdapterMissing
 
 /**
  * @since 1.0.0
@@ -66,6 +67,8 @@ type Operation = "get" | "has" | "set" | "delete" | "transaction"
 
 const isWriteOperation = (operation: Operation) =>
   operation === "set" || operation === "delete" || operation === "transaction"
+
+const ActiveTransactionRef = FiberRef.unsafeMake<PropertyKey | null>(null)
 
 const ownershipFor = (config: AdapterConfig): Ownership => config.capabilities?.composite?.ownership ?? "read-write"
 
@@ -95,6 +98,38 @@ const ensureOwnership = <K extends PropertyKey>(
   }
 
   return Effect.void
+}
+
+const ensureTransactionBoundary = <K extends PropertyKey>(
+  key: K,
+  namespace: Namespace,
+  name: string,
+  operation: Operation
+): Effect.Effect<void, MiniDomError.Unsupported> => {
+  if (!isWriteOperation(operation)) {
+    return Effect.void
+  }
+
+  return Effect.flatMap(FiberRef.get(ActiveTransactionRef), (active) => {
+    if (active === null || active === key) {
+      return Effect.void
+    }
+
+    return Effect.fail(
+      new MiniDomError.Unsupported({
+        message: `Composite transaction for ${String(active)} cannot mutate adapter ${
+          String(key)
+        } during ${operation} ${namespace ?? "null"}:${name}`,
+        cause: {
+          active,
+          attempted: key,
+          namespace,
+          name,
+          operation
+        }
+      })
+    )
+  })
 }
 
 /**
@@ -170,28 +205,73 @@ const delegate = <Adapters extends AdapterRecord, A>(
   Effect.flatMap(resolveAdapter(adapters, options, namespace, name), ([key, adapter]) =>
     Effect.flatMap(
       ensureOwnership(key, namespace, name, operation, adapter),
-      () => {
-        const context: GuardContext<keyof Adapters> = {
-          adapter: key,
-          namespace,
-          name,
-          operation,
-          ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
-        }
+      () =>
+        Effect.flatMap(
+          ensureTransactionBoundary(key, namespace, name, operation),
+          () => {
+            const context: GuardContext<keyof Adapters> = {
+              adapter: key,
+              namespace,
+              name,
+              operation,
+              ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+            }
 
-        return Effect.flatMap(runGuard(options, context), () => f(adapter.bag))
-      }
+            return Effect.flatMap(runGuard(options, context), () => f(adapter.bag))
+          }
+        )
     ))
 
 const entriesFromAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<ReadonlyArray<AttributeEntry>> =>
+): Effect.Effect<ReadonlyArray<readonly [adapter: keyof Adapters, entry: AttributeEntry]>> =>
   Effect.map(
-    Effect.forEach(Array.from(adapters.values()), (adapter) => adapter.bag.entries(), {
+    Effect.forEach(Array.from(adapters.entries()), ([key, adapter]) =>
+      Effect.map(adapter.bag.entries(), (entries) => entries.map((entry) => [key, entry] as const)), {
       concurrency: "unbounded"
     }),
-    (entryGroups) => entryGroups.flat()
+    (entryGroups) =>
+      entryGroups.flat()
   )
+
+const entryKey = (namespace: Namespace, name: string) => `${String(namespace)}::${name}`
+
+const captureState = <Adapters extends AdapterRecord>(
+  adapters: Map<keyof Adapters, AdapterConfig>
+): Effect.Effect<Map<keyof Adapters, Map<string, AttributeEntry>>> =>
+  Effect.map(entriesFromAll(adapters), (pairs) => {
+    const state = new Map<keyof Adapters, Map<string, AttributeEntry>>()
+    for (const [adapter, entry] of pairs) {
+      if (!state.has(adapter)) {
+        state.set(adapter, new Map())
+      }
+      state.get(adapter)!.set(entryKey(entry[0], entry[1]), entry)
+    }
+    return state
+  })
+
+const restoreAdapter = <_Adapters extends AdapterRecord>(
+  adapter: AdapterConfig,
+  before: Map<string, AttributeEntry>,
+  after: Map<string, AttributeEntry>
+): Effect.Effect<void> => {
+  const removals: Array<Effect.Effect<void>> = []
+  for (const key of after.keys()) {
+    if (!before.has(key)) {
+      const [namespace, name] = key.split("::") as [Namespace, string]
+      removals.push(adapter.bag.delete(namespace, name).pipe(Effect.asVoid))
+    }
+  }
+
+  const restorations: Array<Effect.Effect<void>> = []
+  for (const [, [namespace, name, value]] of before) {
+    restorations.push(adapter.bag.set(namespace, name, value))
+  }
+
+  return Effect.forEach(removals.concat(restorations), (effect) => effect, {
+    concurrency: "unbounded"
+  }).pipe(Effect.asVoid)
+}
 
 /**
  * @since 1.0.0
@@ -210,8 +290,9 @@ export const makeRouter = <Adapters extends AdapterRecord>(
         delegate(adapters, options, namespace, name, "set", (bag) => bag.set(namespace, name, value)),
       delete: (namespace, name) =>
         delegate(adapters, options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
-      entries: () => entriesFromAll(adapters),
-      snapshot: () => Effect.map(entriesFromAll(adapters), AttributeBag.viewFromEntries),
+      entries: () => Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
+      snapshot: () =>
+        Effect.map(entriesFromAll(adapters), (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))),
       refresh: () => refreshAll(adapters),
       [CompositeContextSymbol]: {
         adapters,
@@ -228,12 +309,62 @@ export const makeRouter = <Adapters extends AdapterRecord>(
  */
 export const refreshAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<void> =>
-  Effect.asVoid(
-    Effect.forEach(Array.from(adapters.values()), (adapter) => adapter.bag.refresh(), {
-      concurrency: "unbounded"
+): Effect.Effect<void, MiniDomError.Conflict> =>
+  Effect.flatMap(FiberRef.get(ActiveTransactionRef), (active) => {
+    if (active !== null) {
+      return Effect.fail(
+        new MiniDomError.Conflict({
+          message: `Composite transaction for ${String(active)} cannot refresh adapters while in progress`,
+          cause: { active, operation: "refresh" }
+        })
+      )
+    }
+
+    return Effect.gen(function*() {
+      const before = yield* captureState(adapters)
+
+      yield* Effect.forEach(Array.from(adapters.values()), (adapter) => adapter.bag.refresh(), {
+        concurrency: "unbounded"
+      })
+
+      const after = yield* captureState(adapters)
+
+      const conflicts: Array<keyof Adapters> = []
+
+      for (const [key, beforeEntries] of before.entries()) {
+        const afterEntries = after.get(key) ?? new Map<string, AttributeEntry>()
+
+        if (beforeEntries.size !== afterEntries.size) {
+          conflicts.push(key)
+          continue
+        }
+
+        for (const [entryKey, entry] of beforeEntries) {
+          const afterEntry = afterEntries.get(entryKey)
+          if (!afterEntry || afterEntry[2] !== entry[2]) {
+            conflicts.push(key)
+            break
+          }
+        }
+      }
+
+      if (conflicts.length > 0) {
+        yield* Effect.forEach(conflicts, (key) => {
+          const adapter = adapters.get(key)!
+          const beforeEntries = before.get(key) ?? new Map<string, AttributeEntry>()
+          const afterEntries = after.get(key) ?? new Map<string, AttributeEntry>()
+          return restoreAdapter(adapter, beforeEntries, afterEntries)
+        }, {
+          concurrency: "unbounded"
+        })
+
+        return yield* new MiniDomError.Conflict({
+          message: "Composite refresh detected conflicting adapter state",
+          cause: { adapters: conflicts.map((key) => String(key)) }
+        })
+      }
     })
-  )
+  })
 
 /**
  * @since 1.0.0
@@ -266,27 +397,34 @@ export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
     ([key, adapter]) =>
       Effect.flatMap(
         ensureOwnership(key, request.namespace, request.name, "transaction", adapter),
-        () => {
-          const guardContext: GuardContext<keyof Adapters> = {
-            adapter: key,
-            namespace: request.namespace,
-            name: request.name,
-            operation: "transaction",
-            ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
-          }
+        () =>
+          Effect.flatMap(
+            ensureTransactionBoundary(key, request.namespace, request.name, "transaction"),
+            () => {
+              const guardContext: GuardContext<keyof Adapters> = {
+                adapter: key,
+                namespace: request.namespace,
+                name: request.name,
+                operation: "transaction",
+                ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+              }
 
-          const capability = adapter.transaction ?? adapter.capabilities?.transaction
+              const capability = adapter.transaction ?? adapter.capabilities?.transaction
 
-          if (!capability) {
-            return Effect.fail(
-              new MiniDomError.Unsupported({
-                message: `Composite adapter ${String(key)} does not support transactions`
-              })
-            )
-          }
+              if (!capability) {
+                return Effect.fail(
+                  new MiniDomError.Unsupported({
+                    message: `Composite adapter ${String(key)} does not support transactions`
+                  })
+                )
+              }
 
-          return Effect.flatMap(runGuard(options, guardContext), () => capability.withTransaction(request.effect))
-        }
+              return Effect.flatMap(
+                runGuard(options, guardContext),
+                () => capability.withTransaction(request.effect.pipe(Effect.locally(ActiveTransactionRef, key)))
+              )
+            }
+          )
       )
   )
 }
