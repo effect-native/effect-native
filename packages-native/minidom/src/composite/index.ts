@@ -104,7 +104,7 @@ export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | 
  * ```ts
  * import { AttributeBag, Composite } from "@effect-native/minidom"
  *
- * const bag = AttributeBag.make()
+ * const bag = AttributeBag.makeSync()
  * const adapter: Composite.AdapterConfig = {
  *   bag,
  *   capabilities: { composite: { ownership: "read-write" } }
@@ -222,7 +222,7 @@ export interface GuardContext<K extends PropertyKey> {
  * import * as Effect from "effect/Effect"
  * import * as MiniDom from "@effect-native/minidom"
  *
- * const bag = MiniDom.AttributeBag.make()
+ * const bag = MiniDom.AttributeBag.makeSync()
  *
  * const options: MiniDom.Composite.RouterOptions<{ primary: MiniDom.Composite.AdapterConfig }> = {
  *   adapters: { primary: { bag } },
@@ -369,7 +369,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
  * import * as Effect from "effect/Effect"
  * import { AttributeBag, Composite } from "@effect-native/minidom"
  *
- * const bag = AttributeBag.make({ initial: [[null, "id", "root"]] })
+ * const bag = AttributeBag.makeSync({ initial: [[null, "id", "root"]] })
  *
  * const program = Effect.gen(function*() {
  *   const router = yield* Composite.makeRouter({
@@ -449,7 +449,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
  * import { AttributeBag, Composite } from "@effect-native/minidom"
  *
  * const adapters = new Map([
- *   ["primary", { bag: AttributeBag.asyncService() }]
+ *   ["primary", { bag: AttributeBag.makeAsync() }]
  * ] as const)
  *
  * Effect.runPromise(Composite.refreshAll(adapters))
@@ -551,7 +551,7 @@ const compositeContext = <Adapters extends AdapterRecord>(
  * import * as Effect from "effect/Effect"
  * import { AttributeBag, Composite } from "@effect-native/minidom"
  *
- * const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+ * const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
  *
  * const program = Effect.gen(function*() {
  *   const router = yield* Composite.makeRouter({

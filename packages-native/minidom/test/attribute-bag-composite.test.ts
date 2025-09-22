@@ -10,7 +10,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
+            bag: MiniDom.AttributeBag.makeSync({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
             bag: MiniDom.AttributeBag.makeAsync({
@@ -35,7 +35,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
+            bag: MiniDom.AttributeBag.makeSync({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
             bag: MiniDom.AttributeBag.makeAsync({
@@ -56,7 +56,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: MiniDom.AttributeBag.make({ initial: [] })
+            bag: MiniDom.AttributeBag.makeSync({ initial: [] })
           }
         },
         resolve: () => "remote"
@@ -76,7 +76,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: MiniDom.AttributeBag.make({ initial: [] }),
+            bag: MiniDom.AttributeBag.makeSync({ initial: [] }),
             capabilities: { sync: true }
           }
         },

@@ -10,7 +10,7 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
       const composite = yield* Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.make({ initial: [] }),
+            bag: AttributeBag.makeSync({ initial: [] }),
             capabilities: {
               composite: { ownership: "read-write" },
               transaction: TransactionCapability.make((operation) => operation)
@@ -41,7 +41,7 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
       const composite = yield* Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.make({ initial: [[null, "title", "draft"]] })
+            bag: AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
           }
         },
         resolve: () => "local"
@@ -62,7 +62,7 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
 
   it.effect("uses adapter.transaction hook for commit and rollback", () =>
     Effect.gen(function*() {
-      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
 
       const composite = yield* Composite.makeRouter({
         adapters: {
@@ -110,9 +110,9 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
       const composite = yield* Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.make({ initial: [[null, "title", "draft"]] }),
+            bag: AttributeBag.makeSync({ initial: [[null, "title", "draft"]] }),
             transaction: AttributeBag.transaction(
-              AttributeBag.make({ initial: [[null, "title", "draft"]] })
+              AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
             )
           }
         },

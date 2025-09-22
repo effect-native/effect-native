@@ -9,8 +9,8 @@ describe("Hybrid composite transactions (FR1.11 / SC7.7 / SC7.8 / H2 / H14)", ()
 
   it.effect("allows transactions confined to the owning adapter", () =>
     Effect.gen(function*() {
-      const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
-      const svgBag = AttributeBag.make()
+      const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
+      const svgBag = AttributeBag.makeSync()
 
       const composite = yield* Composite.makeRouter({
         adapters: {
@@ -41,8 +41,8 @@ describe("Hybrid composite transactions (FR1.11 / SC7.7 / SC7.8 / H2 / H14)", ()
 
   it.effect("rejects cross-adapter mutations during a transaction", () =>
     Effect.gen(function*() {
-      const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
-      const svgBag = AttributeBag.make()
+      const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
+      const svgBag = AttributeBag.makeSync()
 
       const composite = yield* Composite.makeRouter({
         adapters: {

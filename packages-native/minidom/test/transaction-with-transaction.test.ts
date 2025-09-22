@@ -7,7 +7,7 @@ import { AttributeBag, MiniDomError, TransactionCapability } from "@effect-nativ
 describe("Transaction.withTransaction helper (FR1.11 / SC7.8 / H14)", () => {
   it.effect("commits wrapped effects", () =>
     Effect.gen(function*() {
-      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const capability = AttributeBag.transaction(bag)
 
       const commit = Effect.gen(function*() {
@@ -22,7 +22,7 @@ describe("Transaction.withTransaction helper (FR1.11 / SC7.8 / H14)", () => {
 
   it.effect("rolls back on conflict and surfaces MiniDomError.Conflict", () =>
     Effect.gen(function*() {
-      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const capability = AttributeBag.transaction(bag)
       const conflict = new MiniDomError.Conflict({ message: "write-write" })
 

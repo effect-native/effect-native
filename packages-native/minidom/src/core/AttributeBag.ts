@@ -67,7 +67,7 @@ export interface View {
  * import * as Effect from "effect/Effect"
  *
  * const program = Effect.gen(function*() {
- *   const bag = AttributeBag.make()
+ *   const bag = AttributeBag.makeSync()
  *   yield* bag.set(null, "id", "root")
  *   return yield* bag.get(null, "id")
  * })
@@ -114,7 +114,7 @@ export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Servic
  * ```
  */
 export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
-  Layer.effect(Tag, Effect.sync(() => make(options)))
+  Layer.effect(Tag, Effect.sync(() => makeSync(options)))
 
 /**
  * Constructs an asynchronous {@link Service} that lazily loads attributes.
@@ -129,7 +129,7 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
  * import { AttributeBag } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  *
- * const bag = AttributeBag.asyncService({
+ * const bag = AttributeBag.makeAsync({
  *   loadInitial: () => Effect.succeed([[null, "id", "root"]])
  * })
  *
@@ -318,7 +318,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * import * as Option from "effect/Option"
  *
  * const program = Effect.gen(function*() {
- *   const bag = AttributeBag.make()
+ *   const bag = AttributeBag.makeSync()
  *   yield* bag.set("http://www.w3.org/1999/xhtml", "class", "hero")
  *   yield* bag.set(null, "id", "root")
  *   const snapshot = yield* bag.snapshot()
@@ -338,7 +338,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * })
  * ```
  */
-export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service & {
+export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service & {
   readonly [StoreSymbol]: Map<string, AttributeEntry>
 } => {
   const store = new Map<string, AttributeEntry>()
@@ -383,7 +383,7 @@ const hasStore = (
  * import { AttributeBag } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  *
- * const bag = AttributeBag.asyncService()
+ * const bag = AttributeBag.makeAsync()
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
@@ -399,7 +399,7 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
  * import { AttributeBag, TransactionCapability } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  *
- * const bag = AttributeBag.make({ initial: [[null, "mode", "draft"]] })
+ * const bag = AttributeBag.makeSync({ initial: [[null, "mode", "draft"]] })
  * const capability = AttributeBag.transaction(bag)
  *
  * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
@@ -438,7 +438,7 @@ export const transaction = (service: Service): Transaction.TransactionCapability
  * import { AttributeBag } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  *
- * const bag = AttributeBag.make()
+ * const bag = AttributeBag.makeSync()
  * Effect.runPromise(bag.entries()).then(console.log)
  * ```
  */
@@ -446,7 +446,7 @@ export const AttributeBag = {
   Tag,
   layer,
   layerAsync,
-  make,
+  make: makeSync,
   makeAsync,
   refresh,
   transaction,

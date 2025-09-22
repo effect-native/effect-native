@@ -7,7 +7,7 @@ import { AttributeBag, Composite, MiniDomError } from "@effect-native/minidom"
 describe("Hybrid composite reload during transaction (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H14 / H22)", () => {
   it.effect("treats remote refresh during transaction as conflict", () =>
     Effect.gen(function*() {
-      const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]],
         loadInitial: () => Effect.succeed<Iterable<readonly [null, string, string]>>([[null, "status", "reloaded"]])

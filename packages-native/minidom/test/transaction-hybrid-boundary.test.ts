@@ -9,9 +9,9 @@ describe("Hybrid composite transaction boundaries (FR1.10 / FR1.11 / SC7.7 / SC7
 
   it.effect("allows read access to other adapters while preserving transactional boundaries", () =>
     Effect.gen(function*() {
-      const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
-      const svgBag = AttributeBag.make({ initial: [[SVG_NAMESPACE, "fill", "green"]] })
-      const remoteBag = AttributeBag.make({ initial: [[null, "status", "cold"]] })
+      const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
+      const svgBag = AttributeBag.makeSync({ initial: [[SVG_NAMESPACE, "fill", "green"]] })
+      const remoteBag = AttributeBag.makeSync({ initial: [[null, "status", "cold"]] })
 
       const composite = yield* Composite.makeRouter({
         adapters: {

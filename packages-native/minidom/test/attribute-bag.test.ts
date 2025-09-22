@@ -7,7 +7,7 @@ import * as MiniDom from "@effect-native/minidom"
 describe("MiniDom AttributeBag", () => {
   it.effect("service operations return Effects and track namespaces", () =>
     Effect.gen(function*() {
-      const service = MiniDom.AttributeBag.make()
+      const service = MiniDom.AttributeBag.makeSync()
 
       yield* service.set("http://www.w3.org/1999/xhtml", "class", "hero")
       yield* service.set(null, "id", "root")
@@ -50,7 +50,7 @@ describe("MiniDom Sync capability", () => {
     expect(MiniDom.SyncCapability.is(sync)).toBe(true)
 
     const program = Effect.gen(function*() {
-      const bag = MiniDom.AttributeBag.make()
+      const bag = MiniDom.AttributeBag.makeSync()
       yield* bag.set(null, "role", "banner")
       const view = yield* bag.snapshot()
       return view.size

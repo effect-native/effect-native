@@ -7,7 +7,7 @@ import { AttributeBag, MiniDomError, TransactionCapability } from "@effect-nativ
 describe("AttributeBag transaction capability (FR1.11 / H14)", () => {
   it.effect("commits successful effects", () =>
     Effect.gen(function*() {
-      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const capability = AttributeBag.transaction(bag)
 
       const program = Effect.gen(function*() {
@@ -22,7 +22,7 @@ describe("AttributeBag transaction capability (FR1.11 / H14)", () => {
 
   it.effect("rolls back when effect fails", () =>
     Effect.gen(function*() {
-      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+      const bag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const capability = AttributeBag.transaction(bag)
 
       const conflict = new MiniDomError.Conflict({ message: "write-write" })
