@@ -29,9 +29,9 @@
   (complete — `Schema.toStandardSchemaV1` plus README coverage as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
 
 ### 4. Observation & Reactivity Integration
-- [ ] Wrap @effect/experimental Reactivity service (`MiniDom.Events`)
-- [ ] Implement mutation helpers calling `Reactivity.mutation`
-- [ ] Add observation tests comparing stream vs polling latency
+- [x] Wrap @effect/experimental Reactivity service (`MiniDom.Events`)
+- [x] Implement mutation helpers calling `Reactivity.mutation`
+- [x] Add observation tests comparing stream vs polling latency
 
 ### 5. Composition & Transactions
 - [x] Implement `MiniDom.Composite` router enforcing ownership boundaries (Iteration 24 — read-only enforcement via `packages-native/minidom/test/composite-boundary.test.ts`, evidence in `experiments/minidom/log-20250921-2052.md`)
@@ -72,7 +72,7 @@
 | Package scaffolding & layers | @codex | Complete — Core, schema, composite, host, adapters, and events modules exported via `packages-native/minidom/src/index.ts`; HappyMiniDom/WindowMiniDom helpers (`happy-mini-dom.test.ts`), stub SQL/KV adapters with capability metadata (`adapter-stubs.test.ts`). |
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
 | Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
-| Observation integration | TBD | Not started |
+| Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
 | React host adapter | TBD | Not started |
 | Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
