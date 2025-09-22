@@ -73,7 +73,7 @@
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
 | Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |
-| Composition & transactions | TBD | Not started |
+| Composition & transactions | @codex | In progress — Composite router skeleton + refresh delegation under Iteration 20 (`experiments/minidom/log-20250921-1153.md#L170`) |
 | React host adapter | TBD | Not started |
 | Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
 

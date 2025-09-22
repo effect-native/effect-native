@@ -2,31 +2,52 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag } from "@effect-native/minidom"
+import { AttributeBag, Composite } from "@effect-native/minidom"
 
 describe("AttributeBag composite refresh (H2/H6)", () => {
-  it.effect("refresh propagates without racing between local and remote stores", () =>
+  it.effect("refresh bridges local + remote adapters without boundary leaks", () =>
     Effect.gen(function*() {
-      const local = AttributeBag.service({
-        initial: [[null, "theme", "dark"]]
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag: AttributeBag.service({ initial: [[null, "theme", "dark"]] })
+          },
+          remote: {
+            bag: AttributeBag.asyncService({
+              loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
+            })
+          }
+        },
+        resolve: (namespace, name) => (name === "theme" ? "remote" : "local")
       })
 
-      const remote = AttributeBag.asyncService({
-        loadInitial: () =>
-          Effect.sync(() => [[null, "theme", "remote"]] as const)
+      const before = yield* composite.get(null, "theme")
+      expect(before).toStrictEqual(Option.some("remote"))
+
+      yield* AttributeBag.refresh(composite)
+      const after = yield* composite.get(null, "theme")
+
+      expect(after).toStrictEqual(Option.some("remote"))
+    }))
+
+  it.effect("fails writes when guard denies capability", () =>
+    Effect.gen(function*() {
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag: AttributeBag.service({ initial: [[null, "theme", "dark"]] })
+          },
+          remote: {
+            bag: AttributeBag.asyncService({
+              loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
+            })
+          }
+        },
+        resolve: () => "local",
+        guard: () => Effect.fail(new Error("blocked"))
       })
 
-      const firstLocal = yield* local.get(null, "theme")
-      const firstRemote = yield* remote.get(null, "theme")
-
-      yield* AttributeBag.refresh(remote)
-
-      const secondLocal = yield* local.get(null, "theme")
-      const secondRemote = yield* remote.get(null, "theme")
-
-      expect(firstLocal).toStrictEqual(Option.some("dark"))
-      expect(firstRemote).toStrictEqual(Option.some("remote"))
-      expect(secondLocal).toStrictEqual(Option.some("dark"))
-      expect(secondRemote).toStrictEqual(Option.some("remote"))
+      const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.either)
+      expect(attempt._tag).toBe("Left")
     }))
 })

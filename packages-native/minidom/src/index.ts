@@ -35,6 +35,11 @@ export * as Sync from "./core/Sync.js"
  * @since 1.0.0
  * @category re-exports
  */
+export * as Composite from "./composite/index.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
 export * from "./core/Nodes.js"
 /**
  * @since 1.0.0
