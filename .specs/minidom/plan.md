@@ -44,9 +44,13 @@
 - [ ] Add tests for sync (HappyMiniDom) and async (mock remote) adapters *(tracked in `.specs/minidom-react-host/TODO.md`)*
 
 ### 7. Documentation & Tooling
-- [ ] Ensure JSDoc coverage with docgen validation
-- [ ] Generate capability matrix documentation and onboarding guides
-- [ ] Update README/package docs with adapter usage examples
+
+**Critical for initial release of `@effect-native/minidom`**
+- [ ] Ensure JSDoc coverage with docgen validation (blocks `pnpm docgen` / `done-feature` workflow)
+- [ ] Update README/package docs with adapter usage examples (minimum viable documentation for v0 release)
+
+**Post-release improvements for next minor**
+- [ ] Generate capability matrix documentation and onboarding guides (can follow in subsequent milestone)
 
 ## Validation Checkpoints
 - `nix develop --command pnpm lint --fix packages-native/minidom/**/*.ts`
@@ -75,6 +79,6 @@
 | Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
 | React host adapter | @codex | Deferred — scope migrated to `.specs/minidom-react-host/`; awaiting `/new-feature` workflow. |
-| Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
+| Documentation & tooling | @codex | Split: Critical tasks remaining for initial release (JSDoc/docgen, README refresh); broader capability-matrix docs deferred to post-release. |
 
 Update the table after each milestone, referencing commit hashes and experiment evidence.
