@@ -9,7 +9,7 @@ describe("AttributeBag refresh capability (H6)", () => {
     Effect.gen(function*() {
       let loadCount = 0
 
-      const bag = AttributeBag.asyncService({
+      const bag = AttributeBag.makeAsync({
         loadInitial: () =>
           Effect.sync(() => {
             loadCount += 1

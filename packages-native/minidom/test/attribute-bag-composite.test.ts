@@ -13,7 +13,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
             bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
-            bag: MiniDom.AttributeBag.asyncService({
+            bag: MiniDom.AttributeBag.makeAsync({
               loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }
@@ -38,7 +38,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
             bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
-            bag: MiniDom.AttributeBag.asyncService({
+            bag: MiniDom.AttributeBag.makeAsync({
               loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }

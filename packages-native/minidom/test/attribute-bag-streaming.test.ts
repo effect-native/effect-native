@@ -9,7 +9,7 @@ describe("AttributeBag lazy streaming", () => {
     Effect.gen(function*() {
       let loadCount = 0
 
-      const bag = MiniDom.AttributeBag.asyncService({
+      const bag = MiniDom.AttributeBag.makeAsync({
         loadInitial: () =>
           Effect.async((resume) => {
             loadCount += 1
@@ -49,7 +49,7 @@ describe("AttributeBag lazy streaming", () => {
           }, 0)
         })
 
-      const bag = MiniDom.AttributeBag.asyncService({ loadInitial: loader })
+      const bag = MiniDom.AttributeBag.makeAsync({ loadInitial: loader })
 
       const firstToken = yield* bag.get(null, "token")
       expect(loadCount).toBe(1)

@@ -136,7 +136,7 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
  * Effect.runPromise(bag.refresh())
  * ```
  */
-export const asyncService = (options?: {
+export const makeAsync = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
   readonly loadInitial?: () => Effect.Effect<Iterable<AttributeEntry>>
@@ -257,15 +257,6 @@ export const asyncService = (options?: {
 }
 
 /**
- * Alias for {@link asyncService}; retained for backwards compatibility while providing
- * a more descriptive constructor name.
- *
- * @since 0.0.0
- * @category constructors
- */
-export const makeAsync = asyncService
-
-/**
  * Layer that installs the asynchronous attribute bag service into the environment.
  *
  * @since 0.0.0
@@ -281,7 +272,7 @@ export const makeAsync = asyncService
 export const layerAsync = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
-}) => Layer.effect(Tag, Effect.sync(() => asyncService(options)))
+}) => Layer.effect(Tag, Effect.sync(() => makeAsync(options)))
 
 const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
   const index = new Map<string, AttributeEntry>()
@@ -455,11 +446,7 @@ export const AttributeBag = {
   Tag,
   layer,
   layerAsync,
-  /** @deprecated Use {@link make} instead. */
-  service: make,
   make,
-  /** @deprecated Use {@link makeAsync} instead. */
-  asyncService,
   makeAsync,
   refresh,
   transaction,

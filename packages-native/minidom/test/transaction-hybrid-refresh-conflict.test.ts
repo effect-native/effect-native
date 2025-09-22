@@ -7,7 +7,7 @@ import { AttributeBag, Composite, MiniDomError } from "@effect-native/minidom"
 describe("Hybrid composite refresh conflict detection (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H14 / H22)", () => {
   it.effect("surfaces conflict when refresh overwrites committed status", () =>
     Effect.gen(function*() {
-      const remoteBag = AttributeBag.asyncService({
+      const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]],
         loadInitial: () =>
           Effect.succeed<Iterable<readonly [null, string, string]>>([

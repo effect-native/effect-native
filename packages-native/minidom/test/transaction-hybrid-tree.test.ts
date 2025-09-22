@@ -11,7 +11,7 @@ describe("Hybrid tree integration (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H
     Effect.gen(function*() {
       const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
       const svgBag = AttributeBag.make({ initial: [[SVG_NAMESPACE, "fill", "green"]] })
-      const remoteBag = AttributeBag.asyncService({
+      const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]],
         loadInitial: () => Effect.succeed([[null, "status", "reloaded"]])
       })

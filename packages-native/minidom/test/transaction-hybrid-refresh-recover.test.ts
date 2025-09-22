@@ -7,7 +7,7 @@ import { AttributeBag, Composite } from "@effect-native/minidom"
 describe("Hybrid refresh recovery (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H14 / H22)", () => {
   it.effect("succeeds after resolving conflict", () =>
     Effect.gen(function*() {
-      const remoteBag = AttributeBag.asyncService({
+      const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]],
         loadInitial: () => Effect.succeed([[null, "status", "cold"]])
       })

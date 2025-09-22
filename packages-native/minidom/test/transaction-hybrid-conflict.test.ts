@@ -8,7 +8,7 @@ describe("Hybrid composite remote transactions (FR1.10 / FR1.11 / SC7.7 / SC7.8 
   it.effect("commits async remote transactions", () =>
     Effect.gen(function*() {
       const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
-      const remoteBag = AttributeBag.asyncService({
+      const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]]
       })
 
@@ -39,7 +39,7 @@ describe("Hybrid composite remote transactions (FR1.10 / FR1.11 / SC7.7 / SC7.8 
   it.effect("rolls back async remote transactions on failure", () =>
     Effect.gen(function*() {
       const htmlBag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
-      const remoteBag = AttributeBag.asyncService({
+      const remoteBag = AttributeBag.makeAsync({
         initial: [[null, "status", "cold"]]
       })
 
