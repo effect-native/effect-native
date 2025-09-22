@@ -65,6 +65,43 @@ const choiceRegistry = Schema.registry([
   })
 ])
 
+const anyRegistry = Schema.registry([
+  Schema.element({
+    name: Schema.q(HTML, "div"),
+    content: Schema.content.any(),
+    attributes: []
+  })
+])
+
+const interleaveRegistry = Schema.registry([
+  Schema.element({
+    name: Schema.q(HTML, "article"),
+    content: Schema.content.interleave([
+      Schema.content.element(Schema.q(HTML, "h1")),
+      Schema.content.element(Schema.q(HTML, "p"))
+    ]),
+    attributes: []
+  }),
+  Schema.element({
+    name: Schema.q(HTML, "h1"),
+    content: Schema.content.sequence([]),
+    attributes: []
+  }),
+  Schema.element({
+    name: Schema.q(HTML, "p"),
+    content: Schema.content.sequence([]),
+    attributes: []
+  })
+])
+
+const emptyRegistry = Schema.registry([
+  Schema.element({
+    name: Schema.q(HTML, "br"),
+    content: Schema.content.empty(),
+    attributes: []
+  })
+])
+
 describe("MiniDomX Registry validation", () => {
   it.effect("accepts matching structures", () =>
     Effect.gen(function*() {
@@ -190,5 +227,49 @@ describe("MiniDomX Registry validation", () => {
       const result = yield* Schema.validate(choiceRegistry, node)
 
       expect(result.ok).toBe(true)
+    }))
+
+  it.effect("allows any content when using content.any", () =>
+    Effect.gen(function*() {
+      const node = {
+        name: Schema.q(HTML, "div"),
+        attributes: [],
+        children: [
+          { name: Schema.q(HTML, "span"), attributes: [], children: [] }
+        ]
+      }
+
+      const result = yield* Schema.validate(anyRegistry, node)
+
+      expect(result.ok).toBe(true)
+    }))
+
+  it.effect("interleave accepts children in any order", () =>
+    Effect.gen(function*() {
+      const node = {
+        name: Schema.q(HTML, "article"),
+        attributes: [],
+        children: [
+          { name: Schema.q(HTML, "p"), attributes: [], children: [] },
+          { name: Schema.q(HTML, "h1"), attributes: [], children: [] }
+        ]
+      }
+
+      const result = yield* Schema.validate(interleaveRegistry, node)
+
+      expect(result.ok).toBe(true)
+    }))
+
+  it.effect("empty content rejects children", () =>
+    Effect.gen(function*() {
+      const node = {
+        name: Schema.q(HTML, "br"),
+        attributes: [],
+        children: [{ name: Schema.q(HTML, "span"), attributes: [], children: [] }]
+      }
+
+      const result = yield* Schema.validate(emptyRegistry, node)
+
+      expect(result.ok).toBe(false)
     }))
 })

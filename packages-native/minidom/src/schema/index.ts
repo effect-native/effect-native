@@ -50,6 +50,9 @@ export type ContentExpression =
   | { readonly type: "zeroOrMore"; readonly of: ContentExpression }
   | { readonly type: "oneOrMore"; readonly of: ContentExpression }
   | { readonly type: "choice"; readonly of: ReadonlyArray<ContentExpression> }
+  | { readonly type: "any" }
+  | { readonly type: "empty" }
+  | { readonly type: "interleave"; readonly of: ReadonlyArray<ContentExpression> }
 
 const elementContent = (name: ExpandedName): ContentExpression => ({
   type: "element",
@@ -81,6 +84,19 @@ const choiceContent = (of: ReadonlyArray<ContentExpression>): ContentExpression 
   of
 })
 
+const anyContent = (): ContentExpression => ({
+  type: "any"
+})
+
+const emptyContent = (): ContentExpression => ({
+  type: "empty"
+})
+
+const interleaveContent = (of: ReadonlyArray<ContentExpression>): ContentExpression => ({
+  type: "interleave",
+  of
+})
+
 /**
  * @since 1.0.0
  * @category namespaces
@@ -91,7 +107,10 @@ export const content = {
   optional: optionalContent,
   zeroOrMore: zeroOrMoreContent,
   oneOrMore: oneOrMoreContent,
-  choice: choiceContent
+  choice: choiceContent,
+  any: anyContent,
+  empty: emptyContent,
+  interleave: interleaveContent
 } as const
 
 /**
@@ -442,6 +461,15 @@ const matchElement = (
       }
       return attempt
     }
+    case "any": {
+      return { issues: [], remaining: [] }
+    }
+    case "empty": {
+      if (children.length === 0) {
+        return { issues: [], remaining: [] }
+      }
+      return { issues: ["expected no children"], remaining: children }
+    }
     case "zeroOrMore": {
       let current: ReadonlyArray<NodeSnapshot> = children
       while (current.length > 0) {
@@ -482,6 +510,32 @@ const matchElement = (
         issues: [`expected one of choices: ${expression.of.map((candidate) => candidate.type).join(",")}`],
         remaining: children
       }
+    }
+    case "interleave": {
+      const remainingChildren = [...children]
+      const issues: Array<string> = []
+
+      for (const expr of expression.of) {
+        let matched = false
+        for (let index = 0; index < remainingChildren.length; index++) {
+          const slice = remainingChildren.slice(index)
+          const attempt = matchElement(expr, slice, registry)
+          if (attempt.issues.length === 0) {
+            const consumed = slice.length - attempt.remaining.length
+            if (consumed === 0) {
+              continue
+            }
+            remainingChildren.splice(index, consumed)
+            matched = true
+            break
+          }
+        }
+        if (!matched) {
+          issues.push("interleave element missing")
+        }
+      }
+
+      return { issues, remaining: remainingChildren }
     }
     case "sequence": {
       let current: ReadonlyArray<NodeSnapshot> = children
