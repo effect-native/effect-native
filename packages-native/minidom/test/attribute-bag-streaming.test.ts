@@ -2,14 +2,14 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, Sync } from "@effect-native/minidom"
+import * as MiniDom from "@effect-native/minidom"
 
 describe("AttributeBag lazy streaming", () => {
   it.effect("loads remote attributes exactly once via async loader", () =>
     Effect.gen(function*() {
       let loadCount = 0
 
-      const bag = AttributeBag.asyncService({
+      const bag = MiniDom.AttributeBag.asyncService({
         loadInitial: () =>
           Effect.async((resume) => {
             loadCount += 1
@@ -31,7 +31,7 @@ describe("AttributeBag lazy streaming", () => {
       expect(second).toStrictEqual(Option.some("remote"))
       expect(classAttr).toStrictEqual(Option.some("article"))
 
-      const capability = Sync.detect(() => bag.get(null, "id"))
+      const capability = MiniDom.Sync.detect(() => bag.get(null, "id"))
       expect(Option.isNone(capability)).toBe(true)
     }))
 
@@ -49,7 +49,7 @@ describe("AttributeBag lazy streaming", () => {
           }, 0)
         })
 
-      const bag = AttributeBag.asyncService({ loadInitial: loader })
+      const bag = MiniDom.AttributeBag.asyncService({ loadInitial: loader })
 
       const firstToken = yield* bag.get(null, "token")
       expect(loadCount).toBe(1)
@@ -61,7 +61,7 @@ describe("AttributeBag lazy streaming", () => {
       expect(loadCount).toBe(2)
       expect(secondToken).toStrictEqual(Option.some("refresh-2"))
 
-      const capability = Sync.detect(() => bag.get(null, "token"))
+      const capability = MiniDom.Sync.detect(() => bag.get(null, "token"))
       expect(Option.isNone(capability)).toBe(true)
     }))
 })

@@ -55,7 +55,7 @@ export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Servic
  * @category layers
  */
 export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
-  Layer.effect(Tag, Effect.sync(() => service(options)))
+  Layer.effect(Tag, Effect.sync(() => make(options)))
 
 /**
  * @since 1.0.0
@@ -220,7 +220,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * import * as Option from "effect/Option"
  *
  * const program = Effect.gen(function*() {
- *   const bag = AttributeBag.service()
+ *   const bag = AttributeBag.make()
  *   yield* bag.set("http://www.w3.org/1999/xhtml", "class", "hero")
  *   yield* bag.set(null, "id", "root")
  *   const snapshot = yield* bag.snapshot()
@@ -235,7 +235,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * }
  * ```
  */
-export const service = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service => {
+export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service => {
   const store = new Map<string, AttributeEntry>()
 
   if (options?.initial) {
@@ -275,7 +275,7 @@ export const AttributeBag = {
   Tag,
   layer,
   layerAsync,
-  service,
+  service: make,
   asyncService,
   refresh,
   viewFromEntries

@@ -2,18 +2,18 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, Composite, MiniDomError } from "@effect-native/minidom"
+import * as MiniDom from "@effect-native/minidom"
 
 describe("AttributeBag composite refresh (H2/H6)", () => {
   it.effect("refresh bridges local + remote adapters without boundary leaks", () =>
     Effect.gen(function*() {
-      const composite = yield* Composite.makeRouter({
+      const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.service({ initial: [[null, "theme", "dark"]] })
+            bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
-            bag: AttributeBag.asyncService({
+            bag: MiniDom.AttributeBag.asyncService({
               loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }
@@ -24,7 +24,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const before = yield* composite.get(null, "theme")
       expect(before).toStrictEqual(Option.some("remote"))
 
-      yield* AttributeBag.refresh(composite)
+      yield* MiniDom.AttributeBag.refresh(composite)
       const after = yield* composite.get(null, "theme")
 
       expect(after).toStrictEqual(Option.some("remote"))
@@ -32,19 +32,19 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
 
   it.effect("fails writes when guard denies capability", () =>
     Effect.gen(function*() {
-      const composite = yield* Composite.makeRouter({
+      const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.service({ initial: [[null, "theme", "dark"]] })
+            bag: MiniDom.AttributeBag.make({ initial: [[null, "theme", "dark"]] })
           },
           remote: {
-            bag: AttributeBag.asyncService({
+            bag: MiniDom.AttributeBag.asyncService({
               loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }
         },
         resolve: () => "local",
-        guard: () => Effect.fail(new MiniDomError.Unsupported({ message: "blocked" }))
+        guard: () => Effect.fail(new MiniDom.MiniDomError.Unsupported({ message: "blocked" }))
       })
 
       const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.either)
@@ -53,10 +53,10 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
 
   it.effect("throws when resolver targets missing adapter", () =>
     Effect.gen(function*() {
-      const composite = yield* Composite.makeRouter({
+      const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.service({ initial: [] })
+            bag: MiniDom.AttributeBag.make({ initial: [] })
           }
         },
         resolve: () => "remote"
@@ -65,18 +65,18 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
       const result = yield* composite.get(null, "missing").pipe(Effect.either)
       expect(result._tag).toBe("Left")
       if (result._tag === "Left") {
-        expect(result.left).toBeInstanceOf(Composite.CompositeAdapterMissing)
+        expect(result.left).toBeInstanceOf(MiniDom.Composite.CompositeAdapterMissing)
       }
     }))
 
   it.effect("passes capability metadata to guard", () =>
     Effect.gen(function*() {
-      const seen: Array<Composite.GuardContext<string>> = []
+      const seen: Array<MiniDom.Composite.GuardContext<string>> = []
 
-      const composite = yield* Composite.makeRouter({
+      const composite = yield* MiniDom.Composite.makeRouter({
         adapters: {
           local: {
-            bag: AttributeBag.service({ initial: [] }),
+            bag: MiniDom.AttributeBag.make({ initial: [] }),
             capabilities: { sync: true }
           }
         },

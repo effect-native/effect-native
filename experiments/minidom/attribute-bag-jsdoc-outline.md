@@ -1,6 +1,6 @@
 # MiniDom AttributeBag JSDoc Example Outline
 
-Goal: capture a short synchronous example using `AttributeBag.service` + `Sync.detect` to highlight synchronous mutation flows for documentation.
+Goal: capture a short synchronous example using `AttributeBag.make` + `Sync.detect` to highlight synchronous mutation flows for documentation.
 
 1. Use `Effect.gen` to allocate a service, set namespace + null namespace attributes, and call `snapshot()`.
 2. Demonstrate `Sync.detect` returning a capability that allows `Effect.runSync` to execute the program.
@@ -8,5 +8,5 @@ Goal: capture a short synchronous example using `AttributeBag.service` + `Sync.d
 4. Keep runtime deterministic (no timers) so the example compiles under docgen.
 
 Next actions:
-- Translate outline into actual `@example` block on `AttributeBag.service` JSDoc comment.
+- Translate outline into actual `@example` block on `AttributeBag.make` JSDoc comment.
 - Add secondary `@example` for `Sync.detect` referencing the same snippet to avoid duplication.

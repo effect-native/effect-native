@@ -2,12 +2,12 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, Sync } from "@effect-native/minidom"
+import * as MiniDom from "@effect-native/minidom"
 
 describe("MiniDom AttributeBag", () => {
   it.effect("service operations return Effects and track namespaces", () =>
     Effect.gen(function*() {
-      const service = AttributeBag.service()
+      const service = MiniDom.AttributeBag.make()
 
       yield* service.set("http://www.w3.org/1999/xhtml", "class", "hero")
       yield* service.set(null, "id", "root")
@@ -28,7 +28,7 @@ describe("MiniDom AttributeBag", () => {
     }))
 
   it("creates independent views from entries", () => {
-    const snapshot = AttributeBag.viewFromEntries([
+    const snapshot = MiniDom.AttributeBag.viewFromEntries([
       [null, "lang", "en"],
       ["http://www.w3.org/1999/xhtml", "class", "hero"]
     ])
@@ -45,12 +45,12 @@ describe("MiniDom AttributeBag", () => {
 
 describe("MiniDom Sync capability", () => {
   it("runs MiniDom programs synchronously", () => {
-    const sync = Sync.fromRunner((effect) => Effect.runSync(effect))
+    const sync = MiniDom.Sync.fromRunner((effect) => Effect.runSync(effect))
 
-    expect(Sync.is(sync)).toBe(true)
+    expect(MiniDom.Sync.is(sync)).toBe(true)
 
     const program = Effect.gen(function*() {
-      const bag = AttributeBag.service()
+      const bag = MiniDom.AttributeBag.make()
       yield* bag.set(null, "role", "banner")
       const view = yield* bag.snapshot()
       return view.size
@@ -61,14 +61,14 @@ describe("MiniDom Sync capability", () => {
   })
 
   it("detects synchronous adapters", () => {
-    const capability = Sync.detect(() => Effect.sync(() => "ok"))
+    const capability = MiniDom.Sync.detect(() => Effect.sync(() => "ok"))
 
     expect(Option.isSome(capability)).toBe(true)
     expect(capability.pipe(Option.map((sync) => sync.run(Effect.succeed("ok"))))).toStrictEqual(Option.some("ok"))
   })
 
   it("flags asynchronous adapters as non-sync", () => {
-    const capability = Sync.detect(() =>
+    const capability = MiniDom.Sync.detect(() =>
       Effect.async<never, string, never>((resume) => {
         setTimeout(() => resume(Effect.succeed("ok")), 0)
       })

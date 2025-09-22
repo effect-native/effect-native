@@ -9,7 +9,7 @@ describe("MiniDom.Composite ownership guard (FR1.10 / SC7.7)", () => {
       const composite = yield* Composite.makeRouter({
         adapters: {
           reader: {
-            bag: AttributeBag.service({
+            bag: AttributeBag.make({
               initial: [[null, "color", "blue"]]
             }),
             capabilities: {

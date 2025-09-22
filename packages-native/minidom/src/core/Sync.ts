@@ -49,7 +49,7 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
  * import * as Option from "effect/Option"
  *
  * const program = Effect.gen(function*() {
- *   const bag = AttributeBag.service()
+ *   const bag = AttributeBag.make()
  *   yield* bag.set(null, "id", "root")
  *   const snapshot = yield* bag.snapshot()
  *   return snapshot.size
