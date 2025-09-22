@@ -27,6 +27,44 @@ const registry = Schema.registry([
   })
 ])
 
+const repeatingRegistry = Schema.registry([
+  Schema.element({
+    name: Schema.q(HTML, "ul"),
+    content: Schema.content.sequence([
+      Schema.content.zeroOrMore(Schema.content.element(Schema.q(HTML, "li")))
+    ]),
+    attributes: []
+  }),
+  Schema.element({
+    name: Schema.q(HTML, "li"),
+    content: Schema.content.sequence([]),
+    attributes: []
+  })
+])
+
+const choiceRegistry = Schema.registry([
+  Schema.element({
+    name: Schema.q(HTML, "figure"),
+    content: Schema.content.sequence([
+      Schema.content.choice([
+        Schema.content.element(Schema.q(HTML, "img")),
+        Schema.content.element(Schema.q(HTML, "video"))
+      ])
+    ]),
+    attributes: []
+  }),
+  Schema.element({
+    name: Schema.q(HTML, "img"),
+    content: Schema.content.sequence([]),
+    attributes: []
+  }),
+  Schema.element({
+    name: Schema.q(HTML, "video"),
+    content: Schema.content.sequence([]),
+    attributes: []
+  })
+])
+
 describe("MiniDomX Registry validation", () => {
   it.effect("accepts matching structures", () =>
     Effect.gen(function*() {
@@ -96,5 +134,61 @@ describe("MiniDomX Registry validation", () => {
 
       expect(result.ok).toBe(false)
       expect(Option.isSome(result.issues)).toBe(true)
+    }))
+
+  it.effect("allows zeroOrMore repetitions", () =>
+    Effect.gen(function*() {
+      const node = {
+        name: Schema.q(HTML, "ul"),
+        attributes: [],
+        children: [
+          { name: Schema.q(HTML, "li"), attributes: [], children: [] },
+          { name: Schema.q(HTML, "li"), attributes: [], children: [] },
+          { name: Schema.q(HTML, "li"), attributes: [], children: [] }
+        ]
+      }
+
+      const result = yield* Schema.validate(repeatingRegistry, node)
+
+      expect(result.ok).toBe(true)
+    }))
+
+  it.effect("enforces oneOrMore repetitions", () =>
+    Effect.gen(function*() {
+      const navRegistry = Schema.registry([
+        Schema.element({
+          name: Schema.q(HTML, "nav"),
+          content: Schema.content.sequence([
+            Schema.content.oneOrMore(Schema.content.element(Schema.q(HTML, "a")))
+          ]),
+          attributes: []
+        }),
+        Schema.element({
+          name: Schema.q(HTML, "a"),
+          content: Schema.content.sequence([]),
+          attributes: []
+        })
+      ])
+
+      const node = { name: Schema.q(HTML, "nav"), children: [], attributes: [] }
+      const result = yield* Schema.validate(navRegistry, node)
+
+      expect(result.ok).toBe(false)
+      expect(Option.isSome(result.issues)).toBe(true)
+    }))
+
+  it.effect("supports choice expressions", () =>
+    Effect.gen(function*() {
+      const node = {
+        name: Schema.q(HTML, "figure"),
+        attributes: [],
+        children: [
+          { name: Schema.q(HTML, "video"), attributes: [], children: [] }
+        ]
+      }
+
+      const result = yield* Schema.validate(choiceRegistry, node)
+
+      expect(result.ok).toBe(true)
     }))
 })

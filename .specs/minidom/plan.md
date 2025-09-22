@@ -10,10 +10,10 @@
 ## Task Hierarchies
 
 ### 1. Package Scaffolding & Layer Exports
-- [ ] Create `packages-native/minidom` structure (core, schema, events, composite, host, adapters)
-- [ ] Implement `MiniDom.Handle`, capability descriptors, and tagged `MiniDomError`
-- [ ] Provide baseline `layer`/`make` helpers for HappyMiniDom and WindowMiniDom
-- [ ] Stub additional adapters (sql, kv) with capability metadata placeholders
+- [x] Create `packages-native/minidom` structure (core, schema, events, composite, host, adapters)
+- [x] Implement `MiniDom.Handle`, capability descriptors, and tagged `MiniDomError`
+- [x] Provide baseline `layer`/`make` helpers for HappyMiniDom and WindowMiniDom
+- [x] Stub additional adapters (sql, kv) with capability metadata placeholders
 
 ### 2. Core API & Attribute Handling
 - [x] Implement namespace-aware node interfaces (`FR1.1`)
@@ -69,7 +69,7 @@
 ## Progress Tracking
 | Task | Owner | Status |
 |------|-------|--------|
-| Package scaffolding & layers | TBD | Not started |
+| Package scaffolding & layers | @codex | Complete — Core, schema, composite, host, adapters, and events modules exported via `packages-native/minidom/src/index.ts`; HappyMiniDom/WindowMiniDom helpers (`happy-mini-dom.test.ts`), stub SQL/KV adapters with capability metadata (`adapter-stubs.test.ts`). |
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
 | Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |

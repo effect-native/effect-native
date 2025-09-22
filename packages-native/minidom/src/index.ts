@@ -50,9 +50,19 @@ export * as Composite from "./composite/index.js"
  * @since 1.0.0
  * @category re-exports
  */
+export * as Events from "./events/index.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
 export * from "./core/Nodes.js"
 /**
  * @since 1.0.0
  * @category re-exports
  */
 export * as Schema from "./schema/index.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
+export * as Host from "./host/index.js"
