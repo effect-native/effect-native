@@ -4,7 +4,10 @@
 import type * as Effect from "effect/Effect"
 
 import type { View as AttributeBagView } from "./AttributeBag.js"
+import type * as MiniDomError from "./MiniDomError.js"
 import type { Namespace } from "./Namespace.js"
+
+type MiniDomEffect<A> = Effect.Effect<A, MiniDomError.MiniDomError>
 
 /**
  * @since 1.0.0
@@ -38,7 +41,7 @@ export interface Node {
   readonly previousSibling: Node | null
   readonly nextSibling: Node | null
   readonly textContent: string | null
-  readonly clone: (options?: { readonly deep?: boolean }) => Effect.Effect<Node>
+  readonly clone: (options?: { readonly deep?: boolean }) => MiniDomEffect<Node>
 }
 
 /**
@@ -46,10 +49,10 @@ export interface Node {
  * @category model
  */
 export interface ChildNode {
-  readonly before: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
-  readonly after: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
-  readonly replaceWith: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
-  readonly remove: () => Effect.Effect<void>
+  readonly before: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
+  readonly after: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
+  readonly replaceWith: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
+  readonly remove: () => MiniDomEffect<void>
 }
 
 /**
@@ -61,9 +64,9 @@ export interface ParentNode {
   readonly children: ReadonlyArray<Element>
   readonly firstChild: Node | null
   readonly lastChild: Node | null
-  readonly append: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
-  readonly prepend: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
-  readonly replaceChildren: (...nodes: ReadonlyArray<Node | string>) => Effect.Effect<void>
+  readonly append: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
+  readonly prepend: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
+  readonly replaceChildren: (...nodes: ReadonlyArray<Node | string>) => MiniDomEffect<void>
 }
 
 /**
@@ -73,7 +76,7 @@ export interface ParentNode {
 export interface CharacterData extends Node, ChildNode {
   readonly data: string
   readonly length: number
-  readonly substringData: (offset: number, count: number) => Effect.Effect<string>
+  readonly substringData: (offset: number, count: number) => MiniDomEffect<string>
 }
 
 /**
@@ -145,13 +148,13 @@ export interface Document extends Node, ParentNode {
   readonly contentType: string
   readonly URL: string
   readonly documentElement: Element | null
-  readonly createElementNS: (namespace: Namespace, qualifiedName: string) => Effect.Effect<Element>
-  readonly createTextNode: (data: string) => Effect.Effect<Text>
-  readonly createComment: (data: string) => Effect.Effect<Comment>
-  readonly createProcessingInstruction: (target: string, data: string) => Effect.Effect<ProcessingInstruction>
-  readonly createDocumentFragment: () => Effect.Effect<DocumentFragment>
+  readonly createElementNS: (namespace: Namespace, qualifiedName: string) => MiniDomEffect<Element>
+  readonly createTextNode: (data: string) => MiniDomEffect<Text>
+  readonly createComment: (data: string) => MiniDomEffect<Comment>
+  readonly createProcessingInstruction: (target: string, data: string) => MiniDomEffect<ProcessingInstruction>
+  readonly createDocumentFragment: () => MiniDomEffect<DocumentFragment>
   readonly createDocumentType: (
     name: string,
     options?: { readonly publicId?: string; readonly systemId?: string }
-  ) => Effect.Effect<DocumentType>
+  ) => MiniDomEffect<DocumentType>
 }

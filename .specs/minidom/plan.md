@@ -46,8 +46,8 @@
 ### 7. Documentation & Tooling
 
 **Critical for initial release of `@effect-native/minidom`**
-- [ ] Ensure JSDoc coverage with docgen validation (blocks `pnpm docgen` / `done-feature` workflow)
-- [ ] Update README/package docs with adapter usage examples (minimum viable documentation for v0 release)
+- [x] Ensure JSDoc coverage with docgen validation (blocks `pnpm docgen` / `done-feature` workflow)
+- [x] Update README/package docs with adapter usage examples (minimum viable documentation for v0 release)
 
 **Post-release improvements for next minor**
 - [ ] Generate capability matrix documentation and onboarding guides (can follow in subsequent milestone)

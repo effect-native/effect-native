@@ -29,15 +29,13 @@ export const metadata = {
  * @since 1.0.0
  * @category constructors
  */
-export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> =>
-  Effect.fail(unsupported())
+export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> => Effect.fail(unsupported())
 
 /**
  * @since 1.0.0
  * @category layers
  */
-export const layer: Layer.Layer<MiniDomService, MiniDomError.Unsupported> =
-  Layer.effect(Service.Tag, make())
+export const layer = Layer.effect(Service.Tag, make())
 
 /**
  * @since 1.0.0

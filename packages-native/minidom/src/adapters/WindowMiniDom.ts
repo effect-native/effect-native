@@ -28,8 +28,7 @@ export const make = (options: WindowMiniDomOptions): Effect.Effect<MiniDomServic
  * @since 1.0.0
  * @category layers
  */
-export const layer = (options: WindowMiniDomOptions): Layer.Layer<MiniDomService> =>
-  Layer.effect(Service.Tag, make(options))
+export const layer = (options: WindowMiniDomOptions) => Layer.effect(Service.Tag, make(options))
 
 /**
  * @since 1.0.0

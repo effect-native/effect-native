@@ -1,9 +1,9 @@
 /**
  * @since 1.0.0
  */
-import { Window as HappyWindow } from "happy-dom"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import { Window as HappyWindow } from "happy-dom"
 
 import type { Service as MiniDomService } from "../core/Service.js"
 import * as Service from "../core/Service.js"
@@ -19,8 +19,15 @@ export interface HappyMiniDomOptions {
   readonly url?: string
 }
 
-const createWindow = (options?: HappyMiniDomOptions): HappyWindow =>
-  options?.window ?? new HappyWindow({ url: options?.url })
+const createWindow = (options?: HappyMiniDomOptions): HappyWindow => {
+  if (options?.window) {
+    return options.window
+  }
+  if (options?.url) {
+    return new HappyWindow({ url: options.url })
+  }
+  return new HappyWindow()
+}
 
 /**
  * @since 1.0.0
@@ -33,7 +40,7 @@ export const make = (options?: HappyMiniDomOptions): Effect.Effect<MiniDomServic
  * @since 1.0.0
  * @category layers
  */
-export const layer = (options?: HappyMiniDomOptions): Layer.Layer<MiniDomService> =>
+export const layer = (options?: HappyMiniDomOptions) =>
   Layer.scoped(
     Service.Tag,
     Effect.acquireRelease(

@@ -4,6 +4,7 @@
 import * as Reactivity from "@effect/experimental/Reactivity"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
+import { dual } from "effect/Function"
 import * as Layer from "effect/Layer"
 import type * as Mailbox from "effect/Mailbox"
 import type * as Scope from "effect/Scope"
@@ -32,7 +33,10 @@ export interface Service {
     keys: EventKeys,
     effect: Effect.Effect<A, E, R>
   ) => Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope>
-  readonly stream: <A, E, R>(keys: EventKeys, effect: Effect.Effect<A, E, R>) => Stream.Stream<A, E, Exclude<R, Scope.Scope>>
+  readonly stream: <A, E, R>(
+    keys: EventKeys,
+    effect: Effect.Effect<A, E, R>
+  ) => Stream.Stream<A, E, Exclude<R, Scope.Scope>>
   readonly invalidate: (keys: EventKeys) => Effect.Effect<void>
   readonly unsafeInvalidate: (keys: EventKeys) => void
 }
@@ -83,101 +87,69 @@ const streamImpl = <A, E, R>(
 ): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag> =>
   Stream.unwrapScoped(Effect.map(Tag, (service) => service.stream(keys, effect)))
 
-const isEventKeyRecord = (u: unknown): u is Readonly<Record<string, ReadonlyArray<unknown>>> => {
-  if (typeof u !== "object" || u === null || Array.isArray(u)) {
-    return false
-  }
-  for (const value of Object.values(u)) {
-    if (!Array.isArray(value)) {
-      return false
-    }
-  }
-  return true
-}
-
-const isEventKeys = (u: unknown): u is EventKeys => Array.isArray(u) || isEventKeyRecord(u)
-
 /**
  * @since 1.0.0
  * @category combinators
  */
-export function mutation(keys: EventKeys): <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R | Tag>
-export function mutation<A, E, R>(effect: Effect.Effect<A, E, R>, keys: EventKeys): Effect.Effect<A, E, R | Tag>
-export function mutation<A, E, R>(
-  arg1: EventKeys | Effect.Effect<A, E, R>,
-  arg2?: EventKeys
-): Effect.Effect<A, E, R | Tag> | (<X, EX, RX>(effect: Effect.Effect<X, EX, RX>) => Effect.Effect<X, EX, RX | Tag>) {
-  if (arg2 === undefined) {
-    const keys = arg1 as EventKeys
-    return (effect) => mutationImpl(effect, keys)
-  }
-  if (isEventKeys(arg1)) {
-    return mutationImpl(arg2 as Effect.Effect<A, E, R>, arg1)
-  }
-  return mutationImpl(arg1 as Effect.Effect<A, E, R>, arg2 as EventKeys)
-}
-
-/**
- * @since 1.0.0
- * @category combinators
- */
-export function query(keys: EventKeys): <A, E, R>(
-  effect: Effect.Effect<A, E, R>
-) => Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
-export function query<A, E, R>(
+export const mutation: {
+  <A, E, R>(keys: EventKeys): (
+    effect: Effect.Effect<A, E, R>
+  ) => Effect.Effect<A, E, R | Tag>
+  <A, E, R>(
+    effect: Effect.Effect<A, E, R>,
+    keys: EventKeys
+  ): Effect.Effect<A, E, R | Tag>
+} = dual(2, <A, E, R>(
   effect: Effect.Effect<A, E, R>,
   keys: EventKeys
-): Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
-export function query<A, E, R>(
-  arg1: EventKeys | Effect.Effect<A, E, R>,
-  arg2?: EventKeys
-): Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag> | (<X, EX, RX>(
-  effect: Effect.Effect<X, EX, RX>
-) => Effect.Effect<Mailbox.ReadonlyMailbox<X, EX>, never, RX | Scope.Scope | Tag>) {
-  if (arg2 === undefined) {
-    const keys = arg1 as EventKeys
-    return (effect) => queryImpl(effect, keys)
-  }
-  if (isEventKeys(arg1)) {
-    return queryImpl(arg2 as Effect.Effect<A, E, R>, arg1)
-  }
-  return queryImpl(arg1 as Effect.Effect<A, E, R>, arg2 as EventKeys)
-}
+) => mutationImpl(effect, keys))
 
 /**
  * @since 1.0.0
  * @category combinators
  */
-export function stream(keys: EventKeys): <A, E, R>(effect: Effect.Effect<A, E, R>) => Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
-export function stream<A, E, R>(effect: Effect.Effect<A, E, R>, keys: EventKeys): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
-export function stream<A, E, R>(
-  arg1: EventKeys | Effect.Effect<A, E, R>,
-  arg2?: EventKeys
-): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag> | (<X, EX, RX>(
-  effect: Effect.Effect<X, EX, RX>
-) => Stream.Stream<X, EX, Exclude<RX, Scope.Scope> | Tag>) {
-  if (arg2 === undefined) {
-    const keys = arg1 as EventKeys
-    return (effect) => streamImpl(effect, keys)
-  }
-  if (isEventKeys(arg1)) {
-    return streamImpl(arg2 as Effect.Effect<A, E, R>, arg1)
-  }
-  return streamImpl(arg1 as Effect.Effect<A, E, R>, arg2 as EventKeys)
-}
+export const query: {
+  <A, E, R>(keys: EventKeys): (
+    effect: Effect.Effect<A, E, R>
+  ) => Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
+  <A, E, R>(
+    effect: Effect.Effect<A, E, R>,
+    keys: EventKeys
+  ): Effect.Effect<Mailbox.ReadonlyMailbox<A, E>, never, R | Scope.Scope | Tag>
+} = dual(2, <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  keys: EventKeys
+) => queryImpl(effect, keys))
 
 /**
  * @since 1.0.0
  * @category combinators
  */
-export const invalidate = (keys: EventKeys): Effect.Effect<void> =>
+export const stream: {
+  <A, E, R>(keys: EventKeys): (
+    effect: Effect.Effect<A, E, R>
+  ) => Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
+  <A, E, R>(
+    effect: Effect.Effect<A, E, R>,
+    keys: EventKeys
+  ): Stream.Stream<A, E, Exclude<R, Scope.Scope> | Tag>
+} = dual(2, <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  keys: EventKeys
+) => streamImpl(effect, keys))
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const invalidate = (keys: EventKeys): Effect.Effect<void, never, Tag> =>
   Effect.flatMap(Tag, (service) => service.invalidate(keys))
 
 /**
  * @since 1.0.0
  * @category combinators
  */
-export const unsafeInvalidate = (keys: EventKeys): Effect.Effect<void> =>
+export const unsafeInvalidate = (keys: EventKeys): Effect.Effect<void, never, Tag> =>
   Effect.flatMap(Tag, (service) => Effect.sync(() => service.unsafeInvalidate(keys)))
 
 /**

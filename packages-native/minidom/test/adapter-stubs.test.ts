@@ -1,8 +1,8 @@
 import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 
-import * as SqlMiniDom from "@effect-native/minidom/adapters/SqlMiniDom"
 import * as KvMiniDom from "@effect-native/minidom/adapters/KvMiniDom"
+import * as SqlMiniDom from "@effect-native/minidom/adapters/SqlMiniDom"
 
 describe("Adapter stubs (FR1.13 / H9)", () => {
   it("exposes capability metadata for SQL adapter", () => {

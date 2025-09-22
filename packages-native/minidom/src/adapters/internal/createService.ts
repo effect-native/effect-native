@@ -13,33 +13,105 @@ const NativeNodeSymbol: unique symbol = Symbol.for("@effect-native/minidom/adapt
 
 type NativeNode = Node
 
-type WrappedNode = Nodes.Node & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedBase<A extends Nodes.Node> = A & { readonly [NativeNodeSymbol]: NativeNode }
 
-type WrappedElement = Nodes.Element & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedElement = WrappedBase<Nodes.Element>
 
-type WrappedDocument = Nodes.Document & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedDocument = WrappedBase<Nodes.Document>
 
-type WrappedCharacterData = Nodes.CharacterData & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedCharacterData = WrappedBase<Nodes.CharacterData>
 
-type WrappedDocumentFragment = Nodes.DocumentFragment & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedDocumentFragment = WrappedBase<Nodes.DocumentFragment>
 
-type WrappedDocumentType = Nodes.DocumentType & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedDocumentType = WrappedBase<Nodes.DocumentType>
 
-type WrappedProcessingInstruction = Nodes.ProcessingInstruction & { readonly [NativeNodeSymbol]: NativeNode }
+type WrappedText = WrappedBase<Nodes.Text>
+
+type WrappedComment = WrappedBase<Nodes.Comment>
+
+type WrappedProcessingInstruction = WrappedBase<Nodes.ProcessingInstruction>
+
+type WrappedNode =
+  | WrappedElement
+  | WrappedDocument
+  | WrappedText
+  | WrappedComment
+  | WrappedProcessingInstruction
+  | WrappedDocumentFragment
+  | WrappedDocumentType
+
+const isWrappedDocument = (node: WrappedNode): node is WrappedDocument => node.nodeType === Nodes.NodeType.Document
+
+const isWrappedElement = (node: WrappedNode): node is WrappedElement => node.nodeType === Nodes.NodeType.Element
+
+const isWrappedDocumentFragment = (node: WrappedNode): node is WrappedDocumentFragment =>
+  node.nodeType === Nodes.NodeType.DocumentFragment
+
+const isWrappedProcessingInstruction = (node: WrappedNode): node is WrappedProcessingInstruction =>
+  node.nodeType === Nodes.NodeType.ProcessingInstruction
+
+const ensureDocument = (node: WrappedNode): WrappedDocument => {
+  if (!isWrappedDocument(node)) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped document" })
+  }
+  return node
+}
+
+const ensureElement = (node: WrappedNode): WrappedElement => {
+  if (!isWrappedElement(node)) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped element" })
+  }
+  return node
+}
+
+const ensureText = (node: WrappedNode): WrappedText => {
+  if (node.nodeType !== Nodes.NodeType.Text) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped text" })
+  }
+  return node as WrappedText
+}
+
+const ensureComment = (node: WrappedNode): WrappedComment => {
+  if (node.nodeType !== Nodes.NodeType.Comment) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped comment" })
+  }
+  return node as WrappedComment
+}
+
+const ensureProcessingInstruction = (node: WrappedNode): WrappedProcessingInstruction => {
+  if (!isWrappedProcessingInstruction(node)) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped processing instruction" })
+  }
+  return node
+}
+
+const ensureDocumentFragment = (node: WrappedNode): WrappedDocumentFragment => {
+  if (!isWrappedDocumentFragment(node)) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped document fragment" })
+  }
+  return node
+}
+
+const ensureDocumentType = (node: WrappedNode): WrappedDocumentType => {
+  if (node.nodeType !== Nodes.NodeType.DocumentType) {
+    throw new MiniDomError.BackendFailure({ message: "Expected wrapped document type" })
+  }
+  return node as WrappedDocumentType
+}
 
 const isMiniDomError = MiniDomError.MiniDomError.is
 
 const isWrappedNode = (value: unknown): value is WrappedNode =>
   typeof value === "object" && value !== null && NativeNodeSymbol in value
 
-const markNode = <A extends Nodes.Node>(wrapper: A, node: NativeNode): A & { readonly [NativeNodeSymbol]: NativeNode } => {
+const markNode = <A extends Nodes.Node>(wrapper: A, node: NativeNode): WrappedBase<A> => {
   Object.defineProperty(wrapper, NativeNodeSymbol, {
     value: node,
     enumerable: false,
     configurable: false,
     writable: false
   })
-  return wrapper as A & { readonly [NativeNodeSymbol]: NativeNode }
+  return wrapper as WrappedBase<A>
 }
 
 const attributeEntries = (element: Element): ReadonlyArray<AttributeBag.AttributeEntry> => {
@@ -58,7 +130,7 @@ const runOperation = <A>(description: string, operation: () => A) =>
 
 const parentFor = (
   nodeCtor: typeof Node,
-  wrapNode: (node: NativeNode) => WrappedNode | null,
+  wrapNode: (node: NativeNode) => WrappedNode,
   node: NativeNode
 ): Nodes.Element | Nodes.Document | Nodes.DocumentFragment | null => {
   const parent = node.parentNode
@@ -66,33 +138,27 @@ const parentFor = (
     return null
   }
   const wrapped = wrapNode(parent)
-  if (!wrapped) {
-    return null
-  }
   switch (parent.nodeType) {
     case nodeCtor.DOCUMENT_NODE:
-      return wrapped as Nodes.Document
+      return isWrappedDocument(wrapped) ? wrapped : null
     case nodeCtor.DOCUMENT_FRAGMENT_NODE:
-      return wrapped as Nodes.DocumentFragment
+      return isWrappedDocumentFragment(wrapped) ? wrapped : null
     case nodeCtor.ELEMENT_NODE:
-      return wrapped as Nodes.Element
+      return isWrappedElement(wrapped) ? wrapped : null
     default:
       return null
   }
 }
 
-const wrapChildArray = (wrapNode: (node: NativeNode) => WrappedNode | null, list: NodeListOf<ChildNode>): ReadonlyArray<Nodes.Node> =>
-  Array.from(list)
-    .map((child) => wrapNode(child)!)
-    .filter((child): child is WrappedNode => child !== null)
+const wrapChildArray = (
+  wrapNode: (node: NativeNode) => WrappedNode,
+  list: NodeListOf<ChildNode>
+): ReadonlyArray<Nodes.Node> => Array.from(list, (child) => wrapNode(child))
 
 const wrapElementArray = (
-  wrapNode: (node: NativeNode) => WrappedNode | null,
+  wrapNode: (node: NativeNode) => WrappedNode,
   list: HTMLCollectionOf<Element>
-): ReadonlyArray<Nodes.Element> =>
-  Array.from(list)
-    .map((child) => wrapNode(child)!)
-    .filter((child): child is Nodes.Element => child !== null && child.nodeType === Nodes.NodeType.Element)
+): ReadonlyArray<Nodes.Element> => Array.from(list, (child) => wrapNode(child)).filter(isWrappedElement)
 
 const unwrapInput = <Inputs extends ReadonlyArray<Nodes.Node | string>>(
   document: Document,
@@ -125,7 +191,7 @@ const defineElement = (
   wrapDocument: (doc: Document) => WrappedDocument
 ): WrappedElement => {
   const withAttributes = {
-    nodeType: Nodes.NodeType.Element as const,
+    nodeType: Nodes.NodeType.Element,
     get nodeName() {
       return element.nodeName
     },
@@ -150,20 +216,17 @@ const defineElement = (
       Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
         runOperation("Element.before", () => {
           element.before(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     after: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
         runOperation("Element.after", () => {
           element.after(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     replaceWith: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
         runOperation("Element.replaceWith", () => {
           element.replaceWith(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     remove: () =>
       runOperation("Element.remove", () => {
         element.remove()
@@ -184,19 +247,19 @@ const defineElement = (
       Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
         runOperation("Element.append", () => {
           element.append(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     prepend: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
         runOperation("Element.prepend", () => {
           element.prepend(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     replaceChildren: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(element.ownerDocument!, nodes), (inputs) =>
-        runOperation("Element.replaceChildren", () => {
-          element.replaceChildren(...inputs)
-        }).pipe(Effect.asVoid)
+      Effect.flatMap(
+        unwrapInput(element.ownerDocument!, nodes),
+        (inputs) =>
+          runOperation("Element.replaceChildren", () => {
+            element.replaceChildren(...inputs)
+          }).pipe(Effect.asVoid)
       ),
     get namespaceURI() {
       return element.namespaceURI
@@ -230,7 +293,8 @@ const defineCharacterData = <T extends Text | Comment | ProcessingInstruction>(
       return node.nodeName
     },
     get ownerDocument() {
-      return node.ownerDocument ? (wrapNode(node.ownerDocument) as Nodes.Document) : null
+      const owner = node.ownerDocument
+      return owner ? ensureDocument(wrapNode(owner)) : null
     },
     get parentNode() {
       return parentFor(nodeCtor, wrapNode, node)
@@ -250,19 +314,19 @@ const defineCharacterData = <T extends Text | Comment | ProcessingInstruction>(
       Effect.flatMap(unwrapInput(node.ownerDocument!, nodes), (inputs) =>
         runOperation(`${description}.before`, () => {
           node.before(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     after: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(node.ownerDocument!, nodes), (inputs) =>
         runOperation(`${description}.after`, () => {
           node.after(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     replaceWith: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(node.ownerDocument!, nodes), (inputs) =>
-        runOperation(`${description}.replaceWith`, () => {
-          node.replaceWith(...inputs)
-        }).pipe(Effect.asVoid)
+      Effect.flatMap(
+        unwrapInput(node.ownerDocument!, nodes),
+        (inputs) =>
+          runOperation(`${description}.replaceWith`, () => {
+            node.replaceWith(...inputs)
+          }).pipe(Effect.asVoid)
       ),
     remove: () =>
       runOperation(`${description}.remove`, () => {
@@ -289,8 +353,8 @@ const defineDocumentFragment = (
 ): WrappedDocumentFragment => {
   const wrapper: Nodes.DocumentFragment = {
     nodeType: Nodes.NodeType.DocumentFragment,
-    get nodeName() {
-      return fragment.nodeName
+    get nodeName(): "#document-fragment" {
+      return "#document-fragment"
     },
     get ownerDocument() {
       return fragment.ownerDocument ? wrapDocument(fragment.ownerDocument) : null
@@ -309,28 +373,19 @@ const defineDocumentFragment = (
     },
     clone: (options?: { readonly deep?: boolean }) =>
       runOperation("DocumentFragment.clone", () => wrapNode(fragment.cloneNode(options?.deep ?? false))),
-    before: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.before", () => {
-          fragment.before(...inputs)
-        }).pipe(Effect.asVoid)
+    before: (..._nodes: ReadonlyArray<Nodes.Node | string>) =>
+      Effect.fail(
+        new MiniDomError.Unsupported({ message: "DocumentFragment.before is not supported" })
       ),
-    after: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.after", () => {
-          fragment.after(...inputs)
-        }).pipe(Effect.asVoid)
+    after: (..._nodes: ReadonlyArray<Nodes.Node | string>) =>
+      Effect.fail(
+        new MiniDomError.Unsupported({ message: "DocumentFragment.after is not supported" })
       ),
-    replaceWith: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.replaceWith", () => {
-          fragment.replaceWith(...inputs)
-        }).pipe(Effect.asVoid)
+    replaceWith: (..._nodes: ReadonlyArray<Nodes.Node | string>) =>
+      Effect.fail(
+        new MiniDomError.Unsupported({ message: "DocumentFragment.replaceWith is not supported" })
       ),
-    remove: () =>
-      runOperation("DocumentFragment.remove", () => {
-        fragment.remove()
-      }).pipe(Effect.asVoid),
+    remove: () => Effect.fail(new MiniDomError.Unsupported({ message: "DocumentFragment.remove is not supported" })),
     get childNodes() {
       return wrapChildArray(wrapNode, fragment.childNodes)
     },
@@ -344,22 +399,28 @@ const defineDocumentFragment = (
       return fragment.lastChild ? wrapNode(fragment.lastChild) : null
     },
     append: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.append", () => {
-          fragment.append(...inputs)
-        }).pipe(Effect.asVoid)
+      Effect.flatMap(
+        unwrapInput(fragment.ownerDocument!, nodes),
+        (inputs) =>
+          runOperation("DocumentFragment.append", () => {
+            fragment.append(...inputs)
+          }).pipe(Effect.asVoid)
       ),
     prepend: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.prepend", () => {
-          fragment.prepend(...inputs)
-        }).pipe(Effect.asVoid)
+      Effect.flatMap(
+        unwrapInput(fragment.ownerDocument!, nodes),
+        (inputs) =>
+          runOperation("DocumentFragment.prepend", () => {
+            fragment.prepend(...inputs)
+          }).pipe(Effect.asVoid)
       ),
     replaceChildren: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
-      Effect.flatMap(unwrapInput(fragment.ownerDocument!, nodes), (inputs) =>
-        runOperation("DocumentFragment.replaceChildren", () => {
-          fragment.replaceChildren(...inputs)
-        }).pipe(Effect.asVoid)
+      Effect.flatMap(
+        unwrapInput(fragment.ownerDocument!, nodes),
+        (inputs) =>
+          runOperation("DocumentFragment.replaceChildren", () => {
+            fragment.replaceChildren(...inputs)
+          }).pipe(Effect.asVoid)
       )
   }
 
@@ -405,7 +466,7 @@ const defineDocumentType = (
 const defineDocument = (
   document: Document,
   wrapNode: (node: NativeNode) => WrappedNode,
-  wrapDocument: (doc: Document) => WrappedDocument
+  _wrapDocument: (doc: Document) => WrappedDocument
 ): WrappedDocument => {
   const wrapper: Nodes.Document = {
     nodeType: Nodes.NodeType.Document,
@@ -445,65 +506,63 @@ const defineDocument = (
       Effect.flatMap(unwrapInput(document, nodes), (inputs) =>
         runOperation("Document.append", () => {
           document.append(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     prepend: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(document, nodes), (inputs) =>
         runOperation("Document.prepend", () => {
           document.prepend(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     replaceChildren: (...nodes: ReadonlyArray<Nodes.Node | string>) =>
       Effect.flatMap(unwrapInput(document, nodes), (inputs) =>
         runOperation("Document.replaceChildren", () => {
           document.replaceChildren(...inputs)
-        }).pipe(Effect.asVoid)
-      ),
+        }).pipe(Effect.asVoid)),
     contentType: document.contentType,
     URL: document.URL,
     get documentElement() {
-      return document.documentElement ? (wrapNode(document.documentElement) as Nodes.Element) : null
+      const element = document.documentElement
+      return element ? ensureElement(wrapNode(element)) : null
     },
     createElementNS: (namespace: string | null, qualifiedName: string) =>
       Effect.map(
-        runOperation("Document.createElementNS", () =>
-          wrapNode(document.createElementNS(namespace, qualifiedName) as Element)
-        ),
-        (node) => node as Nodes.Element
+        runOperation<WrappedElement>("Document.createElementNS", () =>
+          ensureElement(wrapNode(document.createElementNS(namespace, qualifiedName) as Element))),
+        ensureElement
       ),
     createTextNode: (data: string) =>
       Effect.map(
-        runOperation("Document.createTextNode", () => wrapNode(document.createTextNode(data))),
-        (node) => node as Nodes.Text
+        runOperation<WrappedText>("Document.createTextNode", () => ensureText(wrapNode(document.createTextNode(data)))),
+        ensureText
       ),
     createComment: (data: string) =>
       Effect.map(
-        runOperation("Document.createComment", () => wrapNode(document.createComment(data))),
-        (node) => node as Nodes.Comment
+        runOperation<WrappedComment>("Document.createComment", () =>
+          ensureComment(wrapNode(document.createComment(data)))),
+        ensureComment
       ),
     createProcessingInstruction: (target: string, data: string) =>
       Effect.map(
-        runOperation("Document.createProcessingInstruction", () =>
-          wrapNode(document.createProcessingInstruction(target, data))
-        ),
-        (node) => node as Nodes.ProcessingInstruction
+        runOperation<WrappedProcessingInstruction>("Document.createProcessingInstruction", () =>
+          ensureProcessingInstruction(wrapNode(document.createProcessingInstruction(target, data)))),
+        ensureProcessingInstruction
       ),
     createDocumentFragment: () =>
       Effect.map(
-        runOperation("Document.createDocumentFragment", () => wrapNode(document.createDocumentFragment())),
-        (node) => node as Nodes.DocumentFragment
+        runOperation<WrappedDocumentFragment>("Document.createDocumentFragment", () =>
+          ensureDocumentFragment(wrapNode(document.createDocumentFragment()))),
+        ensureDocumentFragment
       ),
     createDocumentType: (name: string, options?: { readonly publicId?: string; readonly systemId?: string }) =>
       Effect.map(
-        runOperation("Document.createDocumentType", () => {
+        runOperation<WrappedDocumentType>("Document.createDocumentType", () => {
           const type = document.implementation.createDocumentType(
             name,
             options?.publicId ?? "",
             options?.systemId ?? ""
           )
-          return wrapNode(type)
+          return ensureDocumentType(wrapNode(type))
         }),
-        (node) => node as Nodes.DocumentType
+        ensureDocumentType
       )
   }
 
@@ -533,7 +592,7 @@ const wrapText = (
   nodeCtor: typeof Node,
   node: Text,
   wrapNode: (value: NativeNode) => WrappedNode
-): WrappedCharacterData => {
+): WrappedText => {
   const base = defineCharacterData(nodeCtor, node, wrapNode, "Text")
   const wrapper: Nodes.Text = {
     ...base,
@@ -547,7 +606,7 @@ const wrapComment = (
   nodeCtor: typeof Node,
   node: Comment,
   wrapNode: (value: NativeNode) => WrappedNode
-): WrappedCharacterData => {
+): WrappedComment => {
   const base = defineCharacterData(nodeCtor, node, wrapNode, "Comment")
   const wrapper: Nodes.Comment = {
     ...base,
@@ -557,9 +616,12 @@ const wrapComment = (
   return markNode(wrapper, node)
 }
 
-const createWrapNode = (window: Window) => {
+const createWrapNode = (_window: Window) => {
   const cache = new WeakMap<NativeNode, WrappedNode>()
-  const NodeCtor = window.Node
+  const NodeCtor = (_window as unknown as { Node?: typeof Node }).Node ?? globalThis.Node
+  if (!NodeCtor) {
+    throw new MiniDomError.Unsupported({ message: "MiniDom adapter requires DOM Node constructor" })
+  }
 
   const wrapDocument = (doc: Document): WrappedDocument => {
     const existing = cache.get(doc)
@@ -573,53 +635,53 @@ const createWrapNode = (window: Window) => {
     return defined
   }
 
-  const wrapNode = (node: NativeNode): WrappedNode => {
+  function wrapNode(node: Document): WrappedDocument
+  function wrapNode(node: Element): WrappedElement
+  function wrapNode(node: Text): WrappedText
+  function wrapNode(node: Comment): WrappedComment
+  function wrapNode(node: ProcessingInstruction): WrappedProcessingInstruction
+  function wrapNode(node: DocumentFragment): WrappedDocumentFragment
+  function wrapNode(node: DocumentType): WrappedDocumentType
+  function wrapNode(node: NativeNode): WrappedNode
+  function wrapNode(node: NativeNode): WrappedNode {
     const existing = cache.get(node)
     if (existing) {
       return existing
     }
 
-    let wrapped: WrappedNode
     switch (node.nodeType) {
       case NodeCtor.DOCUMENT_NODE: {
-        wrapped = wrapDocument(node as Document)
-        break
+        return wrapDocument(node as Document)
       }
       case NodeCtor.ELEMENT_NODE: {
         const elementWrapper = defineElement(NodeCtor, node as Element, wrapNode, wrapDocument)
         cache.set(node, elementWrapper)
-        wrapped = elementWrapper
-        break
+        return elementWrapper
       }
       case NodeCtor.TEXT_NODE: {
         const textWrapper = wrapText(NodeCtor, node as Text, wrapNode)
         cache.set(node, textWrapper)
-        wrapped = textWrapper
-        break
+        return textWrapper
       }
       case NodeCtor.COMMENT_NODE: {
         const commentWrapper = wrapComment(NodeCtor, node as Comment, wrapNode)
         cache.set(node, commentWrapper)
-        wrapped = commentWrapper
-        break
+        return commentWrapper
       }
       case NodeCtor.PROCESSING_INSTRUCTION_NODE: {
         const piWrapper = wrapProcessingInstruction(NodeCtor, node as ProcessingInstruction, wrapNode)
         cache.set(node, piWrapper)
-        wrapped = piWrapper
-        break
+        return piWrapper
       }
       case NodeCtor.DOCUMENT_FRAGMENT_NODE: {
         const fragmentWrapper = defineDocumentFragment(NodeCtor, node as DocumentFragment, wrapNode, wrapDocument)
         cache.set(node, fragmentWrapper)
-        wrapped = fragmentWrapper
-        break
+        return fragmentWrapper
       }
       case NodeCtor.DOCUMENT_TYPE_NODE: {
         const docTypeWrapper = defineDocumentType(NodeCtor, node as DocumentType, wrapNode, wrapDocument)
         cache.set(node, docTypeWrapper)
-        wrapped = docTypeWrapper
-        break
+        return docTypeWrapper
       }
       default: {
         throw new MiniDomError.Unsupported({
@@ -627,8 +689,6 @@ const createWrapNode = (window: Window) => {
         })
       }
     }
-
-    return wrapped
   }
 
   return {
@@ -642,7 +702,7 @@ const createWrapNode = (window: Window) => {
  * @category constructors
  */
 export const createService = (window: Window): MiniDomService => {
-  const { wrapNode, wrapDocument } = createWrapNode(window)
+  const { wrapDocument } = createWrapNode(window)
   const document = wrapDocument(window.document)
 
   return {

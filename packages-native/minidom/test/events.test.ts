@@ -1,12 +1,9 @@
-import { expect, layer } from "@effect/vitest"
 import * as Reactivity from "@effect/experimental/Reactivity"
-import * as Chunk from "effect/Chunk"
+import { expect, layer } from "@effect/vitest"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as Layer from "effect/Layer"
-import * as Mailbox from "effect/Mailbox"
-import * as Option from "effect/Option"
 import * as Ref from "effect/Ref"
 import * as TestClock from "effect/TestClock"
 
