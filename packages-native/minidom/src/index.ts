@@ -30,6 +30,11 @@ export * as Nodes from "./core/Nodes.js"
  * @since 1.0.0
  * @category re-exports
  */
+export * as Service from "./core/Service.js"
+/**
+ * @since 1.0.0
+ * @category re-exports
+ */
 export * as Sync from "./core/Sync.js"
 /**
  * @since 1.0.0
