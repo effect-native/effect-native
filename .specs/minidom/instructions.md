@@ -78,6 +78,7 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 - Investigate serialization/deserialization helpers (e.g., to/from XML/HTML strings) once core structures solidify.
 - Consider adapters for existing ecosystems (React, Solid, Svelte) after validating core abstractions.
 - Coordinate follow-up React reconciler host adapter work via `.specs/minidom-react-host/` to keep the core package React-free while enabling Suspense-aware integrations.
+- Schedule a post-release naming audit to align MiniDom exports with existing Effect/@effect conventions (`.specs/minidom/plan.md` lists this follow-up).
 
 ## Testing Requirements
 - Practice TDD: author failing unit tests (Effect/vitest) before implementations for each capability.

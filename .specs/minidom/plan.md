@@ -5,7 +5,7 @@
 - [x] Phase 2 — Requirements (complete)
 - [x] Phase 3 — Design (complete)
 - [x] Phase 4 — Plan (this document)
-- [ ] Phase 5 — Implementation & Validation (in progress: AttributeBag service + Sync capability)
+- [ ] Phase 5 — Implementation & Validation (pending release gating docs: JSDoc/docgen pass, README update)
 
 ## Task Hierarchies
 
