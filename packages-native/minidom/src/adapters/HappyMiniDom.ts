@@ -18,17 +18,7 @@ import { createService } from "./internal/createService.js"
  * @since 0.0.0
  * @category errors
  */
-export class HappyMiniDomError extends Data.TaggedError("HappyMiniDomError")<{
-  readonly message: string
-  readonly cause?: unknown
-}> {
-  constructor(options?: { readonly message?: string; readonly cause?: unknown }) {
-    super({
-      message: options?.message ?? "HappyMiniDom adapter failed to finalize",
-      cause: options?.cause
-    })
-  }
-}
+export class HappyMiniDomError extends Data.TaggedError("HappyMiniDomError")<{ readonly cause?: unknown }> {}
 
 /**
  * Options for creating the Happy DOM-backed MiniDom service.
@@ -82,14 +72,7 @@ export const layer = (options?: HappyMiniDomOptions) =>
       }),
       ({ created, window }) =>
         created
-          ? Effect.try({
-            try: () => {
-              if (typeof window.close === "function") {
-                window.close()
-              }
-            },
-            catch: (cause) => new HappyMiniDomError({ cause })
-          })
+          ? Effect.sync(() => window.close?.())
           : Effect.void
     ).pipe(Effect.map((state) => state.service))
   )
