@@ -37,7 +37,7 @@ describe("MiniDom Events", () => {
 
 describe("MiniDom Sync", () => {
   it("detect returns Option<MiniDom.Sync.Sync>", () => {
-    const capability = MiniDom.Sync.detect(() => syncProgram)
-    expect<typeof capability>().type.toBeAssignableWith<Option.Option<MiniDom.Sync.Sync>>()
+    const capability = MiniDom.SyncCapability.detect(() => syncProgram)
+    expect<typeof capability>().type.toBeAssignableWith<Option.Option<MiniDom.SyncCapability.SyncCapability>>()
   })
 })
