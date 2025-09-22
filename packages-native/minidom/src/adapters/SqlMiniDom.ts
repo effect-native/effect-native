@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -14,7 +14,7 @@ const unsupported = () =>
   })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category metadata
  */
 export const metadata = {
@@ -26,19 +26,19 @@ export const metadata = {
 } as const
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> => Effect.fail(unsupported())
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category layers
  */
 export const layer = Layer.effect(Service.Tag, make())
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const SqlMiniDom = {

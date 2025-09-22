@@ -1,18 +1,18 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const MiniDomSyncTypeId: unique symbol = Symbol.for("@effect-native/minidom/Sync")
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Sync {
@@ -21,13 +21,13 @@ export interface Sync {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category guards
  */
 export const is = (u: unknown): u is Sync => typeof u === "object" && u !== null && MiniDomSyncTypeId in u
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const fromRunner = (runner: Sync["run"]): Sync => ({
@@ -36,11 +36,11 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  * @example
  * ```ts
@@ -75,7 +75,7 @@ export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const Sync = {
@@ -86,7 +86,7 @@ export const Sync = {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const TypeId = MiniDomSyncTypeId

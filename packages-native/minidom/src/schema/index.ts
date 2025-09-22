@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 import * as Effect from "effect/Effect"
@@ -8,7 +8,7 @@ import * as S from "effect/Schema"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface ExpandedName {
@@ -17,13 +17,13 @@ export interface ExpandedName {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const q = (ns: Namespace, name: string): ExpandedName => ({ ns, name })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface AttributeDefinition<Extensions = unknown> {
@@ -33,14 +33,14 @@ export interface AttributeDefinition<Extensions = unknown> {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const attribute = <Extensions>(definition: AttributeDefinition<Extensions>): AttributeDefinition<Extensions> =>
   definition
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export type ContentExpression =
@@ -98,7 +98,7 @@ const interleaveContent = (of: ReadonlyArray<ContentExpression>): ContentExpress
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category namespaces
  */
 export const content = {
@@ -114,7 +114,7 @@ export const content = {
 } as const
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface ElementDefinition<ElementExtensions = unknown> {
@@ -125,7 +125,7 @@ export interface ElementDefinition<ElementExtensions = unknown> {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const element = <ElementExtensions = unknown>(definition: {
@@ -141,13 +141,13 @@ export const element = <ElementExtensions = unknown>(definition: {
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 const key = (name: ExpandedName): string => `${name.ns ?? ""}|${name.name}`
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Registry {
@@ -155,7 +155,7 @@ export interface Registry {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const registry = (elements: ReadonlyArray<ElementDefinition>): Registry => ({
@@ -163,7 +163,7 @@ export const registry = (elements: ReadonlyArray<ElementDefinition>): Registry =
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface AdapterExtensionGroup {
@@ -195,7 +195,7 @@ const isNodeSnapshot = (value: unknown): value is NodeSnapshot =>
   && value.attributes.every(isAttributeSnapshot)
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category introspection
  */
 export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<string, AdapterExtensionGroup>> => {
@@ -320,7 +320,7 @@ const kvFragmentRegistry = registry([
 ])
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category standard-schema
  * @example
  * import * as MiniDom from "@effect-native/minidom"
@@ -373,7 +373,7 @@ const makeRegistryFilter = (registryValue: Registry) => (node: NodeSnapshot) => 
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category effect-schema
  * @example
  * import * as MiniDom from "@effect-native/minidom"
@@ -392,7 +392,7 @@ export const toEffectSchema = (registryValue: Registry) =>
   S.filter(makeRegistryFilter(registryValue))(nodeSnapshotSchema)
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category samples
  * @example
  * import * as MiniDom from "@effect-native/minidom"
@@ -407,7 +407,7 @@ export const samples = {
 } as const
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface NodeSnapshot {
@@ -417,7 +417,7 @@ export interface NodeSnapshot {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface AttributeRecord {
@@ -425,7 +425,7 @@ export interface AttributeRecord {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface AttributeEffectSchema {
@@ -576,7 +576,7 @@ const validateStructure = (node: NodeSnapshot, registry: Registry): ReadonlyArra
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category validation
  */
 export const validate = (
@@ -610,7 +610,7 @@ const attributeDecoder = (registryValue: Registry, name: ExpandedName) => (input
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category effect-schema
  */
 export const effectSchema = (registryValue: Registry, name: ExpandedName): AttributeEffectSchema => ({
@@ -618,7 +618,7 @@ export const effectSchema = (registryValue: Registry, name: ExpandedName): Attri
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const Schema = {

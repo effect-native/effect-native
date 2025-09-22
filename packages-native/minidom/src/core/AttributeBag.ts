@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
@@ -13,7 +13,7 @@ import * as Transaction from "./Transaction.js"
 const StoreSymbol: unique symbol = Symbol.for("@effect-native/minidom/AttributeBag/Store")
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export type AttributeEntry = readonly [namespace: Namespace, name: string, value: string]
@@ -23,7 +23,7 @@ const toEntry = (namespace: Namespace, name: string, value: string): AttributeEn
 const copyEntry = ([namespace, name, value]: AttributeEntry): AttributeEntry => [namespace, name, value]
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface View {
@@ -34,7 +34,7 @@ export interface View {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Service<E = never> {
@@ -48,20 +48,20 @@ export interface Service<E = never> {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category tags
  */
 export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Service")<Tag, Service>() {}
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category layers
  */
 export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
   Layer.effect(Tag, Effect.sync(() => make(options)))
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const asyncService = (options?: {
@@ -185,7 +185,7 @@ export const asyncService = (options?: {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category layers
  */
 export const layerAsync = (options?: {
@@ -208,7 +208,7 @@ const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
@@ -217,7 +217,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  * @example
  * ```ts
@@ -277,13 +277,13 @@ const hasStore = (
 ): service is Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category combinators
  */
 export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => service.refresh()
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category capabilities
  */
 export const transaction = (service: Service): Transaction.Transaction => {
@@ -310,7 +310,7 @@ export const transaction = (service: Service): Transaction.Transaction => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const AttributeBag = {

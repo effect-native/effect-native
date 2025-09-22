@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import type * as Effect from "effect/Effect"
 
@@ -10,7 +10,7 @@ import type { Namespace } from "./Namespace.js"
 type MiniDomEffect<A> = Effect.Effect<A, MiniDomError.MiniDomError>
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const NodeType = {
@@ -24,13 +24,13 @@ export const NodeType = {
 } as const
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export type NodeType = typeof NodeType[keyof typeof NodeType]
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Node {
@@ -45,7 +45,7 @@ export interface Node {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface ChildNode {
@@ -56,7 +56,7 @@ export interface ChildNode {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface ParentNode {
@@ -70,7 +70,7 @@ export interface ParentNode {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface CharacterData extends Node, ChildNode {
@@ -80,7 +80,7 @@ export interface CharacterData extends Node, ChildNode {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Text extends CharacterData {
@@ -89,7 +89,7 @@ export interface Text extends CharacterData {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Comment extends CharacterData {
@@ -98,7 +98,7 @@ export interface Comment extends CharacterData {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface ProcessingInstruction extends CharacterData {
@@ -107,7 +107,7 @@ export interface ProcessingInstruction extends CharacterData {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface DocumentType extends Node {
@@ -118,7 +118,7 @@ export interface DocumentType extends Node {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Element extends Node, ParentNode, ChildNode {
@@ -131,7 +131,7 @@ export interface Element extends Node, ParentNode, ChildNode {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface DocumentFragment extends Node, ParentNode, ChildNode {
@@ -140,7 +140,7 @@ export interface DocumentFragment extends Node, ParentNode, ChildNode {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Document extends Node, ParentNode {

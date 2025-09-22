@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 import * as FiberRef from "effect/FiberRef"
@@ -11,7 +11,7 @@ import type { Namespace } from "../core/Namespace.js"
 import type { Transaction as TransactionCapability } from "../core/Transaction.js"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category errors
  */
 export class CompositeAdapterMissing extends Error {
@@ -22,13 +22,13 @@ export class CompositeAdapterMissing extends Error {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export type Ownership = "read-write" | "read-only"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface CompositeCapability {
@@ -36,7 +36,7 @@ export interface CompositeCapability {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface AdapterCapabilities {
@@ -46,13 +46,13 @@ export interface AdapterCapabilities {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | CompositeAdapterMissing
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export interface AdapterConfig {
@@ -133,7 +133,7 @@ const ensureTransactionBoundary = <K extends PropertyKey>(
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export interface GuardContext<K extends PropertyKey> {
@@ -145,7 +145,7 @@ export interface GuardContext<K extends PropertyKey> {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export interface RouterOptions<Adapters extends AdapterRecord> {
@@ -274,7 +274,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const makeRouter = <Adapters extends AdapterRecord>(
@@ -304,7 +304,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
   })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category helpers
  */
 export const refreshAll = <Adapters extends AdapterRecord>(
@@ -367,7 +367,7 @@ export const refreshAll = <Adapters extends AdapterRecord>(
   })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category types
  */
 export interface TransactionRequest<R, E, A> {
@@ -381,7 +381,7 @@ const compositeContext = <Adapters extends AdapterRecord>(
 ): CompositeContext<Adapters> => service[CompositeContextSymbol]
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category combinators
  */
 export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(

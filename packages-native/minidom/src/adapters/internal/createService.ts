@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 
@@ -698,7 +698,7 @@ const createWrapNode = (_window: Window) => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const createService = (window: Window): MiniDomService => {
@@ -715,7 +715,7 @@ export const createService = (window: Window): MiniDomService => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const Internal = {

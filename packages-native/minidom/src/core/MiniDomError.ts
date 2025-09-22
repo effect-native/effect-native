@@ -1,10 +1,10 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Data from "effect/Data"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const MiniDomErrorTypeId: unique symbol = Symbol.for("@effect-native/minidom/MiniDomError")
@@ -20,7 +20,7 @@ const withTypeId = <A extends BaseErrorShape>(fields: A): A & { readonly [MiniDo
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
@@ -45,7 +45,7 @@ export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export class BackendFailure extends Data.TaggedError("BackendFailure")<
@@ -69,7 +69,7 @@ export class BackendFailure extends Data.TaggedError("BackendFailure")<
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export class Conflict extends Data.TaggedError("Conflict")<
@@ -94,7 +94,7 @@ export class Conflict extends Data.TaggedError("Conflict")<
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export class Unsupported extends Data.TaggedError("Unsupported")<
@@ -118,7 +118,7 @@ export class Unsupported extends Data.TaggedError("Unsupported")<
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export class ObservationFailure extends Data.TaggedError("ObservationFailure")<
@@ -142,14 +142,14 @@ export class ObservationFailure extends Data.TaggedError("ObservationFailure")<
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category guards
  */
 export const isMiniDomError = (u: unknown): u is MiniDomError =>
   typeof u === "object" && u !== null && MiniDomErrorTypeId in u
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export type MiniDomError =
@@ -160,7 +160,7 @@ export type MiniDomError =
   | ObservationFailure
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const MiniDomError = {
@@ -174,7 +174,7 @@ export const MiniDomError = {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const TypeId = MiniDomErrorTypeId

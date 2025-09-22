@@ -1,18 +1,18 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 
 import * as MiniDomError from "./MiniDomError.js"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const MiniDomTransactionTypeId: unique symbol = Symbol.for("@effect-native/minidom/Transaction")
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export interface Transaction<E = MiniDomError.Conflict> {
@@ -23,13 +23,13 @@ export interface Transaction<E = MiniDomError.Conflict> {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category guards
  */
 export const is = (u: unknown): u is Transaction => typeof u === "object" && u !== null && MiniDomTransactionTypeId in u
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const make = <E>(handler: Transaction<E>["withTransaction"]): Transaction<E> => ({
@@ -38,7 +38,7 @@ export const make = <E>(handler: Transaction<E>["withTransaction"]): Transaction
 })
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category combinators
  */
 export const run = <E, R, A, EE>(
@@ -47,7 +47,7 @@ export const run = <E, R, A, EE>(
 ): Effect.Effect<A, EE | E, R> => transaction.withTransaction(effect)
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category combinators
  * @example
  * ```ts
@@ -74,7 +74,7 @@ export const withTransaction =
     transaction.withTransaction(effect)
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const unsupported = (options?: {
@@ -91,7 +91,7 @@ export const unsupported = (options?: {
   )
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category exports
  */
 export const Transaction = {
@@ -104,7 +104,7 @@ export const Transaction = {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category symbols
  */
 export const TypeId = MiniDomTransactionTypeId

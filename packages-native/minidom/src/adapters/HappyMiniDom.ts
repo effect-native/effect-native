@@ -1,5 +1,5 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -11,7 +11,7 @@ import * as Service from "../core/Service.js"
 import { createService } from "./internal/createService.js"
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category options
  */
 export interface HappyMiniDomOptions {
@@ -30,14 +30,14 @@ const createWindow = (options?: HappyMiniDomOptions): HappyWindow => {
 }
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const make = (options?: HappyMiniDomOptions): Effect.Effect<MiniDomService> =>
   Effect.sync(() => createService(createWindow(options) as unknown as Window))
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category layers
  */
 export const layer = (options?: HappyMiniDomOptions) =>
@@ -66,7 +66,7 @@ export const layer = (options?: HappyMiniDomOptions) =>
   )
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category tags
  */
 export const Tag = Service.Tag

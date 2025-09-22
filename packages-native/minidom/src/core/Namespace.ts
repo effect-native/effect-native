@@ -1,20 +1,20 @@
 /**
- * @since 1.0.0
+ * @since 0.0.0
  */
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category model
  */
 export type Namespace = string | null
 
 /**
- * @since 1.0.0
+ * @since 0.0.0
  * @category constructors
  */
 export const Namespace = {
   /**
-   * @since 1.0.0
+   * @since 0.0.0
    * @category constructors
    */
   key(ns: Namespace, name: string): string {
