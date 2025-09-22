@@ -322,7 +322,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * @category constructors
  * @example
  * ```ts
- * import { AttributeBag, Sync } from "@effect-native/minidom"
+ * import { AttributeBag, SyncCapability } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  * import * as Option from "effect/Option"
  *
@@ -334,12 +334,17 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  *   return Array.from(snapshot.entries())
  * })
  *
- * const capability = Sync.detect(() => program)
+ * const capability = SyncCapability.detect(() => program)
  *
- * if (Option.isSome(capability)) {
- *   const entries = capability.value.run(program)
- *   console.log(entries)
- * }
+ * Option.match(capability, {
+ *   onNone: () => {
+ *     console.log("adapter did not expose a synchronous capability")
+ *   },
+ *   onSome: (syncRunner) => {
+ *     const entries = syncRunner.run(program)
+ *     console.log(entries)
+ *   }
+ * })
  * ```
  */
 export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service & {
@@ -400,13 +405,13 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
  * @category capabilities
  * @example
  * ```ts
- * import { AttributeBag, Transaction } from "@effect-native/minidom"
+ * import { AttributeBag, TransactionCapability } from "@effect-native/minidom"
  * import * as Effect from "effect/Effect"
  *
  * const bag = AttributeBag.make({ initial: [[null, "mode", "draft"]] })
  * const capability = AttributeBag.transaction(bag)
  *
- * const program = Transaction.run(capability, Effect.succeed("ok"))
+ * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
  * ```
  */
 export const transaction = (service: Service): Transaction.TransactionCapability => {
