@@ -5,7 +5,7 @@
 - [x] Phase 2 — Requirements (complete)
 - [x] Phase 3 — Design (complete)
 - [x] Phase 4 — Plan (this document)
-- [ ] Phase 5 — Implementation & Validation (pending release gating docs: JSDoc/docgen pass, README update)
+- [x] Phase 5 — Implementation & Validation (documentation gatekeepers complete; validation braid green)
 
 ## Task Hierarchies
 
@@ -71,11 +71,17 @@
 - Before final integration, run capability matrix and composite tests to demonstrate coverage.
 - Capture benchmark outputs (Effect sync vs imperative, observation latency) for regression.
 
+## Implementation Summary (2025-10-09)
+- README now includes adapter wiring, Events observation, and install notes; docgen runs clean with JSDoc coverage across public APIs.
+- `createService` wrappers gained explicit node refinements and capability-checked fallbacks, keeping runtime behavior while satisfying TS 5.9.
+- Added `packages-native/minidom/dtslint/MiniDom.tst.ts` to guard document factories, Events combinators, and Sync detection type surfaces.
+- Validation braid executed in `nix develop`: `pnpm docgen`, `pnpm lint --fix`, `pnpm check`, `pnpm test packages-native/minidom`, `pnpm --filter @effect-native/minidom run build`, and `tstyche packages-native/minidom/dtslint --target current`.
+
 ## Progress Tracking
 | Task | Owner | Status |
 |------|-------|--------|
 | Package scaffolding & layers | @codex | Complete — Core, schema, composite, host, adapters, and events modules exported via `packages-native/minidom/src/index.ts`; HappyMiniDom/WindowMiniDom helpers (`happy-mini-dom.test.ts`), stub SQL/KV adapters with capability metadata (`adapter-stubs.test.ts`). |
-| Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
+| Core API & attributes | @codex | Complete — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`); node wrappers now enforce MiniDomError propagation and docgen passes. |
 | Schema DSL & extensions | @codex | Complete — MiniDomX DSL supports choice/interleave/multiplicity/any/empty; Effect Schema bridge and typed extensions exercised via `packages-native/minidom/test/schema-validation.test.ts`. |
 | Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
