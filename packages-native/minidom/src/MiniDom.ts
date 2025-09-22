@@ -28,17 +28,35 @@ export class MiniDom extends Context.Tag("@effect-native/minidom/MiniDom")<MiniD
   }
 }>() {}
 
+/**
+ * Retrieves the host window from the current MiniDom environment.
+ *
+ * @since 0.0.0
+ * @category accessors
+ */
 export const window = Effect.gen(function*() {
   const dom = yield* MiniDom
   return dom.window
 })
 
+/**
+ * Retrieves the root document from the current MiniDom environment.
+ *
+ * @since 0.0.0
+ * @category accessors
+ */
 export const document = Effect.gen(function*() {
   const dom = yield* MiniDom
   return dom.document
 })
 
+/**
+ * Retrieves the capability descriptor published by the current MiniDom environment.
+ *
+ * @since 0.0.0
+ * @category accessors
+ */
 export const capabilities = Effect.gen(function*() {
   const dom = yield* MiniDom
-  return dom.document
+  return dom.capabilities
 })
