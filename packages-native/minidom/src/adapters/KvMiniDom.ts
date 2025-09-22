@@ -34,7 +34,7 @@ export const metadata = {
  * @since 0.0.0
  * @category constructors
  */
-export const make = (): Effect.Effect<MiniDom, MiniDomError.Unsupported> => Effect.fail(unsupported())
+export const make = () => Effect.fail(unsupported())
 
 /**
  * Layer that currently fails with {@link MiniDomError.Unsupported}.
