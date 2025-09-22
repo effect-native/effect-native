@@ -59,4 +59,47 @@ describe("Composite transactions (FR1.11 / SC7.8 / H14)", () => {
         expect(attempt.left.message).toContain("transaction")
       }
     }))
+
+  it.effect("uses adapter.transaction hook for commit and rollback", () =>
+    Effect.gen(function*() {
+      const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag,
+            transaction: AttributeBag.transaction(bag)
+          }
+        },
+        resolve: () => "local"
+      })
+
+      const conflict = new MiniDomError.Conflict({ message: "rollback" })
+
+      const failed = yield* Composite.runTransaction(composite, {
+        namespace: null,
+        name: "title",
+        effect: Effect.gen(function*() {
+          yield* composite.set(null, "title", "conflict")
+          return yield* Effect.fail(conflict)
+        })
+      }).pipe(Effect.either)
+
+      expect(failed._tag).toBe("Left")
+      if (failed._tag === "Left") {
+        expect(failed.left).toBe(conflict)
+      }
+
+      const afterFailure = yield* composite.get(null, "title")
+      expect(afterFailure).toEqual(Option.some("draft"))
+
+      yield* Composite.runTransaction(composite, {
+        namespace: null,
+        name: "title",
+        effect: composite.set(null, "title", "committed")
+      })
+
+      const afterCommit = yield* composite.get(null, "title")
+      expect(afterCommit).toEqual(Option.some("committed"))
+    }))
 })
