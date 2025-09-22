@@ -24,30 +24,35 @@ export class CompositeAdapterMissing extends Error {
  */
 export interface AdapterConfig {
   readonly bag: AttributeBag.Service
+  readonly capabilities?: unknown
 }
 
-/**
- * @since 1.0.0
- * @category types
- */
+type AdapterRecord = Record<PropertyKey, AdapterConfig>
+
 export interface GuardContext<K extends PropertyKey> {
   readonly adapter: K
   readonly namespace: Namespace
   readonly name: string
   readonly operation: "get" | "has" | "set" | "delete"
+  readonly capabilities?: unknown
 }
 
 /**
  * @since 1.0.0
  * @category types
  */
-export interface RouterOptions<Adapters extends Record<PropertyKey, AdapterConfig>> {
+export interface RouterOptions<Adapters extends AdapterRecord> {
   readonly adapters: Adapters
   readonly resolve: (namespace: Namespace, name: string) => keyof Adapters
   readonly guard?: (context: GuardContext<keyof Adapters>) => Effect.Effect<void>
 }
 
-const resolveAdapter = <Adapters extends Record<PropertyKey, AdapterConfig>>(
+const adapterTable = <Adapters extends AdapterRecord>(
+  options: RouterOptions<Adapters>
+) => new Map(Object.entries(options.adapters) as Array<[keyof Adapters, AdapterConfig]>)
+
+const resolveAdapter = <Adapters extends AdapterRecord>(
+  adapters: Map<keyof Adapters, AdapterConfig>,
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string
@@ -55,7 +60,7 @@ const resolveAdapter = <Adapters extends Record<PropertyKey, AdapterConfig>>(
   Effect.try({
     try: () => {
       const key = options.resolve(namespace, name)
-      const adapter = options.adapters[key]
+      const adapter = adapters.get(key)
 
       if (!adapter) {
         throw new CompositeAdapterMissing(key)
@@ -66,29 +71,36 @@ const resolveAdapter = <Adapters extends Record<PropertyKey, AdapterConfig>>(
     catch: (error) => error as CompositeAdapterMissing
   })
 
-const guard = <Adapters extends Record<PropertyKey, AdapterConfig>>(
+const guard = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>,
   context: GuardContext<keyof Adapters>
 ): Effect.Effect<void> => (options.guard ? options.guard(context) : Effect.void)
 
-const delegate = <Adapters extends Record<PropertyKey, AdapterConfig>, A>(
+const delegate = <Adapters extends AdapterRecord, A>(
+  adapters: Map<keyof Adapters, AdapterConfig>,
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string,
   operation: GuardContext<keyof Adapters>["operation"],
   f: (bag: AttributeBag.Service) => Effect.Effect<A>
 ): Effect.Effect<A> =>
-  Effect.flatMap(resolveAdapter(options, namespace, name), ([key, bag]) =>
+  Effect.flatMap(resolveAdapter(adapters, options, namespace, name), ([key, bag]) =>
     Effect.flatMap(
-      guard(options, { adapter: key, namespace, name, operation }),
+      guard(options, {
+        adapter: key,
+        namespace,
+        name,
+        operation,
+        capabilities: adapters.get(key)?.capabilities
+      }),
       () => f(bag)
     ))
 
-const entriesFromAll = <Adapters extends Record<PropertyKey, AdapterConfig>>(
-  options: RouterOptions<Adapters>
+const entriesFromAll = <Adapters extends AdapterRecord>(
+  adapters: Map<keyof Adapters, AdapterConfig>
 ): Effect.Effect<ReadonlyArray<AttributeEntry>> =>
   Effect.map(
-    Effect.forEach(Object.values(options.adapters), (adapter) => adapter.bag.entries(), {
+    Effect.forEach(Array.from(adapters.values()), (adapter) => adapter.bag.entries(), {
       concurrency: "unbounded"
     }),
     (entryGroups) => entryGroups.flat()
@@ -98,29 +110,34 @@ const entriesFromAll = <Adapters extends Record<PropertyKey, AdapterConfig>>(
  * @since 1.0.0
  * @category constructors
  */
-export const makeRouter = <Adapters extends Record<PropertyKey, AdapterConfig>>(
+export const makeRouter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>
 ): Effect.Effect<AttributeBag.Service> =>
-  Effect.sync(() => ({
-    get: (namespace, name) => delegate(options, namespace, name, "get", (bag) => bag.get(namespace, name)),
-    has: (namespace, name) => delegate(options, namespace, name, "has", (bag) => bag.has(namespace, name)),
-    set: (namespace, name, value) =>
-      delegate(options, namespace, name, "set", (bag) => bag.set(namespace, name, value)),
-    delete: (namespace, name) => delegate(options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
-    entries: () => entriesFromAll(options),
-    snapshot: () => Effect.map(entriesFromAll(options), AttributeBag.viewFromEntries),
-    refresh: () => refreshAll(options)
-  }))
+  Effect.sync(() => {
+    const adapters = adapterTable(options)
+
+    return {
+      get: (namespace, name) => delegate(adapters, options, namespace, name, "get", (bag) => bag.get(namespace, name)),
+      has: (namespace, name) => delegate(adapters, options, namespace, name, "has", (bag) => bag.has(namespace, name)),
+      set: (namespace, name, value) =>
+        delegate(adapters, options, namespace, name, "set", (bag) => bag.set(namespace, name, value)),
+      delete: (namespace, name) =>
+        delegate(adapters, options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
+      entries: () => entriesFromAll(adapters, options),
+      snapshot: () => Effect.map(entriesFromAll(adapters, options), AttributeBag.viewFromEntries),
+      refresh: () => refreshAll(adapters)
+    }
+  })
 
 /**
  * @since 1.0.0
  * @category helpers
  */
-export const refreshAll = <Adapters extends Record<PropertyKey, AdapterConfig>>(
-  options: RouterOptions<Adapters>
+export const refreshAll = <Adapters extends AdapterRecord>(
+  adapters: Map<keyof Adapters, AdapterConfig>
 ): Effect.Effect<void> =>
   Effect.asVoid(
-    Effect.forEach(Object.values(options.adapters), (adapter) => adapter.bag.refresh(), {
+    Effect.forEach(Array.from(adapters.values()), (adapter) => adapter.bag.refresh(), {
       concurrency: "unbounded"
     })
   )

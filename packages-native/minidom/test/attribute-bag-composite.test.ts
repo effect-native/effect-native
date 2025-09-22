@@ -68,4 +68,27 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
         expect(result.left).toBeInstanceOf(Composite.CompositeAdapterMissing)
       }
     }))
+
+  it.effect("passes capability metadata to guard", () =>
+    Effect.gen(function*() {
+      const seen: Array<Composite.GuardContext<string>> = []
+
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag: AttributeBag.service({ initial: [] }),
+            capabilities: { sync: true }
+          }
+        },
+        resolve: () => "local",
+        guard: (context) =>
+          Effect.sync(() => {
+            seen.push(context)
+          })
+      })
+
+      yield* composite.has(null, "theme")
+
+      expect(seen[0]?.capabilities).toEqual({ sync: true })
+    }))
 })
