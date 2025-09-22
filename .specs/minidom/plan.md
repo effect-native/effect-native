@@ -23,7 +23,7 @@
 - [x] Document JSDoc @examples for core APIs
 
 ### 3. Schema DSL & Registry Extensions
-- [ ] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (in progress — attribute/element metadata stored with registries, grouped via `Schema.extensionsByAdapter`, and bridged to Effect Schema via `Schema.toEffectSchema` as of 2025-09-21 [`FR1.3`, `FR1.14`, `SC7.3`, `SC7.11`])
+- [x] Port MiniDomX DSL, ensure Effect Schema integration, and typed `extensions` (complete — `Schema.content` supports choice/optional/repetition/interleave/any/empty; validation covers multiplicity and order semantics; Effect Schema integration verified via `schema-validation.test.ts` [`FR1.3`, `FR1.14`, `SC7.3`, `SC7.11`])
 - [x] Create sample registries demonstrating metadata for SQL/KV backends (complete — `Schema.samples` exposes SQL/KV fixtures validated via docs/tests on 2025-09-21 [`FR1.14`, `SC7.11`])
 - [x] Provide Standard Schema export utilities
   (complete — `Schema.toStandardSchemaV1` plus README coverage as of 2025-09-21 [`FR1.3`, `FR1.4`, `FR1.14`, `SC7.3`])
@@ -71,7 +71,7 @@
 |------|-------|--------|
 | Package scaffolding & layers | @codex | Complete — Core, schema, composite, host, adapters, and events modules exported via `packages-native/minidom/src/index.ts`; HappyMiniDom/WindowMiniDom helpers (`happy-mini-dom.test.ts`), stub SQL/KV adapters with capability metadata (`adapter-stubs.test.ts`). |
 | Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
-| Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
+| Schema DSL & extensions | @codex | Complete — MiniDomX DSL supports choice/interleave/multiplicity/any/empty; Effect Schema bridge and typed extensions exercised via `packages-native/minidom/test/schema-validation.test.ts`. |
 | Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
 | React host adapter | TBD | Not started |
