@@ -35,7 +35,7 @@
 
 ### 5. Composition & Transactions
 - [x] Implement `MiniDom.Composite` router enforcing ownership boundaries (Iteration 24 — read-only enforcement via `packages-native/minidom/test/composite-boundary.test.ts`, evidence in `experiments/minidom/log-20250921-2052.md`)
-- [ ] Provide `withTransaction` API and tagged conflict errors (Iterations 25–26 in progress — core `Transaction` capability plus composite delegation via `packages-native/minidom/test/transaction-conflict.test.ts` and `transaction-composite.test.ts`; evidence in `experiments/minidom/log-20250921-2052.md`)
+- [ ] Provide `withTransaction` API and tagged conflict errors (Iterations 25–29 in progress — core `Transaction` capability, composite delegation, and AttributeBag atomic semantics via `packages-native/minidom/test/transaction-conflict.test.ts`, `transaction-composite.test.ts`, `transaction-attribute-bag.test.ts`; evidence in `experiments/minidom/log-20250921-2052.md`)
 - [ ] Create hybrid tree tests combining local, happy-dom, and mock remote adapters
 
 ### 6. React Host Adapter

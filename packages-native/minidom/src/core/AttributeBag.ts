@@ -10,6 +10,8 @@ import type { Namespace } from "./Namespace.js"
 import { Namespace as NamespaceHelpers } from "./Namespace.js"
 import * as Transaction from "./Transaction.js"
 
+const StoreSymbol: unique symbol = Symbol.for("@effect-native/minidom/AttributeBag/Store")
+
 /**
  * @since 1.0.0
  * @category types
@@ -236,7 +238,9 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * }
  * ```
  */
-export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service => {
+export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }): Service & {
+  readonly [StoreSymbol]: Map<string, AttributeEntry>
+} => {
   const store = new Map<string, AttributeEntry>()
 
   if (options?.initial) {
@@ -247,7 +251,7 @@ export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }):
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  return {
+  const service: Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
     get: (namespace, name) =>
       Effect.sync(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => Effect.sync(() => store.has(NamespaceHelpers.key(namespace, name))),
@@ -258,8 +262,11 @@ export const make = (options?: { readonly initial?: Iterable<AttributeEntry> }):
     delete: (namespace, name) => Effect.sync(() => store.delete(NamespaceHelpers.key(namespace, name))),
     entries: () => Effect.sync(() => Array.from(store.values(), copyEntry)),
     snapshot: () => Effect.sync(makeView),
-    refresh: () => Effect.void
+    refresh: () => Effect.void,
+    [StoreSymbol]: store
   }
+
+  return service
 }
 
 /**
@@ -272,11 +279,28 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
  * @since 1.0.0
  * @category capabilities
  */
-export const transaction = (service: Service): Transaction.Transaction =>
-  Transaction.unsupported({
-    message: "AttributeBag service does not implement transactional semantics",
-    cause: { service }
+export const transaction = (service: Service): Transaction.Transaction => {
+  const store = (service as { readonly [k: symbol]: Map<string, AttributeEntry> })[StoreSymbol]
+
+  if (!store) {
+    return Transaction.unsupported({
+      message: "AttributeBag service does not implement transactional semantics"
+    })
+  }
+
+  return Transaction.make((operation) => {
+    const snapshot = new Map(store)
+
+    const restore = Effect.sync(() => {
+      store.clear()
+      for (const [key, value] of snapshot) {
+        store.set(key, value)
+      }
+    })
+
+    return Effect.tapError(operation, () => restore)
   })
+}
 
 /**
  * @since 1.0.0
