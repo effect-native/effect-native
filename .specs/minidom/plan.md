@@ -70,7 +70,7 @@
 | Task | Owner | Status |
 |------|-------|--------|
 | Package scaffolding & layers | TBD | Not started |
-| Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync + async layers validated (Iterations 14–15, see `experiments/minidom/log-20250921-1153.md#L75`, `#L100`) |
+| Core API & attributes | @codex | In progress — Node interfaces shipped with `packages-native/minidom/src/core/Nodes.ts`; AttributeBag sync/async/loader flows validated (Iterations 14–19, see `experiments/minidom/log-20250921-1153.md#L75`, `#L126`) |
 | Schema DSL & extensions | @codex | In progress — MiniDomX schema helpers with typed `extensions`, adapter grouping, Standard Schema export, and sample registries (`Schema.samples`) (see `packages-native/minidom/src/schema/index.ts`) |
 | Observation integration | TBD | Not started |
 | Composition & transactions | TBD | Not started |

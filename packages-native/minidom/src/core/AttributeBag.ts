@@ -41,6 +41,7 @@ export interface Service {
   readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean>
   readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>>
   readonly snapshot: () => Effect.Effect<View>
+  readonly refresh: () => Effect.Effect<void>
 }
 
 /**
@@ -63,12 +64,16 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
 export const asyncService = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
+  readonly loadInitial?: () => Effect.Effect<Iterable<AttributeEntry>>
 }): Service => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
 
   const store = new Map<string, AttributeEntry>()
+  let state: "idle" | "loading" | "loaded" = options?.initial ? "loaded" : "idle"
+  let pending: Promise<void> | undefined
+  const waiters: Array<(effect: Effect.Effect<void>) => void> = []
 
   if (options?.initial) {
     for (const [namespace, name, value] of options.initial) {
@@ -76,12 +81,69 @@ export const asyncService = (options?: {
     }
   }
 
-  const run = <A>(evaluate: () => A): Effect.Effect<A> =>
-    Effect.async((resume) => {
-      schedule(() => {
-        resume(Effect.succeed(evaluate()))
+  const runWaiters = (effect: Effect.Effect<void>) => {
+    while (waiters.length > 0) {
+      const resume = waiters.shift()!
+      resume(effect)
+    }
+  }
+
+  const triggerLoad = () => {
+    if (pending || !options?.loadInitial) {
+      return
+    }
+
+    state = "loading"
+    pending = Promise.resolve()
+
+    schedule(() => {
+      const current = Effect.runPromise(options.loadInitial!()).then(
+        (entries) => {
+          store.clear()
+          for (const [namespace, name, value] of entries) {
+            store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
+          }
+          state = "loaded"
+          runWaiters(Effect.void)
+        },
+        (error) => {
+          state = "idle"
+          runWaiters(Effect.die(error))
+          throw error
+        }
+      ).finally(() => {
+        if (pending === current) {
+          pending = undefined
+        }
       })
+
+      pending = current
     })
+  }
+
+  const ensureLoaded = options?.loadInitial
+    ? () =>
+      Effect.async<void, never, never>((resume) => {
+        if (state === "loaded") {
+          resume(Effect.void)
+          return
+        }
+
+        waiters.push(resume)
+
+        if (state === "idle") {
+          triggerLoad()
+        }
+      })
+    : () => Effect.void
+
+  const run = <A>(evaluate: () => A): Effect.Effect<A> =>
+    Effect.flatMap(ensureLoaded(), () =>
+      Effect.async((resume) => {
+        schedule(() => {
+          resume(Effect.succeed(evaluate()))
+        })
+      }))
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
@@ -92,9 +154,27 @@ export const asyncService = (options?: {
       run(() => {
         store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
       }),
-    delete: (namespace, name) => run(() => store.delete(NamespaceHelpers.key(namespace, name))),
+    delete: (namespace, name) =>
+      run(() => store.delete(NamespaceHelpers.key(namespace, name))).pipe(
+        Effect.tap((removed) =>
+          removed && options?.loadInitial
+            ? Effect.sync(() => {
+              state = "idle"
+              pending = undefined
+              triggerLoad()
+            })
+            : Effect.void
+        )
+      ),
     entries: () => run(() => Array.from(store.values(), copyEntry)),
-    snapshot: () => run(makeView)
+    snapshot: () => run(makeView),
+    refresh: () =>
+      Effect.async<void, never, never>((resume) => {
+        waiters.push(resume)
+        state = "idle"
+        pending = undefined
+        triggerLoad()
+      })
   }
 }
 
@@ -176,9 +256,16 @@ export const service = (options?: { readonly initial?: Iterable<AttributeEntry> 
       }),
     delete: (namespace, name) => Effect.sync(() => store.delete(NamespaceHelpers.key(namespace, name))),
     entries: () => Effect.sync(() => Array.from(store.values(), copyEntry)),
-    snapshot: () => Effect.sync(makeView)
+    snapshot: () => Effect.sync(makeView),
+    refresh: () => Effect.void
   }
 }
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const refresh = (service: Service): Effect.Effect<void> => service.refresh()
 
 /**
  * @since 1.0.0
@@ -190,5 +277,6 @@ export const AttributeBag = {
   layerAsync,
   service,
   asyncService,
+  refresh,
   viewFromEntries
 }
