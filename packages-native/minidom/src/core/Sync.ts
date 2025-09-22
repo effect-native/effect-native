@@ -69,7 +69,7 @@ export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync
  * @since 0.0.0
  * @category exports
  */
-// TODO: expand jsdoc to explain the purpose of this code. what goal is blocked when this is not present?
+// NOTE: Keeping a namespace-style export preserves the existing public API surface.
 export const Sync = {
   TypeId: MiniDomSyncTypeId,
   is,

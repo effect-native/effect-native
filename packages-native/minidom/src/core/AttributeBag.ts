@@ -136,7 +136,6 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
  * Effect.runPromise(bag.refresh())
  * ```
  */
-// TODO: rename asyncService -> makeAsync
 export const asyncService = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
@@ -256,6 +255,15 @@ export const asyncService = (options?: {
 
   return service
 }
+
+/**
+ * Alias for {@link asyncService}; retained for backwards compatibility while providing
+ * a more descriptive constructor name.
+ *
+ * @since 0.0.0
+ * @category constructors
+ */
+export const makeAsync = asyncService
 
 /**
  * Layer that installs the asynchronous attribute bag service into the environment.
@@ -442,10 +450,12 @@ export const AttributeBag = {
   Tag,
   layer,
   layerAsync,
-  // TODO: rename service -> make
+  /** @deprecated Use {@link make} instead. */
   service: make,
-  // TODO: rename asyncService -> makeAsync
+  make,
+  /** @deprecated Use {@link makeAsync} instead. */
   asyncService,
+  makeAsync,
   refresh,
   transaction,
   viewFromEntries

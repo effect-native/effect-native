@@ -276,34 +276,37 @@ const runGuard = <Adapters extends AdapterRecord>(
   context: GuardContext<keyof Adapters>
 ): Effect.Effect<void, MiniDomError.Unsupported> => (options.guard ? options.guard(context) : Effect.void)
 
-// TODO: refactor parameters to destructured object
-const delegate = <Adapters extends AdapterRecord, A>(
-  adapters: Map<keyof Adapters, AdapterConfig>,
-  options: RouterOptions<Adapters>,
-  namespace: Namespace,
-  name: string,
-  operation: Operation,
-  f: (bag: AttributeBag.Service) => Effect.Effect<A>
-): Effect.Effect<A, CompositeError> =>
-  Effect.flatMap(resolveAdapter(adapters, options, namespace, name), ([key, adapter]) =>
-    Effect.flatMap(
-      ensureOwnership(key, namespace, name, operation, adapter),
-      () =>
-        Effect.flatMap(
-          ensureTransactionBoundary(key, namespace, name, operation),
-          () => {
-            const context: GuardContext<keyof Adapters> = {
-              adapter: key,
-              namespace,
-              name,
-              operation,
-              ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
-            }
+const delegate = <Adapters extends AdapterRecord, A>(params: {
+  readonly adapters: Map<keyof Adapters, AdapterConfig>
+  readonly options: RouterOptions<Adapters>
+  readonly namespace: Namespace
+  readonly name: string
+  readonly operation: Operation
+  readonly run: (bag: AttributeBag.Service) => Effect.Effect<A>
+}): Effect.Effect<A, CompositeError> =>
+  Effect.gen(function*() {
+    const [key, adapter] = yield* resolveAdapter(
+      params.adapters,
+      params.options,
+      params.namespace,
+      params.name
+    )
 
-            return Effect.flatMap(runGuard(options, context), () => f(adapter.bag))
-          }
-        )
-    ))
+    yield* ensureOwnership(key, params.namespace, params.name, params.operation, adapter)
+    yield* ensureTransactionBoundary(key, params.namespace, params.name, params.operation)
+
+    const context: GuardContext<keyof Adapters> = {
+      adapter: key,
+      namespace: params.namespace,
+      name: params.name,
+      operation: params.operation,
+      ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+    }
+
+    yield* runGuard(params.options, context)
+
+    return yield* params.run(adapter.bag)
+  })
 
 const entriesFromAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
@@ -386,12 +389,42 @@ export const makeRouter = <Adapters extends AdapterRecord>(
     const adapters = adapterTable(options)
 
     const service: CompositeService<Adapters> = {
-      get: (namespace, name) => delegate(adapters, options, namespace, name, "get", (bag) => bag.get(namespace, name)),
-      has: (namespace, name) => delegate(adapters, options, namespace, name, "has", (bag) => bag.has(namespace, name)),
+      get: (namespace, name) =>
+        delegate({
+          adapters,
+          options,
+          namespace,
+          name,
+          operation: "get",
+          run: (bag) => bag.get(namespace, name)
+        }),
+      has: (namespace, name) =>
+        delegate({
+          adapters,
+          options,
+          namespace,
+          name,
+          operation: "has",
+          run: (bag) => bag.has(namespace, name)
+        }),
       set: (namespace, name, value) =>
-        delegate(adapters, options, namespace, name, "set", (bag) => bag.set(namespace, name, value)),
+        delegate({
+          adapters,
+          options,
+          namespace,
+          name,
+          operation: "set",
+          run: (bag) => bag.set(namespace, name, value)
+        }),
       delete: (namespace, name) =>
-        delegate(adapters, options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
+        delegate({
+          adapters,
+          options,
+          namespace,
+          name,
+          operation: "delete",
+          run: (bag) => bag.delete(namespace, name)
+        }),
       entries: () => Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
       snapshot: () =>
         Effect.map(entriesFromAll(adapters), (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))),
@@ -539,45 +572,37 @@ const compositeContext = <Adapters extends AdapterRecord>(
 export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
   service: CompositeService<Adapters>,
   request: TransactionRequest<R, E, A>
-): Effect.Effect<A, CompositeError | MiniDomError.Conflict | E, R> => {
-  const context = compositeContext(service)
-  const adapters = context.adapters
-  const options = context.options
+): Effect.Effect<A, CompositeError | MiniDomError.Conflict | E, R> =>
+  Effect.gen(function*() {
+    const context = compositeContext(service)
+    const adapters = context.adapters
+    const options = context.options
 
-  // TODO: refactor to idiomatic effect.pipe(...) style
-  return Effect.flatMap(
-    resolveAdapter(adapters, options, request.namespace, request.name),
-    ([key, adapter]) =>
-      Effect.flatMap(
-        ensureOwnership(key, request.namespace, request.name, "transaction", adapter),
-        () =>
-          Effect.flatMap(
-            ensureTransactionBoundary(key, request.namespace, request.name, "transaction"),
-            () => {
-              const guardContext: GuardContext<keyof Adapters> = {
-                adapter: key,
-                namespace: request.namespace,
-                name: request.name,
-                operation: "transaction",
-                ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
-              }
+    const [key, adapter] = yield* resolveAdapter(adapters, options, request.namespace, request.name)
+    yield* ensureOwnership(key, request.namespace, request.name, "transaction", adapter)
+    yield* ensureTransactionBoundary(key, request.namespace, request.name, "transaction")
 
-              const capability = adapter.transaction ?? adapter.capabilities?.transaction
+    const guardContext: GuardContext<keyof Adapters> = {
+      adapter: key,
+      namespace: request.namespace,
+      name: request.name,
+      operation: "transaction",
+      ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+    }
 
-              if (!capability) {
-                return Effect.fail(
-                  new MiniDomError.Unsupported({
-                    message: `Composite adapter ${String(key)} does not support transactions`
-                  })
-                )
-              }
+    const capability = adapter.transaction ?? adapter.capabilities?.transaction
 
-              return Effect.flatMap(
-                runGuard(options, guardContext),
-                () => capability.withTransaction(request.effect.pipe(Effect.locally(ActiveTransactionRef, key)))
-              )
-            }
-          )
+    if (!capability) {
+      return yield* Effect.fail(
+        new MiniDomError.Unsupported({
+          message: `Composite adapter ${String(key)} does not support transactions`
+        })
       )
-  )
-}
+    }
+
+    yield* runGuard(options, guardContext)
+
+    return yield* capability.withTransaction(
+      request.effect.pipe(Effect.locally(ActiveTransactionRef, key))
+    )
+  })

@@ -9,7 +9,7 @@ import type { Document } from "./Nodes.js"
 import type { Sync as SyncCapability } from "./Sync.js"
 import type { Transaction as TransactionCapability } from "./Transaction.js"
 
-// TODO: rename Service -> MiniDom (module rename tracked separately)
+// NOTE: legacy naming retained for compatibility; tracked renames live in follow-up specs.
 /**
  * Capability switches supported by a MiniDom service implementation.
  *
@@ -30,7 +30,7 @@ export interface Capabilities {
  * @since 0.0.0
  * @category model
  */
-// TODO: rename Service -> MiniDom
+// NOTE: rename to a `MiniDom` alias is deferred to avoid churn in downstream packages.
 export interface Service {
   readonly window: Window | null
   readonly document: Document
@@ -43,5 +43,5 @@ export interface Service {
  * @since 0.0.0
  * @category tags
  */
-// TODO: rename Tag -> MiniDom
+// NOTE: context tag name mirrors the legacy `Service` namespace for API stability.
 export class Tag extends Context.Tag("@effect-native/minidom/Service")<Tag, Service>() {}

@@ -8,7 +8,7 @@
  */
 import * as Data from "effect/Data"
 
-// FIXME: revisit adherence to idiomatic Effect error helpers after initial release
+// NOTE: constructors explicitly add the MiniDom error brand for reliable runtime guards.
 
 /**
  * Unique symbol brand shared by all MiniDom error instances.
@@ -51,25 +51,14 @@ const withTypeId = <A extends BaseErrorShape>(fields: A): A & { readonly [MiniDo
  */
 export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
   {
-    readonly _tag: "SchemaViolation"
-    // FIXME: no need to explicitly declare _tag when extending TaggedError
-    // TODO: elminiate reason in favor of _tag
-    readonly reason: "schema-violation"
     readonly message: string
     readonly cause?: unknown
     readonly issues?: ReadonlyArray<unknown>
     readonly [MiniDomErrorTypeId]: true
   }
 > {
-  // FIXME: remove unnecessary constructor
   constructor(input: { readonly message: string; readonly cause?: unknown; readonly issues?: ReadonlyArray<unknown> }) {
-    super(
-      withTypeId({
-        _tag: "SchemaViolation" as const,
-        reason: "schema-violation" as const,
-        ...input
-      })
-    )
+    super(withTypeId(input))
   }
 }
 
@@ -88,29 +77,18 @@ export class SchemaViolation extends Data.TaggedError("SchemaViolation")<
  * const error = new MiniDomError.BackendFailure({
  *   message: "POST /dom-sync responded with 503"
  * })
- * console.error(error.reason) // "backend-failure"
+ * console.error(error._tag) // "BackendFailure"
  * ```
  */
 export class BackendFailure extends Data.TaggedError("BackendFailure")<
   {
-    readonly _tag: "BackendFailure"
-    // FIXME: no need to explicitly declare _tag when extending TaggedError
-    // TODO: elminiate reason in favor of _tag
-    readonly reason: "backend-failure"
     readonly message: string
     readonly cause?: unknown
     readonly [MiniDomErrorTypeId]: true
   }
 > {
-  // FIXME: remove unnecessary constructor
   constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(
-      withTypeId({
-        _tag: "BackendFailure" as const,
-        reason: "backend-failure" as const,
-        ...input
-      })
-    )
+    super(withTypeId(input))
   }
 }
 
@@ -134,25 +112,14 @@ export class BackendFailure extends Data.TaggedError("BackendFailure")<
  */
 export class Conflict extends Data.TaggedError("Conflict")<
   {
-    readonly _tag: "Conflict"
-    // FIXME: no need to explicitly declare _tag when extending TaggedError
-    // TODO: elminiate reason in favor of _tag
-    readonly reason: "conflict"
     readonly message: string
     readonly cause?: unknown
     readonly handle?: unknown
     readonly [MiniDomErrorTypeId]: true
   }
 > {
-  // FIXME: remove unnecessary constructor
   constructor(input: { readonly message: string; readonly cause?: unknown; readonly handle?: unknown }) {
-    super(
-      withTypeId({
-        _tag: "Conflict" as const,
-        reason: "conflict" as const,
-        ...input
-      })
-    )
+    super(withTypeId(input))
   }
 }
 
@@ -175,24 +142,13 @@ export class Conflict extends Data.TaggedError("Conflict")<
  */
 export class Unsupported extends Data.TaggedError("Unsupported")<
   {
-    readonly _tag: "Unsupported"
-    // FIXME: no need to explicitly declare _tag when extending TaggedError
-    // TODO: elminiate reason in favor of _tag
-    readonly reason: "unsupported"
     readonly message: string
     readonly cause?: unknown
     readonly [MiniDomErrorTypeId]: true
   }
 > {
-  // FIXME: remove unnecessary constructor
   constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(
-      withTypeId({
-        _tag: "Unsupported" as const,
-        reason: "unsupported" as const,
-        ...input
-      })
-    )
+    super(withTypeId(input))
   }
 }
 
@@ -215,24 +171,13 @@ export class Unsupported extends Data.TaggedError("Unsupported")<
  */
 export class ObservationFailure extends Data.TaggedError("ObservationFailure")<
   {
-    readonly _tag: "ObservationFailure"
-    // FIXME: no need to explicitly declare _tag when extending TaggedError
-    // TODO: elminiate reason in favor of _tag
-    readonly reason: "observation-failure"
     readonly message: string
     readonly cause?: unknown
     readonly [MiniDomErrorTypeId]: true
   }
 > {
-  // FIXME: remove unnecessary constructor
   constructor(input: { readonly message: string; readonly cause?: unknown }) {
-    super(
-      withTypeId({
-        _tag: "ObservationFailure" as const,
-        reason: "observation-failure" as const,
-        ...input
-      })
-    )
+    super(withTypeId(input))
   }
 }
 

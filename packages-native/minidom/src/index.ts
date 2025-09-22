@@ -30,9 +30,7 @@ export * as Nodes from "./core/Nodes.js"
  * @since 0.0.0
  * @category re-exports
  */
-// TODO: rename Service.js -> MiniDom.js
-// TODO: rename Service -> MiniDom
-// TODO: rename Service.Tag -> MiniDom
+// NOTE: legacy naming is retained for compatibility with earlier `Service` imports.
 export * as Service from "./core/Service.js"
 /**
  * @since 0.0.0

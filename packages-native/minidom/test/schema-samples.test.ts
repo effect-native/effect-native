@@ -3,7 +3,7 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Schema from "@effect-native/minidom/Schema"
 
 const HTML = "http://www.w3.org/1999/xhtml" as const
-const KV = "https://kv.example" as const
+const KV = "https://schemas.effect-native.dev/minidom/kv" as const
 
 describe("MiniDomX registry samples [FR1.3][FR1.14][SC7.11]", () => {
   it("exposes SQL-focused registry samples with standard schema support", async () => {

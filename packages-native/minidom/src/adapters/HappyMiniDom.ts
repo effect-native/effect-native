@@ -64,10 +64,11 @@ export const layer = (options?: HappyMiniDomOptions) =>
       }),
       ({ created, window }) =>
         created
-          // TODO: use Effect.try instead since `window.close()` could throw
-          ? Effect.sync(() => {
-            if (typeof window.close === "function") {
-              window.close()
+          ? Effect.try({
+            try: () => {
+              if (typeof window.close === "function") {
+                window.close()
+              }
             }
           })
           : Effect.void

@@ -392,8 +392,7 @@ export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<st
 const standardSchemaVendor = "@effect-native/minidom/Schema"
 
 const HTML_NAMESPACE: Namespace = "http://www.w3.org/1999/xhtml"
-// TODO: make the kv namespace a more standard value
-const KV_NAMESPACE: Namespace = "https://kv.example"
+const KV_NAMESPACE: Namespace = "https://schemas.effect-native.dev/minidom/kv"
 
 const expandedNameSchema = S.Struct({
   ns: S.Union(S.String, S.Null),

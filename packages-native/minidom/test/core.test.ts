@@ -38,7 +38,6 @@ describe("MiniDomError", () => {
     })
     expect(error).toBeInstanceOf(Error)
     expect(error._tag).toBe("SchemaViolation")
-    expect(error.reason).toBe("schema-violation")
     expect(error.issues).toEqual(["missing child"])
   })
 
@@ -50,6 +49,6 @@ describe("MiniDomError", () => {
         cause
       })
       expect(Data.struct({ cause: error.cause })).toStrictEqual({ cause })
-      expect(error.reason).toBe("backend-failure")
+      expect(error._tag).toBe("BackendFailure")
     }))
 })
