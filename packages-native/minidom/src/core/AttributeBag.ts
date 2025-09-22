@@ -8,6 +8,7 @@ import * as Option from "effect/Option"
 
 import type { Namespace } from "./Namespace.js"
 import { Namespace as NamespaceHelpers } from "./Namespace.js"
+import * as Transaction from "./Transaction.js"
 
 /**
  * @since 1.0.0
@@ -269,6 +270,16 @@ export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => servi
 
 /**
  * @since 1.0.0
+ * @category capabilities
+ */
+export const transaction = (service: Service): Transaction.Transaction =>
+  Transaction.unsupported({
+    message: "AttributeBag service does not implement transactional semantics",
+    cause: { service }
+  })
+
+/**
+ * @since 1.0.0
  * @category exports
  */
 export const AttributeBag = {
@@ -278,5 +289,6 @@ export const AttributeBag = {
   service: make,
   asyncService,
   refresh,
+  transaction,
   viewFromEntries
 }
