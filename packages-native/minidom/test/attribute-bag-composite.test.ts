@@ -2,7 +2,7 @@ import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 
-import { AttributeBag, Composite } from "@effect-native/minidom"
+import { AttributeBag, Composite, MiniDomError } from "@effect-native/minidom"
 
 describe("AttributeBag composite refresh (H2/H6)", () => {
   it.effect("refresh bridges local + remote adapters without boundary leaks", () =>
@@ -44,7 +44,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
           }
         },
         resolve: () => "local",
-        guard: () => Effect.fail(new Error("blocked"))
+        guard: () => Effect.fail(new MiniDomError.Unsupported({ message: "blocked" }))
       })
 
       const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.either)

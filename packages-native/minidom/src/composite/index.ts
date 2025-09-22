@@ -5,6 +5,7 @@ import * as Effect from "effect/Effect"
 
 import * as AttributeBag from "../core/AttributeBag.js"
 import type { AttributeEntry } from "../core/AttributeBag.js"
+import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
@@ -20,21 +21,88 @@ export class CompositeAdapterMissing extends Error {
 
 /**
  * @since 1.0.0
+ * @category model
+ */
+export type Ownership = "read-write" | "read-only"
+
+/**
+ * @since 1.0.0
+ * @category model
+ */
+export interface CompositeCapability {
+  readonly ownership?: Ownership
+}
+
+/**
+ * @since 1.0.0
+ * @category model
+ */
+export interface AdapterCapabilities {
+  readonly composite?: CompositeCapability
+  readonly [key: string]: unknown
+}
+
+/**
+ * @since 1.0.0
+ * @category model
+ */
+export type CompositeError = MiniDomError.Unsupported | CompositeAdapterMissing
+
+/**
+ * @since 1.0.0
  * @category types
  */
 export interface AdapterConfig {
   readonly bag: AttributeBag.Service
-  readonly capabilities?: unknown
+  readonly capabilities?: AdapterCapabilities
 }
 
 type AdapterRecord = Record<PropertyKey, AdapterConfig>
 
+type Operation = "get" | "has" | "set" | "delete"
+
+const isWriteOperation = (operation: Operation) => operation === "set" || operation === "delete"
+
+const ownershipFor = (config: AdapterConfig): Ownership => config.capabilities?.composite?.ownership ?? "read-write"
+
+const ensureOwnership = <K extends PropertyKey>(
+  key: K,
+  namespace: Namespace,
+  name: string,
+  operation: Operation,
+  config: AdapterConfig
+): Effect.Effect<void, MiniDomError.Unsupported> => {
+  if (!isWriteOperation(operation)) {
+    return Effect.void
+  }
+
+  if (ownershipFor(config) === "read-only") {
+    return Effect.fail(
+      new MiniDomError.Unsupported({
+        message: `Composite adapter ${String(key)} is read-only and cannot ${operation} ${namespace ?? "null"}:${name}`,
+        cause: {
+          adapter: key,
+          namespace,
+          name,
+          operation
+        }
+      })
+    )
+  }
+
+  return Effect.void
+}
+
+/**
+ * @since 1.0.0
+ * @category types
+ */
 export interface GuardContext<K extends PropertyKey> {
   readonly adapter: K
   readonly namespace: Namespace
   readonly name: string
-  readonly operation: "get" | "has" | "set" | "delete"
-  readonly capabilities?: unknown
+  readonly operation: Operation
+  readonly capabilities?: AdapterCapabilities
 }
 
 /**
@@ -44,7 +112,7 @@ export interface GuardContext<K extends PropertyKey> {
 export interface RouterOptions<Adapters extends AdapterRecord> {
   readonly adapters: Adapters
   readonly resolve: (namespace: Namespace, name: string) => keyof Adapters
-  readonly guard?: (context: GuardContext<keyof Adapters>) => Effect.Effect<void>
+  readonly guard?: (context: GuardContext<keyof Adapters>) => Effect.Effect<void, MiniDomError.Unsupported>
 }
 
 const adapterTable = <Adapters extends AdapterRecord>(
@@ -56,7 +124,7 @@ const resolveAdapter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string
-): Effect.Effect<readonly [keyof Adapters, AttributeBag.Service], CompositeAdapterMissing> =>
+): Effect.Effect<readonly [keyof Adapters, AdapterConfig], CompositeAdapterMissing> =>
   Effect.try({
     try: () => {
       const key = options.resolve(namespace, name)
@@ -66,34 +134,38 @@ const resolveAdapter = <Adapters extends AdapterRecord>(
         throw new CompositeAdapterMissing(key)
       }
 
-      return [key, adapter.bag]
+      return [key, adapter] as const
     },
     catch: (error) => error as CompositeAdapterMissing
   })
 
-const guard = <Adapters extends AdapterRecord>(
+const runGuard = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>,
   context: GuardContext<keyof Adapters>
-): Effect.Effect<void> => (options.guard ? options.guard(context) : Effect.void)
+): Effect.Effect<void, MiniDomError.Unsupported> => (options.guard ? options.guard(context) : Effect.void)
 
 const delegate = <Adapters extends AdapterRecord, A>(
   adapters: Map<keyof Adapters, AdapterConfig>,
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string,
-  operation: GuardContext<keyof Adapters>["operation"],
+  operation: Operation,
   f: (bag: AttributeBag.Service) => Effect.Effect<A>
-): Effect.Effect<A> =>
-  Effect.flatMap(resolveAdapter(adapters, options, namespace, name), ([key, bag]) =>
+): Effect.Effect<A, CompositeError> =>
+  Effect.flatMap(resolveAdapter(adapters, options, namespace, name), ([key, adapter]) =>
     Effect.flatMap(
-      guard(options, {
-        adapter: key,
-        namespace,
-        name,
-        operation,
-        capabilities: adapters.get(key)?.capabilities
-      }),
-      () => f(bag)
+      ensureOwnership(key, namespace, name, operation, adapter),
+      () => {
+        const context: GuardContext<keyof Adapters> = {
+          adapter: key,
+          namespace,
+          name,
+          operation,
+          ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+        }
+
+        return Effect.flatMap(runGuard(options, context), () => f(adapter.bag))
+      }
     ))
 
 const entriesFromAll = <Adapters extends AdapterRecord>(
@@ -112,21 +184,23 @@ const entriesFromAll = <Adapters extends AdapterRecord>(
  */
 export const makeRouter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>
-): Effect.Effect<AttributeBag.Service> =>
+): Effect.Effect<AttributeBag.Service<CompositeError>> =>
   Effect.sync(() => {
     const adapters = adapterTable(options)
 
-    return {
+    const service: AttributeBag.Service<CompositeError> = {
       get: (namespace, name) => delegate(adapters, options, namespace, name, "get", (bag) => bag.get(namespace, name)),
       has: (namespace, name) => delegate(adapters, options, namespace, name, "has", (bag) => bag.has(namespace, name)),
       set: (namespace, name, value) =>
         delegate(adapters, options, namespace, name, "set", (bag) => bag.set(namespace, name, value)),
       delete: (namespace, name) =>
         delegate(adapters, options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
-      entries: () => entriesFromAll(adapters, options),
-      snapshot: () => Effect.map(entriesFromAll(adapters, options), AttributeBag.viewFromEntries),
+      entries: () => entriesFromAll(adapters),
+      snapshot: () => Effect.map(entriesFromAll(adapters), AttributeBag.viewFromEntries),
       refresh: () => refreshAll(adapters)
     }
+
+    return service
   })
 
 /**

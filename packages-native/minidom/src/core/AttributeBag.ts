@@ -34,14 +34,14 @@ export interface View {
  * @since 1.0.0
  * @category model
  */
-export interface Service {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>>
-  readonly snapshot: () => Effect.Effect<View>
-  readonly refresh: () => Effect.Effect<void>
+export interface Service<E = never> {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, E>
+  readonly snapshot: () => Effect.Effect<View, E>
+  readonly refresh: () => Effect.Effect<void, E>
 }
 
 /**
@@ -265,7 +265,7 @@ export const service = (options?: { readonly initial?: Iterable<AttributeEntry> 
  * @since 1.0.0
  * @category combinators
  */
-export const refresh = (service: Service): Effect.Effect<void> => service.refresh()
+export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => service.refresh()
 
 /**
  * @since 1.0.0
