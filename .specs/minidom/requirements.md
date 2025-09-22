@@ -50,6 +50,8 @@ The system shall surface failures through a tagged `MiniDomError` union that dis
 ### [Event-Driven] FR1.16 React Host Adapter
 The system shall provide a reusable React reconciler host configuration that adapts to MiniDom capability descriptors (Sync, Events, etc.) and integrates asynchronous adapters through Suspense-compatible pathways.
 
+> **Status Note (2025-10-09):** Implementation is delegated to the spin-out documented in `.specs/minidom-react-host/`.
+
 ## Non-Functional Requirements
 
 ### NFR2.1 Deterministic Behavior

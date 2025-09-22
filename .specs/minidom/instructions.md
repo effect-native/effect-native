@@ -19,6 +19,8 @@ As framework maintainers building Effect-native tooling, we need a reusable Mini
 13. [State-Driven] When adapters surface dependency injection hooks, each shall export standardized `layer` and `make` helpers along with advertised capability metadata for integration into Effect Layer graphs.
 14. [Optional] When registries require backend-specific metadata (e.g., SQL column hints or KV storage directives), the system shall support typed `extensions` fields that coexist with core schema definitions without weakening type safety.
 
+> Follow-up React host adapter deliverables (FR1.16) are tracked separately in `.specs/minidom-react-host/`.
+
 ## Technical Specifications
 - Package name: `@effect-native/minidom`; location: `packages-native/minidom` within the monorepo.
 - Implement pure TypeScript modules compatible with `effect@^3.17` patterns (generator-friendly APIs, tagged errors, Effect Schema integrations).

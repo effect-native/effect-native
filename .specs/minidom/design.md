@@ -18,7 +18,7 @@
 - `packages-native/minidom/src/schema` – MiniDomX DSL, registry extensions, Effect Schema integrations (`FR1.3`, `FR1.14`).
 - `packages-native/minidom/src/events` – thin wrapper around Reactivity service exporting `MiniDom.Events` (`FR1.12`).
 - `packages-native/minidom/src/composite` – router that maps namespace/prefix to adapters; enforces ownership boundaries (`FR1.10`, `IR5.3`).
-- `packages-native/minidom/src/react-host` – canonical React reconciler host adapter driven by capabilities, supports Suspense for async adapters (`FR1.16`, `IR5.4`, `TC3.7`).
+- `packages-native/minidom/src/react-host` – canonical React reconciler host adapter driven by capabilities, supports Suspense for async adapters (`FR1.16`, `IR5.4`, `TC3.7`). *(Implementation deferred to `.specs/minidom-react-host/` feature track.)*
 - Adapter folders (`happy-dom`, `window`, future `sql`, `kv`) each expose `layer`, `make`, capability metadata, and adapter-specific configuration.
 
 ## Error Handling Strategy

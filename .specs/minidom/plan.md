@@ -38,10 +38,10 @@
 - [x] Provide `withTransaction` API and tagged conflict errors (Iterations 25–39 — core `Transaction` capability, composite delegation, AttributeBag atomic semantics, shared helper coverage, hybrid transaction enforcement, cross-adapter read validation, async remote rollback, refresh conflict detection, refresh recovery, hybrid tree verification, and adversarial refresh reporting via `packages-native/minidom/test/transaction-conflict.test.ts`, `transaction-composite.test.ts`, `transaction-attribute-bag.test.ts`, `transaction-with-transaction.test.ts`, `transaction-hybrid-composite.test.ts`, `transaction-hybrid-boundary.test.ts`, `transaction-hybrid-conflict.test.ts`, `transaction-hybrid-reload.test.ts`, `transaction-hybrid-refresh-conflict.test.ts`, `transaction-hybrid-refresh-recover.test.ts`, `transaction-hybrid-tree.test.ts`, `transaction-hybrid-adversarial.test.ts`; evidence in `experiments/minidom/log-20250921-2052.md`)
 - [x] Create hybrid tree tests combining local, happy-dom, and mock remote adapters (Iteration 38 evidence: `packages-native/minidom/test/transaction-hybrid-tree.test.ts` plus adversarial refresh coverage; see `experiments/minidom/log-20250921-2052.md`)
 
-### 6. React Host Adapter
-- [ ] Build canonical host config mapping capabilities to React reconciler hooks
-- [ ] Support Suspense/transition scenarios for async adapters
-- [ ] Add tests for sync (HappyMiniDom) and async (mock remote) adapters
+### 6. React Host Adapter *(spun out to `.specs/minidom-react-host/` as of 2025-10-09)*
+- [ ] Build canonical host config mapping capabilities to React reconciler hooks *(tracked in `.specs/minidom-react-host/TODO.md`)*
+- [ ] Support Suspense/transition scenarios for async adapters *(tracked in `.specs/minidom-react-host/TODO.md`)*
+- [ ] Add tests for sync (HappyMiniDom) and async (mock remote) adapters *(tracked in `.specs/minidom-react-host/TODO.md`)*
 
 ### 7. Documentation & Tooling
 - [ ] Ensure JSDoc coverage with docgen validation
@@ -74,7 +74,7 @@
 | Schema DSL & extensions | @codex | Complete — MiniDomX DSL supports choice/interleave/multiplicity/any/empty; Effect Schema bridge and typed extensions exercised via `packages-native/minidom/test/schema-validation.test.ts`. |
 | Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
-| React host adapter | TBD | Not started |
+| React host adapter | @codex | Deferred — scope migrated to `.specs/minidom-react-host/`; awaiting `/new-feature` workflow. |
 | Documentation & tooling | @codex | In progress — README covers `Schema.samples` + `Schema.toStandardSchemaV1` and Effect.gen workflow (`packages-native/minidom/README.md`) |
 
 Update the table after each milestone, referencing commit hashes and experiment evidence.
