@@ -8,9 +8,12 @@ describe("Hybrid refresh recovery (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H
   it.effect("succeeds after resolving conflict", () =>
     Effect.gen(function*() {
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]],
-        loadInitial: () => Effect.succeed([[null, "status", "cold"]])
+        effect: Effect.succeed<ReadonlyArray<readonly [string | null, string, string]>>([
+          [null, "status", "cold"]
+        ])
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

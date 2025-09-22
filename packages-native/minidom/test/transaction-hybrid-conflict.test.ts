@@ -9,8 +9,12 @@ describe("Hybrid composite remote transactions (FR1.10 / FR1.11 / SC7.7 / SC7.8 
     Effect.gen(function*() {
       const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]]
+        effect: Effect.succeed<ReadonlyArray<readonly [string | null, string, string]>>([
+          [null, "status", "cold"]
+        ])
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {
@@ -40,8 +44,12 @@ describe("Hybrid composite remote transactions (FR1.10 / FR1.11 / SC7.7 / SC7.8 
     Effect.gen(function*() {
       const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]]
+        effect: Effect.succeed<ReadonlyArray<readonly [string | null, string, string]>>([
+          [null, "status", "cold"]
+        ])
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

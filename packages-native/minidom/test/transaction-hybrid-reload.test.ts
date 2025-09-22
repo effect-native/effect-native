@@ -8,10 +8,17 @@ describe("Hybrid composite reload during transaction (FR1.10 / FR1.11 / SC7.7 / 
   it.effect("treats remote refresh during transaction as conflict", () =>
     Effect.gen(function*() {
       const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
+      let remoteState: "cold" | "reloaded" = "cold"
+
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]],
-        loadInitial: () => Effect.succeed<Iterable<readonly [null, string, string]>>([[null, "status", "reloaded"]])
+        effect: Effect.sync(() => {
+          const current = remoteState
+          remoteState = "reloaded"
+          return [[null, "status", current]] as const
+        })
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

@@ -7,10 +7,17 @@ import { AttributeBag, Composite, MiniDomError } from "@effect-native/minidom"
 describe("Hybrid composite adversarial refresh (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2)", () => {
   it.effect("reports conflicting adapters in refresh error", () =>
     Effect.gen(function*() {
+      let state: "cold" | "stale" = "cold"
+
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]],
-        loadInitial: () => Effect.succeed([[null, "status", "stale"]])
+        effect: Effect.sync(() => {
+          const current = state
+          state = "stale"
+          return [[null, "status", current]] as const
+        })
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

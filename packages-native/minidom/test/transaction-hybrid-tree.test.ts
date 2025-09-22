@@ -11,10 +11,17 @@ describe("Hybrid tree integration (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H
     Effect.gen(function*() {
       const htmlBag = AttributeBag.makeSync({ initial: [[null, "title", "draft"]] })
       const svgBag = AttributeBag.makeSync({ initial: [[SVG_NAMESPACE, "fill", "green"]] })
+      let remoteState: "cold" | "reloaded" = "cold"
+
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]],
-        loadInitial: () => Effect.succeed([[null, "status", "reloaded"]])
+        effect: Effect.sync(() => {
+          const current = remoteState
+          remoteState = "reloaded"
+          return [[null, "status", current]] as const
+        })
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

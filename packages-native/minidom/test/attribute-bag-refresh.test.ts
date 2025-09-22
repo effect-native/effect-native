@@ -10,13 +10,12 @@ describe("AttributeBag refresh capability (H6)", () => {
       let loadCount = 0
 
       const bag = AttributeBag.makeAsync({
-        loadInitial: () =>
-          Effect.sync(() => {
-            loadCount += 1
-            return [
-              [null, "token", `value-${loadCount}`] as const
-            ]
-          })
+        effect: Effect.sync(() => {
+          loadCount += 1
+          return [
+            [null, "token", `value-${loadCount}`] as const
+          ]
+        })
       })
 
       const first = yield* bag.get(null, "token")

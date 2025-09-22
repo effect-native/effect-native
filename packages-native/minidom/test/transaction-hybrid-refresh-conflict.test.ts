@@ -8,12 +8,12 @@ describe("Hybrid composite refresh conflict detection (FR1.10 / FR1.11 / SC7.7 /
   it.effect("surfaces conflict when refresh overwrites committed status", () =>
     Effect.gen(function*() {
       const remoteBag = AttributeBag.makeAsync({
-        initial: [[null, "status", "cold"]],
-        loadInitial: () =>
-          Effect.succeed<Iterable<readonly [null, string, string]>>([
-            [null, "status", "cold"]
-          ])
+        effect: Effect.succeed<ReadonlyArray<readonly [string | null, string, string]>>([
+          [null, "status", "cold"]
+        ])
       })
+
+      yield* AttributeBag.refresh(remoteBag)
 
       const composite = yield* Composite.makeRouter({
         adapters: {

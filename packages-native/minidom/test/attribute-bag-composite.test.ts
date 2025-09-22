@@ -14,7 +14,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
           },
           remote: {
             bag: MiniDom.AttributeBag.makeAsync({
-              loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
+              effect: Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }
         },
@@ -39,7 +39,7 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
           },
           remote: {
             bag: MiniDom.AttributeBag.makeAsync({
-              loadInitial: () => Effect.sync(() => [[null, "theme", "remote"]] as const)
+              effect: Effect.sync(() => [[null, "theme", "remote"]] as const)
             })
           }
         },
