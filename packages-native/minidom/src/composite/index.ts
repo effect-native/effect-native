@@ -1,4 +1,6 @@
 /**
+ * Composite router helpers for orchestrating multiple MiniDom adapters.
+ *
  * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
@@ -11,8 +13,16 @@ import type { Namespace } from "../core/Namespace.js"
 import type { Transaction as TransactionCapability } from "../core/Transaction.js"
 
 /**
+ * Error thrown when a composite router cannot find the requested adapter.
+ *
  * @since 0.0.0
  * @category errors
+ * @example
+ * ```ts
+ * import { Composite } from "@effect-native/minidom"
+ *
+ * throw new Composite.CompositeAdapterMissing("happy-dom")
+ * ```
  */
 export class CompositeAdapterMissing extends Error {
   constructor(readonly adapter: string | number | symbol) {
@@ -22,22 +32,48 @@ export class CompositeAdapterMissing extends Error {
 }
 
 /**
+ * Allowed ownership levels for adapters participating in a composite router.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const ownership: MiniDom.Composite.Ownership = "read-only"
+ * ```
  */
 export type Ownership = "read-write" | "read-only"
 
 /**
+ * Optional metadata describing how a particular adapter participates in the composite.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const capability: MiniDom.Composite.CompositeCapability = { ownership: "read-only" }
+ * ```
  */
 export interface CompositeCapability {
   readonly ownership?: Ownership
 }
 
 /**
+ * Capability record advertised by each adapter to the composite router.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const adapter: MiniDom.Composite.AdapterCapabilities = {
+ *   composite: { ownership: "read-write" }
+ * }
+ * ```
  */
 export interface AdapterCapabilities {
   readonly composite?: CompositeCapability
@@ -46,14 +82,34 @@ export interface AdapterCapabilities {
 }
 
 /**
+ * Error union emitted by composite attribute operations.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const log = (error: MiniDom.Composite.CompositeError) => console.error(error.message)
+ * ```
  */
 export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | CompositeAdapterMissing
 
 /**
+ * Definition for connecting an attribute bag into the composite router.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import { AttributeBag, Composite } from "@effect-native/minidom"
+ *
+ * const bag = AttributeBag.make()
+ * const adapter: Composite.AdapterConfig = {
+ *   bag,
+ *   capabilities: { composite: { ownership: "read-write" } }
+ * }
+ * ```
  */
 export interface AdapterConfig {
   readonly bag: AttributeBag.Service
@@ -133,8 +189,20 @@ const ensureTransactionBoundary = <K extends PropertyKey>(
 }
 
 /**
+ * Context object passed to guard hooks before delegating to an adapter.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const guard = (context: MiniDom.Composite.GuardContext<string>) => {
+ *   console.log(context.adapter, context.operation)
+ *   return Effect.void
+ * }
+ * ```
  */
 export interface GuardContext<K extends PropertyKey> {
   readonly adapter: K
@@ -145,8 +213,22 @@ export interface GuardContext<K extends PropertyKey> {
 }
 
 /**
+ * Configuration used to construct a composite attribute router.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const bag = MiniDom.AttributeBag.make()
+ *
+ * const options: MiniDom.Composite.RouterOptions<{ primary: MiniDom.Composite.AdapterConfig }> = {
+ *   adapters: { primary: { bag } },
+ *   resolve: () => "primary"
+ * }
+ * ```
  */
 export interface RouterOptions<Adapters extends AdapterRecord> {
   readonly adapters: Adapters
@@ -194,6 +276,7 @@ const runGuard = <Adapters extends AdapterRecord>(
   context: GuardContext<keyof Adapters>
 ): Effect.Effect<void, MiniDomError.Unsupported> => (options.guard ? options.guard(context) : Effect.void)
 
+// TODO: refactor parameters to destructured object
 const delegate = <Adapters extends AdapterRecord, A>(
   adapters: Map<keyof Adapters, AdapterConfig>,
   options: RouterOptions<Adapters>,
@@ -274,8 +357,27 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
 }
 
 /**
+ * Builds a composite attribute service from the supplied adapter map.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { AttributeBag, Composite } from "@effect-native/minidom"
+ *
+ * const bag = AttributeBag.make({ initial: [[null, "id", "root"]] })
+ *
+ * const program = Effect.gen(function*() {
+ *   const router = yield* Composite.makeRouter({
+ *     adapters: { primary: { bag } },
+ *     resolve: () => "primary"
+ *   })
+ *   return yield* router.get(null, "id")
+ * })
+ *
+ * Effect.runPromise(program).then(console.log)
+ * ```
  */
 export const makeRouter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>
@@ -304,8 +406,21 @@ export const makeRouter = <Adapters extends AdapterRecord>(
   })
 
 /**
+ * Refreshes every adapter participating in a composite router.
+ *
  * @since 0.0.0
  * @category helpers
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { AttributeBag, Composite } from "@effect-native/minidom"
+ *
+ * const adapters = new Map([
+ *   ["primary", { bag: AttributeBag.asyncService() }]
+ * ] as const)
+ *
+ * Effect.runPromise(Composite.refreshAll(adapters))
+ * ```
  */
 export const refreshAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
@@ -367,8 +482,21 @@ export const refreshAll = <Adapters extends AdapterRecord>(
   })
 
 /**
+ * Describes a transactional effect that should run against a specific adapter.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Composite } from "@effect-native/minidom"
+ *
+ * const request: Composite.TransactionRequest<never, never, string> = {
+ *   namespace: null,
+ *   name: "title",
+ *   effect: Effect.succeed("ok")
+ * }
+ * ```
  */
 export interface TransactionRequest<R, E, A> {
   readonly namespace: Namespace
@@ -381,8 +509,32 @@ const compositeContext = <Adapters extends AdapterRecord>(
 ): CompositeContext<Adapters> => service[CompositeContextSymbol]
 
 /**
+ * Executes an effect under the transactional capability of the resolved adapter.
+ *
  * @since 0.0.0
  * @category combinators
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { AttributeBag, Composite } from "@effect-native/minidom"
+ *
+ * const bag = AttributeBag.make({ initial: [[null, "title", "draft"]] })
+ *
+ * const program = Effect.gen(function*() {
+ *   const router = yield* Composite.makeRouter({
+ *     adapters: { primary: { bag, transaction: AttributeBag.transaction(bag) } },
+ *     resolve: () => "primary"
+ *   })
+ *
+ *   return yield* Composite.runTransaction(router, {
+ *     namespace: null,
+ *     name: "title",
+ *     effect: Effect.succeed("published")
+ *   })
+ * })
+ *
+ * Effect.runPromise(program).then(console.log)
+ * ```
  */
 export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
   service: CompositeService<Adapters>,
@@ -392,6 +544,7 @@ export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
   const adapters = context.adapters
   const options = context.options
 
+  // TODO: refactor to idiomatic effect.pipe(...) style
   return Effect.flatMap(
     resolveAdapter(adapters, options, request.namespace, request.name),
     ([key, adapter]) =>

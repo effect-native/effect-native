@@ -1,4 +1,6 @@
 /**
+ * Detection helpers for synchronous MiniDom adapters.
+ *
  * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
@@ -6,12 +8,16 @@ import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 
 /**
+ * Branded symbol used to identify synchronous execution capabilities.
+ *
  * @since 0.0.0
  * @category symbols
  */
 export const MiniDomSyncTypeId: unique symbol = Symbol.for("@effect-native/minidom/Sync")
 
 /**
+ * Capability exposing synchronous execution for MiniDom effects.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -21,12 +27,16 @@ export interface Sync {
 }
 
 /**
+ * Determines whether an unknown value is a MiniDom sync capability.
+ *
  * @since 0.0.0
  * @category guards
  */
 export const is = (u: unknown): u is Sync => typeof u === "object" && u !== null && MiniDomSyncTypeId in u
 
 /**
+ * Wraps an arbitrary effect runner with the MiniDom sync brand.
+ *
  * @since 0.0.0
  * @category constructors
  */
@@ -36,32 +46,11 @@ export const fromRunner = (runner: Sync["run"]): Sync => ({
 })
 
 /**
+ * Detects whether an operation can be run synchronously and returns the
+ * capability when possible.
+ *
  * @since 0.0.0
  * @category constructors
- */
-/**
- * @since 0.0.0
- * @category constructors
- * @example
- * ```ts
- * import { AttributeBag, Sync } from "@effect-native/minidom"
- * import * as Effect from "effect/Effect"
- * import * as Option from "effect/Option"
- *
- * const program = Effect.gen(function*() {
- *   const bag = AttributeBag.make()
- *   yield* bag.set(null, "id", "root")
- *   const snapshot = yield* bag.snapshot()
- *   return snapshot.size
- * })
- *
- * const capability = Sync.detect(() => program)
- *
- * Option.match(capability, {
- *   onNone: () => console.log("adapter is async"),
- *   onSome: (sync) => console.log("size", sync.run(program))
- * })
- * ```
  */
 export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync> => {
   try {
@@ -75,9 +64,12 @@ export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<Sync
 }
 
 /**
+ * Namespace export that exposes the sync helper utilities.
+ *
  * @since 0.0.0
  * @category exports
  */
+// TODO: expand jsdoc to explain the purpose of this code. what goal is blocked when this is not present?
 export const Sync = {
   TypeId: MiniDomSyncTypeId,
   is,
@@ -86,6 +78,8 @@ export const Sync = {
 }
 
 /**
+ * Alias for {@link MiniDomSyncTypeId} to support named imports.
+ *
  * @since 0.0.0
  * @category symbols
  */

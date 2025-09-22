@@ -1,4 +1,6 @@
 /**
+ * MiniDom adapter backed by `happy-dom` for deterministic server-side DOM emulation.
+ *
  * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
@@ -11,6 +13,8 @@ import * as Service from "../core/Service.js"
 import { createService } from "./internal/createService.js"
 
 /**
+ * Options for creating the Happy DOM-backed MiniDom service.
+ *
  * @since 0.0.0
  * @category options
  */
@@ -30,6 +34,8 @@ const createWindow = (options?: HappyMiniDomOptions): HappyWindow => {
 }
 
 /**
+ * Constructs a MiniDom service powered by `happy-dom`.
+ *
  * @since 0.0.0
  * @category constructors
  */
@@ -37,6 +43,8 @@ export const make = (options?: HappyMiniDomOptions): Effect.Effect<MiniDomServic
   Effect.sync(() => createService(createWindow(options) as unknown as Window))
 
 /**
+ * Layer that scopes a Happy DOM window and exposes the MiniDom service.
+ *
  * @since 0.0.0
  * @category layers
  */
@@ -56,6 +64,7 @@ export const layer = (options?: HappyMiniDomOptions) =>
       }),
       ({ created, window }) =>
         created
+          // TODO: use Effect.try instead since `window.close()` could throw
           ? Effect.sync(() => {
             if (typeof window.close === "function") {
               window.close()
@@ -66,6 +75,8 @@ export const layer = (options?: HappyMiniDomOptions) =>
   )
 
 /**
+ * Alias to the MiniDom {@link Service.Tag} for ergonomic adapter usage.
+ *
  * @since 0.0.0
  * @category tags
  */

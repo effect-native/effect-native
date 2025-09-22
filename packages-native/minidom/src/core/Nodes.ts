@@ -1,4 +1,9 @@
 /**
+ * MiniDom-flavoured DOM node model definitions.
+ *
+ * These types mirror the browser DOM surface but swap imperative methods for
+ * {@link effect/Effect!Effect} actions that report {@link MiniDomError.MiniDomError}.
+ *
  * @since 0.0.0
  */
 import type * as Effect from "effect/Effect"
@@ -10,8 +15,28 @@ import type { Namespace } from "./Namespace.js"
 type MiniDomEffect<A> = Effect.Effect<A, MiniDomError.MiniDomError>
 
 /**
+ * Map of DOM `Node.nodeType` constants used by MiniDom.
+ *
+ * The numeric values match the WHATWG DOM specification so existing code can
+ * branch on familiar semantics.
+ *
  * @since 0.0.0
  * @category symbols
+ * @example
+ * ```ts
+ * import { Nodes } from "@effect-native/minidom"
+ *
+ * const describe = (node: Nodes.Node) => {
+ *   switch (node.nodeType) {
+ *     case Nodes.NodeType.Element:
+ *       return "element"
+ *     case Nodes.NodeType.Text:
+ *       return "text"
+ *     default:
+ *       return "other"
+ *   }
+ * }
+ * ```
  */
 export const NodeType = {
   Element: 1,
@@ -24,12 +49,26 @@ export const NodeType = {
 } as const
 
 /**
+ * Union of the numeric {@link NodeType} constants.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const accepts: (type: MiniDom.Nodes.NodeType) => void = () => {}
+ * accepts(MiniDom.Nodes.NodeType.Comment)
+ * ```
  */
 export type NodeType = typeof NodeType[keyof typeof NodeType]
 
 /**
+ * Base MiniDom node interface shared by all DOM node types.
+ *
+ * The asynchronous operations return {@link MiniDomError.MiniDomError}-aware
+ * effects instead of mutating in place.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -45,6 +84,8 @@ export interface Node {
 }
 
 /**
+ * Node methods that are available on `ChildNode` participants.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -56,6 +97,8 @@ export interface ChildNode {
 }
 
 /**
+ * Properties and operations exposed by nodes that can contain children.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -70,6 +113,8 @@ export interface ParentNode {
 }
 
 /**
+ * Shared surface for nodes whose contents are text-based.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -80,6 +125,8 @@ export interface CharacterData extends Node, ChildNode {
 }
 
 /**
+ * MiniDom `Text` node wrapper.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -89,6 +136,8 @@ export interface Text extends CharacterData {
 }
 
 /**
+ * MiniDom `Comment` node wrapper.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -98,6 +147,8 @@ export interface Comment extends CharacterData {
 }
 
 /**
+ * MiniDom `ProcessingInstruction` node wrapper.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -107,6 +158,8 @@ export interface ProcessingInstruction extends CharacterData {
 }
 
 /**
+ * MiniDom `DocumentType` wrapper.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -118,6 +171,8 @@ export interface DocumentType extends Node {
 }
 
 /**
+ * MiniDom `Element` wrapper with Effect-powered attribute accessors.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -131,6 +186,8 @@ export interface Element extends Node, ParentNode, ChildNode {
 }
 
 /**
+ * MiniDom `DocumentFragment` wrapper.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -140,6 +197,8 @@ export interface DocumentFragment extends Node, ParentNode, ChildNode {
 }
 
 /**
+ * MiniDom `Document` wrapper with asynchronous factory helpers.
+ *
  * @since 0.0.0
  * @category model
  */

@@ -1,4 +1,6 @@
 /**
+ * Attribute bag services for MiniDom nodes.
+ *
  * @since 0.0.0
  */
 import * as Context from "effect/Context"
@@ -13,8 +15,20 @@ import * as Transaction from "./Transaction.js"
 const StoreSymbol: unique symbol = Symbol.for("@effect-native/minidom/AttributeBag/Store")
 
 /**
+ * Tuple representation of a namespaced attribute entry.
+ *
  * @since 0.0.0
  * @category types
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const entry: MiniDom.AttributeBag.AttributeEntry = [
+ *   "http://www.w3.org/1999/xhtml",
+ *   "class",
+ *   "hero"
+ * ]
+ * ```
  */
 export type AttributeEntry = readonly [namespace: Namespace, name: string, value: string]
 
@@ -23,8 +37,17 @@ const toEntry = (namespace: Namespace, name: string, value: string): AttributeEn
 const copyEntry = ([namespace, name, value]: AttributeEntry): AttributeEntry => [namespace, name, value]
 
 /**
+ * Immutable view that exposes attribute lookup operations.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ *
+ * const view = AttributeBag.viewFromEntries([[null, "id", "root"]])
+ * console.log(view.get(null, "id"))
+ * ```
  */
 export interface View {
   readonly size: number
@@ -34,8 +57,21 @@ export interface View {
 }
 
 /**
+ * Effect-based attribute bag service.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const program = Effect.gen(function*() {
+ *   const bag = AttributeBag.make()
+ *   yield* bag.set(null, "id", "root")
+ *   return yield* bag.get(null, "id")
+ * })
+ * ```
  */
 export interface Service<E = never> {
   readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E>
@@ -48,22 +84,59 @@ export interface Service<E = never> {
 }
 
 /**
+ * Context tag for retrieving an {@link AttributeBag.Service} from the environment.
+ *
  * @since 0.0.0
  * @category tags
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ * import { Effect } from "effect"
+ *
+ * const program = AttributeBag.Tag.pipe(
+ *   Effect.map((bag) => bag.snapshot())
+ * )
+ * ```
  */
 export class Tag extends Context.Tag("@effect-native/minidom/AttributeBag/Service")<Tag, Service>() {}
 
 /**
+ * Layer that provides a synchronous {@link Service} backed by an in-memory map.
+ *
  * @since 0.0.0
  * @category layers
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ *
+ * const layer = AttributeBag.layer()
+ * console.log(typeof layer)
+ * ```
  */
 export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> }) =>
   Layer.effect(Tag, Effect.sync(() => make(options)))
 
 /**
+ * Constructs an asynchronous {@link Service} that lazily loads attributes.
+ *
+ * The returned service exposes the internal store via a symbol for transaction
+ * support.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const bag = AttributeBag.asyncService({
+ *   loadInitial: () => Effect.succeed([[null, "id", "root"]])
+ * })
+ *
+ * Effect.runPromise(bag.refresh())
+ * ```
  */
+// TODO: rename asyncService -> makeAsync
 export const asyncService = (options?: {
   readonly initial?: Iterable<AttributeEntry>
   readonly scheduler?: (task: () => void) => void
@@ -185,8 +258,17 @@ export const asyncService = (options?: {
 }
 
 /**
+ * Layer that installs the asynchronous attribute bag service into the environment.
+ *
  * @since 0.0.0
  * @category layers
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ *
+ * const layer = AttributeBag.layerAsync()
+ * console.log(typeof layer)
+ * ```
  */
 export const layerAsync = (options?: {
   readonly initial?: Iterable<AttributeEntry>
@@ -208,8 +290,17 @@ const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
 }
 
 /**
+ * Builds a read-only {@link View} from an attribute entry iterable.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ *
+ * const view = AttributeBag.viewFromEntries([[null, "role", "banner"]])
+ * console.log(view.size) // 1
+ * ```
  */
 export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
   const list = Array.from(entries, copyEntry)
@@ -217,6 +308,8 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
 }
 
 /**
+ * Creates a synchronous attribute bag service backed by an in-memory map.
+ *
  * @since 0.0.0
  * @category constructors
  * @example
@@ -277,14 +370,36 @@ const hasStore = (
 ): service is Service & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
 
 /**
+ * Re-runs the service's refresh effect, ensuring async bags reload data.
+ *
  * @since 0.0.0
  * @category combinators
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const bag = AttributeBag.asyncService()
+ * Effect.runPromise(AttributeBag.refresh(bag))
+ * ```
  */
 export const refresh = <E>(service: Service<E>): Effect.Effect<void, E> => service.refresh()
 
 /**
+ * Derives a {@link Transaction.Transaction} capability from an attribute bag service.
+ *
  * @since 0.0.0
  * @category capabilities
+ * @example
+ * ```ts
+ * import { AttributeBag, Transaction } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const bag = AttributeBag.make({ initial: [[null, "mode", "draft"]] })
+ * const capability = AttributeBag.transaction(bag)
+ *
+ * const program = Transaction.run(capability, Effect.succeed("ok"))
+ * ```
  */
 export const transaction = (service: Service): Transaction.Transaction => {
   if (!hasStore(service)) {
@@ -310,14 +425,26 @@ export const transaction = (service: Service): Transaction.Transaction => {
 }
 
 /**
+ * Namespace export bundling the attribute bag helpers.
+ *
  * @since 0.0.0
  * @category exports
+ * @example
+ * ```ts
+ * import { AttributeBag } from "@effect-native/minidom"
+ * import * as Effect from "effect/Effect"
+ *
+ * const bag = AttributeBag.make()
+ * Effect.runPromise(bag.entries()).then(console.log)
+ * ```
  */
 export const AttributeBag = {
   Tag,
   layer,
   layerAsync,
+  // TODO: rename service -> make
   service: make,
+  // TODO: rename asyncService -> makeAsync
   asyncService,
   refresh,
   transaction,

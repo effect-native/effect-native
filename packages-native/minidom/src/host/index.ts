@@ -1,14 +1,20 @@
 /**
+ * React host adapter facade for MiniDom.
+ *
  * @since 0.0.0
  */
 
 /**
+ * Brand used by host adapter configurations.
+ *
  * @since 0.0.0
  * @category symbols
  */
 export const MiniDomHostTypeId: unique symbol = Symbol.for("@effect-native/minidom/Host")
 
 /**
+ * Marker interface implemented by MiniDom host adapter configs.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -17,6 +23,8 @@ export interface HostConfig {
 }
 
 /**
+ * Placeholder helper for unimplemented host adapters.
+ *
  * @since 0.0.0
  * @category constructors
  */
@@ -25,6 +33,8 @@ export const notImplemented = (): never => {
 }
 
 /**
+ * Namespace export collecting host-related helpers.
+ *
  * @since 0.0.0
  * @category exports
  */
@@ -34,6 +44,8 @@ export const Host = {
 }
 
 /**
+ * Alias for {@link MiniDomHostTypeId} to support named imports.
+ *
  * @since 0.0.0
  * @category symbols
  */

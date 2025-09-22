@@ -1,4 +1,6 @@
 /**
+ * Internal utilities for wrapping native DOM nodes into MiniDom services.
+ *
  * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
@@ -698,6 +700,8 @@ const createWrapNode = (_window: Window) => {
 }
 
 /**
+ * Wraps a native `window` object in the MiniDom service interface.
+ *
  * @since 0.0.0
  * @category constructors
  */
@@ -715,6 +719,8 @@ export const createService = (window: Window): MiniDomService => {
 }
 
 /**
+ * Namespace exposing internals used by adapter implementations.
+ *
  * @since 0.0.0
  * @category exports
  */

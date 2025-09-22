@@ -1,4 +1,6 @@
 /**
+ * Schema DSL utilities for describing MiniDom documents.
+ *
  * @since 0.0.0
  */
 import type { StandardSchemaV1 } from "@standard-schema/spec"
@@ -8,8 +10,19 @@ import * as S from "effect/Schema"
 import type { Namespace } from "../core/Namespace.js"
 
 /**
+ * Qualified name with an optional namespace used throughout the schema DSL.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const name: MiniDom.Schema.ExpandedName = {
+ *   ns: "http://www.w3.org/1999/xhtml",
+ *   name: "div"
+ * }
+ * ```
  */
 export interface ExpandedName {
   readonly ns: Namespace
@@ -17,14 +30,33 @@ export interface ExpandedName {
 }
 
 /**
+ * Convenience helper for constructing {@link ExpandedName} objects.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const name = Schema.q("http://www.w3.org/1999/xhtml", "article")
+ * ```
  */
 export const q = (ns: Namespace, name: string): ExpandedName => ({ ns, name })
 
 /**
+ * Describes an attribute that can appear on an element definition.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const classAttr: Schema.AttributeDefinition = {
+ *   name: Schema.q(null, "class"),
+ *   required: false
+ * }
+ * ```
  */
 export interface AttributeDefinition<Extensions = unknown> {
   readonly name: ExpandedName
@@ -33,15 +65,37 @@ export interface AttributeDefinition<Extensions = unknown> {
 }
 
 /**
+ * Helper that preserves inference when defining attribute metadata.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const slugAttr = Schema.attribute({
+ *   name: Schema.q(null, "data-slug"),
+ *   required: true
+ * })
+ * ```
  */
 export const attribute = <Extensions>(definition: AttributeDefinition<Extensions>): AttributeDefinition<Extensions> =>
   definition
 
 /**
+ * Structural expressions describing allowed child nodes for an element.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const content: Schema.ContentExpression = {
+ *   type: "element",
+ *   name: Schema.q("http://www.w3.org/1999/xhtml", "section")
+ * }
+ * ```
  */
 export type ContentExpression =
   | { readonly type: "element"; readonly name: ExpandedName }
@@ -98,8 +152,21 @@ const interleaveContent = (of: ReadonlyArray<ContentExpression>): ContentExpress
 })
 
 /**
+ * Namespace of helpers for constructing {@link ContentExpression} trees.
+ *
  * @since 0.0.0
  * @category namespaces
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const content = Schema.content.sequence([
+ *   Schema.content.element(Schema.q(null, "slot")),
+ *   Schema.content.optional(
+ *     Schema.content.element(Schema.q(null, "footer"))
+ *   )
+ * ])
+ * ```
  */
 export const content = {
   element: elementContent,
@@ -114,8 +181,20 @@ export const content = {
 } as const
 
 /**
+ * Describes an element, its allowed children, and attribute metadata.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const element: Schema.ElementDefinition = {
+ *   name: Schema.q(null, "article"),
+ *   content: Schema.content.any(),
+ *   attributes: []
+ * }
+ * ```
  */
 export interface ElementDefinition<ElementExtensions = unknown> {
   readonly name: ExpandedName
@@ -125,8 +204,22 @@ export interface ElementDefinition<ElementExtensions = unknown> {
 }
 
 /**
+ * Helper that preserves inference when defining element metadata.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const article = Schema.element({
+ *   name: Schema.q(null, "article"),
+ *   content: Schema.content.any(),
+ *   attributes: [
+ *     Schema.attribute({ name: Schema.q(null, "data-slug"), required: true })
+ *   ]
+ * })
+ * ```
  */
 export const element = <ElementExtensions = unknown>(definition: {
   readonly name: ExpandedName
@@ -147,24 +240,59 @@ export const element = <ElementExtensions = unknown>(definition: {
 const key = (name: ExpandedName): string => `${name.ns ?? ""}|${name.name}`
 
 /**
+ * In-memory registry mapping expanded names to element definitions.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const registry: Schema.Registry = Schema.registry([
+ *   Schema.element({
+ *     name: Schema.q(null, "article"),
+ *     content: Schema.content.any()
+ *   })
+ * ])
+ * ```
  */
 export interface Registry {
   readonly elements: ReadonlyMap<string, ElementDefinition>
 }
 
 /**
+ * Creates a registry from element definitions, keyed by expanded name.
+ *
  * @since 0.0.0
  * @category constructors
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const registry = Schema.registry([
+ *   Schema.element({
+ *     name: Schema.q(null, "article"),
+ *     content: Schema.content.any()
+ *   })
+ * ])
+ * ```
  */
 export const registry = (elements: ReadonlyArray<ElementDefinition>): Registry => ({
   elements: new Map(elements.map((definition) => [key(definition.name), definition]))
 })
 
 /**
+ * Grouped adapter metadata extracted from schema definitions.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const groups = Schema.extensionsByAdapter(Schema.samples.sqlArticleRegistry)
+ * console.log(groups.sql?.elements.length)
+ * ```
  */
 export interface AdapterExtensionGroup {
   readonly elements: ReadonlyArray<{
@@ -195,8 +323,17 @@ const isNodeSnapshot = (value: unknown): value is NodeSnapshot =>
   && value.attributes.every(isAttributeSnapshot)
 
 /**
+ * Aggregates schema-defined adapter metadata by adapter identifier.
+ *
  * @since 0.0.0
  * @category introspection
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const metadata = Schema.extensionsByAdapter(Schema.samples.sqlArticleRegistry)
+ * console.log(metadata.sql?.elements[0]?.metadata)
+ * ```
  */
 export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<string, AdapterExtensionGroup>> => {
   const groups = new Map<
@@ -255,6 +392,7 @@ export const extensionsByAdapter = (registryValue: Registry): Readonly<Record<st
 const standardSchemaVendor = "@effect-native/minidom/Schema"
 
 const HTML_NAMESPACE: Namespace = "http://www.w3.org/1999/xhtml"
+// TODO: make the kv namespace a more standard value
 const KV_NAMESPACE: Namespace = "https://kv.example"
 
 const expandedNameSchema = S.Struct({
@@ -320,9 +458,12 @@ const kvFragmentRegistry = registry([
 ])
 
 /**
+ * Produces a Standard Schema v1 adapter for validating MiniDom snapshots.
+ *
  * @since 0.0.0
  * @category standard-schema
  * @example
+ * ```ts
  * import * as MiniDom from "@effect-native/minidom"
  *
  * const standard = MiniDom.Schema.toStandardSchemaV1(MiniDom.Schema.samples.sqlArticleRegistry)
@@ -331,6 +472,8 @@ const kvFragmentRegistry = registry([
  *   attributes: [{ name: MiniDom.Schema.q(null, "data-slug"), value: "intro" }],
  *   children: []
  * })
+ * console.log(result)
+ * ```
  */
 export const toStandardSchemaV1 = (
   registryValue: Registry,
@@ -373,33 +516,27 @@ const makeRegistryFilter = (registryValue: Registry) => (node: NodeSnapshot) => 
 }
 
 /**
+ * Builds an Effect Schema that validates MiniDom snapshots using registry metadata.
+ *
  * @since 0.0.0
  * @category effect-schema
- * @example
- * import * as MiniDom from "@effect-native/minidom"
- * import * as S from "effect/Schema"
- * const decode = S.decodeUnknown(
- *   MiniDom.Schema.toEffectSchema(MiniDom.Schema.samples.sqlArticleRegistry)
- * )
- *
- * const result = decode({
- *   name: MiniDom.Schema.q("http://www.w3.org/1999/xhtml", "article"),
- *   attributes: [{ name: MiniDom.Schema.q(null, "data-slug"), value: "intro" }],
- *   children: []
- * })
  */
 export const toEffectSchema = (registryValue: Registry) =>
   S.filter(makeRegistryFilter(registryValue))(nodeSnapshotSchema)
 
 /**
+ * Ready-made registry samples used in examples and tests.
+ *
  * @since 0.0.0
  * @category samples
  * @example
+ * ```ts
  * import * as MiniDom from "@effect-native/minidom"
  *
  * const registry = MiniDom.Schema.samples.kvFragmentRegistry
  * const metadata = MiniDom.Schema.extensionsByAdapter(registry)
  * console.log(metadata.kv?.elements[0]?.metadata)
+ * ```
  */
 export const samples = {
   sqlArticleRegistry,
@@ -407,8 +544,20 @@ export const samples = {
 } as const
 
 /**
+ * Simplified structural representation of a DOM subtree used for validation.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const snapshot: MiniDom.Schema.NodeSnapshot = {
+ *   name: MiniDom.Schema.q(null, "article"),
+ *   children: [],
+ *   attributes: []
+ * }
+ * ```
  */
 export interface NodeSnapshot {
   readonly name: ExpandedName
@@ -417,14 +566,24 @@ export interface NodeSnapshot {
 }
 
 /**
+ * Record encoding of element attributes keyed by local attribute name.
+ *
  * @since 0.0.0
  * @category model
+ * @example
+ * ```ts
+ * import * as MiniDom from "@effect-native/minidom"
+ *
+ * const record: MiniDom.Schema.AttributeRecord = { id: "root" }
+ * ```
  */
 export interface AttributeRecord {
   readonly [key: string]: string | undefined
 }
 
 /**
+ * Adapter that decodes raw attribute records into validated objects.
+ *
  * @since 0.0.0
  * @category model
  */
@@ -576,8 +735,26 @@ const validateStructure = (node: NodeSnapshot, registry: Registry): ReadonlyArra
 }
 
 /**
+ * Validates a snapshot against a registry and returns structured issues.
+ *
  * @since 0.0.0
  * @category validation
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * Effect.runPromise(
+ *   Schema.validate(
+ *     Schema.samples.sqlArticleRegistry,
+ *     {
+ *       name: Schema.q("http://www.w3.org/1999/xhtml", "article"),
+ *       children: [],
+ *       attributes: [{ name: Schema.q(null, "data-slug"), value: "intro" }]
+ *     }
+ *   )
+ * ).then((result) => console.log(result.ok))
+ * ```
  */
 export const validate = (
   registryValue: Registry,
@@ -610,6 +787,8 @@ const attributeDecoder = (registryValue: Registry, name: ExpandedName) => (input
 }
 
 /**
+ * Produces an attribute decoder tailored to a registry element definition.
+ *
  * @since 0.0.0
  * @category effect-schema
  */
@@ -618,8 +797,19 @@ export const effectSchema = (registryValue: Registry, name: ExpandedName): Attri
 })
 
 /**
+ * Namespace export bundling the MiniDom schema DSL helpers.
+ *
  * @since 0.0.0
  * @category exports
+ * @example
+ * ```ts
+ * import { Schema } from "@effect-native/minidom"
+ *
+ * const article = Schema.element({
+ *   name: Schema.q(null, "article"),
+ *   content: Schema.content.any()
+ * })
+ * ```
  */
 export const Schema = {
   q,

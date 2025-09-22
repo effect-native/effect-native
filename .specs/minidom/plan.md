@@ -48,6 +48,7 @@
 **Critical for initial release of `@effect-native/minidom`**
 - [x] Ensure JSDoc coverage with docgen validation (blocks `pnpm docgen` / `done-feature` workflow)
 - [x] Update README/package docs with adapter usage examples (minimum viable documentation for v0 release)
+- [ ] Add detailed JSDoc (with usage examples) for every public export and re-run `pnpm docgen` as examples are added to guarantee validity
 
 **Post-release improvements for next minor**
 - [ ] Generate capability matrix documentation and onboarding guides (can follow in subsequent milestone)

@@ -1,4 +1,6 @@
 /**
+ * Placeholder adapter for future SQL-backed MiniDom implementations.
+ *
  * @since 0.0.0
  */
 import * as Effect from "effect/Effect"
@@ -14,6 +16,8 @@ const unsupported = () =>
   })
 
 /**
+ * Capability metadata advertised by the SQL adapter stub.
+ *
  * @since 0.0.0
  * @category metadata
  */
@@ -26,18 +30,24 @@ export const metadata = {
 } as const
 
 /**
+ * Failing constructor that signals the adapter has not been implemented yet.
+ *
  * @since 0.0.0
  * @category constructors
  */
 export const make = (): Effect.Effect<MiniDomService, MiniDomError.Unsupported> => Effect.fail(unsupported())
 
 /**
+ * Layer that fails with {@link MiniDomError.Unsupported} until implementation lands.
+ *
  * @since 0.0.0
  * @category layers
  */
 export const layer = Layer.effect(Service.Tag, make())
 
 /**
+ * Namespace export collecting the SQL adapter stubs.
+ *
  * @since 0.0.0
  * @category exports
  */
