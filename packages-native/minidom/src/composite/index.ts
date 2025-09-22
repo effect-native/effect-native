@@ -7,6 +7,7 @@ import * as AttributeBag from "../core/AttributeBag.js"
 import type { AttributeEntry } from "../core/AttributeBag.js"
 import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
+import type { Transaction as TransactionCapability } from "../core/Transaction.js"
 
 /**
  * @since 1.0.0
@@ -39,6 +40,7 @@ export interface CompositeCapability {
  */
 export interface AdapterCapabilities {
   readonly composite?: CompositeCapability
+  readonly transaction?: TransactionCapability
   readonly [key: string]: unknown
 }
 
@@ -59,9 +61,10 @@ export interface AdapterConfig {
 
 type AdapterRecord = Record<PropertyKey, AdapterConfig>
 
-type Operation = "get" | "has" | "set" | "delete"
+type Operation = "get" | "has" | "set" | "delete" | "transaction"
 
-const isWriteOperation = (operation: Operation) => operation === "set" || operation === "delete"
+const isWriteOperation = (operation: Operation) =>
+  operation === "set" || operation === "delete" || operation === "transaction"
 
 const ownershipFor = (config: AdapterConfig): Ownership => config.capabilities?.composite?.ownership ?? "read-write"
 
@@ -113,6 +116,17 @@ export interface RouterOptions<Adapters extends AdapterRecord> {
   readonly adapters: Adapters
   readonly resolve: (namespace: Namespace, name: string) => keyof Adapters
   readonly guard?: (context: GuardContext<keyof Adapters>) => Effect.Effect<void, MiniDomError.Unsupported>
+}
+
+const CompositeContextSymbol: unique symbol = Symbol.for("@effect-native/minidom/Composite/Context")
+
+interface CompositeContext<Adapters extends AdapterRecord> {
+  readonly adapters: Map<keyof Adapters, AdapterConfig>
+  readonly options: RouterOptions<Adapters>
+}
+
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.Service<CompositeError> & {
+  readonly [CompositeContextSymbol]: CompositeContext<Adapters>
 }
 
 const adapterTable = <Adapters extends AdapterRecord>(
@@ -184,11 +198,11 @@ const entriesFromAll = <Adapters extends AdapterRecord>(
  */
 export const makeRouter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>
-): Effect.Effect<AttributeBag.Service<CompositeError>> =>
+): Effect.Effect<CompositeService<Adapters>> =>
   Effect.sync(() => {
     const adapters = adapterTable(options)
 
-    const service: AttributeBag.Service<CompositeError> = {
+    const service: CompositeService<Adapters> = {
       get: (namespace, name) => delegate(adapters, options, namespace, name, "get", (bag) => bag.get(namespace, name)),
       has: (namespace, name) => delegate(adapters, options, namespace, name, "has", (bag) => bag.has(namespace, name)),
       set: (namespace, name, value) =>
@@ -197,7 +211,11 @@ export const makeRouter = <Adapters extends AdapterRecord>(
         delegate(adapters, options, namespace, name, "delete", (bag) => bag.delete(namespace, name)),
       entries: () => entriesFromAll(adapters),
       snapshot: () => Effect.map(entriesFromAll(adapters), AttributeBag.viewFromEntries),
-      refresh: () => refreshAll(adapters)
+      refresh: () => refreshAll(adapters),
+      [CompositeContextSymbol]: {
+        adapters,
+        options
+      }
     }
 
     return service
@@ -215,3 +233,59 @@ export const refreshAll = <Adapters extends AdapterRecord>(
       concurrency: "unbounded"
     })
   )
+
+/**
+ * @since 1.0.0
+ * @category types
+ */
+export interface TransactionRequest<R, E, A> {
+  readonly namespace: Namespace
+  readonly name: string
+  readonly effect: Effect.Effect<A, E, R>
+}
+
+const compositeContext = <Adapters extends AdapterRecord>(
+  service: CompositeService<Adapters>
+): CompositeContext<Adapters> => service[CompositeContextSymbol]
+
+/**
+ * @since 1.0.0
+ * @category combinators
+ */
+export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
+  service: CompositeService<Adapters>,
+  request: TransactionRequest<R, E, A>
+): Effect.Effect<A, CompositeError | MiniDomError.Conflict | E, R> => {
+  const context = compositeContext(service)
+  const adapters = context.adapters
+  const options = context.options
+
+  return Effect.flatMap(
+    resolveAdapter(adapters, options, request.namespace, request.name),
+    ([key, adapter]) =>
+      Effect.flatMap(
+        ensureOwnership(key, request.namespace, request.name, "transaction", adapter),
+        () => {
+          const guardContext: GuardContext<keyof Adapters> = {
+            adapter: key,
+            namespace: request.namespace,
+            name: request.name,
+            operation: "transaction",
+            ...(adapter.capabilities ? { capabilities: adapter.capabilities } : {})
+          }
+
+          const capability = adapter.capabilities?.transaction
+
+          if (!capability) {
+            return Effect.fail(
+              new MiniDomError.Unsupported({
+                message: `Composite adapter ${String(key)} does not support transactions`
+              })
+            )
+          }
+
+          return Effect.flatMap(runGuard(options, guardContext), () => capability.withTransaction(request.effect))
+        }
+      )
+  )
+}
