@@ -51,6 +51,7 @@
 
 **Post-release improvements for next minor**
 - [ ] Generate capability matrix documentation and onboarding guides (can follow in subsequent milestone)
+- [ ] Review public API and export naming to align with Effect/@effect package conventions
 
 ## Validation Checkpoints
 - `nix develop --command pnpm lint --fix packages-native/minidom/**/*.ts`
@@ -79,6 +80,6 @@
 | Observation integration | @codex | Complete — `MiniDom.Events` wraps Reactivity service with query/mutation helpers; latency tests compare mailbox invalidation vs polling (`packages-native/minidom/src/events/index.ts`, `packages-native/minidom/test/events.test.ts`). |
 | Composition & transactions | @codex | In progress — Ownership guard (Iteration 24), Transaction capability + composite delegation (Iterations 25–33), shared helper coverage (`transaction-with-transaction.test.ts`, Iteration 34), hybrid adapter enforcement (`transaction-hybrid-composite.test.ts`, Iteration 35), cross-adapter read validation (`transaction-hybrid-boundary.test.ts`, Iteration 36), async remote rollback coverage (`transaction-hybrid-conflict.test.ts`, Iteration 37), and refresh conflict detection (`transaction-hybrid-reload.test.ts`, Iteration 38; see `experiments/minidom/log-20250921-2052.md`); adapter-backed transactional integrations still pending |
 | React host adapter | @codex | Deferred — scope migrated to `.specs/minidom-react-host/`; awaiting `/new-feature` workflow. |
-| Documentation & tooling | @codex | Split: Critical tasks remaining for initial release (JSDoc/docgen, README refresh); broader capability-matrix docs deferred to post-release. |
+| Documentation & tooling | @codex | Split: Critical tasks remaining for initial release (JSDoc/docgen, README refresh); broader capability-matrix docs and naming audit deferred to post-release. |
 
 Update the table after each milestone, referencing commit hashes and experiment evidence.
