@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 
 import { AttributeBag, Composite } from "@effect-native/minidom"
@@ -47,7 +48,22 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
         guard: () => Effect.fail(new Error("blocked"))
       })
 
-      const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.either)
-      expect(attempt._tag).toBe("Left")
+      const attempt = yield* composite.set(null, "theme", "override").pipe(Effect.exit)
+      expect(Exit.isFailure(attempt)).toBe(true)
+    }))
+
+  it.effect("throws when resolver targets missing adapter", () =>
+    Effect.gen(function*() {
+      const composite = yield* Composite.makeRouter({
+        adapters: {
+          local: {
+            bag: AttributeBag.service({ initial: [] })
+          }
+        },
+        resolve: () => "remote"
+      })
+
+      const exit = yield* composite.get(null, "missing").pipe(Effect.exit)
+      expect(Exit.isFailure(exit)).toBe(true)
     }))
 })
