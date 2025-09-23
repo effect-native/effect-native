@@ -269,6 +269,9 @@ importers:
       '@effect/ai-openai':
         specifier: latest
         version: 0.31.0(@effect/ai@0.28.0(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(@effect/rpc@0.70.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14))(effect@3.17.14))(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)
+      '@effect/ai-openrouter':
+        specifier: latest
+        version: 0.2.0(@effect/ai@0.28.0(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(@effect/rpc@0.70.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14))(effect@3.17.14))(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)
       '@effect/cli':
         specifier: latest
         version: 0.70.0(@effect/platform@0.91.1(effect@3.17.14))(@effect/printer-ansi@0.45.0(@effect/typeclass@0.36.0(effect@3.17.14))(effect@3.17.14))(@effect/printer@0.45.0(@effect/typeclass@0.36.0(effect@3.17.14))(effect@3.17.14))(effect@3.17.14)
@@ -853,6 +856,14 @@ packages:
 
   '@effect/ai-openai@0.31.0':
     resolution: {integrity: sha512-SCyJNYnhaJ33PCc185jpMr1sGmUrw42au/0unTogCbGFe5Mf5mvZv3j5rERWnOpq059zywNBQFAu1B8mawpNhA==}
+    peerDependencies:
+      '@effect/ai': ^0.28.0
+      '@effect/experimental': ^0.55.0
+      '@effect/platform': ^0.91.0
+      effect: ^3.17.14
+
+  '@effect/ai-openrouter@0.2.0':
+    resolution: {integrity: sha512-e53KqZvq+/+zhRmANAGMdHihkfjD8goLWKK8Mh3SlbPJDz5DDhqEJZZRBgghwDzUpj2RbkoQSTaEDWcaNT5VDA==}
     peerDependencies:
       '@effect/ai': ^0.28.0
       '@effect/experimental': ^0.55.0
@@ -6735,6 +6746,13 @@ snapshots:
       '@effect/platform': 0.91.1(effect@3.17.14)
       effect: 3.17.14
       gpt-tokenizer: 2.9.0
+
+  '@effect/ai-openrouter@0.2.0(@effect/ai@0.28.0(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(@effect/rpc@0.70.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14))(effect@3.17.14))(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)':
+    dependencies:
+      '@effect/ai': 0.28.0(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(@effect/rpc@0.70.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14))(effect@3.17.14)
+      '@effect/experimental': 0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1)
+      '@effect/platform': 0.91.1(effect@3.17.14)
+      effect: 3.17.14
 
   '@effect/ai@0.28.0(@effect/experimental@0.55.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14)(ioredis@5.6.1)(lmdb@3.4.1))(@effect/platform@0.91.1(effect@3.17.14))(@effect/rpc@0.70.0(@effect/platform@0.91.1(effect@3.17.14))(effect@3.17.14))(effect@3.17.14)':
     dependencies:
