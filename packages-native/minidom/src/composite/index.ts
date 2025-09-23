@@ -12,24 +12,7 @@ import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
 import type { TransactionCapability } from "../core/TransactionCapability.js"
 
-/**
- * Error thrown when a composite router cannot find the requested adapter.
- *
- * @since 0.0.0
- * @category errors
- * @example
- * ```ts
- * import { Composite } from "@effect-native/minidom"
- *
- * throw new Composite.CompositeAdapterMissing("happy-dom")
- * ```
- */
-export class CompositeAdapterMissing extends Error {
-  constructor(readonly adapter: string | number | symbol) {
-    super(`Composite router missing adapter: ${String(adapter)}`)
-    this.name = "CompositeAdapterMissing"
-  }
-}
+export { CompositeAdapterMissing } from "../core/MiniDomError.js"
 
 /**
  * Allowed ownership levels for adapters participating in a composite router.
@@ -93,7 +76,10 @@ export interface AdapterCapabilities {
  * const log = (error: MiniDom.Composite.CompositeError) => console.error(error.message)
  * ```
  */
-export type CompositeError = MiniDomError.Unsupported | MiniDomError.Conflict | CompositeAdapterMissing
+export type CompositeError =
+  | MiniDomError.Unsupported
+  | MiniDomError.Conflict
+  | MiniDomError.CompositeAdapterMissing
 
 /**
  * Definition for connecting an attribute bag into the composite router.
@@ -243,8 +229,11 @@ interface CompositeContext<Adapters extends AdapterRecord> {
   readonly options: RouterOptions<Adapters>
 }
 
-type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagShape<CompositeError> & {
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBag & {
   readonly [CompositeContextSymbol]: CompositeContext<Adapters>
+}
+namespace CompositeService {
+  export const of = <Adapters extends AdapterRecord>(self: CompositeService<Adapters>) => self
 }
 
 const adapterTable = <Adapters extends AdapterRecord>(
@@ -256,19 +245,20 @@ const resolveAdapter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>,
   namespace: Namespace,
   name: string
-): Effect.Effect<readonly [keyof Adapters, AdapterConfig], CompositeAdapterMissing> =>
+) =>
   Effect.try({
     try: () => {
       const key = options.resolve(namespace, name)
       const adapter = adapters.get(key)
-
       if (!adapter) {
-        throw new CompositeAdapterMissing(key)
+        throw new MiniDomError.CompositeAdapterMissing({ adapter: key })
       }
-
       return [key, adapter] as const
     },
-    catch: (error) => error as CompositeAdapterMissing
+    catch: (cause) =>
+      MiniDomError.isMiniDomError(cause) ?
+        cause :
+        new MiniDomError.Unexpected({ cause })
   })
 
 const runGuard = <Adapters extends AdapterRecord>(
@@ -388,7 +378,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
   Effect.sync(() => {
     const adapters = adapterTable(options)
 
-    const service: CompositeService<Adapters> = {
+    return CompositeService.of<Adapters>({
       get: (namespace, name) =>
         delegate({
           adapters,
@@ -433,9 +423,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
         adapters,
         options
       }
-    }
-
-    return service
+    })
   })
 
 /**

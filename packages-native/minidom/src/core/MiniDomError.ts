@@ -110,6 +110,25 @@ export class Unsupported extends Data.TaggedError("MiniDomError.Unsupported")<
 > {}
 
 /**
+ * Error thrown when a composite router cannot find the requested adapter.
+ *
+ * @since 0.0.0
+ * @category model
+ * @example
+ * ```ts
+ * import { MiniDomError } from "@effect-native/minidom"
+ *
+ * throw new MiniDomError.CompositeAdapterMissing("happy-dom")
+ * ```
+ */
+export class CompositeAdapterMissing extends Data.TaggedError("MiniDomError.CompositeAdapterMissing")<
+  {
+    readonly adapter: string | number | symbol
+    readonly cause?: unknown
+  }
+> {}
+
+/**
  * Error triggered when the observation layer fails to deliver updates.
  *
  * Common causes include stream disconnections or invalidation loops that
@@ -131,6 +150,16 @@ export class ObservationFailure extends Data.TaggedError("MiniDomError.Observati
     readonly message: string
     readonly cause?: unknown
   }
+> {}
+
+/**
+ * Error triggered when unexpected failures occur.
+ *
+ * @since 0.0.0
+ * @category model
+ */
+export class Unexpected extends Data.TaggedError("MiniDomError.Unexpected")<
+  { readonly cause?: unknown }
 > {}
 
 /**
@@ -165,7 +194,9 @@ export type MiniDomError =
   | BackendFailure
   | Conflict
   | Unsupported
+  | CompositeAdapterMissing
   | ObservationFailure
+  | Unexpected
 
 /**
  * Convenience namespace that re-exports the MiniDom error classes and helpers.
@@ -178,6 +209,8 @@ export const MiniDomError = {
   BackendFailure,
   Conflict,
   Unsupported,
+  CompositeAdapterMissing,
   ObservationFailure,
+  Unexpected,
   is: isMiniDomError
 }

@@ -59,13 +59,15 @@ describe("AttributeBag composite refresh (H2/H6)", () => {
             bag: MiniDom.AttributeBag.makeSync({ initial: [] })
           }
         },
-        resolve: () => "remote"
+        resolve: () =>
+          // @ts-expect-error testing runtime failure
+          "remote"
       })
 
       const result = yield* composite.get(null, "missing").pipe(Effect.either)
       expect(result._tag).toBe("Left")
       if (result._tag === "Left") {
-        expect(result.left).toBeInstanceOf(MiniDom.Composite.CompositeAdapterMissing)
+        expect(result.left._tag).toBe("MiniDomError.CompositeAdapterMissing")
       }
     }))
 

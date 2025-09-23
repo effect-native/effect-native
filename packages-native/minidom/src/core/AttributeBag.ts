@@ -9,6 +9,7 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
+import * as Ref from "effect/Ref"
 import * as Runtime from "effect/Runtime"
 
 import type { Namespace } from "./Namespace.js"
@@ -76,34 +77,15 @@ export interface View {
  * })
  * ```
  */
-export interface AttributeBagShape<E = never, R = never> {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E, R>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E, R>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E, R>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, E, R>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, E, R>
-  readonly snapshot: () => Effect.Effect<View, E, R>
-  readonly refresh: () => Effect.Effect<void, E, R>
-}
-
-/**
- * Context tag for retrieving an {@link AttributeBag.Service} from the environment.
- *
- * @since 0.0.0
- * @category tags
- * @example
- * ```ts
- * import { AttributeBag } from "@effect-native/minidom"
- * import { Effect } from "effect"
- *
- * const program = AttributeBag.Tag.pipe(
- *   Effect.map((bag) => bag.snapshot())
- * )
- * ```
- */
-export class AttributeBag
-  extends Context.Tag("@effect-native/minidom/AttributeBag")<AttributeBag, AttributeBagShape<any, any>>()
-{}
+export class AttributeBag extends Context.Tag("@effect-native/minidom/AttributeBag")<AttributeBag, {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>>
+  readonly snapshot: () => Effect.Effect<View>
+  readonly refresh: () => Effect.Effect<void>
+}>() {}
 
 /**
  * Layer that provides a synchronous {@link AttributeBag} backed by an in-memory map.
@@ -146,14 +128,25 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
 export const makeAsync = <E = never, R = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, R>
   readonly scheduler?: (task: () => void) => void
-}): AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => {
+}) => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
 
   const store = new Map<string, AttributeEntry>()
-  let status: "idle" | "loading" | "loaded" = "idle"
-  let currentLoad: Deferred.Deferred<void, E> | undefined
+
+  type LoadStatus = "idle" | "loading" | "loaded"
+  type LoadState = {
+    readonly status: LoadStatus
+    readonly currentLoad: Option.Option<Deferred.Deferred<void, E>>
+  }
+
+  const makeLoadState = (status: LoadStatus, deferred?: Deferred.Deferred<void, E>): LoadState => ({
+    status,
+    currentLoad: deferred ? Option.some(deferred) : Option.none<Deferred.Deferred<void, E>>()
+  })
+
+  const loadState = Ref.unsafeMake<LoadState>(makeLoadState("idle"))
 
   const loadEntries = options?.effect ?? Effect.succeed<Iterable<AttributeEntry>>([])
 
@@ -165,32 +158,33 @@ export const makeAsync = <E = never, R = never>(options?: {
   }
 
   const launchLoad = Effect.gen(function*() {
-    if (currentLoad) {
-      return currentLoad
+    const deferred = yield* Deferred.make<void, E>()
+
+    const active = yield* Ref.modify(loadState, (state) => {
+      if (Option.isSome(state.currentLoad)) {
+        return [state.currentLoad.value, state] as const
+      }
+      return [deferred, makeLoadState("loading", deferred)] as const
+    })
+
+    if (active !== deferred) {
+      return active
     }
 
     const runtime = yield* Effect.runtime<R>()
-    const deferred = yield* Deferred.make<void, E>()
-
-    currentLoad = deferred
-    status = "loading"
 
     yield* Effect.sync(() => {
       schedule(() => {
         const effect = loadEntries
 
+        // FIXME: use idiomatic Effect .pip(...) syntax
         Runtime.runCallback(runtime, effect, {
           onExit: (exit) => {
             if (Exit.isFailure(exit)) {
               Runtime.runFork(
                 runtime,
                 Deferred.failCause(deferred, exit.cause).pipe(
-                  Effect.tap(() =>
-                    Effect.sync(() => {
-                      currentLoad = undefined
-                      status = "idle"
-                    })
-                  )
+                  Effect.tap(() => Ref.set(loadState, makeLoadState("idle")))
                 )
               )
             } else {
@@ -198,12 +192,7 @@ export const makeAsync = <E = never, R = never>(options?: {
                 runtime,
                 Effect.sync(() => installEntries(exit.value)).pipe(
                   Effect.zipRight(Deferred.succeed(deferred, undefined)),
-                  Effect.tap(() =>
-                    Effect.sync(() => {
-                      currentLoad = undefined
-                      status = "loaded"
-                    })
-                  )
+                  Effect.tap(() => Ref.set(loadState, makeLoadState("loaded")))
                 )
               )
             }
@@ -218,7 +207,8 @@ export const makeAsync = <E = never, R = never>(options?: {
   const ensureLoaded = options?.effect
     ? (): Effect.Effect<void, E, R> =>
       Effect.gen(function*() {
-        if (status === "loaded") {
+        const state = yield* Ref.get(loadState)
+        if (state.status === "loaded") {
           return
         }
 
@@ -229,8 +219,7 @@ export const makeAsync = <E = never, R = never>(options?: {
 
   const resetAndTrigger = (): Effect.Effect<void, E, R> =>
     Effect.gen(function*() {
-      status = "idle"
-      currentLoad = undefined
+      yield* Ref.set(loadState, makeLoadState("idle"))
       const deferred = yield* launchLoad
       return yield* Deferred.await(deferred)
     })
@@ -245,7 +234,7 @@ export const makeAsync = <E = never, R = never>(options?: {
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  const service: AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } = {
+  const service = AttributeBag.of({
     get: (namespace, name) => run(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => run(() => store.has(NamespaceHelpers.key(namespace, name))),
     set: (namespace, name, value) =>
@@ -257,8 +246,7 @@ export const makeAsync = <E = never, R = never>(options?: {
         Effect.tap((removed) =>
           removed && options?.effect
             ? Effect.gen(function*() {
-              status = "idle"
-              currentLoad = undefined
+              yield* Ref.set(loadState, makeLoadState("idle"))
               yield* launchLoad
             })
             : Effect.void
@@ -266,11 +254,10 @@ export const makeAsync = <E = never, R = never>(options?: {
       ),
     entries: () => run(() => Array.from(store.values(), copyEntry)),
     snapshot: () => run(makeView),
-    refresh: () => (options?.effect ? resetAndTrigger() : Effect.void),
-    [StoreSymbol]: store
-  }
+    refresh: () => (options?.effect ? resetAndTrigger() : Effect.void)
+  })
 
-  return service
+  return Object.assign(service, { [StoreSymbol]: store })
 }
 
 /**
@@ -355,9 +342,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * })
  * ```
  */
-export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): AttributeBag & {
-  readonly [StoreSymbol]: Map<string, AttributeEntry>
-} => {
+export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }) => {
   const store = new Map<string, AttributeEntry>()
 
   if (options?.initial) {
@@ -366,7 +351,7 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
     }
   }
 
-  const makeView = (): View => toView(Array.from(store.values(), copyEntry))
+  const makeView = () => toView(Array.from(store.values(), copyEntry))
 
   return AttributeBag.of({
     get: (namespace, name) =>
@@ -383,10 +368,9 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
   })
 }
 
-const hasStore = <E, R>(
-  service: AttributeBagShape<E, R>
-): service is AttributeBagShape<E, R> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } =>
-  StoreSymbol in service
+const hasStore = (
+  service: AttributeBag
+): service is AttributeBag & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -402,7 +386,7 @@ const hasStore = <E, R>(
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = <E, R>(service: AttributeBagShape<E, R>): Effect.Effect<void, E, R> => service.refresh()
+export const refresh = (service: AttributeBag) => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
@@ -420,7 +404,7 @@ export const refresh = <E, R>(service: AttributeBagShape<E, R>): Effect.Effect<v
  * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
  * ```
  */
-export const transaction = <E, R>(service: AttributeBagShape<E, R>): Transaction.TransactionCapability => {
+export const transaction = (service: AttributeBag): Transaction.TransactionCapability => {
   if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"
