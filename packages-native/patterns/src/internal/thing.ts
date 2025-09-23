@@ -1,7 +1,6 @@
 /** @internal */
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
-import { dual } from "effect/Function"
 import type { Pipeable } from "effect/Pipeable"
 import { pipeArguments } from "effect/Pipeable"
 
@@ -81,23 +80,16 @@ export const isThing = (u: unknown): u is Thing<unknown> =>
   typeof u === "object" && u !== null && TypeId in u
 
 /** @internal */
-export const mapValue = dual<
-  <A, B>(f: (value: A) => B) => (self: Thing<A>) => Thing<B>,
-  <A, B>(self: Thing<A>, f: (value: A) => B) => Thing<B>
->(2, (self, f) =>
+export const mapValue = <A, B>(self: Thing<A>, f: (value: A) => B): Thing<B> =>
   make({
     id: self.id,
     label: self.label,
     value: f(self.value),
     tags: self.tags
   })
-)
 
 /** @internal */
-export const addTag = dual<
-  (tag: string) => <A>(self: Thing<A>) => Thing<A>,
-  <A>(self: Thing<A>, tag: string) => Thing<A>
->(2, (self, tag) => {
+export const addTag = <A>(self: Thing<A>, tag: string): Thing<A> => {
   if (self.tags.includes(tag)) {
     return self
   }
@@ -107,4 +99,4 @@ export const addTag = dual<
     value: self.value,
     tags: [...self.tags, tag]
   })
-})
+}

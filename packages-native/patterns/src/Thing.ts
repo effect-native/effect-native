@@ -1,8 +1,7 @@
 /**
  * @since 0.0.0
  */
-import type * as Equal from "effect/Equal"
-import type { Pipeable } from "effect/Pipeable"
+import { dual } from "effect/Function"
 import * as internal from "./internal/thing.js"
 
 /**
@@ -21,13 +20,7 @@ export type TypeId = internal.TypeId
  * @since 0.0.0
  * @category models
  */
-export interface Thing<A> extends Pipeable, Equal.Equal {
-  readonly [TypeId]: TypeId
-  readonly id: string
-  readonly label: string
-  readonly value: A
-  readonly tags: ReadonlyArray<string>
-}
+export interface Thing<A> extends internal.Thing<A> {}
 
 /**
  * @since 0.0.0
@@ -45,12 +38,18 @@ export const isThing: typeof internal.isThing = internal.isThing
  * @since 0.0.0
  * @category combinators
  */
-export const mapValue: typeof internal.mapValue = internal.mapValue
+export const mapValue = dual<
+  <A, B>(f: (value: A) => B) => (self: Thing<A>) => Thing<B>,
+  <A, B>(self: Thing<A>, f: (value: A) => B) => Thing<B>
+>(2, internal.mapValue)
 
 /**
  * @since 0.0.0
  * @category combinators
  */
-export const addTag: typeof internal.addTag = internal.addTag
+export const addTag = dual<
+  (tag: string) => <A>(self: Thing<A>) => Thing<A>,
+  <A>(self: Thing<A>, tag: string) => Thing<A>
+>(2, internal.addTag)
 
 export type { ThingInput } from "./internal/thing.js"
