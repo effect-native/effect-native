@@ -58,7 +58,15 @@ export const toArray: typeof internal.toArray = internal.toArray
  * @category combinators
  */
 export const appendChild = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A>(child: Tree<A>) => (self: Tree<A>) => Tree<A>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A>(self: Tree<A>, child: Tree<A>) => Tree<A>
 >(2, internal.appendChild)
 
@@ -67,7 +75,15 @@ export const appendChild = dual<
  * @category combinators
  */
 export const map = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(f: (value: A) => B) => (self: Tree<A>) => Tree<B>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(self: Tree<A>, f: (value: A) => B) => Tree<B>
 >(2, internal.map)
 
@@ -76,7 +92,15 @@ export const map = dual<
  * @category folding
  */
 export const reduce = dual<
+  /**
+   * @since 0.0.0
+   * @category folding
+   */
   <A, B>(initial: B, f: (accumulator: B, value: A) => B) => (self: Tree<A>) => B,
+  /**
+   * @since 0.0.0
+   * @category folding
+   */
   <A, B>(self: Tree<A>, initial: B, f: (accumulator: B, value: A) => B) => B
 >(3, internal.reduce)
 
@@ -85,11 +109,19 @@ export const reduce = dual<
  * @category traversing
  */
 export const forEachEffect = dual<
+  /**
+   * @since 0.0.0
+   * @category traversing
+   */
   <A, E, R>(
-    f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
+   f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
   ) => (self: Tree<A>) => Effect.Effect<void, E, R>,
+  /**
+   * @since 0.0.0
+   * @category traversing
+   */
   <A, E, R>(
-    self: Tree<A>,
-    f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
+   self: Tree<A>,
+   f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
   ) => Effect.Effect<void, E, R>
 >(2, internal.forEachEffect)

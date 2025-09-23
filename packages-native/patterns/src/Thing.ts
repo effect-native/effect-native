@@ -39,7 +39,15 @@ export const isThing: typeof internal.isThing = internal.isThing
  * @category combinators
  */
 export const mapValue = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(f: (value: A) => B) => (self: Thing<A>) => Thing<B>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(self: Thing<A>, f: (value: A) => B) => Thing<B>
 >(2, internal.mapValue)
 
@@ -48,7 +56,15 @@ export const mapValue = dual<
  * @category combinators
  */
 export const addTag = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   (tag: string) => <A>(self: Thing<A>) => Thing<A>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A>(self: Thing<A>, tag: string) => Thing<A>
 >(2, internal.addTag)
 

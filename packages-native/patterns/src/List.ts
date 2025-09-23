@@ -34,7 +34,15 @@ export const empty: typeof internal.empty = internal.empty
  * @category constructors
  */
 export const cons = dual<
+  /**
+   * @since 0.0.0
+   * @category constructors
+   */
   <A>(value: A) => (self: List<A>) => List<A>,
+  /**
+   * @since 0.0.0
+   * @category constructors
+   */
   <A>(self: List<A>, value: A) => List<A>
 >(2, internal.cons)
 
@@ -67,7 +75,15 @@ export const toArray: typeof internal.toArray = internal.toArray
  * @category combinators
  */
 export const map = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(f: (value: A, index: number) => B) => (self: List<A>) => List<B>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A, B>(self: List<A>, f: (value: A, index: number) => B) => List<B>
 >(2, internal.map)
 
@@ -76,7 +92,15 @@ export const map = dual<
  * @category combinators
  */
 export const append = dual<
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A>(value: A) => (self: List<A>) => List<A>,
+  /**
+   * @since 0.0.0
+   * @category combinators
+   */
   <A>(self: List<A>, value: A) => List<A>
 >(2, internal.append)
 
@@ -85,8 +109,20 @@ export const append = dual<
  * @category folding
  */
 export const reduce = dual<
+  /**
+   * @since 0.0.0
+   * @category folding
+   */
   <A, B>(initial: B, f: (accumulator: B, value: A, index: number) => B) => (self: List<A>) => B,
-  <A, B>(self: List<A>, initial: B, f: (accumulator: B, value: A, index: number) => B) => B
+  /**
+   * @since 0.0.0
+   * @category folding
+   */
+  <A, B>(
+   self: List<A>,
+   initial: B,
+   f: (accumulator: B, value: A, index: number) => B
+  ) => B
 >(3, internal.reduce)
 
 /**
@@ -94,6 +130,14 @@ export const reduce = dual<
  * @category traversing
  */
 export const forEachEffect = dual<
+  /**
+   * @since 0.0.0
+   * @category traversing
+   */
   <A, E, R>(f: (value: A, index: number) => Effect.Effect<void, E, R>) => (self: List<A>) => Effect.Effect<void, E, R>,
+  /**
+   * @since 0.0.0
+   * @category traversing
+   */
   <A, E, R>(self: List<A>, f: (value: A, index: number) => Effect.Effect<void, E, R>) => Effect.Effect<void, E, R>
 >(2, internal.forEachEffect)
