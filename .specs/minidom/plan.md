@@ -60,6 +60,11 @@
 - [ ] Wire `HappyMiniDom.layer` teardown through `Effect.try`/`return yield*` and surface `HappyMiniDomError` on failure so cleanup follows `.patterns/error-handling.md` (structured errors, no silent `Effect.sync`).
 - [ ] Rename `AttributeBag.Service` to `AttributeBag.AttributeBagShape` (and `Tag` accordingly) to better describe the public API surface once we exit the current milestone; document the rename plan in release notes.
 
+### 9. Regression Watchlist (2025-10-22)
+- [ ] Rework `AttributeBag.makeAsync` cache hydration so asynchronous adapters remain classified as non-sync capabilities. `MiniDom.SyncCapability.detect` currently returns `Option.some` after the cache warms, causing `packages-native/minidom/test/attribute-bag-streaming.test.ts:37` and `packages-native/minidom/test/attribute-bag-streaming.test.ts:69` to fail against `.patterns/testing-patterns.md` expectations. Ensure the solution keeps single-flight semantics from `packages/effect/src/Cache.ts` while preserving asynchronous boundaries declared in `.specs/minidom/design.md` and `.patterns/effect-library-development.md`.
+- [ ] Document the chosen sync-capability semantics for async AttributeBag adapters (do we gate detection on first load or enforce async fallbacks?) in `.specs/minidom/memo.md`, and update tests (`packages-native/minidom/test/attribute-bag-sync.test.ts:41`) to reflect the decision once implemented.
+- [ ] Address the ESLint `prefer-const` violation in `packages-native/minidom/test/nodes.test.ts:40` by restructuring the mock document helper without resorting to disabling the rule, keeping test scaffolding compliant with `.patterns/testing-patterns.md`.
+
 ## Validation Checkpoints
 - `nix develop --command pnpm lint --fix packages-native/minidom/**/*.ts`
 - `nix develop --command pnpm docgen`
