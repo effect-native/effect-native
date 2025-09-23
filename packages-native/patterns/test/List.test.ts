@@ -66,8 +66,7 @@ describe("List", () => {
       yield* List.forEachEffect(list, (value, index) =>
         Effect.sync(() => {
           output.push(`${index}:${value}`)
-        })
-      )
+        }))
 
       assert.deepStrictEqual(output, ["0:a", "1:b", "2:c"])
     }))

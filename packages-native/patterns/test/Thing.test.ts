@@ -1,9 +1,9 @@
+import * as Thing from "@effect-native/patterns/Thing"
 import { assert, describe, it } from "@effect/vitest"
+import * as Data from "effect/Data"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 import * as HashSet from "effect/HashSet"
-import * as Data from "effect/Data"
-import * as Thing from "@effect-native/patterns/Thing"
 
 describe("Thing", () => {
   it("make creates TypeId-tagged instances and isThing recognizes them", () => {

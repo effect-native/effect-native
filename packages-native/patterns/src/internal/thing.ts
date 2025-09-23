@@ -76,8 +76,7 @@ export const make = <A>(input: ThingInput<A>): Thing<A> => {
 }
 
 /** @internal */
-export const isThing = (u: unknown): u is Thing<unknown> =>
-  typeof u === "object" && u !== null && TypeId in u
+export const isThing = (u: unknown): u is Thing<unknown> => typeof u === "object" && u !== null && TypeId in u
 
 /** @internal */
 export const mapValue = <A, B>(self: Thing<A>, f: (value: A) => B): Thing<B> =>

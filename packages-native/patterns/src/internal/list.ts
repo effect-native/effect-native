@@ -20,7 +20,7 @@ export interface List<A> extends Pipeable, Equal.Equal {
   readonly tail: List<A>
 }
 
-const iterator = function* <A>(self: List<A>) {
+const iterator = function*<A>(self: List<A>) {
   let current: List<A> = self
   while (!current.isEmpty) {
     yield current.head as A

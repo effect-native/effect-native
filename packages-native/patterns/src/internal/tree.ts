@@ -64,7 +64,7 @@ const Proto = {
   }
 }
 
-const iterator = function* <A>(self: Tree<A>): Generator<A> {
+const iterator = function*<A>(self: Tree<A>): Generator<A> {
   yield self.value
   for (const child of self.children) {
     yield* iterator(child)
