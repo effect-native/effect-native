@@ -73,7 +73,9 @@ export class AttributeBagError extends Data.TaggedError("MiniDom.AttributeBagErr
     readonly cause?: unknown
   }
 > {
-  constructor({ message = "Attribute bag operation failed", cause }: { readonly message?: string; readonly cause?: unknown } = {}) {
+  constructor(
+    { cause, message = "Attribute bag operation failed" }: { readonly message?: string; readonly cause?: unknown } = {}
+  ) {
     super({
       message,
       ...(cause !== undefined ? { cause } : {})
@@ -81,17 +83,25 @@ export class AttributeBagError extends Data.TaggedError("MiniDom.AttributeBagErr
   }
 }
 
-export interface AttributeBagService {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, AttributeBagError>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, AttributeBagError>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError>
-  readonly snapshot: () => Effect.Effect<View, AttributeBagError>
-  readonly refresh: () => Effect.Effect<void, AttributeBagError>
+/**
+ * Common interface implemented by AttributeBag services.
+ *
+ * @since 0.0.0
+ * @category model
+ */
+export interface AttributeBagService<E = AttributeBagError> {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, E>
+  readonly snapshot: () => Effect.Effect<View, E>
+  readonly refresh: () => Effect.Effect<void, E>
 }
 
-type AttributeBagWithStore = AttributeBagService & { readonly [StoreSymbol]: Map<string, AttributeEntry> }
+type AttributeBagWithStore<E = AttributeBagError> = AttributeBagService<E> & {
+  readonly [StoreSymbol]: Map<string, AttributeEntry>
+}
 
 /**
  * Effect-based attribute bag service.
@@ -364,9 +374,9 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  *
  * const program = Effect.gen(function*() {
  *   const bag = AttributeBag.makeSync()
- *   yield* bag.set("http://www.w3.org/1999/xhtml", "class", "hero")
- *   yield* bag.set(null, "id", "root")
- *   const snapshot = yield* bag.snapshot()
+ *   yield* bag.set("http://www.w3.org/1999/xhtml", "class", "hero").pipe(Effect.orDie)
+ *   yield* bag.set(null, "id", "root").pipe(Effect.orDie)
+ *   const snapshot = yield* bag.snapshot().pipe(Effect.orDie)
  *   return Array.from(snapshot.entries())
  * })
  *
@@ -417,9 +427,9 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
   return Object.assign(service, { [StoreSymbol]: store })
 }
 
-const hasStore = (
-  service: AttributeBagService
-): service is AttributeBagWithStore => StoreSymbol in service
+const hasStore = <E>(
+  service: AttributeBagService<E>
+): service is AttributeBagWithStore<E> => StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -435,7 +445,7 @@ const hasStore = (
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = (service: AttributeBagService) => service.refresh()
+export const refresh = <E>(service: AttributeBagService<E>) => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.

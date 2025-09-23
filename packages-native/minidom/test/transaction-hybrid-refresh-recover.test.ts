@@ -31,7 +31,7 @@ describe("Hybrid refresh recovery (FR1.10 / FR1.11 / SC7.7 / SC7.8 / H2 / H6 / H
         effect: composite.set(null, "status", "warm")
       })
 
-      yield* composite.refresh().pipe(Effect.catchTag("Conflict", () => Effect.void))
+      yield* composite.refresh().pipe(Effect.catchTag("MiniDomError.Conflict", () => Effect.void))
 
       const afterConflict = yield* composite.get(null, "status")
       expect(afterConflict).toEqual(Option.some("warm"))

@@ -7,12 +7,9 @@ import * as Effect from "effect/Effect"
 import * as FiberRef from "effect/FiberRef"
 
 import * as AttributeBag from "../core/AttributeBag.js"
-import type { AttributeEntry } from "../core/AttributeBag.js"
 import * as MiniDomError from "../core/MiniDomError.js"
 import type { Namespace } from "../core/Namespace.js"
 import type { TransactionCapability } from "../core/TransactionCapability.js"
-
-export { CompositeAdapterMissing } from "../core/MiniDomError.js"
 
 /**
  * Allowed ownership levels for adapters participating in a composite router.
@@ -80,6 +77,7 @@ export type CompositeError =
   | MiniDomError.Unsupported
   | MiniDomError.Conflict
   | MiniDomError.CompositeAdapterMissing
+  | MiniDomError.Unexpected
   | AttributeBag.AttributeBagError
 
 /**
@@ -99,7 +97,7 @@ export type CompositeError =
  * ```
  */
 export interface AdapterConfig {
-  readonly bag: AttributeBag.AttributeBag
+  readonly bag: AttributeBag.AttributeBagService
   readonly transaction?: TransactionCapability
   readonly capabilities?: AdapterCapabilities
 }
@@ -230,7 +228,7 @@ interface CompositeContext<Adapters extends AdapterRecord> {
   readonly options: RouterOptions<Adapters>
 }
 
-type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBag & {
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagService<CompositeError> & {
   readonly [CompositeContextSymbol]: CompositeContext<Adapters>
 }
 namespace CompositeService {
@@ -256,10 +254,7 @@ const resolveAdapter = <Adapters extends AdapterRecord>(
       }
       return [key, adapter] as const
     },
-    catch: (cause) =>
-      MiniDomError.isMiniDomError(cause) ?
-        cause :
-        new MiniDomError.Unexpected({ cause })
+    catch: (cause) => MiniDomError.isMiniDomError(cause) ? cause : new MiniDomError.Unexpected({ cause })
   })
 
 const runGuard = <Adapters extends AdapterRecord>(
@@ -273,8 +268,8 @@ const delegate = <Adapters extends AdapterRecord, A>(params: {
   readonly namespace: Namespace
   readonly name: string
   readonly operation: Operation
-  readonly run: (bag: AttributeBag.AttributeBag) => Effect.Effect<A>
-}): Effect.Effect<A, CompositeError> =>
+  readonly run: (bag: AttributeBag.AttributeBagService) => Effect.Effect<A, AttributeBag.AttributeBagError>
+}) =>
   Effect.gen(function*() {
     const [key, adapter] = yield* resolveAdapter(
       params.adapters,
@@ -301,46 +296,51 @@ const delegate = <Adapters extends AdapterRecord, A>(params: {
 
 const entriesFromAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<ReadonlyArray<readonly [adapter: keyof Adapters, entry: AttributeEntry]>> =>
+): Effect.Effect<
+  ReadonlyArray<readonly [adapter: keyof Adapters, entry: AttributeBag.AttributeEntry]>,
+  AttributeBag.AttributeBagError
+> =>
   Effect.map(
-    Effect.forEach(Array.from(adapters.entries()), ([key, adapter]) =>
-      Effect.map(adapter.bag.entries(), (entries) => entries.map((entry) => [key, entry] as const)), {
-      concurrency: "unbounded"
-    }),
-    (entryGroups) =>
-      entryGroups.flat()
+    Effect.forEach(
+      Array.from(adapters.entries()),
+      ([key, adapter]) => Effect.map(adapter.bag.entries(), (entries) => entries.map((entry) => [key, entry] as const)),
+      { concurrency: "unbounded" }
+    ),
+    (entryGroups) => entryGroups.flat()
   )
 
-const entryKey = (namespace: Namespace, name: string) => `${String(namespace)}::${name}`
+const entryKey = (namespace: Namespace, name: string) => `${String(namespace)}${SEPARATOR}${name}`
 
 const captureState = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<Map<keyof Adapters, Map<string, AttributeEntry>>> =>
+) =>
   Effect.map(entriesFromAll(adapters), (pairs) => {
-    const state = new Map<keyof Adapters, Map<string, AttributeEntry>>()
+    const state = new Map<keyof Adapters, Map<string, AttributeBag.AttributeEntry>>()
     for (const [adapter, entry] of pairs) {
       if (!state.has(adapter)) {
         state.set(adapter, new Map())
       }
-      state.get(adapter)!.set(entryKey(entry[0], entry[1]), entry)
+      const [namespace, name, _value] = entry
+      state.get(adapter)!.set(entryKey(namespace, name), entry)
     }
     return state
   })
 
+const SEPARATOR = "::"
 const restoreAdapter = <_Adapters extends AdapterRecord>(
   adapter: AdapterConfig,
-  before: Map<string, AttributeEntry>,
-  after: Map<string, AttributeEntry>
-): Effect.Effect<void> => {
-  const removals: Array<Effect.Effect<void>> = []
+  before: Map<string, AttributeBag.AttributeEntry>,
+  after: Map<string, AttributeBag.AttributeEntry>
+): Effect.Effect<void, AttributeBag.AttributeBagError> => {
+  const removals: Array<Effect.Effect<void, AttributeBag.AttributeBagError>> = []
   for (const key of after.keys()) {
     if (!before.has(key)) {
-      const [namespace, name] = key.split("::") as [Namespace, string]
+      const [namespace, name] = key.split(SEPARATOR) as [Namespace, string]
       removals.push(adapter.bag.delete(namespace, name).pipe(Effect.asVoid))
     }
   }
 
-  const restorations: Array<Effect.Effect<void>> = []
+  const restorations: Array<Effect.Effect<void, AttributeBag.AttributeBagError>> = []
   for (const [, [namespace, name, value]] of before) {
     restorations.push(adapter.bag.set(namespace, name, value))
   }
@@ -380,7 +380,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
     const adapters = adapterTable(options)
 
     return CompositeService.of<Adapters>({
-      get: (namespace, name) =>
+      get: (namespace: Namespace, name: string) =>
         delegate({
           adapters,
           options,
@@ -389,7 +389,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
           operation: "get",
           run: (bag) => bag.get(namespace, name)
         }),
-      has: (namespace, name) =>
+      has: (namespace: Namespace, name: string) =>
         delegate({
           adapters,
           options,
@@ -398,7 +398,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
           operation: "has",
           run: (bag) => bag.has(namespace, name)
         }),
-      set: (namespace, name, value) =>
+      set: (namespace: Namespace, name: string, value: string) =>
         delegate({
           adapters,
           options,
@@ -407,7 +407,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
           operation: "set",
           run: (bag) => bag.set(namespace, name, value)
         }),
-      delete: (namespace, name) =>
+      delete: (namespace: Namespace, name: string) =>
         delegate({
           adapters,
           options,
@@ -416,10 +416,14 @@ export const makeRouter = <Adapters extends AdapterRecord>(
           operation: "delete",
           run: (bag) => bag.delete(namespace, name)
         }),
-      entries: () => Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
-      snapshot: () =>
-        Effect.map(entriesFromAll(adapters), (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))),
-      refresh: () => refreshAll(adapters),
+      entries: (): Effect.Effect<ReadonlyArray<AttributeBag.AttributeEntry>, CompositeError> =>
+        Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
+      snapshot: (): Effect.Effect<AttributeBag.View, CompositeError> =>
+        Effect.map(
+          entriesFromAll(adapters),
+          (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))
+        ),
+      refresh: (): Effect.Effect<void, CompositeError> => refreshAll(adapters),
       [CompositeContextSymbol]: {
         adapters,
         options
@@ -446,7 +450,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
  */
 export const refreshAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<void, MiniDomError.Conflict> =>
+): Effect.Effect<void, MiniDomError.Conflict | AttributeBag.AttributeBagError> =>
   Effect.flatMap(FiberRef.get(ActiveTransactionRef), (active) => {
     if (active !== null) {
       return Effect.fail(
@@ -469,7 +473,7 @@ export const refreshAll = <Adapters extends AdapterRecord>(
       const conflicts: Array<keyof Adapters> = []
 
       for (const [key, beforeEntries] of before.entries()) {
-        const afterEntries = after.get(key) ?? new Map<string, AttributeEntry>()
+        const afterEntries = after.get(key) ?? new Map<string, AttributeBag.AttributeEntry>()
 
         if (beforeEntries.size !== afterEntries.size) {
           conflicts.push(key)
@@ -488,8 +492,8 @@ export const refreshAll = <Adapters extends AdapterRecord>(
       if (conflicts.length > 0) {
         yield* Effect.forEach(conflicts, (key) => {
           const adapter = adapters.get(key)!
-          const beforeEntries = before.get(key) ?? new Map<string, AttributeEntry>()
-          const afterEntries = after.get(key) ?? new Map<string, AttributeEntry>()
+          const beforeEntries = before.get(key) ?? new Map<string, AttributeBag.AttributeEntry>()
+          const afterEntries = after.get(key) ?? new Map<string, AttributeBag.AttributeEntry>()
           return restoreAdapter(adapter, beforeEntries, afterEntries)
         }, {
           concurrency: "unbounded"
