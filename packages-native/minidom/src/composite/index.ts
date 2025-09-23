@@ -73,12 +73,7 @@ export interface AdapterCapabilities {
  * const log = (error: MiniDom.Composite.CompositeError) => console.error(error.message)
  * ```
  */
-export type CompositeError =
-  | MiniDomError.Unsupported
-  | MiniDomError.Conflict
-  | MiniDomError.CompositeAdapterMissing
-  | MiniDomError.Unexpected
-  | AttributeBag.AttributeBagError
+export type CompositeError = MiniDomError.MiniDomError | AttributeBag.AttributeBagError
 
 /**
  * Definition for connecting an attribute bag into the composite router.
@@ -97,7 +92,7 @@ export type CompositeError =
  * ```
  */
 export interface AdapterConfig {
-  readonly bag: AttributeBag.AttributeBagService
+  readonly bag: AttributeBag.AttributeBagService<CompositeError>
   readonly transaction?: TransactionCapability
   readonly capabilities?: AdapterCapabilities
 }
@@ -228,7 +223,7 @@ interface CompositeContext<Adapters extends AdapterRecord> {
   readonly options: RouterOptions<Adapters>
 }
 
-type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagService & {
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagService<CompositeError> & {
   readonly [CompositeContextSymbol]: CompositeContext<Adapters>
 }
 namespace CompositeService {
@@ -268,7 +263,7 @@ const delegate = <Adapters extends AdapterRecord, A>(params: {
   readonly namespace: Namespace
   readonly name: string
   readonly operation: Operation
-  readonly run: (bag: AttributeBag.AttributeBagService) => Effect.Effect<A, AttributeBag.AttributeBagError>
+  readonly run: (bag: AttributeBag.AttributeBagService<CompositeError>) => Effect.Effect<A, CompositeError>
 }) =>
   Effect.gen(function*() {
     const [key, adapter] = yield* resolveAdapter(
@@ -329,7 +324,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
   before: Map<string, AttributeBag.AttributeEntry>,
   after: Map<string, AttributeBag.AttributeEntry>
 ) => {
-  const removals: Array<Effect.Effect<void, AttributeBag.AttributeBagError>> = []
+  const removals: Array<Effect.Effect<void, CompositeError>> = []
   for (const key of after.keys()) {
     if (!before.has(key)) {
       const [namespace, name] = key.split(SEPARATOR) as [Namespace, string]
@@ -337,7 +332,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
     }
   }
 
-  const restorations: Array<Effect.Effect<void, AttributeBag.AttributeBagError>> = []
+  const restorations: Array<Effect.Effect<void, CompositeError>> = []
   for (const [, [namespace, name, value]] of before) {
     restorations.push(adapter.bag.set(namespace, name, value))
   }
@@ -440,7 +435,7 @@ export const makeRouter = <Adapters extends AdapterRecord>(
  */
 export const refreshAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<void, MiniDomError.Conflict | AttributeBag.AttributeBagError> =>
+): Effect.Effect<void, CompositeError> =>
   Effect.flatMap(FiberRef.get(ActiveTransactionRef), (active) => {
     if (active !== null) {
       return Effect.fail(
@@ -555,7 +550,7 @@ const compositeContext = <Adapters extends AdapterRecord>(
 export const runTransaction = <Adapters extends AdapterRecord, R, E, A>(
   service: CompositeService<Adapters>,
   request: TransactionRequest<R, E, A>
-): Effect.Effect<A, CompositeError | MiniDomError.Conflict | E, R> =>
+): Effect.Effect<A, CompositeError | E, R> =>
   Effect.gen(function*() {
     const context = compositeContext(service)
     const adapters = context.adapters

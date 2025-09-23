@@ -87,15 +87,15 @@ export class AttributeBagError extends Data.TaggedError("MiniDom.AttributeBagErr
  * @since 0.0.0
  * @category model
  */
-export interface AttributeBagService {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, AttributeBagError>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, AttributeBagError>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError>
-  readonly snapshot: () => Effect.Effect<View, AttributeBagError>
-  readonly refresh: () => Effect.Effect<void, AttributeBagError>
-  readonly [StoreSymbol]: Map<string, AttributeEntry>
+export interface AttributeBagService<E = AttributeBagError> {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, E>
+  readonly snapshot: () => Effect.Effect<View, E>
+  readonly refresh: () => Effect.Effect<void, E>
+  readonly [StoreSymbol]?: Map<string, AttributeEntry>
 }
 
 /**
@@ -159,7 +159,6 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
  */
 export const makeAsync = <E = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
-  readonly scheduler?: (task: () => void) => void
 }): AttributeBagService => {
   const store = new Map<string, AttributeEntry>()
 
@@ -217,9 +216,7 @@ export const makeAsync = <E = never>(options?: {
       }),
     delete: (namespace, name) =>
       run(() => store.delete(NamespaceHelpers.key(namespace, name))).pipe(
-        Effect.tap((removed) =>
-          removed && options?.effect ? refreshFromSource() : Effect.void
-        )
+        Effect.tap((removed) => removed && options?.effect ? refreshFromSource() : Effect.void)
       ),
     entries: () => run(() => Array.from(store.values(), copyEntry)),
     snapshot: () => run(makeView),
@@ -343,9 +340,10 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
   })
 }
 
-const hasStore = (
-  service: AttributeBagService
-): service is AttributeBagService => StoreSymbol in service
+const hasStore = <E>(
+  service: AttributeBagService<E>
+): service is AttributeBagService<E> & { readonly [StoreSymbol]: Map<string, AttributeEntry> } =>
+  StoreSymbol in service && service[StoreSymbol] !== undefined
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -361,7 +359,7 @@ const hasStore = (
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = (service: AttributeBagService) => service.refresh()
+export const refresh = <E>(service: AttributeBagService<E>) => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
@@ -379,7 +377,7 @@ export const refresh = (service: AttributeBagService) => service.refresh()
  * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
  * ```
  */
-export const transaction = (service: AttributeBagService): Transaction.TransactionCapability => {
+export const transaction = <E>(service: AttributeBagService<E>): Transaction.TransactionCapability => {
   if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"
