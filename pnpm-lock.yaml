@@ -246,17 +246,6 @@ importers:
         version: 15.11.7
     publishDirectory: dist
 
-  packages-native/patterns:
-    dependencies:
-      effect:
-        specifier: latest
-        version: 3.17.14
-    devDependencies:
-      '@effect/vitest':
-        specifier: latest
-        version: 0.25.1(effect@3.17.14)(vitest@3.2.4)
-    publishDirectory: dist
-
   scratchpad:
     dependencies:
       '@effect-native/bun-test':
