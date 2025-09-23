@@ -3,15 +3,13 @@
  *
  * @since 0.0.0
  */
+import * as Cache from "effect/Cache"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
-import * as Deferred from "effect/Deferred"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Exit from "effect/Exit"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
-import * as Ref from "effect/Ref"
-import * as Runtime from "effect/Runtime"
 
 import type { Namespace } from "./Namespace.js"
 import { Namespace as NamespaceHelpers } from "./Namespace.js"
@@ -163,120 +161,48 @@ export const makeAsync = <E = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
   readonly scheduler?: (task: () => void) => void
 }): AttributeBagService => {
-  const schedule = options?.scheduler ?? ((task: () => void) => {
-    setTimeout(task, 0)
-  })
   const store = new Map<string, AttributeEntry>()
-
-  type LoadStatus = "idle" | "loading" | "loaded"
-  type LoadState = {
-    readonly status: LoadStatus
-    readonly currentLoad: Option.Option<Deferred.Deferred<void, AttributeBagError>>
-  }
-
-  const makeLoadState = (status: LoadStatus, deferred?: Deferred.Deferred<void, AttributeBagError>): LoadState => ({
-    status,
-    currentLoad: deferred ? Option.some(deferred) : Option.none<Deferred.Deferred<void, AttributeBagError>>()
-  })
-
-  const loadState = Ref.unsafeMake<LoadState>(makeLoadState("idle"))
 
   const rawLoadEntries: Effect.Effect<Iterable<AttributeEntry>, E, never> = options?.effect
     ?? Effect.succeed<Iterable<AttributeEntry>>([])
-  const loadEntries: Effect.Effect<Iterable<AttributeEntry>, AttributeBagError> = rawLoadEntries.pipe(
-    Effect.catchAllCause((cause) => Effect.fail(new AttributeBagError({ cause })))
+  const loadEntries: Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError> = rawLoadEntries.pipe(
+    Effect.catchAllCause((cause) => Effect.fail(new AttributeBagError({ cause }))),
+    Effect.map((entries) => Array.from(entries, copyEntry))
   )
 
-  const installEntries = (entries: Iterable<AttributeEntry>) => {
+  const installEntries = (entries: ReadonlyArray<AttributeEntry>) => {
     store.clear()
     for (const [namespace, name, value] of entries) {
       store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
     }
   }
 
-  const launchLoad = Effect.gen(function*() {
-    const deferred = yield* Deferred.make<void, AttributeBagError>()
-
-    const active = yield* Ref.modify(loadState, (state) => {
-      if (Option.isSome(state.currentLoad)) {
-        return [state.currentLoad.value, state] as const
-      }
-      return [deferred, makeLoadState("loading", deferred)] as const
+  const cache = Effect.runSync(
+    Cache.make<string, ReadonlyArray<AttributeEntry>, AttributeBagError>({
+      capacity: 1,
+      timeToLive: Duration.infinity,
+      lookup: () =>
+        loadEntries.pipe(
+          Effect.tap((entries) => Effect.sync(() => installEntries(entries)))
+        )
     })
+  )
 
-    if (active !== deferred) {
-      return active
-    }
-
-    const runtime = yield* Effect.runtime()
-
-    yield* Effect.sync(() => {
-      schedule(() => {
-        const effect = loadEntries
-
-        // FIXME: use idiomatic Effect .pipe(...) syntax
-        Runtime.runCallback(runtime, effect, {
-          onExit: (exit) => {
-            if (Exit.isFailure(exit)) {
-              Runtime.runFork(
-                runtime,
-                Deferred.failCause(deferred, exit.cause).pipe(
-                  Effect.tap(() => Ref.set(loadState, makeLoadState("idle")))
-                )
-              )
-            } else {
-              Runtime.runFork(
-                runtime,
-                Effect.sync(() => installEntries(exit.value)).pipe(
-                  Effect.zipRight(Deferred.succeed(deferred, undefined)),
-                  Effect.tap(() => Ref.set(loadState, makeLoadState("loaded")))
-                )
-              )
-            }
-          }
-        })
-      })
-    })
-
-    return deferred
-  })
+  const CACHE_KEY = "attributes" as const
 
   const ensureLoaded = options?.effect
-    ? (): Effect.Effect<void, AttributeBagError> =>
-      Effect.gen(function*() {
-        const state = yield* Ref.get(loadState)
-        if (state.status === "loaded") {
-          return
-        }
-
-        const deferred = yield* launchLoad
-        return yield* Deferred.await(deferred)
-      })
+    ? (): Effect.Effect<void, AttributeBagError> => cache.get(CACHE_KEY).pipe(Effect.asVoid)
     : () => Effect.void
 
-  const resetAndTrigger = (): Effect.Effect<void, AttributeBagError> =>
-    Effect.gen(function*() {
-      yield* Ref.set(loadState, makeLoadState("idle"))
-      const deferred = yield* launchLoad
-      return yield* Deferred.await(deferred)
-    })
+  const refreshFromSource = (): Effect.Effect<void, AttributeBagError> => cache.refresh(CACHE_KEY)
 
   const run = <A>(evaluate: () => A): Effect.Effect<A, AttributeBagError> =>
     Effect.flatMap(
       ensureLoaded(),
       () =>
-        Effect.async<A, AttributeBagError>((resume) => {
-          try {
-            schedule(() => {
-              try {
-                resume(Effect.succeed(evaluate()))
-              } catch (cause) {
-                resume(Effect.fail(new AttributeBagError({ cause })))
-              }
-            })
-          } catch (cause) {
-            resume(Effect.fail(new AttributeBagError({ cause })))
-          }
+        Effect.try({
+          try: evaluate,
+          catch: (cause) => new AttributeBagError({ cause })
         })
     )
 
@@ -292,17 +218,12 @@ export const makeAsync = <E = never>(options?: {
     delete: (namespace, name) =>
       run(() => store.delete(NamespaceHelpers.key(namespace, name))).pipe(
         Effect.tap((removed) =>
-          removed && options?.effect
-            ? Effect.gen(function*() {
-              yield* Ref.set(loadState, makeLoadState("idle"))
-              const _deferred = yield* launchLoad
-            })
-            : Effect.void
+          removed && options?.effect ? refreshFromSource() : Effect.void
         )
       ),
     entries: () => run(() => Array.from(store.values(), copyEntry)),
     snapshot: () => run(makeView),
-    refresh: () => (options?.effect ? resetAndTrigger() : Effect.void),
+    refresh: () => (options?.effect ? refreshFromSource() : Effect.void),
     [StoreSymbol]: store
   })
 }
