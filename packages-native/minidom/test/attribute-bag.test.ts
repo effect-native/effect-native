@@ -6,7 +6,7 @@ import * as MiniDom from "@effect-native/minidom"
 
 describe("MiniDom AttributeBag", () => {
   it.effect("service operations return Effects and track namespaces", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const service = MiniDom.AttributeBag.makeSync()
 
       yield* service.set("http://www.w3.org/1999/xhtml", "class", "hero")
@@ -25,8 +25,7 @@ describe("MiniDom AttributeBag", () => {
 
       yield* service.delete(null, "id")
       assert.deepStrictEqual(view.get(null, "id"), Option.some("root"))
-    })
-  )
+    }))
 
   it("creates independent views from entries", () => {
     const snapshot = MiniDom.AttributeBag.viewFromEntries([
@@ -50,7 +49,7 @@ describe("MiniDom Sync capability", () => {
 
     assert.isTrue(MiniDom.SyncCapability.is(sync))
 
-    const program = Effect.gen(function* () {
+    const program = Effect.gen(function*() {
       const bag = MiniDom.AttributeBag.makeSync()
       yield* bag.set(null, "role", "banner")
       const view = yield* bag.snapshot()

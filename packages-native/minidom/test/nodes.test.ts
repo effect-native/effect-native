@@ -152,12 +152,10 @@ const makeDocument = (): MiniDom.Document => {
     contentType: "text/html",
     URL: "https://example.org",
     documentElement: null,
-    createElementNS: (namespace, qualifiedName) =>
-      Effect.sync(() => makeElement(namespace, qualifiedName, document)),
+    createElementNS: (namespace, qualifiedName) => Effect.sync(() => makeElement(namespace, qualifiedName, document)),
     createTextNode: (data) => Effect.sync(() => makeTextNode(data)),
     createComment: (data) => Effect.sync(() => makeCommentNode(data)),
-    createProcessingInstruction: (target, data) =>
-      Effect.sync(() => makeProcessingInstructionNode(target, data)),
+    createProcessingInstruction: (target, data) => Effect.sync(() => makeProcessingInstructionNode(target, data)),
     createDocumentFragment: () => Effect.sync(() => makeFragmentNode()),
     createDocumentType: (name, options) => Effect.sync(() => makeDocumentTypeNode(name, options))
   }
@@ -176,12 +174,11 @@ describe("MiniDom NodeType", () => {
 
 describe("MiniDom namespace-aware interfaces", () => {
   it.effect("creates elements using effectful document factories", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const document = makeDocument()
       const element = yield* document.createElementNS("http://www.w3.org/1999/xhtml", "div")
       assert.strictEqual(element.namespaceURI, "http://www.w3.org/1999/xhtml")
       assert.strictEqual(element.tagName, "div")
       assert.strictEqual(Array.from(element.attributes.entries()).length, 0)
-    })
-  )
+    }))
 })

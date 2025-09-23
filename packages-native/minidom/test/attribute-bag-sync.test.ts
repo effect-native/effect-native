@@ -6,9 +6,9 @@ import * as MiniDom from "@effect-native/minidom"
 
 describe("AttributeBag Sync integration", () => {
   it.effect("provides AttributeBag service via Layer for synchronous adapters", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const program = Effect.provide(
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           const service = yield* MiniDom.AttributeBag.AttributeBag
           yield* service.set(null, "id", "root")
           yield* service.set("http://www.w3.org/1999/xhtml", "class", "hero")
@@ -22,13 +22,12 @@ describe("AttributeBag Sync integration", () => {
 
       assert.isTrue(Option.isSome(capability))
       assert.deepStrictEqual(Option.map(capability, (sync) => sync.run(program.pipe(Effect.orDie))), Option.some(2))
-    })
-  )
+    }))
 
   it.effect("flags asynchronous AttributeBag adapters as non-sync while preserving behavior", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const program = Effect.provide(
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           const service = yield* MiniDom.AttributeBag.AttributeBag
           yield* service.set(null, "id", "remote")
           return yield* service.get(null, "id")
@@ -40,6 +39,5 @@ describe("AttributeBag Sync integration", () => {
 
       assert.isTrue(Option.isNone(capability))
       assert.deepStrictEqual(yield* program, Option.some("remote"))
-    })
-  )
+    }))
 })

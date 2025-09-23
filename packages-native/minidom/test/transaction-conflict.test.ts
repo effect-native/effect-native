@@ -5,7 +5,7 @@ import { MiniDomError, TransactionCapability } from "@effect-native/minidom"
 
 describe("MiniDom.Transaction capability (FR1.11 / SC7.8 / H14)", () => {
   it.effect("propagates conflicts via withTransaction", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const conflict = new MiniDomError.Conflict({
         message: "simulated conflict",
         cause: new Error("write-write")
@@ -30,6 +30,5 @@ describe("MiniDom.Transaction capability (FR1.11 / SC7.8 / H14)", () => {
         assert.instanceOf(error, MiniDomError.Unsupported)
         assert.isTrue(error.message.includes("missing transaction support"))
       }
-    })
-  )
+    }))
 })

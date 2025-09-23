@@ -1,6 +1,6 @@
+import * as Reactivity from "@effect/experimental/Reactivity"
 import { assert, describe, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
-import * as Reactivity from "@effect/experimental/Reactivity"
 import * as Ref from "effect/Ref"
 
 import * as MiniDom from "@effect-native/minidom"
@@ -12,7 +12,7 @@ describe("MiniDom.Events", () => {
 
   it.effect("query delivers updates after mutation", () =>
     Effect.scoped(
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const events = yield* acquireEvents
         const ref = yield* Ref.make(0)
 
@@ -27,12 +27,11 @@ describe("MiniDom.Events", () => {
         const second = yield* mailbox.take
         assert.strictEqual(second, 1)
       })
-    )
-  )
+    ))
 
   it.effect("invalidate triggers re-fetch", () =>
     Effect.scoped(
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const events = yield* acquireEvents
         const ref = yield* Ref.make(0)
 
@@ -46,6 +45,5 @@ describe("MiniDom.Events", () => {
         const next = yield* mailbox.take
         assert.strictEqual(next, 42)
       })
-    )
-  )
+    ))
 })
