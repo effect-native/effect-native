@@ -260,7 +260,7 @@ const resolveAdapter = <Adapters extends AdapterRecord>(
 const runGuard = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>,
   context: GuardContext<keyof Adapters>
-): Effect.Effect<void, MiniDomError.Unsupported> => (options.guard ? options.guard(context) : Effect.void)
+) => (options.guard ? options.guard(context) : Effect.void)
 
 const delegate = <Adapters extends AdapterRecord, A>(params: {
   readonly adapters: Map<keyof Adapters, AdapterConfig>
@@ -296,10 +296,7 @@ const delegate = <Adapters extends AdapterRecord, A>(params: {
 
 const entriesFromAll = <Adapters extends AdapterRecord>(
   adapters: Map<keyof Adapters, AdapterConfig>
-): Effect.Effect<
-  ReadonlyArray<readonly [adapter: keyof Adapters, entry: AttributeBag.AttributeEntry]>,
-  AttributeBag.AttributeBagError
-> =>
+) =>
   Effect.map(
     Effect.forEach(
       Array.from(adapters.entries()),
@@ -331,7 +328,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
   adapter: AdapterConfig,
   before: Map<string, AttributeBag.AttributeEntry>,
   after: Map<string, AttributeBag.AttributeEntry>
-): Effect.Effect<void, AttributeBag.AttributeBagError> => {
+) => {
   const removals: Array<Effect.Effect<void, AttributeBag.AttributeBagError>> = []
   for (const key of after.keys()) {
     if (!before.has(key)) {
@@ -375,7 +372,7 @@ const restoreAdapter = <_Adapters extends AdapterRecord>(
  */
 export const makeRouter = <Adapters extends AdapterRecord>(
   options: RouterOptions<Adapters>
-): Effect.Effect<CompositeService<Adapters>> =>
+) =>
   Effect.sync(() => {
     const adapters = adapterTable(options)
 
@@ -416,18 +413,11 @@ export const makeRouter = <Adapters extends AdapterRecord>(
           operation: "delete",
           run: (bag) => bag.delete(namespace, name)
         }),
-      entries: (): Effect.Effect<ReadonlyArray<AttributeBag.AttributeEntry>, CompositeError> =>
-        Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
-      snapshot: (): Effect.Effect<AttributeBag.View, CompositeError> =>
-        Effect.map(
-          entriesFromAll(adapters),
-          (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))
-        ),
-      refresh: (): Effect.Effect<void, CompositeError> => refreshAll(adapters),
-      [CompositeContextSymbol]: {
-        adapters,
-        options
-      }
+      entries: () => Effect.map(entriesFromAll(adapters), (pairs) => pairs.map(([, entry]) => entry)),
+      snapshot: () =>
+        Effect.map(entriesFromAll(adapters), (pairs) => AttributeBag.viewFromEntries(pairs.map(([, entry]) => entry))),
+      refresh: () => refreshAll(adapters),
+      [CompositeContextSymbol]: { adapters, options }
     })
   })
 

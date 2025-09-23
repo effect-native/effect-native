@@ -89,17 +89,17 @@ export class AttributeBagError extends Data.TaggedError("MiniDom.AttributeBagErr
  * @since 0.0.0
  * @category model
  */
-export interface AttributeBagService<E = AttributeBagError> {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, E>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, E>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, E>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, E>
-  readonly snapshot: () => Effect.Effect<View, E>
-  readonly refresh: () => Effect.Effect<void, E>
+export interface AttributeBagService {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, AttributeBagError>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, AttributeBagError>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError>
+  readonly snapshot: () => Effect.Effect<View, AttributeBagError>
+  readonly refresh: () => Effect.Effect<void, AttributeBagError>
 }
 
-type AttributeBagWithStore<E = AttributeBagError> = AttributeBagService<E> & {
+type AttributeBagWithStore = AttributeBagService & {
   readonly [StoreSymbol]: Map<string, AttributeEntry>
 }
 
@@ -427,9 +427,9 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
   return Object.assign(service, { [StoreSymbol]: store })
 }
 
-const hasStore = <E>(
-  service: AttributeBagService<E>
-): service is AttributeBagWithStore<E> => StoreSymbol in service
+const hasStore = (
+  service: AttributeBagService
+): service is AttributeBagWithStore => StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
