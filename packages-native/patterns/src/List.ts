@@ -119,9 +119,9 @@ export const reduce = dual<
    * @category folding
    */
   <A, B>(
-   self: List<A>,
-   initial: B,
-   f: (accumulator: B, value: A, index: number) => B
+    self: List<A>,
+    initial: B,
+    f: (accumulator: B, value: A, index: number) => B
   ) => B
 >(3, internal.reduce)
 

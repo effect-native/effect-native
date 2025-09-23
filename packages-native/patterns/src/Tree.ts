@@ -114,14 +114,14 @@ export const forEachEffect = dual<
    * @category traversing
    */
   <A, E, R>(
-   f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
+    f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
   ) => (self: Tree<A>) => Effect.Effect<void, E, R>,
   /**
    * @since 0.0.0
    * @category traversing
    */
   <A, E, R>(
-   self: Tree<A>,
-   f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
+    self: Tree<A>,
+    f: (value: A, indexPath: ReadonlyArray<number>) => Effect.Effect<void, E, R>
   ) => Effect.Effect<void, E, R>
 >(2, internal.forEachEffect)
