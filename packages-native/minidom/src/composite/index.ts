@@ -80,6 +80,7 @@ export type CompositeError =
   | MiniDomError.Unsupported
   | MiniDomError.Conflict
   | MiniDomError.CompositeAdapterMissing
+  | AttributeBag.AttributeBagError
 
 /**
  * Definition for connecting an attribute bag into the composite router.

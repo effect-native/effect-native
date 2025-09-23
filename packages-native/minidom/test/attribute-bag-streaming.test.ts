@@ -1,5 +1,4 @@
 import { assert, describe, expect, it } from "@effect/vitest"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
@@ -65,25 +64,15 @@ describe("AttributeBag lazy streaming", () => {
       expect(Option.isNone(capability)).toBe(true)
     }))
 
-  it.effect("propagates loader failures and environment requirements", () =>
+  it.effect("wraps loader failures in AttributeBagError", () =>
     Effect.gen(function*() {
-      class Loader extends Context.Tag("test/Loader")<
-        Loader,
-        { readonly entries: ReadonlyArray<MiniDom.AttributeBag.AttributeEntry> }
-      >() {}
-
       const failingError = new Error("boom")
 
-      const effect = Effect.flatMap(Loader, () => Effect.fail(failingError))
+      const bag = MiniDom.AttributeBag.makeAsync<Error>({ effect: Effect.fail(failingError) })
 
-      const bag = MiniDom.AttributeBag.makeAsync<Error, Loader>({ effect })
-
-      const exit = yield* bag.get(null, "missing").pipe(
-        Effect.provideService(Loader, { entries: [] }),
-        Effect.exit
-      )
+      const exit = yield* bag.get(null, "missing").pipe(Effect.exit)
 
       assert.isTrue(Exit.isFailure(exit))
-      expect(exit).toEqual(Exit.fail(failingError))
+      expect(exit).toEqual(Exit.fail(new MiniDom.AttributeBag.AttributeBagError({ cause: failingError })))
     }))
 })

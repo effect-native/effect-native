@@ -4,6 +4,7 @@
  * @since 0.0.0
  */
 import * as Context from "effect/Context"
+import * as Data from "effect/Data"
 import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -61,6 +62,38 @@ export interface View {
 }
 
 /**
+ * High-level error surfaced by attribute bag operations.
+ *
+ * @since 0.0.0
+ * @category errors
+ */
+export class AttributeBagError extends Data.TaggedError("MiniDom.AttributeBagError")<
+  {
+    readonly message: string
+    readonly cause?: unknown
+  }
+> {
+  constructor({ message = "Attribute bag operation failed", cause }: { readonly message?: string; readonly cause?: unknown } = {}) {
+    super({
+      message,
+      ...(cause !== undefined ? { cause } : {})
+    })
+  }
+}
+
+export interface AttributeBagService {
+  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>, AttributeBagError>
+  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
+  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void, AttributeBagError>
+  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean, AttributeBagError>
+  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError>
+  readonly snapshot: () => Effect.Effect<View, AttributeBagError>
+  readonly refresh: () => Effect.Effect<void, AttributeBagError>
+}
+
+type AttributeBagWithStore = AttributeBagService & { readonly [StoreSymbol]: Map<string, AttributeEntry> }
+
+/**
  * Effect-based attribute bag service.
  *
  * @since 0.0.0
@@ -77,15 +110,9 @@ export interface View {
  * })
  * ```
  */
-export class AttributeBag extends Context.Tag("@effect-native/minidom/AttributeBag")<AttributeBag, {
-  readonly get: (namespace: Namespace, name: string) => Effect.Effect<Option.Option<string>>
-  readonly has: (namespace: Namespace, name: string) => Effect.Effect<boolean>
-  readonly set: (namespace: Namespace, name: string, value: string) => Effect.Effect<void>
-  readonly delete: (namespace: Namespace, name: string) => Effect.Effect<boolean>
-  readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>>
-  readonly snapshot: () => Effect.Effect<View>
-  readonly refresh: () => Effect.Effect<void>
-}>() {}
+export class AttributeBag
+  extends Context.Tag("@effect-native/minidom/AttributeBag")<AttributeBag, AttributeBagService>()
+{}
 
 /**
  * Layer that provides a synchronous {@link AttributeBag} backed by an in-memory map.
@@ -125,30 +152,33 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
  * Effect.runPromise(bag.refresh())
  * ```
  */
-export const makeAsync = <E = never, R = never>(options?: {
-  readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, R>
+export const makeAsync = <E = never>(options?: {
+  readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
   readonly scheduler?: (task: () => void) => void
-}) => {
+}): AttributeBagWithStore => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
-
   const store = new Map<string, AttributeEntry>()
 
   type LoadStatus = "idle" | "loading" | "loaded"
   type LoadState = {
     readonly status: LoadStatus
-    readonly currentLoad: Option.Option<Deferred.Deferred<void, E>>
+    readonly currentLoad: Option.Option<Deferred.Deferred<void, AttributeBagError>>
   }
 
-  const makeLoadState = (status: LoadStatus, deferred?: Deferred.Deferred<void, E>): LoadState => ({
+  const makeLoadState = (status: LoadStatus, deferred?: Deferred.Deferred<void, AttributeBagError>): LoadState => ({
     status,
-    currentLoad: deferred ? Option.some(deferred) : Option.none<Deferred.Deferred<void, E>>()
+    currentLoad: deferred ? Option.some(deferred) : Option.none<Deferred.Deferred<void, AttributeBagError>>()
   })
 
   const loadState = Ref.unsafeMake<LoadState>(makeLoadState("idle"))
 
-  const loadEntries = options?.effect ?? Effect.succeed<Iterable<AttributeEntry>>([])
+  const rawLoadEntries: Effect.Effect<Iterable<AttributeEntry>, E, never> = options?.effect
+    ?? Effect.succeed<Iterable<AttributeEntry>>([])
+  const loadEntries: Effect.Effect<Iterable<AttributeEntry>, AttributeBagError> = rawLoadEntries.pipe(
+    Effect.catchAllCause((cause) => Effect.fail(new AttributeBagError({ cause })))
+  )
 
   const installEntries = (entries: Iterable<AttributeEntry>) => {
     store.clear()
@@ -158,7 +188,7 @@ export const makeAsync = <E = never, R = never>(options?: {
   }
 
   const launchLoad = Effect.gen(function*() {
-    const deferred = yield* Deferred.make<void, E>()
+    const deferred = yield* Deferred.make<void, AttributeBagError>()
 
     const active = yield* Ref.modify(loadState, (state) => {
       if (Option.isSome(state.currentLoad)) {
@@ -171,13 +201,13 @@ export const makeAsync = <E = never, R = never>(options?: {
       return active
     }
 
-    const runtime = yield* Effect.runtime<R>()
+    const runtime = yield* Effect.runtime()
 
     yield* Effect.sync(() => {
       schedule(() => {
         const effect = loadEntries
 
-        // FIXME: use idiomatic Effect .pip(...) syntax
+        // FIXME: use idiomatic Effect .pipe(...) syntax
         Runtime.runCallback(runtime, effect, {
           onExit: (exit) => {
             if (Exit.isFailure(exit)) {
@@ -205,7 +235,7 @@ export const makeAsync = <E = never, R = never>(options?: {
   })
 
   const ensureLoaded = options?.effect
-    ? (): Effect.Effect<void, E, R> =>
+    ? (): Effect.Effect<void, AttributeBagError> =>
       Effect.gen(function*() {
         const state = yield* Ref.get(loadState)
         if (state.status === "loaded") {
@@ -217,20 +247,31 @@ export const makeAsync = <E = never, R = never>(options?: {
       })
     : () => Effect.void
 
-  const resetAndTrigger = (): Effect.Effect<void, E, R> =>
+  const resetAndTrigger = (): Effect.Effect<void, AttributeBagError> =>
     Effect.gen(function*() {
       yield* Ref.set(loadState, makeLoadState("idle"))
       const deferred = yield* launchLoad
       return yield* Deferred.await(deferred)
     })
 
-  const run = <A>(evaluate: () => A): Effect.Effect<A, E, R> =>
-    Effect.flatMap(ensureLoaded(), () =>
-      Effect.async((resume) => {
-        schedule(() => {
-          resume(Effect.succeed(evaluate()))
+  const run = <A>(evaluate: () => A): Effect.Effect<A, AttributeBagError> =>
+    Effect.flatMap(
+      ensureLoaded(),
+      () =>
+        Effect.async<A, AttributeBagError>((resume) => {
+          try {
+            schedule(() => {
+              try {
+                resume(Effect.succeed(evaluate()))
+              } catch (cause) {
+                resume(Effect.fail(new AttributeBagError({ cause })))
+              }
+            })
+          } catch (cause) {
+            resume(Effect.fail(new AttributeBagError({ cause })))
+          }
         })
-      }))
+    )
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
@@ -273,10 +314,10 @@ export const makeAsync = <E = never, R = never>(options?: {
  * console.log(typeof layer)
  * ```
  */
-export const layerAsync = <E = never, R = never>(options?: {
-  readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, R>
+export const layerAsync = <E = never>(options?: {
+  readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
   readonly scheduler?: (task: () => void) => void
-}) => Layer.effect(AttributeBag, Effect.sync(() => makeAsync<E, R>(options)))
+}) => Layer.effect(AttributeBag, Effect.sync(() => makeAsync<E>(options)))
 
 const toView = (entries: ReadonlyArray<AttributeEntry>): View => {
   const index = new Map<string, AttributeEntry>()
@@ -342,7 +383,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * })
  * ```
  */
-export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }) => {
+export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): AttributeBagWithStore => {
   const store = new Map<string, AttributeEntry>()
 
   if (options?.initial) {
@@ -351,26 +392,34 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
     }
   }
 
+  const safeSync = <A>(evaluate: () => A): Effect.Effect<A, AttributeBagError> =>
+    Effect.try({
+      try: evaluate,
+      catch: (cause) => new AttributeBagError({ cause })
+    })
+
   const makeView = () => toView(Array.from(store.values(), copyEntry))
 
-  return AttributeBag.of({
+  const service = AttributeBag.of({
     get: (namespace, name) =>
-      Effect.sync(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
-    has: (namespace, name) => Effect.sync(() => store.has(NamespaceHelpers.key(namespace, name))),
+      safeSync(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
+    has: (namespace, name) => safeSync(() => store.has(NamespaceHelpers.key(namespace, name))),
     set: (namespace, name, value) =>
-      Effect.sync(() => {
+      safeSync(() => {
         store.set(NamespaceHelpers.key(namespace, name), toEntry(namespace, name, value))
       }),
-    delete: (namespace, name) => Effect.sync(() => store.delete(NamespaceHelpers.key(namespace, name))),
-    entries: () => Effect.sync(() => Array.from(store.values(), copyEntry)),
-    snapshot: () => Effect.sync(makeView),
+    delete: (namespace, name) => safeSync(() => store.delete(NamespaceHelpers.key(namespace, name))),
+    entries: () => safeSync(() => Array.from(store.values(), copyEntry)),
+    snapshot: () => safeSync(makeView),
     refresh: () => Effect.void
   })
+
+  return Object.assign(service, { [StoreSymbol]: store })
 }
 
 const hasStore = (
-  service: AttributeBag
-): service is AttributeBag & { readonly [StoreSymbol]: Map<string, AttributeEntry> } => StoreSymbol in service
+  service: AttributeBagService
+): service is AttributeBagWithStore => StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -386,7 +435,7 @@ const hasStore = (
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = (service: AttributeBag) => service.refresh()
+export const refresh = (service: AttributeBagService) => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
@@ -404,7 +453,7 @@ export const refresh = (service: AttributeBag) => service.refresh()
  * const program = TransactionCapability.run(capability, Effect.succeed("ok"))
  * ```
  */
-export const transaction = (service: AttributeBag): Transaction.TransactionCapability => {
+export const transaction = (service: AttributeBagService): Transaction.TransactionCapability => {
   if (!hasStore(service)) {
     return Transaction.unsupported({
       message: "AttributeBag service does not implement transactional semantics"
