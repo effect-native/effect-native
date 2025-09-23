@@ -228,7 +228,7 @@ interface CompositeContext<Adapters extends AdapterRecord> {
   readonly options: RouterOptions<Adapters>
 }
 
-type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagService<CompositeError> & {
+type CompositeService<Adapters extends AdapterRecord> = AttributeBag.AttributeBagService & {
   readonly [CompositeContextSymbol]: CompositeContext<Adapters>
 }
 namespace CompositeService {

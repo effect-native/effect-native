@@ -97,9 +97,6 @@ export interface AttributeBagService {
   readonly entries: () => Effect.Effect<ReadonlyArray<AttributeEntry>, AttributeBagError>
   readonly snapshot: () => Effect.Effect<View, AttributeBagError>
   readonly refresh: () => Effect.Effect<void, AttributeBagError>
-}
-
-type AttributeBagWithStore = AttributeBagService & {
   readonly [StoreSymbol]: Map<string, AttributeEntry>
 }
 
@@ -165,7 +162,7 @@ export const layer = (options?: { readonly initial?: Iterable<AttributeEntry> })
 export const makeAsync = <E = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
   readonly scheduler?: (task: () => void) => void
-}): AttributeBagWithStore => {
+}): AttributeBagService => {
   const schedule = options?.scheduler ?? ((task: () => void) => {
     setTimeout(task, 0)
   })
@@ -285,7 +282,7 @@ export const makeAsync = <E = never>(options?: {
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))
 
-  const service = AttributeBag.of({
+  return AttributeBag.of({
     get: (namespace, name) => run(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => run(() => store.has(NamespaceHelpers.key(namespace, name))),
     set: (namespace, name, value) =>
@@ -298,17 +295,16 @@ export const makeAsync = <E = never>(options?: {
           removed && options?.effect
             ? Effect.gen(function*() {
               yield* Ref.set(loadState, makeLoadState("idle"))
-              yield* launchLoad
+              const _deferred = yield* launchLoad
             })
             : Effect.void
         )
       ),
     entries: () => run(() => Array.from(store.values(), copyEntry)),
     snapshot: () => run(makeView),
-    refresh: () => (options?.effect ? resetAndTrigger() : Effect.void)
+    refresh: () => (options?.effect ? resetAndTrigger() : Effect.void),
+    [StoreSymbol]: store
   })
-
-  return Object.assign(service, { [StoreSymbol]: store })
 }
 
 /**
@@ -393,7 +389,7 @@ export const viewFromEntries = (entries: Iterable<AttributeEntry>): View => {
  * })
  * ```
  */
-export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): AttributeBagWithStore => {
+export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry> }): AttributeBagService => {
   const store = new Map<string, AttributeEntry>()
 
   if (options?.initial) {
@@ -410,7 +406,7 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
 
   const makeView = () => toView(Array.from(store.values(), copyEntry))
 
-  const service = AttributeBag.of({
+  return AttributeBag.of({
     get: (namespace, name) =>
       safeSync(() => Option.fromNullable(store.get(NamespaceHelpers.key(namespace, name))?.[2])),
     has: (namespace, name) => safeSync(() => store.has(NamespaceHelpers.key(namespace, name))),
@@ -421,15 +417,14 @@ export const makeSync = (options?: { readonly initial?: Iterable<AttributeEntry>
     delete: (namespace, name) => safeSync(() => store.delete(NamespaceHelpers.key(namespace, name))),
     entries: () => safeSync(() => Array.from(store.values(), copyEntry)),
     snapshot: () => safeSync(makeView),
-    refresh: () => Effect.void
+    refresh: () => Effect.void,
+    [StoreSymbol]: store
   })
-
-  return Object.assign(service, { [StoreSymbol]: store })
 }
 
 const hasStore = (
   service: AttributeBagService
-): service is AttributeBagWithStore => StoreSymbol in service
+): service is AttributeBagService => StoreSymbol in service
 
 /**
  * Re-runs the service's refresh effect, ensuring async bags reload data.
@@ -445,7 +440,7 @@ const hasStore = (
  * Effect.runPromise(AttributeBag.refresh(bag))
  * ```
  */
-export const refresh = <E>(service: AttributeBagService<E>) => service.refresh()
+export const refresh = (service: AttributeBagService) => service.refresh()
 
 /**
  * Derives a {@link Transaction.TransactionCapability} capability from an attribute bag service.
