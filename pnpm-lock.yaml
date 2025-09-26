@@ -159,6 +159,13 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@22.18.4)(@vitest/browser@3.2.4)(happy-dom@17.6.3)(terser@5.44.0)(tsx@4.20.5)(yaml@2.8.0)
 
+  packages-native/bidi:
+    dependencies:
+      effect:
+        specifier: latest
+        version: 3.17.14
+    publishDirectory: dist
+
   packages-native/bun-test:
     dependencies:
       effect:
