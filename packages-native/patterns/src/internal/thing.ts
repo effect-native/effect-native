@@ -1,4 +1,9 @@
-/** @internal */
+/**
+ * Internal implementation details for the `Thing` model.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 import type { Pipeable } from "effect/Pipeable"

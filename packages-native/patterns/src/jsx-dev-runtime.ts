@@ -17,4 +17,34 @@ export const Fragment = internal.Fragment
  */
 export const jsxDEV = internal.jsxDEV
 
-export type { JsxElement, JsxKey, JsxProps, JsxRef } from "./internal/jsx.js"
+/**
+ * JSX element representation including dev metadata.
+ *
+ * @since 0.0.0
+ * @category models
+ */
+export type JsxElement = internal.JsxElement
+
+/**
+ * Key associated with JSX elements when reconciling lists in dev builds.
+ *
+ * @since 0.0.0
+ * @category models
+ */
+export type JsxKey = internal.JsxKey
+
+/**
+ * Props record accepted by JSX factories in dev builds.
+ *
+ * @since 0.0.0
+ * @category models
+ */
+export type JsxProps = internal.JsxProps
+
+/**
+ * Ref value captured by JSX element creation in dev builds.
+ *
+ * @since 0.0.0
+ * @category models
+ */
+export type JsxRef = internal.JsxRef

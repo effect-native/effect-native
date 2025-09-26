@@ -1,4 +1,9 @@
-/** @internal */
+/**
+ * Internal implementation for the `Tree` data structure.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"

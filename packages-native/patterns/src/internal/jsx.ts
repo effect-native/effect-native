@@ -1,18 +1,53 @@
-/** @internal */
-
+/**
+ * Internal primitives shared by the JSX runtimes.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 const REACT_ELEMENT_TYPE = Symbol.for("react.element")
 const REACT_FRAGMENT_TYPE = Symbol.for("react.fragment")
 
+/**
+ * Normalized key representation carried by JSX elements.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export type JsxKey = string | null
+
+/**
+ * Ref value accepted by JSX elements.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export type JsxRef = unknown
 
+/**
+ * Additional metadata recorded when producing JSX elements.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export interface JsxMeta {
   readonly source?: unknown
   readonly owner?: unknown
 }
 
+/**
+ * Props record carried by JSX elements.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export type JsxProps = Record<string, unknown>
 
+/**
+ * React-compatible object produced by the JSX runtime.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export interface JsxElement {
   readonly $$typeof: typeof REACT_ELEMENT_TYPE
   readonly type: unknown
@@ -85,20 +120,44 @@ const createElement = (
     : base
 }
 
+/**
+ * Symbol identifying fragment elements.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export const Fragment = REACT_FRAGMENT_TYPE
 
+/**
+ * Creates a JSX element for single-child scenarios.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export const jsx = (
   type: unknown,
   props: Record<string, unknown> | null | undefined,
   key?: unknown
 ): JsxElement => createElement(type, props, key)
 
+/**
+ * Creates a JSX element for multi-child scenarios.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export const jsxs = (
   type: unknown,
   props: Record<string, unknown> | null | undefined,
   key?: unknown
 ): JsxElement => createElement(type, props, key)
 
+/**
+ * Creates a JSX element that captures dev-time metadata.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 export const jsxDEV = (
   type: unknown,
   props: Record<string, unknown> | null | undefined,

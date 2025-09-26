@@ -68,4 +68,10 @@ export const addTag = dual<
   <A>(self: Thing<A>, tag: string) => Thing<A>
 >(2, internal.addTag)
 
-export type { ThingInput } from "./internal/thing.js"
+/**
+ * Configuration used to construct a `Thing`.
+ *
+ * @since 0.0.0
+ * @category models
+ */
+export type ThingInput<A> = internal.ThingInput<A>

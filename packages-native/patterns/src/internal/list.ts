@@ -1,4 +1,9 @@
-/** @internal */
+/**
+ * Internal linked-list utilities backing the public `List` API.
+ *
+ * @since 0.0.0
+ * @internal
+ */
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
