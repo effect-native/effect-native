@@ -161,6 +161,7 @@ export const makeAsync = <E = never>(options?: {
   readonly effect?: Effect.Effect<Iterable<AttributeEntry>, E, never>
 }): AttributeBagService => {
   const store = new Map<string, AttributeEntry>()
+  const hasLoader = options?.effect !== undefined
 
   const rawLoadEntries: Effect.Effect<Iterable<AttributeEntry>, E, never> = options?.effect
     ?? Effect.succeed<Iterable<AttributeEntry>>([])
@@ -189,20 +190,27 @@ export const makeAsync = <E = never>(options?: {
 
   const CACHE_KEY = "attributes" as const
 
-  const ensureLoaded = options?.effect
+  const ensureLoaded = hasLoader
     ? (): Effect.Effect<void, AttributeBagError> => cache.get(CACHE_KEY).pipe(Effect.asVoid)
     : () => Effect.void
 
   const refreshFromSource = (): Effect.Effect<void, AttributeBagError> => cache.refresh(CACHE_KEY)
 
+  const wrapEvaluation = <A>(effect: Effect.Effect<A, AttributeBagError>) =>
+    Effect.async<A, AttributeBagError, never>((resume) => {
+      queueMicrotask(() => resume(effect))
+    })
+
   const run = <A>(evaluate: () => A): Effect.Effect<A, AttributeBagError> =>
     Effect.flatMap(
       ensureLoaded(),
       () =>
-        Effect.try({
-          try: evaluate,
-          catch: (cause) => new AttributeBagError({ cause })
-        })
+        wrapEvaluation(
+          Effect.try({
+            try: evaluate,
+            catch: (cause) => new AttributeBagError({ cause })
+          })
+        )
     )
 
   const makeView = (): View => toView(Array.from(store.values(), copyEntry))

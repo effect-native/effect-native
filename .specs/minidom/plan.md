@@ -5,7 +5,7 @@
 - [x] Phase 2 — Requirements (complete)
 - [x] Phase 3 — Design (complete)
 - [x] Phase 4 — Plan (this document)
-- [x] Phase 5 — Implementation & Validation (documentation gatekeepers complete; validation braid green)
+- [x] Phase 5 — Implementation & Validation (documentation gatekeepers complete; `pnpm ok` green on 2025-09-24 after patterns tsconfig + async AttributeBag fixes)
 
 ## Task Hierarchies
 
@@ -61,9 +61,12 @@
 - [ ] Rename `AttributeBag.Service` to `AttributeBag.AttributeBagShape` (and `Tag` accordingly) to better describe the public API surface once we exit the current milestone; document the rename plan in release notes.
 
 ### 9. Regression Watchlist (2025-10-22)
-- [ ] Rework `AttributeBag.makeAsync` cache hydration so asynchronous adapters remain classified as non-sync capabilities. `MiniDom.SyncCapability.detect` currently returns `Option.some` after the cache warms, causing `packages-native/minidom/test/attribute-bag-streaming.test.ts:37` and `packages-native/minidom/test/attribute-bag-streaming.test.ts:69` to fail against `.patterns/testing-patterns.md` expectations. Ensure the solution keeps single-flight semantics from `packages/effect/src/Cache.ts` while preserving asynchronous boundaries declared in `.specs/minidom/design.md` and `.patterns/effect-library-development.md`.
-- [ ] Document the chosen sync-capability semantics for async AttributeBag adapters (do we gate detection on first load or enforce async fallbacks?) in `.specs/minidom/memo.md`, and update tests (`packages-native/minidom/test/attribute-bag-sync.test.ts:41`) to reflect the decision once implemented.
-- [ ] Address the ESLint `prefer-const` violation in `packages-native/minidom/test/nodes.test.ts:40` by restructuring the mock document helper without resorting to disabling the rule, keeping test scaffolding compliant with `.patterns/testing-patterns.md`.
+- [x] Reworked `AttributeBag.makeAsync` cache hydration to force asynchronous scheduling (microtask via `Effect.async`) so `MiniDom.SyncCapability.detect` now returns `Option.none` for loader-backed bags; validated by `packages-native/minidom/test/attribute-bag-streaming.test.ts` and `packages-native/minidom/test/attribute-bag-sync.test.ts` under `nix develop --command pnpm ok` (2025-09-24).
+- [x] Documented the async sync-capability semantics in `.specs/minidom/memo.md` (`Blockers` section, 2025-09-24) and retained the existing tests asserting `Option.none` for async bags.
+- [x] Resolved the ESLint `prefer-const` violation by rewriting the mock document factory in `packages-native/minidom/test/nodes.test.ts` to build via captured helpers without reassignment, satisfying `.patterns/testing-patterns.md`.
+
+### 10. Blockers (2025-09-24)
+- [x] Restored the missing `packages-native/patterns/tsconfig.json` (plus stub `src/index.ts`) so `nix develop --command pnpm ok` no longer fails with TSConfck `ENOENT`; latest run passes through attribute bag suites and completes the validation braid.
 
 ## Validation Checkpoints
 - `nix develop --command pnpm lint --fix packages-native/minidom/**/*.ts`

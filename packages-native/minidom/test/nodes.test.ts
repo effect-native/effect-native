@@ -37,17 +37,15 @@ const makeElement = (
 })
 
 const makeDocument = (): MiniDom.Document => {
-  let document!: MiniDom.Document
-
-  const makeTextNode = (data: string): MiniDom.Text => ({
+  const makeTextNode = (doc: MiniDom.Document, data: string): MiniDom.Text => ({
     nodeType: MiniDom.NodeType.Text,
     nodeName: "#text" as const,
-    ownerDocument: document,
+    ownerDocument: doc,
     parentNode: null,
     previousSibling: null,
     nextSibling: null,
     textContent: data,
-    clone: () => Effect.sync(() => makeTextNode(data)),
+    clone: () => Effect.sync(() => makeTextNode(doc, data)),
     before: () => effectVoid,
     after: () => effectVoid,
     replaceWith: () => effectVoid,
@@ -57,15 +55,15 @@ const makeDocument = (): MiniDom.Document => {
     substringData: (offset, count) => Effect.sync(() => data.substring(offset, offset + count))
   })
 
-  const makeCommentNode = (data: string): MiniDom.Comment => ({
+  const makeCommentNode = (doc: MiniDom.Document, data: string): MiniDom.Comment => ({
     nodeType: MiniDom.NodeType.Comment,
     nodeName: "#comment" as const,
-    ownerDocument: document,
+    ownerDocument: doc,
     parentNode: null,
     previousSibling: null,
     nextSibling: null,
     textContent: data,
-    clone: () => Effect.sync(() => makeCommentNode(data)),
+    clone: () => Effect.sync(() => makeCommentNode(doc, data)),
     before: () => effectVoid,
     after: () => effectVoid,
     replaceWith: () => effectVoid,
@@ -75,15 +73,19 @@ const makeDocument = (): MiniDom.Document => {
     substringData: (offset, count) => Effect.sync(() => data.substring(offset, offset + count))
   })
 
-  const makeProcessingInstructionNode = (target: string, data: string): MiniDom.ProcessingInstruction => ({
+  const makeProcessingInstructionNode = (
+    doc: MiniDom.Document,
+    target: string,
+    data: string
+  ): MiniDom.ProcessingInstruction => ({
     nodeType: MiniDom.NodeType.ProcessingInstruction,
     nodeName: target,
-    ownerDocument: document,
+    ownerDocument: doc,
     parentNode: null,
     previousSibling: null,
     nextSibling: null,
     textContent: data,
-    clone: () => Effect.sync(() => makeProcessingInstructionNode(target, data)),
+    clone: () => Effect.sync(() => makeProcessingInstructionNode(doc, target, data)),
     before: () => effectVoid,
     after: () => effectVoid,
     replaceWith: () => effectVoid,
@@ -94,15 +96,15 @@ const makeDocument = (): MiniDom.Document => {
     target
   })
 
-  const makeFragmentNode = (): MiniDom.DocumentFragment => ({
+  const makeFragmentNode = (doc: MiniDom.Document): MiniDom.DocumentFragment => ({
     nodeType: MiniDom.NodeType.DocumentFragment,
     nodeName: "#document-fragment" as const,
-    ownerDocument: document,
+    ownerDocument: doc,
     parentNode: null,
     previousSibling: null,
     nextSibling: null,
     textContent: null,
-    clone: () => Effect.sync(() => makeFragmentNode()),
+    clone: () => Effect.sync(() => makeFragmentNode(doc)),
     childNodes: [],
     children: [],
     firstChild: null,
@@ -117,23 +119,24 @@ const makeDocument = (): MiniDom.Document => {
   })
 
   const makeDocumentTypeNode = (
+    doc: MiniDom.Document,
     name: string,
     options?: { readonly publicId?: string; readonly systemId?: string }
   ): MiniDom.DocumentType => ({
     nodeType: MiniDom.NodeType.DocumentType,
     nodeName: name,
-    ownerDocument: document,
+    ownerDocument: doc,
     parentNode: null,
     previousSibling: null,
     nextSibling: null,
     textContent: null,
-    clone: () => Effect.sync(() => makeDocumentTypeNode(name, options)),
+    clone: () => Effect.sync(() => makeDocumentTypeNode(doc, name, options)),
     name,
     publicId: options?.publicId ?? "",
     systemId: options?.systemId ?? ""
   })
 
-  document = {
+  const document: MiniDom.Document = {
     nodeType: MiniDom.NodeType.Document,
     nodeName: "#document",
     ownerDocument: null,
@@ -153,11 +156,12 @@ const makeDocument = (): MiniDom.Document => {
     URL: "https://example.org",
     documentElement: null,
     createElementNS: (namespace, qualifiedName) => Effect.sync(() => makeElement(namespace, qualifiedName, document)),
-    createTextNode: (data) => Effect.sync(() => makeTextNode(data)),
-    createComment: (data) => Effect.sync(() => makeCommentNode(data)),
-    createProcessingInstruction: (target, data) => Effect.sync(() => makeProcessingInstructionNode(target, data)),
-    createDocumentFragment: () => Effect.sync(() => makeFragmentNode()),
-    createDocumentType: (name, options) => Effect.sync(() => makeDocumentTypeNode(name, options))
+    createTextNode: (data) => Effect.sync(() => makeTextNode(document, data)),
+    createComment: (data) => Effect.sync(() => makeCommentNode(document, data)),
+    createProcessingInstruction: (target, data) =>
+      Effect.sync(() => makeProcessingInstructionNode(document, target, data)),
+    createDocumentFragment: () => Effect.sync(() => makeFragmentNode(document)),
+    createDocumentType: (name, options) => Effect.sync(() => makeDocumentTypeNode(document, name, options))
   }
 
   return document

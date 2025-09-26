@@ -3,6 +3,7 @@
  *
  * @since 0.0.0
  */
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
@@ -54,7 +55,16 @@ export const fromRunner = (runner: SyncCapability["run"]): SyncCapability => ({
  */
 export const detect = <A>(operation: () => Effect.Effect<A>): Option.Option<SyncCapability> => {
   try {
-    const exit = Effect.runSyncExit(operation())
+    const exit = Effect.runSyncExit(
+      operation().pipe(
+        // Zero-duration timeout marks any asynchronous boundary as a failure,
+        // ensuring detection only succeeds for strictly synchronous effects.
+        Effect.timeoutFail({
+          duration: Duration.zero,
+          onTimeout: () => undefined
+        })
+      )
+    )
     return Exit.isSuccess(exit)
       ? Option.some(fromRunner((effect) => Effect.runSync(effect)))
       : Option.none()

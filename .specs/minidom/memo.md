@@ -17,6 +17,10 @@
 2. Run `.claude/commands/done-feature.md` to transition the spec into the completion workflow.
 3. Proceed with any release packaging steps outlined by `/done-feature` once accepted.
 
+## Blockers
+- Resolved 2025-09-24: Added placeholder `packages-native/patterns/tsconfig.json` plus `src/index.ts` so Vitest no longer fails during config discovery.
+- Resolved 2025-09-24: Async AttributeBag loaders now force asynchronous scheduling (microtask bridge) so `SyncCapability.detect` returns `Option.none`; `packages-native/minidom/test/attribute-bag-streaming.test.ts` and `packages-native/minidom/test/attribute-bag-sync.test.ts` are green under `nix develop --command pnpm ok` (Effect 3.17.14).
+
 ## Notes
-- Validation braid (docgen, lint, check, test, build, tstyche) is clean as of this memo.
+- Validation braid (`pnpm ok`) is green as of 2025-09-24, confirming the async AttributeBag fix and lint cleanup.
 - Keep avoiding broad `try/catch` in Effect pipelines and unsafe type assertions per repository policy.
