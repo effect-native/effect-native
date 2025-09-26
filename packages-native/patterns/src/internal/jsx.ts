@@ -66,12 +66,17 @@ const normalizeKey = (key: unknown): JsxKey => {
   return String(key)
 }
 
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
 const cloneProps = (props: Record<string, unknown> | null | undefined): JsxProps => {
   if (!props) {
     return {}
   }
   const result: Record<string, unknown> = {}
-  for (const key of Object.keys(props)) {
+  for (const key in props) {
+    if (!hasOwnProperty.call(props, key)) {
+      continue
+    }
     if (key === "key" || key === "ref" || key === "__self" || key === "__source") {
       continue
     }
