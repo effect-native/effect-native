@@ -25,3 +25,14 @@ export const jsx = internal.jsx
 export const jsxs = internal.jsxs
 
 export type { JsxElement, JsxKey, JsxProps, JsxRef } from "./internal/jsx.js"
+
+export namespace JSX {
+  export interface IntrinsicElements {
+    div: internal.JsxProps & { style?: any }
+  }
+  interface ExoticComponent {
+    readonly $$typeof: symbol
+  }
+
+  export type Element = internal.JsxElement | ExoticComponent | any
+}
