@@ -103,12 +103,19 @@ export const cons = <A>(self: List<A>, value: A): List<A> => makeNode(value, sel
 /** @internal */
 export const fromIterable = <A>(iterable: Iterable<A>): List<A> => {
   let result = empty<A>()
-  const reversed: Array<A> = []
   for (const value of iterable) {
-    reversed.push(value)
+    result = makeNode(value, result)
   }
-  for (let i = reversed.length - 1; i >= 0; i--) {
-    result = makeNode(reversed[i]!, result)
+  return reverse(result)
+}
+
+/** @internal */
+export const reverse = <A>(self: List<A>): List<A> => {
+  let result = empty<A>()
+  let current = self
+  while (!current.isEmpty) {
+    result = makeNode(current.head as A, result)
+    current = current.tail
   }
   return result
 }
