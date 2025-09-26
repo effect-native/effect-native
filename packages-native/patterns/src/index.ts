@@ -3,6 +3,13 @@
  */
 
 /**
+ * Re-export of the `CodexSession` module.
+ *
+ * @since 0.0.0
+ */
+export * as CodexSession from "./CodexSession.js"
+
+/**
  * Re-export of the `List` module utilities.
  *
  * @since 0.0.0
