@@ -61,9 +61,7 @@ const failAllPending = (state: SessionState, error: Debug.DebugError): Effect.Ef
       map.clear()
       return [pending, map]
     })
-    yield* Effect.forEach(entries, (entry) =>
-      Deferred.complete(Effect.fail(error))(entry.deferred)
-    )
+    yield* Effect.forEach(entries, (entry) => Deferred.complete(Effect.fail(error))(entry.deferred))
   })
 
 const shutdownSubscribers = (state: SessionState): Effect.Effect<void> =>
@@ -83,7 +81,6 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
         cause
       })
     })
-    yield* Effect.sync(() => console.log("debug:message", message))
 
     const id = message.id
     if (typeof id === "number") {
@@ -125,9 +122,7 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
     }
 
     if (typeof message.method === "string") {
-      yield* Effect.sync(() => console.log("debug:event-branch-enter"))
       const subscribers = yield* Ref.get(state.subscribers)
-      yield* Effect.sync(() => console.log("debug:event-subs", subscribers.length))
       if (subscribers.length === 0) {
         return
       }
@@ -138,14 +133,7 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
         sessionId: typeof message.sessionId === "string" ? message.sessionId : undefined,
         targetId: typeof message.targetId === "string" ? message.targetId : undefined
       }
-      yield* Effect.sync(() => console.log("debug:event", { event, subscribers: subscribers.length }))
-      yield* Effect.log("debug:incoming:event", event)
-      for (const queue of subscribers) {
-        const shutdown = yield* Queue.isShutdown(queue)
-        yield* Effect.sync(() => console.log("debug:queue-shutdown", shutdown))
-        yield* Queue.offer(queue, event)
-      }
-      yield* Effect.sync(() => console.log("debug:event-delivered"))
+      yield* Effect.forEach(subscribers, (queue) => Queue.offer(queue, event))
     }
   })
 
@@ -274,7 +262,7 @@ const sendCommand: Debug.Service["sendCommand"] = (session, cmd) =>
       payload.targetId = cmd.targetId
     }
 
-    const send = state.writer(JSON.stringify(payload)).pipe(
+    yield* state.writer(JSON.stringify(payload)).pipe(
       Effect.mapError((cause) =>
         new Debug.DebugTransportError({
           transport: state.transport,
@@ -292,29 +280,26 @@ const sendCommand: Debug.Service["sendCommand"] = (session, cmd) =>
       )
     )
 
-    yield* send
-
     return yield* Deferred.await(deferred)
   })
 
 const subscribe: Debug.Service["subscribe"] = (session) =>
-  Effect.scoped(
+  Effect.acquireRelease(
     Effect.gen(function*() {
       const state = yield* getState(session)
-    const queue = yield* Queue.unbounded<Debug.Event>()
-    yield* Ref.update(state.subscribers, (subs) => [...subs, queue])
-    const subs = yield* Ref.get(state.subscribers)
-    yield* Effect.sync(() => console.log("debug:subscriber-count", subs.length))
-      yield* Effect.addFinalizer(() =>
-        Ref.update(state.subscribers, (subs) => subs.filter((candidate) => candidate !== queue)).pipe(
-          Effect.zipRight(Queue.shutdown(queue))
-        )
+      const queue = yield* Queue.unbounded<Debug.Event>()
+      yield* Ref.update(state.subscribers, (subs) => [...subs, queue])
+      return { state, queue }
+    }),
+    ({ state, queue }) =>
+      Ref.update(state.subscribers, (subs) => subs.filter((candidate) => candidate !== queue)).pipe(
+        Effect.zipRight(Queue.shutdown(queue))
       )
-      return Stream.fromQueue(queue, { shutdown: true })
-    })
+  ).pipe(
+    Effect.map(({ queue }) => Stream.fromQueue(queue, { shutdown: true }))
   )
 
-const makeService = Effect.succeed<Debug.Service>({ connect, disconnect, sendCommand, subscribe })
+const makeService: Effect.Effect<Debug.Service, never, Socket.WebSocketConstructor | Scope.Scope> =
+  Effect.succeed({ connect, disconnect, sendCommand, subscribe })
 
-export const layer: Layer.Layer<Debug.Service, never, Socket.WebSocketConstructor> =
-  Layer.effect(Debug.Debug, makeService)
+export const layer: Layer.Layer<Debug.Service> = Layer.effect(Debug.Debug, makeService)

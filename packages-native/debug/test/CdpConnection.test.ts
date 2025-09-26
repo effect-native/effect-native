@@ -10,6 +10,8 @@ import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import * as Duration from "effect/Duration"
+import * as Chunk from "effect/Chunk"
+import * as Fiber from "effect/Fiber"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import type * as Scope from "effect/Scope"
 import { WebSocketServer } from "ws"
@@ -164,10 +166,12 @@ describe("Debug CDP connection", () => {
             transport: DebugTransport.cdp()
           })
           const events = yield* debug.subscribe(session)
+          const collector = yield* Stream.take(events, 1).pipe(Stream.runCollect, Effect.forkScoped)
           yield* debug.sendCommand(session, RuntimeEnable)
           yield* Effect.yieldNow()
-          yield* Effect.sleep(Duration.millis(10))
-          const head = yield* Stream.runHead(events)
+          const chunk = yield* Fiber.join(collector)
+          const head = Chunk.headOption(chunk)
+          yield* Effect.sync(() => console.log("debug:head", head))
           expect(Option.map(head, (event) => event.method)).toEqual(Option.some("Runtime.consoleAPICalled"))
         })
       )
