@@ -28,7 +28,7 @@ export type { JsxElement, JsxKey, JsxProps, JsxRef } from "./internal/jsx.js"
 
 export namespace JSX {
   export interface IntrinsicElements {
-    div: internal.JsxProps & { style?: any }
+    [anything: string]: internal.JsxProps
   }
   interface ExoticComponent {
     readonly $$typeof: symbol
