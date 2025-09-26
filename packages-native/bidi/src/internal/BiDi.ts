@@ -152,7 +152,13 @@ export const make = Effect.gen(function*(_) {
       if (!handlers || handlers.length === 0) {
         return
       }
-      yield* Effect.forEach(handlers, (handler) => handler(event), { discard: true })
+      yield* Effect.catchAllCause(
+        Effect.forEach(handlers, (handler) => handler(event), { discard: true }),
+        (cause) =>
+          markClosed(new TransportReceiveError({ cause })).pipe(
+            Effect.flatMap((closure) => Effect.fail(closure))
+          )
+      )
     })
 
   const processMessage = (message: IncomingMessage) =>
@@ -180,7 +186,11 @@ export const make = Effect.gen(function*(_) {
   const loop = Effect.forever(
     transport.receive.pipe(
       Effect.flatMap(processMessage),
-      Effect.catchAll((error) => markClosed(error).pipe(Effect.flatMap((closure) => Effect.fail(closure))))
+      Effect.catchAll((error) =>
+        error._tag === "TransportClosed"
+          ? Effect.fail(error)
+          : markClosed(error).pipe(Effect.flatMap((closure) => Effect.fail(closure)))
+      )
     )
   )
 

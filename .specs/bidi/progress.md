@@ -37,3 +37,6 @@
 ## Notes
 - Implementation follows the [WebDriver BiDi draft specification](https://w3c.github.io/webdriver-bidi/).
 - Progress items will be checked as the implementation evolves across PRs.
+
+## Follow-up Tasks
+- [x] Guard the event receive loop against faulty subscribers by wrapping handler dispatch in `Effect.catchAllCause` and closing the transport so pending commands fail fast with `TransportClosed` instead of hanging.
