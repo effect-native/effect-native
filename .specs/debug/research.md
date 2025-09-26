@@ -21,7 +21,7 @@
 | **NativeScript**                                                                                               | CDP (Android), WebKit Inspector (iOS)                                                 | As above                            | CLI + VS Code flows map to Chrome/Safari protocols. ([docs.nativescript.org][9])                                                                                                                         |
 | **Electron (main process)**                                                                                    | V8 Inspector (`--inspect`, `--inspect-brk`)                                           | WS                                  | Renderer = CDP (Chromium); main = V8 Inspector. ([electronjs.org][10])                                                                                                                                   |
 | **Servo**                                                                                                      | Firefox DevTools (RDP)                                                                | TCP                                 | Run Servo with `--devtools=<port>`, connect from Firefox `about:debugging`. ([book.servo.org][11])                                                                                                       |
-| **Ladybird**                                                                                                   | (No public remote inspector yet)                                                      | —                                   | Project is independent engine; no official remote debugging docs as of today. ([ladybird.org][12])                                                                                                       |
+| **Ladybird**                                                                                                   | **Firefox RDP-compatible devtools server** (`--devtools[=port]`)                       | TCP (length-prefixed JSON)          | Ships documented RDP handshake; enable `--devtools` and connect from Firefox `about:debugging`. (`Documentation/DevTools.md` via `.specs/debug/research-ladybird.md`)                                      |
 | **LynxJS / PrimJS**                                                                                            | **CDP** (engine claims full impl.) + custom DevTool bridge                            | WS/USB via Lynx DevTool             | PrimJS advertises full CDP; desktop DevTool app bridges protocols. ([GitHub][13])                                                                                                                        |
 | **GraalVM JavaScript**                                                                                         | **CDP** (`--inspect`), also **Debug Adapter Protocol**                                | WS (CDP) / DAP                      | Attach Chrome DevTools or VS Code. ([graalvm.org][14])                                                                                                                                                   |
 
@@ -125,26 +125,54 @@ open "http://localhost:9222" # DevTools targets page; click Inspect.
 
 ([Chrome for Developers][22])
 
-### Safari (macOS) / iOS Safari / WKWebView — WebKit Inspector UI
+### Safari (macOS) / iOS Safari / WKWebView — WebKit Inspector socket
 
 ```bash
-# Enable menus, open Safari; iOS: enable Settings ▸ Safari ▸ Advanced ▸ Web Inspector.
+# Prereqs: brew install ios-webkit-debug-proxy libimobiledevice jq
 defaults write com.apple.Safari ShowDevelopMenu -bool true
-open -a Safari "about:blank"
-echo "Use Safari ▸ Develop to attach (iOS device / WKWebView)."
+defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+ios_webkit_debug_proxy -c null:9223 -d >/tmp/ios-wip.log 2>&1 & sleep 2
+WS=$(curl -s http://127.0.0.1:9223/json | jq -r '.[0].webSocketDebuggerUrl')
+npx -y wscat -c "$WS" -x '{"id":1,"method":"Runtime.evaluate","params":{"expression":"2+2","includeCommandLineAPI":true}}'
 ```
 
-([WebKit][2])
+Expect `"value":4` in the JSON response. iOS devices require Settings ▸ Safari ▸ Advanced ▸ Web Inspector enabled and a trusted USB connection. See `.specs/debug/research-webkit.md` for transport details. ([WebKit][2]) ([ios-webkit-debug-proxy][30])
 
-### Firefox — RDP UI (about:debugging) or BiDi
+### Firefox — RDP socket demo (`listTabs`)
 
 ```bash
-# RDP server (desktop):
-/Applications/Firefox.app/Contents/MacOS/firefox --start-debugger-server 6000 >/dev/null 2>&1 &
-echo "Open Firefox ▸ about:debugging ▸ 'Connect' ▸ localhost:6000"
+/Applications/Firefox.app/Contents/MacOS/firefox --start-debugger-server 6000 >/tmp/firefox-rdp.log 2>&1 & sleep 1
+PORT=6000 python - <<'PY'
+import json, os, socket
+
+def read_packet(sock):
+    size_bytes = []
+    while True:
+        ch = sock.recv(1)
+        if ch == b':':
+            break
+        if not ch:
+            raise RuntimeError('connection closed while reading size')
+        size_bytes.append(ch)
+    length = int(b''.join(size_bytes))
+    data = sock.recv(length)
+    return json.loads(data)
+
+def send_packet(sock, payload):
+    data = json.dumps(payload)
+    sock.sendall(f"{len(data)}:{data}".encode())
+
+port = int(os.environ.get('PORT', '6000'))
+with socket.create_connection(('127.0.0.1', port)) as sock:
+    hello = read_packet(sock)
+    print('root:', json.dumps(hello, indent=2))
+    send_packet(sock, {"to": "root", "type": "listTabs"})
+    reply = read_packet(sock)
+    print('listTabs:', json.dumps(reply, indent=2))
+PY
 ```
 
-(For cross-browser automation, prefer WebDriver **BiDi** via your language bindings.) ([dataswamp.org][23])
+The `listTabs` response proves request/response sequencing described in `.specs/debug/research-firefox.md`. For cross-browser automation, prefer WebDriver **BiDi** when available. ([dataswamp.org][23])
 
 ### Deno — V8 Inspector (shows WS endpoint)
 
@@ -156,23 +184,26 @@ deno eval --inspect-wait "setTimeout(()=>{},1e9)" 2>&1 | sed -n 's/.*\(ws:\/\/[^
 
 ([Deno][5])
 
-### Bun — WebKit Inspector (opens official debugger)
+### Bun — WebKit Inspector (WS bridge via debug.bun.sh)
 
 ```bash
-bun --inspect -e "setTimeout(()=>{},1e9)" 2>&1 | awk '/https?:\/\/debug\.bun\.sh/{print $NF; exit}' | xargs open
+WS=$(bun --inspect-wait -e "setTimeout(()=>{},1e9)" 2>&1 | sed -n 's/.*#\(ws:\/\/[^ ]*\)$/\1/p')
+npx -y wscat -c "$WS" -x '{"id":1,"method":"Runtime.evaluate","params":{"expression":"globalThis.process?.version ?? 4","includeCommandLineAPI":true}}'
 ```
 
-([Bun][24])
+Close with `Ctrl+C` after receiving `"type":"number","value":4`. See `.specs/debug/research-webkit.md` for protocol notes. ([Bun][24])
 
 ### React Native (Hermes) — React Native DevTools (RN 0.76+)
 
 ```bash
-# In one terminal:
+# Terminal 1: start Metro (Hermes app running):
 npx react-native start
-# Then press "j" to launch React Native DevTools (attach to Hermes engine automatically).
+# Terminal 2: pull Hermes target and evaluate via inspector proxy.
+WS=$(curl -s http://127.0.0.1:8081/json/list | jq -r '.[0].webSocketDebuggerUrl')
+npx -y wscat -c "$WS" -x '{"id":1,"method":"Runtime.evaluate","params":{"expression":"globalThis.__fbBatchedBridge ? 2+2 : 0","returnByValue":true}}'
 ```
 
-([React Native][25])
+Look for `"value":4` in the response. Ensure your app opts into Hermes and keep the device/simulator attached so Metro lists the target. See `.specs/debug/research-react-native.md` for protocol notes. ([React Native][25])
 
 ### NativeScript — Android (CDP) / iOS (WebKit)
 
@@ -187,12 +218,75 @@ echo "Run: ns debug android  |  ns debug ios"
 ### Servo — Firefox DevTools over RDP
 
 ```bash
-# In Servo repo:
-./mach run --devtools=6080
-# In Firefox: about:debugging ▸ Set up ▸ Add localhost:6080 ▸ Connect
+# In Servo repo (separate terminal):
+./mach run --devtools=6080 >/tmp/servo-rdp.log 2>&1 & sleep 1
+PORT=6080 python - <<'PY'
+import json, os, socket
+
+def read_packet(sock):
+    size_bytes = []
+    while True:
+        ch = sock.recv(1)
+        if ch == b':':
+            break
+        if not ch:
+            raise RuntimeError('connection closed while reading size')
+        size_bytes.append(ch)
+    length = int(b''.join(size_bytes))
+    data = sock.recv(length)
+    return json.loads(data)
+
+def send_packet(sock, payload):
+    data = json.dumps(payload)
+    sock.sendall(f"{len(data)}:{data}".encode())
+
+port = int(os.environ.get('PORT', '6080'))
+with socket.create_connection(('127.0.0.1', port)) as sock:
+    hello = read_packet(sock)
+    print('root:', json.dumps(hello, indent=2))
+    send_packet(sock, {"to": "root", "type": "listTabs"})
+    reply = read_packet(sock)
+    print('listTabs:', json.dumps(reply, indent=2))
+PY
 ```
 
-([book.servo.org][11])
+Servo mirrors Firefox’s actor graph; the snippet should return the same `WindowGlobalTargetActor` forms. ([book.servo.org][11])
+
+### Ladybird — Firefox DevTools RDP (`--devtools`)
+
+```bash
+DEVTOOLS_DEBUG=1 ladybird --devtools=6081 https://example.com >/tmp/ladybird-rdp.log 2>&1 & sleep 1
+PORT=6081 python - <<'PY'
+import json, os, socket
+
+def read_packet(sock):
+    size_bytes = []
+    while True:
+        ch = sock.recv(1)
+        if ch == b':':
+            break
+        if not ch:
+            raise RuntimeError('connection closed while reading size')
+        size_bytes.append(ch)
+    length = int(b''.join(size_bytes))
+    data = sock.recv(length)
+    return json.loads(data)
+
+def send_packet(sock, payload):
+    data = json.dumps(payload)
+    sock.sendall(f"{len(data)}:{data}".encode())
+
+port = int(os.environ.get('PORT', '6081'))
+with socket.create_connection(('127.0.0.1', port)) as sock:
+    hello = read_packet(sock)
+    print('root:', json.dumps(hello, indent=2))
+    send_packet(sock, {"to": "root", "type": "listTabs"})
+    reply = read_packet(sock)
+    print('listTabs:', json.dumps(reply, indent=2))
+PY
+```
+
+`DEVTOOLS_DEBUG=1` writes `>>`/`<<` packets to `/tmp/ladybird-rdp.log`, matching the handshake documented in `.specs/debug/research-ladybird.md`. Attach Firefox via `about:debugging` for full tooling once the socket handshake succeeds.
 
 ### LynxJS / PrimJS — CDP bridge via Lynx DevTool
 
@@ -218,7 +312,7 @@ echo 'npx -y wscat -c "ws://<lynx-ws>" -x "{\"id\":1,\"method\":\"Runtime.evalua
 # 5) Caveats, counter-views, and security
 
 * **Firefox CDP**: not enabled by default anymore; prefer BiDi/RDP. You can toggle `remote.active-protocols` if you must, but future is BiDi. ([fxdx.dev][27])
-* **Ladybird**: exciting engine, but there’s **no public remote-debug protocol** doc yet—expect local devtools to evolve first. ([ladybird.org][12])
+* **Ladybird**: ships a documented Firefox-compatible RDP server; enable `--devtools` and consult `Documentation/DevTools.md` (see `.specs/debug/research-ladybird.md`) for watcher details and known disconnect issues.
 * **Bun vs CDP**: Bun speaks **WebKit Inspector**, not CDP; you’ll use its hosted inspector UI (`debug.bun.sh`) instead of Chrome’s DevTools. ([Bun][6])
 * **React Native**: new **React Native DevTools** replaces Flipper/old Chrome-based flows; for JSC (not Hermes), use Safari’s Direct JSC debugging. ([React Native][7])
 * **Security**: exposing a debug port is **code execution**—bind to loopback, tunnel via ADB/SSH only. ([kenneth.io][28])
@@ -286,3 +380,4 @@ If you want this turned into a printable PDF or broken into repo-friendly Markdo
 [27]: https://fxdx.dev/deprecating-cdp-support-in-firefox-embracing-the-future-with-webdriver-bidi/?utm_source=chatgpt.com "Deprecating CDP Support in Firefox: Embracing the Future ..."
 [28]: https://kenneth.io/post/use-chrome-devtools-to-debug-your-users-browser-remotely-with-browserremote?utm_source=chatgpt.com "Use Chrome DevTools to debug your user's browser remotely ..."
 [29]: https://www.w3.org/TR/webdriver-bidi/?utm_source=chatgpt.com "WebDriver BiDi - W3C"
+[30]: https://github.com/google/ios-webkit-debug-proxy "ios-webkit-debug-proxy"
