@@ -1,19 +1,16 @@
+import * as NodeSocket from "@effect/platform-node/NodeSocket"
+import type * as Socket from "@effect/platform/Socket"
 import { describe, expect, it } from "@effect/vitest"
-import {
-  Debug,
-  Transport as DebugTransport,
-  command as debugCommand,
-  layerCdp
-} from "../src/Debug.js"
+import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
-import * as Stream from "effect/Stream"
-import * as Chunk from "effect/Chunk"
-import * as Fiber from "effect/Fiber"
-import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import type * as Scope from "effect/Scope"
+import * as Stream from "effect/Stream"
 import { WebSocketServer } from "ws"
+import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
+import type { Service as DebugService } from "../src/DebugModel.js"
 
 type CloseFn = () => Promise<void>
 
@@ -125,7 +122,9 @@ const RuntimeEnable = debugCommand({
   response: Schema.Struct({})
 })
 
-const withDebugEnvironment = <A>(effect: Effect.Effect<A>) =>
+const withDebugEnvironment = <A, E>(
+  effect: Effect.Effect<A, E, DebugService | Socket.WebSocketConstructor>
+): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(layerCdp),
     Effect.provide(NodeSocket.layerWebSocketConstructor)
@@ -151,8 +150,7 @@ describe("Debug CDP connection", () => {
           yield* debug.disconnect(session)
         })
       )
-    )
-  )
+    ).pipe(Effect.orDie))
 
   it.effect("emits protocol events via subscribe", () =>
     withDebugEnvironment(
@@ -173,6 +171,5 @@ describe("Debug CDP connection", () => {
           expect(Option.map(head, (event) => event.method)).toEqual(Option.some("Runtime.consoleAPICalled"))
         })
       )
-    )
-  )
+    ).pipe(Effect.orDie))
 })

@@ -1,5 +1,11 @@
+/**
+ * Chrome DevTools Protocol implementation for the Debug service.
+ *
+ * @category Internal
+ * @internal
+ * @since 0.0.0
+ */
 import * as Socket from "@effect/platform/Socket"
-import * as Debug from "../DebugModel.js"
 import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -9,6 +15,7 @@ import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as Debug from "../DebugModel.js"
 
 interface RawMessage {
   readonly id?: number
@@ -26,7 +33,7 @@ interface PendingRequest {
 }
 
 interface SessionState {
-  readonly scope: Scope.Scope
+  readonly scope: Scope.CloseableScope
   readonly writer: (chunk: string) => Effect.Effect<void, Socket.SocketError>
   readonly pending: Ref.Ref<Map<number, PendingRequest>>
   readonly nextId: Ref.Ref<number>
@@ -56,30 +63,37 @@ const getState = (session: Debug.Session): Effect.Effect<SessionState, Debug.Deb
 
 const failAllPending = (state: SessionState, error: Debug.DebugError): Effect.Effect<void> =>
   Effect.gen(function*() {
-    const entries = yield* Ref.modify(state.pending, (map) => {
-      const pending = Array.from(map.values())
-      map.clear()
-      return [pending, map]
-    })
-    yield* Effect.forEach(entries, (entry) => Deferred.complete(Effect.fail(error))(entry.deferred))
+    const entries = yield* Ref.modify(
+      state.pending,
+      (map): readonly [Array<PendingRequest>, Map<number, PendingRequest>] => {
+        const pending = Array.from(map.values())
+        map.clear()
+        return [pending, map]
+      }
+    )
+    yield* Effect.forEach(entries, (entry) => Effect.intoDeferred(Effect.fail(error), entry.deferred))
   })
 
 const shutdownSubscribers = (state: SessionState): Effect.Effect<void> =>
   Effect.gen(function*() {
-    const subscribers = yield* Ref.modify(state.subscribers, (subs) => [subs, []])
+    const subscribers = yield* Ref.modify(
+      state.subscribers,
+      (subs): readonly [ReadonlyArray<Queue.Queue<Debug.Event>>, ReadonlyArray<Queue.Queue<Debug.Event>>] => [subs, []]
+    )
     yield* Effect.forEach(subscribers, Queue.shutdown)
   })
 
 const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect.Effect<void, Debug.DebugError> =>
   Effect.gen(function*() {
     const text = typeof chunk === "string" ? chunk : decoder.decode(chunk)
-    const message = yield* Effect.try({
+    const message = yield* Effect.try<RawMessage, Debug.DebugInvalidMessage>({
       try: () => JSON.parse(text) as RawMessage,
-      catch: (cause) => new Debug.DebugInvalidMessage({
-        transport: state.transport,
-        endpoint: state.endpoint,
-        cause
-      })
+      catch: (cause) =>
+        new Debug.DebugInvalidMessage({
+          transport: state.transport,
+          endpoint: state.endpoint,
+          cause
+        })
     })
 
     const id = message.id
@@ -95,7 +109,7 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
         return
       }
       if (message.error !== undefined) {
-        yield* Deferred.complete(
+        yield* Effect.intoDeferred(
           Effect.fail(
             new Debug.DebugCommandError({
               transport: state.transport,
@@ -103,8 +117,9 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
               command: pending.command.command,
               detail: message.error
             })
-          )
-        )(pending.deferred)
+          ),
+          pending.deferred
+        )
         return
       }
       const decoded = yield* Schema.decodeUnknown(pending.command.response)(message.result).pipe(
@@ -117,7 +132,7 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
           })
         )
       )
-      yield* Deferred.complete(Effect.succeed(decoded))(pending.deferred)
+      yield* Effect.intoDeferred(Effect.succeed(decoded), pending.deferred)
       return
     }
 
@@ -164,14 +179,16 @@ const createSession = (
 ): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor> =>
   Effect.gen(function*() {
     if (options.transport._tag !== "Cdp") {
-      return yield* new Debug.DebugStateError({
-        transport: options.transport,
-        endpoint: options.endpoint,
-        reason: "CDP layer only supports Cdp transport"
-      })
+      return yield* Effect.fail(
+        new Debug.DebugStateError({
+          transport: options.transport,
+          endpoint: options.endpoint,
+          reason: "CDP layer only supports Cdp transport"
+        })
+      )
     }
 
-    const scope = yield* Scope.make()
+    const scope: Scope.CloseableScope = yield* Scope.make()
     const socket = yield* Scope.extend(Socket.makeWebSocket(options.endpoint), scope)
     const writer = yield* Scope.extend(socket.writer, scope)
     const nextId = yield* Ref.make(1)
@@ -211,7 +228,7 @@ const createSession = (
       Effect.catchAll((error) =>
         Effect.zipRight(
           failAllPending(state, error),
-          Effect.zipRight(shutdownSubscribers(state), Effect.fail<never, Debug.DebugError>(error))
+          Effect.zipRight(shutdownSubscribers(state), Effect.fail(error))
         )
       )
     )
@@ -221,8 +238,7 @@ const createSession = (
     return session
   })
 
-const connect: Debug.Service["connect"] = (options) =>
-  Effect.acquireRelease(createSession(options), releaseSession)
+const connect: Debug.Service["connect"] = (options) => Effect.acquireRelease(createSession(options), releaseSession)
 
 const disconnect: Debug.Service["disconnect"] = (session) =>
   Effect.gen(function*() {
@@ -234,11 +250,13 @@ const sendCommand: Debug.Service["sendCommand"] = (session, cmd) =>
   Effect.gen(function*() {
     const state = yield* getState(session)
     if (cmd.transport._tag !== state.transport._tag) {
-      return yield* new Debug.DebugStateError({
-        transport: cmd.transport,
-        endpoint: state.endpoint,
-        reason: "Command transport does not match the session transport"
-      })
+      return yield* Effect.fail(
+        new Debug.DebugStateError({
+          transport: cmd.transport,
+          endpoint: state.endpoint,
+          reason: "Command transport does not match the session transport"
+        })
+      )
     }
 
     const id = yield* Ref.modify(state.nextId, (current) => [current, current + 1])
@@ -263,19 +281,19 @@ const sendCommand: Debug.Service["sendCommand"] = (session, cmd) =>
     }
 
     yield* state.writer(JSON.stringify(payload)).pipe(
-      Effect.mapError((cause) =>
+      Effect.mapError((cause: unknown) =>
         new Debug.DebugTransportError({
           transport: state.transport,
           endpoint: state.endpoint,
           cause
         })
       ),
-      Effect.tapError((error) =>
+      Effect.tapError((error: Debug.DebugError) =>
         Ref.update(state.pending, (map) => {
           map.delete(id)
           return map
         }).pipe(
-          Effect.zipRight(Deferred.complete(Effect.fail(error))(deferred))
+          Effect.zipRight(Effect.intoDeferred(Effect.fail(error), deferred))
         )
       )
     )
@@ -291,7 +309,7 @@ const subscribe: Debug.Service["subscribe"] = (session) =>
       yield* Ref.update(state.subscribers, (subs) => [...subs, queue])
       return { state, queue }
     }),
-    ({ state, queue }) =>
+    ({ queue, state }) =>
       Ref.update(state.subscribers, (subs) => subs.filter((candidate) => candidate !== queue)).pipe(
         Effect.zipRight(Queue.shutdown(queue))
       )
@@ -299,7 +317,15 @@ const subscribe: Debug.Service["subscribe"] = (session) =>
     Effect.map(({ queue }) => Stream.fromQueue(queue, { shutdown: true }))
   )
 
-const makeService: Effect.Effect<Debug.Service, never, Socket.WebSocketConstructor | Scope.Scope> =
-  Effect.succeed({ connect, disconnect, sendCommand, subscribe })
+const makeService: Effect.Effect<Debug.Service, never> = Effect.succeed({
+  connect,
+  disconnect,
+  sendCommand,
+  subscribe
+})
 
+/**
+ * @internal
+ * @since 0.0.0
+ */
 export const layer: Layer.Layer<Debug.Service> = Layer.effect(Debug.Debug, makeService)

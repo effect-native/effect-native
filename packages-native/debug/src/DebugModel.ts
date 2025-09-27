@@ -1,10 +1,16 @@
+/**
+ * Core Debug service types and tagged errors.
+ *
+ * @category Debug
+ * @since 0.0.0
+ */
+import type * as Socket from "@effect/platform/Socket"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import type * as Effect from "effect/Effect"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
-import type * as Socket from "@effect/platform/Socket"
 
 /**
  * Unique symbol for Debug sessions.
@@ -155,7 +161,9 @@ export type DebugError =
  * @since 0.0.0
  */
 export interface Service {
-  readonly connect: (options: ConnectOptions) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor>
+  readonly connect: (
+    options: ConnectOptions
+  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor>
   readonly disconnect: (session: Session) => Effect.Effect<void, DebugError>
   readonly sendCommand: <A, I = unknown>(session: Session, cmd: Command<A, I>) => Effect.Effect<A, DebugError>
   readonly subscribe: (session: Session) => Effect.Effect<Stream.Stream<Event>, DebugError, Scope.Scope>
