@@ -14,12 +14,16 @@ import type * as Stream from "effect/Stream"
 
 /**
  * Unique symbol for Debug sessions.
+ *
+ * @category Identifiers
  * @since 0.0.0
  */
 export const SessionTypeId: unique symbol = Symbol.for("@effect-native/debug/Session")
 
 /**
  * Transport descriptor for debugger protocols.
+ *
+ * @category Transport
  * @since 0.0.0
  */
 export interface CdpTransport {
@@ -29,12 +33,16 @@ export interface CdpTransport {
 
 /**
  * Union of supported transports.
+ *
+ * @category Transport
  * @since 0.0.0
  */
 export type Transport = CdpTransport
 
 /**
  * Helpers for constructing transport descriptors.
+ *
+ * @category Transport
  * @since 0.0.0
  */
 export const Transport = {
@@ -45,6 +53,8 @@ export const Transport = {
 
 /**
  * Command envelope describing a debugger request.
+ *
+ * @category Command
  * @since 0.0.0
  */
 export interface Command<A, I = unknown> {
@@ -58,12 +68,16 @@ export interface Command<A, I = unknown> {
 
 /**
  * Construct a typed command envelope.
+ *
+ * @category Command
  * @since 0.0.0
  */
 export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> => options
 
 /**
  * Connection options for establishing a Debug session.
+ *
+ * @category Connection
  * @since 0.0.0
  */
 export interface ConnectOptions {
@@ -73,6 +87,8 @@ export interface ConnectOptions {
 
 /**
  * Represents an active Debug session.
+ *
+ * @category Session
  * @since 0.0.0
  */
 export interface Session {
@@ -83,6 +99,8 @@ export interface Session {
 
 /**
  * Event emitted by a Debug session.
+ *
+ * @category Events
  * @since 0.0.0
  */
 export interface Event {
@@ -95,6 +113,8 @@ export interface Event {
 
 /**
  * Error produced when a session reference is invalid.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export class DebugStateError extends Data.TaggedError("DebugStateError")<{
@@ -105,6 +125,8 @@ export class DebugStateError extends Data.TaggedError("DebugStateError")<{
 
 /**
  * Error produced when the underlying transport fails.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export class DebugTransportError extends Data.TaggedError("DebugTransportError")<{
@@ -115,6 +137,8 @@ export class DebugTransportError extends Data.TaggedError("DebugTransportError")
 
 /**
  * Error produced when the remote protocol reports a failure.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export class DebugCommandError extends Data.TaggedError("DebugCommandError")<{
@@ -126,6 +150,8 @@ export class DebugCommandError extends Data.TaggedError("DebugCommandError")<{
 
 /**
  * Error produced when decoding a command response fails.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export class DebugDecodeError extends Data.TaggedError("DebugDecodeError")<{
@@ -137,6 +163,8 @@ export class DebugDecodeError extends Data.TaggedError("DebugDecodeError")<{
 
 /**
  * Error produced when incoming protocol data is malformed.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export class DebugInvalidMessage extends Data.TaggedError("DebugInvalidMessage")<{
@@ -147,6 +175,8 @@ export class DebugInvalidMessage extends Data.TaggedError("DebugInvalidMessage")
 
 /**
  * Union of errors emitted by the Debug service.
+ *
+ * @category Errors
  * @since 0.0.0
  */
 export type DebugError =
@@ -158,6 +188,8 @@ export type DebugError =
 
 /**
  * Debug service interface exposing protocol-agnostic operations.
+ *
+ * @category Service
  * @since 0.0.0
  */
 export interface Service {
@@ -171,6 +203,8 @@ export interface Service {
 
 /**
  * Debug service tag.
+ *
+ * @category Service
  * @since 0.0.0
  */
 export const Debug = Context.GenericTag<Service>("@effect-native/debug/Debug")
