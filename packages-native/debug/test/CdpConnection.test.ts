@@ -8,6 +8,7 @@ import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as inspector from "node:inspector"
 import { WebSocketServer } from "ws"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 import type { Service as DebugService } from "../src/DebugModel.js"
@@ -20,6 +21,7 @@ interface TestCdpServer {
   readonly close: CloseFn
 }
 
+// TODO: refactor to use @effect/rpc
 const makeTestCdpServer: Effect.Effect<TestCdpServer, Error, Scope.Scope> = Effect.acquireRelease(
   Effect.async<TestCdpServer, Error>((resume) => {
     const wss = new WebSocketServer({ port: 0 })
@@ -122,6 +124,29 @@ const RuntimeEnable = debugCommand({
   response: Schema.Struct({})
 })
 
+const RuntimeEvaluate = debugCommand({
+  transport: DebugTransport.cdp(),
+  command: "Runtime.evaluate",
+  params: { expression: "21 * 2" },
+  response: Schema.Struct({
+    result: Schema.Struct({
+      type: Schema.String,
+      value: Schema.optional(Schema.Number),
+      description: Schema.optional(Schema.String)
+    })
+  })
+})
+
+const makeNodeInspectorSession: Effect.Effect<string, Error, Scope.Scope> = Effect.acquireRelease(
+  Effect.gen(function*() {
+    inspector.close()
+    inspector.open(0, "127.0.0.1", false)
+    const url = inspector.url()
+    return url ? url : yield* Effect.fail(new Error("Inspector URL unavailable"))
+  }),
+  () => Effect.sync(() => inspector.close())
+)
+
 const withDebugEnvironment = <A, E>(
   effect: Effect.Effect<A, E, DebugService | Socket.WebSocketConstructor>
 ): Effect.Effect<A, E, never> =>
@@ -130,7 +155,7 @@ const withDebugEnvironment = <A, E>(
     Effect.provide(NodeSocket.layerWebSocketConstructor)
   )
 
-describe("Debug CDP connection", () => {
+describe.sequential("Debug CDP connection", () => {
   it.effect("connects and fetches browser metadata", () =>
     withDebugEnvironment(
       Effect.scoped(
@@ -169,6 +194,73 @@ describe("Debug CDP connection", () => {
           const chunk = yield* Fiber.join(collector)
           const head = Chunk.head(chunk)
           expect(Option.map(head, (event) => event.method)).toEqual(Option.some("Runtime.consoleAPICalled"))
+        })
+      )
+    ).pipe(Effect.orDie))
+
+  it.effect("connects to Node inspector", () =>
+    withDebugEnvironment(
+      Effect.scoped(
+        Effect.gen(function*() {
+          const inspectorSession = yield* makeNodeInspectorSession
+          const debug = yield* Debug
+          const session = yield* debug.connect({
+            endpoint: inspectorSession,
+            transport: DebugTransport.cdp()
+          })
+          const evaluation = yield* debug.sendCommand(session, RuntimeEvaluate)
+          expect(evaluation.result.type).toBe("number")
+          expect(evaluation.result.value).toBe(42)
+          yield* debug.disconnect(session)
+        })
+      )
+    ).pipe(Effect.orDie))
+
+  it.effect("connects via Node debug target discovery", () =>
+    withDebugEnvironment(
+      Effect.scoped(
+        Effect.gen(function*() {
+          const inspectorSession = yield* makeNodeInspectorSession
+          const inspectorUrl = new URL(inspectorSession)
+          const targets = yield* Effect.tryPromise({
+            try: async () => {
+              const response = await fetch(`http://${inspectorUrl.host}/json/list`)
+              if (!response.ok) {
+                throw new Error(`Inspector target discovery failed with status ${response.status}`)
+              }
+              return response.json() as Promise<unknown>
+            },
+            catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+          })
+
+          if (!Array.isArray(targets)) {
+            return yield* Effect.fail(new Error("Inspector target list is not an array"))
+          }
+
+          const firstTarget = targets[0]
+
+          if (firstTarget === undefined || typeof firstTarget !== "object" || firstTarget === null) {
+            return yield* Effect.fail(new Error("Inspector target list is empty"))
+          }
+
+          const nodeTarget = firstTarget as { readonly type?: unknown; readonly webSocketDebuggerUrl?: unknown }
+          expect(nodeTarget.type).toBe("node")
+
+          const endpoint = nodeTarget.webSocketDebuggerUrl
+
+          if (typeof endpoint !== "string") {
+            return yield* Effect.fail(new Error("Inspector target missing webSocketDebuggerUrl"))
+          }
+
+          const debug = yield* Debug
+          const session = yield* debug.connect({
+            endpoint,
+            transport: DebugTransport.cdp()
+          })
+          const evaluation = yield* debug.sendCommand(session, RuntimeEvaluate)
+          expect(evaluation.result.type).toBe("number")
+          expect(evaluation.result.value).toBe(42)
+          yield* debug.disconnect(session)
         })
       )
     ).pipe(Effect.orDie))
