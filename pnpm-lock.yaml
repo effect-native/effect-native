@@ -107,6 +107,9 @@ importers:
       dependency-cruiser:
         specifier: ^16.10.4
         version: 16.10.4
+      effect:
+        specifier: latest
+        version: 3.17.14
       eslint:
         specifier: ^9.35.0
         version: 9.35.0
@@ -158,6 +161,13 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/node@22.18.4)(@vitest/browser@3.2.4)(happy-dom@17.6.3)(terser@5.44.0)(tsx@4.20.5)(yaml@2.8.0)
+
+  packages-native/bidi:
+    dependencies:
+      effect:
+        specifier: latest
+        version: 3.17.14
+    publishDirectory: dist
 
   packages-native/bun-test:
     dependencies:
@@ -4308,7 +4318,6 @@ packages:
 
   libsql@0.4.7:
     resolution: {integrity: sha512-T9eIRCs6b0J1SHKYIvD8+KCJMcWZ900iZyxdnSCdqxN12Z1ijzT+jY5nrk72Jw4B0HGzms2NgpryArlJqvc3Lw==}
-    cpu: [x64, arm64, wasm32]
     os: [darwin, linux, win32]
 
   lighthouse-logger@1.4.2:
