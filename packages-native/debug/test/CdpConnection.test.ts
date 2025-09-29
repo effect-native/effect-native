@@ -8,7 +8,13 @@ import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as ChildProcess from "node:child_process"
+import { constants as FsConstants } from "node:fs"
+import * as Fs from "node:fs/promises"
 import * as inspector from "node:inspector"
+import * as Net from "node:net"
+import * as Os from "node:os"
+import * as Path from "node:path"
 import { WebSocketServer } from "ws"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 import type { Service as DebugService } from "../src/DebugModel.js"
@@ -137,6 +143,275 @@ const RuntimeEvaluate = debugCommand({
   })
 })
 
+const chromeBinaryCandidates: ReadonlyArray<string | undefined> = [
+  process.env.CHROME_PATH,
+  "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium-browser",
+  "/usr/bin/chromium",
+  "/opt/google/chrome/google-chrome",
+  "/snap/bin/chromium"
+]
+
+interface ChromeInspectorSession {
+  readonly endpoint: string
+  readonly targetType?: string | undefined
+}
+
+const findChromeExecutable: Effect.Effect<string, Error> = Effect.gen(function*() {
+  for (const candidate of chromeBinaryCandidates) {
+    if (!candidate) {
+      continue
+    }
+    const exists = yield* Effect.matchEffect(
+      Effect.tryPromise({
+        try: () => Fs.access(candidate, FsConstants.X_OK),
+        catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+      }),
+      {
+        onFailure: () => Effect.succeed(false),
+        onSuccess: () => Effect.succeed(true)
+      }
+    )
+    if (exists) {
+      return candidate
+    }
+  }
+  return yield* Effect.fail(new Error("Chrome executable not found; set CHROME_PATH to override"))
+})
+
+const acquireDebuggingPort: Effect.Effect<number, Error> = Effect.async((resume) => {
+  const server = Net.createServer()
+  const fail = (cause: unknown) => {
+    server.close()
+    resume(Effect.fail(cause instanceof Error ? cause : new Error(String(cause))))
+  }
+  server.once("error", fail)
+  server.listen(0, "127.0.0.1", () => {
+    const address = server.address()
+    server.close(() => {
+      if (!address || typeof address !== "object") {
+        resume(Effect.fail(new Error("Failed to allocate debugging port")))
+        return
+      }
+      resume(Effect.succeed(address.port))
+    })
+  })
+})
+
+const fetchChromeJson = (
+  port: number,
+  path: string,
+  init?: RequestInit
+): Effect.Effect<unknown, Error> =>
+  Effect.tryPromise({
+    try: async () => {
+      const url = `http://127.0.0.1:${port}${path}`
+      const signal = init?.signal ?? AbortSignal.timeout(200)
+      const response = await fetch(url, {
+        ...init,
+        method: init?.method ?? "GET",
+        signal
+      })
+      if (!response.ok) {
+        throw new Error(`Chrome debugger request to ${path} failed with status ${response.status}`)
+      }
+      return response.json() as Promise<unknown>
+    },
+    catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+  })
+
+const parseChromeTarget = (value: unknown): ChromeInspectorSession | undefined => {
+  if (!value || typeof value !== "object") {
+    return undefined
+  }
+  const candidate = value as {
+    readonly type?: unknown
+    readonly webSocketDebuggerUrl?: unknown
+  }
+  const endpoint = candidate.webSocketDebuggerUrl
+  if (typeof endpoint !== "string") {
+    return undefined
+  }
+  const rawType = candidate.type
+  const targetType = typeof rawType === "string" ? rawType : undefined
+  return { endpoint, targetType }
+}
+
+const findInspectablePage = (value: unknown): ChromeInspectorSession | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+  for (const entry of value) {
+    const target = parseChromeTarget(entry)
+    if (!target) {
+      continue
+    }
+    if (!target.targetType || target.targetType === "page" || target.targetType === "tab") {
+      return target
+    }
+  }
+  return undefined
+}
+
+const waitFor = (ms: number): Effect.Effect<void> =>
+  Effect.promise(() => new Promise((resolve) => setTimeout(resolve, ms)))
+
+const makeChromeInspectorSession: Effect.Effect<ChromeInspectorSession, Error, Scope.Scope> = Effect.acquireRelease(
+  Effect.gen(function*() {
+    const chromeBinary = yield* findChromeExecutable
+    const port = yield* acquireDebuggingPort
+    const userDataDir = yield* Effect.tryPromise({
+      try: () => Fs.mkdtemp(Path.join(Os.tmpdir(), "uxp-chrome-")),
+      catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+    })
+
+    const chrome = ChildProcess.spawn(
+      chromeBinary,
+      [
+        `--remote-debugging-port=${port}`,
+        "--remote-debugging-address=127.0.0.1",
+        `--user-data-dir=${userDataDir}`,
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-first-run-ui",
+        "--disable-fre",
+        "--disable-background-networking",
+        "--disable-component-update",
+        "--disable-default-apps",
+        "--disable-sync",
+        "--disable-extensions",
+        "--disable-popup-blocking",
+        "--disable-search-engine-choice-screen",
+        "--password-store=basic",
+        "--use-mock-keychain",
+        "--headless=new",
+        "about:blank"
+      ],
+      {
+        stdio: "ignore"
+      }
+    )
+
+    if (chrome.pid === undefined) {
+      return yield* Effect.fail(new Error("Failed to spawn Chrome process"))
+    }
+
+    let spawnError: Error | undefined
+    let exitCode: number | null = null
+    let exitSignal: NodeJS.Signals | null = null
+
+    chrome.once("error", (error) => {
+      spawnError = error instanceof Error ? error : new Error(String(error))
+    })
+    chrome.once("exit", (code, signal) => {
+      exitCode = code
+      exitSignal = signal
+    })
+
+    const maxAttempts = 40
+    const waitDelayMs = 100
+    const creationLimit = 5
+    let creationAttempts = 0
+    let lastTargetsSummary = "none"
+    let lastFailure: unknown = undefined
+    let createdTargetEndpoint: string | undefined
+
+    const { endpoint, targetType } = yield* Effect.gen(function*() {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (spawnError) {
+          return yield* Effect.fail(
+            new Error(`Chrome failed before debugger became ready: ${spawnError.message}`)
+          )
+        }
+        if (exitCode !== null) {
+          return yield* Effect.fail(
+            new Error(
+              `Chrome exited before debugger became ready (code: ${String(exitCode)}, signal: ${exitSignal ?? "none"})`
+            )
+          )
+        }
+        const result = yield* Effect.either(fetchChromeJson(port, "/json/list"))
+        if (result._tag === "Right") {
+          const value = result.right
+          lastTargetsSummary = Array.isArray(value) ? `targets=${value.length}` : "non-array"
+          const pageTarget = findInspectablePage(value)
+          if (pageTarget) {
+            return pageTarget
+          }
+          if (creationAttempts < creationLimit) {
+            creationAttempts += 1
+            const creation = yield* Effect.either(
+              fetchChromeJson(port, `/json/new?${encodeURIComponent("about:blank")}`, {
+                method: "PUT"
+              })
+            )
+            if (creation._tag === "Right") {
+              const createdTarget = parseChromeTarget(creation.right)
+              if (createdTarget) {
+                createdTargetEndpoint = createdTarget.endpoint
+                return createdTarget
+              }
+            }
+          }
+        } else {
+          lastFailure = result.left
+        }
+
+        yield* waitFor(waitDelayMs)
+      }
+
+      const failureDetailParts: Array<string> = []
+      if (createdTargetEndpoint) {
+        failureDetailParts.push(`last-created=${createdTargetEndpoint}`)
+      }
+      if (lastTargetsSummary !== "none") {
+        failureDetailParts.push(lastTargetsSummary)
+      }
+      if (lastFailure !== undefined) {
+        const rendered = lastFailure instanceof Error
+          ? lastFailure.message
+          : String(lastFailure)
+        failureDetailParts.push(`last-error=${rendered}`)
+      }
+      const detail = failureDetailParts.length > 0 ? ` (${failureDetailParts.join(", ")})` : ""
+      return yield* Effect.fail(new Error(`Timed out waiting for Chrome debugger target${detail}`))
+    })
+
+    return { endpoint, targetType, chrome, userDataDir }
+  }),
+  ({ chrome, userDataDir }) =>
+    Effect.async<void, never>((resume) => {
+      let completed = false
+      const finish = () => {
+        if (!completed) {
+          completed = true
+          resume(Effect.void)
+        }
+      }
+      chrome.once("close", finish)
+      chrome.once("exit", finish)
+      chrome.once("error", finish)
+      if (!chrome.kill("SIGTERM")) {
+        finish()
+      }
+      setTimeout(() => {
+        if (!chrome.killed) {
+          chrome.kill("SIGKILL")
+        }
+      }, 1_000)
+    }).pipe(
+      Effect.zipRight(
+        Effect.tryPromise({
+          try: () => Fs.rm(userDataDir, { recursive: true, force: true }),
+          catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+        }).pipe(Effect.catchAll(() => Effect.void))
+      )
+    )
+).pipe(Effect.map(({ endpoint, targetType }) => ({ endpoint, targetType })))
+
 const makeNodeInspectorSession: Effect.Effect<string, Error, Scope.Scope> = Effect.acquireRelease(
   Effect.gen(function*() {
     inspector.close()
@@ -264,4 +539,31 @@ describe.sequential("Debug CDP connection", () => {
         })
       )
     ).pipe(Effect.orDie))
+
+  it.effect(
+    "connects to Chrome remote debugging",
+    () =>
+      withDebugEnvironment(
+        Effect.scoped(
+          Effect.gen(function*() {
+            const chromeInspector = yield* makeChromeInspectorSession
+            const debug = yield* Debug
+            const session = yield* debug.connect({
+              endpoint: chromeInspector.endpoint,
+              transport: DebugTransport.cdp()
+            })
+            if (chromeInspector.targetType) {
+              expect(["page", "tab"]).toContain(chromeInspector.targetType)
+            }
+            const runtimeEnabled = yield* debug.sendCommand(session, RuntimeEnable)
+            expect(runtimeEnabled).toEqual({})
+            const evaluation = yield* debug.sendCommand(session, RuntimeEvaluate)
+            expect(evaluation.result.type).toBe("number")
+            expect(evaluation.result.value).toBe(42)
+            yield* debug.disconnect(session)
+          })
+        )
+      ).pipe(Effect.orDie),
+    30_000
+  )
 })
