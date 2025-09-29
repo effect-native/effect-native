@@ -259,7 +259,7 @@ const findInspectablePage = (value: unknown): ChromeInspectorSession | undefined
 const waitFor = (ms: number): Effect.Effect<void> =>
   Effect.promise(() => new Promise((resolve) => setTimeout(resolve, ms)))
 
-const makeChromeInspectorSession: Effect.Effect<ChromeInspectorSession, Error, Scope.Scope> = Effect.acquireRelease(
+const makeChromeInspectorSession = Effect.acquireRelease(
   Effect.gen(function*() {
     const chromeBinary = yield* findChromeExecutable
     const port = yield* acquireDebuggingPort
@@ -543,27 +543,24 @@ describe.sequential("Debug CDP connection", () => {
   it.effect(
     "connects to Chrome remote debugging",
     () =>
-      withDebugEnvironment(
-        Effect.scoped(
-          Effect.gen(function*() {
-            const chromeInspector = yield* makeChromeInspectorSession
-            const debug = yield* Debug
-            const session = yield* debug.connect({
-              endpoint: chromeInspector.endpoint,
-              transport: DebugTransport.cdp()
-            })
-            if (chromeInspector.targetType) {
-              expect(["page", "tab"]).toContain(chromeInspector.targetType)
-            }
-            const runtimeEnabled = yield* debug.sendCommand(session, RuntimeEnable)
-            expect(runtimeEnabled).toEqual({})
-            const evaluation = yield* debug.sendCommand(session, RuntimeEvaluate)
-            expect(evaluation.result.type).toBe("number")
-            expect(evaluation.result.value).toBe(42)
-            yield* debug.disconnect(session)
-          })
-        )
-      ).pipe(Effect.orDie),
+      Effect.gen(function*() {
+        const chromeInspector = yield* makeChromeInspectorSession
+        const debug = yield* Debug
+        const session = yield* debug.connect({
+          endpoint: chromeInspector.endpoint,
+          transport: DebugTransport.cdp()
+        })
+        if (chromeInspector.targetType) {
+          expect(["page", "tab"]).toContain(chromeInspector.targetType)
+        }
+        const runtimeEnabled = yield* debug.sendCommand(session, RuntimeEnable)
+        expect(runtimeEnabled).toEqual({})
+        const evaluation = yield* debug.sendCommand(session, RuntimeEvaluate)
+        expect(evaluation.result.type).toBe("number")
+        expect(evaluation.result.value).toBe(42)
+        yield* debug.disconnect(session)
+      })
+        .pipe(Effect.orDie, Effect.scoped, withDebugEnvironment),
     30_000
   )
 })
