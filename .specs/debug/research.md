@@ -15,7 +15,8 @@
 | **Firefox (desktop & Android)**                                                                                | **Firefox DevTools Remote Debugging Protocol (RDP)**; **WebDriver BiDi** (automation) | TCP (RDP), WS (BiDi via driver)     | RDP powers DevTools; BiDi is production-ready and the cross-browser path; CDP is no longer on by default. ([firefox-source-docs.mozilla.org][3])                                                         |
 | **Node.js** (V8)                                                                                               | **V8 Inspector** (CDP dialect) via `--inspect`                                        | WS (+ HTTP discovery on `9229`)     | CDP-style domains exposed; `inspector` module available in-process. ([Node.js][4])                                                                                                                       |
 | **Deno**                                                                                                       | **V8 Inspector** (`--inspect`)                                                        | WS (prints `ws://…/ws/<id>`)        | Attach via Chrome DevTools or any CDP client. ([Deno][5])                                                                                                                                                |
-| **Bun** (JSC)                                                                                                  | **WebKit Inspector Protocol** (`--inspect`)                                           | WS UI at **debug.bun.sh**           | Bun speaks WebKit’s protocol; opens a hosted Inspector front-end. ([Bun][6])                                                                                                                             |
+| **Bun** (JSC)                                                                                                  | **WebKit Inspector Protocol** (`--inspect`)                                           | WS UI at **debug.bun.sh**           | Bun speaks WebKit's protocol; opens a hosted Inspector front-end. ([Bun][6])                                                                                                                             |
+| **Cloudflare Workers** (workerd)                                                                               | **V8 Inspector** (CDP dialect) via `wrangler dev`                                     | WS (+ HTTP discovery `/json`)       | Local dev only; `wrangler dev --inspector-port=9229` exposes full CDP. Production uses tail workers and logs. Full `Runtime.*`, `Debugger.*` support. ([Cloudflare][6a])                                  |
 | **React Native (Hermes)**                                                                                      | **CDP-compatible Hermes Inspector**; **React Native DevTools** (frontend)             | WS via Metro/Inspector proxy        | RN 0.76+ ships React Native DevTools; Hermes implements Chrome inspector protocol for in-place debugging. ([React Native][7])                                                                            |
 | **React Native (JSC)**                                                                                         | WebKit Inspector (Direct JSC)                                                         | WS via Safari Develop (iOS)         | Use Direct JSC Debugging / Safari Web Inspector on Apple platforms. ([React Native][8])                                                                                                                  |
 | **NativeScript**                                                                                               | CDP (Android), WebKit Inspector (iOS)                                                 | As above                            | CLI + VS Code flows map to Chrome/Safari protocols. ([docs.nativescript.org][9])                                                                                                                         |
@@ -192,6 +193,27 @@ npx -y wscat -c "$WS" -x '{"id":1,"method":"Runtime.evaluate","params":{"express
 ```
 
 Close with `Ctrl+C` after receiving `"type":"number","value":4`. See `.specs/debug/research-webkit.md` for protocol notes. ([Bun][24])
+
+### Cloudflare Workers — V8 Inspector (via wrangler dev)
+
+```bash
+# Create and start a basic worker with inspector
+npx wrangler init cf-worker --yes
+cd cf-worker
+cat > src/index.ts << 'EOF'
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return new Response(JSON.stringify({ msg: "Hello Worker!", time: Date.now() }));
+  }
+}
+EOF
+npx wrangler dev --inspector-port=9229 >/dev/null 2>&1 & sleep 3
+WS=$(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl')
+npx -y wscat -c "$WS" -x '{"id":1,"method":"Runtime.evaluate","params":{"expression":"typeof fetch","returnByValue":true}}'
+# Expect: {"result":{"type":"string","value":"function"}}
+```
+
+Local dev only; production Workers use `wrangler tail` for logs. Full CDP support including debugger, profiler, and console. See `.specs/debug/research-cloudflare-workers.md` for bindings inspection and production debugging notes. ([Cloudflare][6a])
 
 ### React Native (Hermes) — React Native DevTools (RN 0.76+)
 
