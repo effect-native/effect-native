@@ -21,3 +21,4 @@ file:*
 packages-native/*/file:*
 .codex/sessions/
 .codex/.codex/
+.pnpm-store/
