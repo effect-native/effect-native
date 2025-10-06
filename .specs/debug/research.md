@@ -379,6 +379,7 @@ If you want this turned into a printable PDF or broken into repo-friendly Markdo
 [4]: https://nodejs.org/api/inspector.html?utm_source=chatgpt.com "Inspector | Node.js v24.8.0 Documentation"
 [5]: https://docs.deno.com/runtime/fundamentals/debugging/?utm_source=chatgpt.com "Debugging"
 [6]: https://bun.com/guides/runtime/web-debugger?utm_source=chatgpt.com "Debugging Bun with the web debugger"
+[6a]: https://developers.cloudflare.com/workers/observability/debugging/?utm_source=chatgpt.com "Debugging Workers - Cloudflare Workers"
 [7]: https://reactnative.dev/blog/2024/10/23/release-0.76-new-architecture?utm_source=chatgpt.com "React Native 0.76 - New Architecture by default, ..."
 [8]: https://reactnative.dev/docs/debugging?utm_source=chatgpt.com "Debugging Basics"
 [9]: https://docs.nativescript.org/guide/debugging?utm_source=chatgpt.com "Debugging"
