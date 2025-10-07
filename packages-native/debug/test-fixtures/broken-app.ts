@@ -153,7 +153,8 @@ async function fetchDataWithTimeout(url: string, timeoutMs: number): Promise<str
  */
 async function main() {
   console.log("🐛 Starting Broken App Demo")
-  console.log("This app has 7 intentional bugs for debugging practice\n")
+  console.log("This app has 7 intentional bugs for debugging practice")
+  console.log("🔍 Waiting for debugger to attach and step through...\n")
 
   // Bug #1: Off-by-one error
   console.log("1️⃣  Testing processItems (off-by-one bug)...")
@@ -232,8 +233,24 @@ async function main() {
   console.log("   Note: Timeout is never cleared, causing memory leak")
   console.log("   Run with --expose-gc and monitor heap to see leak accumulate")
 
-  console.log("\n✅ Demo complete!")
-  console.log("🔍 Attach a debugger and step through to find all bugs")
+  console.log("\n✅ Initial demo complete!")
+  console.log("🔁 Now looping forever for debugger to step through...")
+  console.log("")
+
+  // Infinite loop for debugger to step through
+  let iteration = 0
+  while (true) {
+    iteration++
+
+    // Slow down the loop so stepping is visible
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    // Exercise bugs repeatedly so debugger can step through them
+    if (iteration % 10 === 1) {
+      const result = processItems(["a", "b", "c"])
+      console.log(`[${iteration}] processItems errors: ${result.errors.length}`)
+    }
+  }
 }
 
 // Run the demo

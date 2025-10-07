@@ -2,18 +2,12 @@
 /**
  * Debug Step-Through Demo
  *
- * This script demonstrates using @effect-native/debug to:
- * 1. Launch a Node.js process with debugging enabled
- * 2. Connect to the inspector
- * 3. Enable the Debugger domain
- * 4. Pause execution
- * 5. Step through code line-by-line forever
- * 6. Log execution details (file, line, function, call stack)
+ * Launches broken-app.ts with --inspect-brk, connects via @effect-native/debug,
+ * and steps through every line of execution, logging file:line:function info.
  *
  * Run with: pnpm test:debug-log-steps
  */
 
-import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import { spawn } from "child_process"
 import * as Console from "effect/Console"
@@ -27,252 +21,160 @@ import { fileURLToPath } from "url"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 
 // ============================================================================
-// Schemas for CDP Protocol Responses
+// Launch Target with Inspector
 // ============================================================================
 
-const DebuggerEnableResponse = Schema.Struct({
-  debuggerId: Schema.String
-})
-
-const DebuggerPauseResponse = Schema.Struct({})
-
-const Location = Schema.Struct({
-  scriptId: Schema.String,
-  lineNumber: Schema.Number,
-  columnNumber: Schema.optional(Schema.Number)
-})
-
-const Scope = Schema.Struct({
-  type: Schema.String,
-  object: Schema.Struct({
-    type: Schema.String,
-    className: Schema.optional(Schema.String),
-    description: Schema.optional(Schema.String)
-  })
-})
-
-const CallFrame = Schema.Struct({
-  callFrameId: Schema.String,
-  functionName: Schema.String,
-  location: Location,
-  url: Schema.String,
-  scopeChain: Schema.Array(Scope)
-})
-
-const DebuggerStepIntoResponse = Schema.Struct({})
-
-const ScriptParsedParams = Schema.Struct({
-  scriptId: Schema.String,
-  url: Schema.String,
-  startLine: Schema.optional(Schema.Number),
-  startColumn: Schema.optional(Schema.Number),
-  endLine: Schema.optional(Schema.Number),
-  endColumn: Schema.optional(Schema.Number)
-})
-
-// ============================================================================
-// Launch Target Process
-// ============================================================================
-
-function launchDebugTarget(): { port: number; process: ReturnType<typeof spawn> } {
+function launchDebugTarget() {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
   const targetScript = join(__dirname, "broken-app.ts")
-
   const port = 9300 + Math.floor(Math.random() * 100)
-  console.log(`🚀 Launching target process: node --inspect-brk=${port} ${targetScript}`)
 
-  const child = spawn(
-    "node",
-    ["--inspect-brk=" + port, "--import", "tsx/esm", targetScript],
-    {
-      stdio: ["ignore", "pipe", "pipe"]
-    }
-  )
+  console.log(`🚀 Launching: node --inspect-brk=${port} ${targetScript}`)
 
-  child.stdout.on("data", (data) => {
-    process.stdout.write(`[target] ${data}`)
+  const child = spawn("node", ["--inspect-brk=" + port, "--import", "tsx/esm", targetScript], {
+    stdio: ["ignore", "pipe", "pipe"]
   })
 
-  child.stderr.on("data", (data) => {
-    process.stderr.write(`[target] ${data}`)
-  })
+  child.stdout.on("data", (data) => process.stdout.write(`[target] ${data}`))
+  child.stderr.on("data", (data) => process.stderr.write(`[target] ${data}`))
 
   return { port, process: child }
 }
 
 async function getWebSocketUrl(port: number): Promise<string> {
-  // Wait for inspector to be ready
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 1500))
 
-  let retries = 5
-  while (retries > 0) {
+  for (let i = 0; i < 5; i++) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`)
       const targets = (await response.json()) as Array<{ webSocketDebuggerUrl: string }>
-
-      if (targets.length === 0) {
-        throw new Error("No debug targets found")
-      }
-
-      return targets[0].webSocketDebuggerUrl
-    } catch (error) {
-      retries--
-      if (retries === 0) throw error
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      if (targets.length > 0) return targets[0].webSocketDebuggerUrl
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 300))
     }
   }
-
   throw new Error("Failed to get WebSocket URL")
 }
 
 // ============================================================================
-// Main Debug Step-Through Program
+// Main Program
 // ============================================================================
 
 const program = Effect.gen(function*() {
   yield* Console.log("🔍 Debug Step-Through Demo")
   yield* Console.log("━".repeat(80))
-  yield* Console.log("")
 
-  // Launch target process
+  // Launch target
   const { port, process: targetProcess } = launchDebugTarget()
-
-  // Get WebSocket URL
   const wsUrl = yield* Effect.promise(() => getWebSocketUrl(port))
-  yield* Console.log(`🔌 Inspector WebSocket: ${wsUrl}`)
-  yield* Console.log("")
+  yield* Console.log(`🔌 Connected to ${wsUrl}\n`)
 
-  // Connect to inspector
+  // Connect debug service
   const debug = yield* Debug
-  const session = yield* debug.connect({
-    endpoint: wsUrl,
-    transport: DebugTransport.cdp()
-  })
+  const session = yield* debug.connect({ endpoint: wsUrl, transport: DebugTransport.cdp() })
 
-  yield* Console.log("✅ Connected to inspector")
-  yield* Console.log("")
+  // Track state
+  const scripts = yield* Ref.make(new Map<string, { url: string; source?: string }>())
+  const stepCount = yield* Ref.make(0)
 
-  // Track parsed scripts
-  const scripts = yield* Ref.make(new Map<string, { url: string; scriptId: string }>())
-
-  // Subscribe to debugger events
+  // Subscribe to events FIRST
   const events = yield* debug.subscribe(session)
 
-  // Process events in background
+  // Handle events in background
   yield* Effect.forkScoped(
     Stream.runForEach(events, (event) =>
       Effect.gen(function*() {
-        // Debug: Log all events
-        yield* Console.log(`📬 Event received: ${event.method}`)
-
-        // Log script parsing
+        // Collect script sources
         if (event.method === "Debugger.scriptParsed") {
-          const parsed = yield* Schema.decodeUnknown(ScriptParsedParams)(event.params)
-          yield* Ref.update(scripts, (map) =>
-            map.set(parsed.scriptId, {
-              url: parsed.url,
-              scriptId: parsed.scriptId
-            }))
-
-          if (parsed.url.includes("broken-app")) {
-            yield* Console.log(`📜 Script parsed: ${parsed.url}`)
-          }
+          const params = event.params as any
+          const scriptId = params.scriptId
+          const url = params.url || ""
+          yield* Ref.update(scripts, (map) => map.set(scriptId, { url }))
         }
 
-        // Handle paused event
+        // Handle paused - log and step
         if (event.method === "Debugger.paused") {
-          yield* Console.log("🔔 Paused event received!")
           const params = event.params as any
           const callFrames = params.callFrames || []
-          const reason = params.reason || "unknown"
-
-          yield* Console.log(`   Call frames: ${callFrames.length}`)
 
           if (callFrames.length > 0) {
             const frame = callFrames[0]
-            const location = frame.location
+            const loc = frame.location
             const scriptMap = yield* Ref.get(scripts)
-            const script = scriptMap.get(location.scriptId)
+            const script = scriptMap.get(loc.scriptId)
+            const step = yield* Ref.getAndUpdate(stepCount, (n) => n + 1)
 
-            yield* Console.log("⏸️  Paused")
-            yield* Console.log(`   Reason: ${reason}`)
-            yield* Console.log(
-              `   Location: ${script?.url || location.scriptId}:${location.lineNumber}:${location.columnNumber || 0}`
-            )
-            yield* Console.log(`   Function: ${frame.functionName || "(anonymous)"}`)
-
-            // Show call stack
-            if (callFrames.length > 1) {
-              const stack = callFrames
-                .slice(0, 3)
-                .map((f: any) => f.functionName || "(anonymous)")
-                .join(" → ")
-              yield* Console.log(`   Stack: ${stack}`)
+            // Only log our broken-app, not node internals
+            if (script?.url.includes("broken-app")) {
+              const fileName = script.url.split("/").pop() || "???"
+              const funcName = frame.functionName || "(anonymous)"
+              yield* Console.log(
+                `[${step}] ${fileName}:${loc.lineNumber}:${loc.columnNumber || 0} in ${funcName}`
+              )
             }
 
-            // Step into next line
-            const DebuggerStepInto = debugCommand({
+            // Step into next line (don't wait for response)
+            const StepInto = debugCommand({
               transport: DebugTransport.cdp(),
               command: "Debugger.stepInto",
-              response: DebuggerStepIntoResponse
+              response: Schema.Struct({})
             })
-            yield* debug.sendCommand(session, DebuggerStepInto)
+            yield* Effect.fork(debug.sendCommand(session, StepInto))
           }
         }
-
-        // Handle resumed event
-        if (event.method === "Debugger.resumed") {
-          yield* Console.log("▶️  Resumed")
-        }
-      }).pipe(Effect.catchAll((error) => Console.error(`Event error: ${error}`))))
+      }).pipe(Effect.catchAll(() => Effect.void)))
   )
 
   // Enable debugger
   yield* Console.log("🔧 Enabling Debugger...")
-  const DebuggerEnable = debugCommand({
+  const EnableDebugger = debugCommand({
     transport: DebugTransport.cdp(),
     command: "Debugger.enable",
-    response: DebuggerEnableResponse
+    response: Schema.Struct({ debuggerId: Schema.String })
   })
-  yield* debug.sendCommand(session, DebuggerEnable)
-
+  yield* debug.sendCommand(session, EnableDebugger)
   yield* Console.log("✅ Debugger enabled")
-  yield* Console.log("")
 
-  // Explicitly pause execution now that debugger is enabled
-  yield* Console.log("⏸️  Pausing execution...")
-  const DebuggerPause = debugCommand({
+  // Call Runtime.runIfWaitingForDebugger to unpause from --inspect-brk
+  yield* Console.log("▶️  Starting execution from --inspect-brk...")
+  const RunIfWaiting = debugCommand({
+    transport: DebugTransport.cdp(),
+    command: "Runtime.runIfWaitingForDebugger",
+    response: Schema.Struct({})
+  })
+  yield* debug.sendCommand(session, RunIfWaiting)
+
+  // Now pause again to start stepping
+  yield* Console.log("⏸️  Pausing to start stepping...")
+  const Pause = debugCommand({
     transport: DebugTransport.cdp(),
     command: "Debugger.pause",
     response: Schema.Struct({})
   })
-  yield* debug.sendCommand(session, DebuggerPause)
+  yield* debug.sendCommand(session, Pause)
 
-  // Wait for paused event to be received and processed
-  yield* Effect.sleep(Duration.millis(500))
+  // Wait for paused event
+  yield* Effect.sleep(Duration.millis(100))
 
-  yield* Console.log("🔁 Stepping through code forever...")
-  yield* Console.log("   Press Ctrl+C to stop")
+  yield* Console.log("🔁 Stepping through code (Ctrl+C to stop)...")
   yield* Console.log("━".repeat(80))
   yield* Console.log("")
 
-  // Keep program alive while events are processed
-  // The event handler will receive Debugger.paused and start stepping
+  // Wait forever while stepping
   yield* Effect.never
-
-  // Cleanup (won't reach here due to infinite sleep, but good practice)
-  yield* debug.disconnect(session)
-  targetProcess.kill()
 })
+
+// ============================================================================
+// Run
+// ============================================================================
 
 const runnable = Effect.scoped(program).pipe(
   Effect.provide(layerCdp),
   Effect.provide(NodeSocket.layerWebSocketConstructor)
 )
 
-// ============================================================================
-// Run
-// ============================================================================
-
-runnable.pipe(NodeRuntime.runMain)
+Effect.runPromise(runnable).catch((error) => {
+  console.error("❌ Fatal error:", error)
+  process.exit(1)
+})
