@@ -23,6 +23,8 @@
     "demo:fixed": "node --inspect=9229 --expose-gc --loader tsx/esm src/memory-leak-fixed.ts",
     "demo:detector": "node --inspect=9229 --expose-gc --loader tsx/esm src/leak-detector.ts",
     "demo:monitor": "node --inspect=9229 --expose-gc --loader tsx/esm src/heap-monitor.ts",
+    "demo:workers-leak": "echo 'Note: Run this with wrangler in a Workers project. Copy src/workers-ai-proxy-leak.ts to your worker src/index.ts'",
+    "demo:workers-fixed": "echo 'Note: Run this with wrangler in a Workers project. Copy src/workers-ai-proxy-fixed.ts to your worker src/index.ts'",
     "build": "tsc --noEmit",
     "clean": "rm -rf dist .tsbuildinfo node_modules/.cache"
   },
