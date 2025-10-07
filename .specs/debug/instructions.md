@@ -15,6 +15,8 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [Optional] When alternative protocols (Firefox RDP, WebKit Inspector, etc.) become available, the system shall allow additional implementations to be registered without modifying existing consumer code.
 - [Memory-Aware] When memory profiling is requested, the system shall provide access to heap snapshots, allocation tracking, and garbage collection monitoring through protocol-specific HeapProfiler/Memory domains.
 - [Stream-Based] When capturing heap snapshots (which can be large), the system shall stream snapshot chunks as Effect Streams rather than buffering entire snapshots in memory.
+- [Safe-Stepping] When stepping through user code, the system shall provide mechanisms to blackbox third-party code and avoid stepping into runtime internals that may trigger V8 inspector crashes or performance degradation.
+- [Selective-Debug] When debugging specific files, the system shall support script filtering (blackbox patterns, URL matching) so that stepping operations (stepInto, stepOver, stepOut) remain within user-controlled code boundaries.
 
 ## Technical Specifications
 
@@ -26,6 +28,9 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - Place public interfaces in `packages/debug/src/Debug.ts` (following `.patterns/module-organization.md`), keep protocol-specific wiring under `packages/debug/src/internal`.
 - Follow `.patterns/effect-library-development.md` for `Effect.gen` structure and `return yield*` semantics.
 - Avoid type assertions; rely on schema-based validation where possible.
+- Implement blackboxing support via `Debugger.setBlackboxPatterns` (regex patterns for script URLs) and `Debugger.setBlackboxedRanges` (line ranges per script) to prevent stepping into third-party code during stepInto operations.
+- Provide safe-stepping helpers that check frame URL/location before issuing step commands, automatically using `stepOut` or `resume` when execution lands in non-target code to avoid V8 inspector crashes.
+- Support step limits (MAX_STEPS configuration) to prevent infinite stepping loops and ensure debugging sessions terminate gracefully.
 
 ## Acceptance Criteria (mirrors EARS requirements)
 
@@ -37,6 +42,9 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [AC-M2] Given a CDP-compatible runtime, calling memory profiling commands (`takeHeapSnapshot`, `getHeapUsage`) returns structured memory data that can be saved or analyzed programmatically.
 - [AC-S2] Heap snapshot data streams incrementally via Effect Streams without buffering the entire snapshot in memory, allowing analysis of large heaps (>1GB) without OOM errors.
 - [AC-M3] Allocation tracking and sampling heap profiler commands work across CDP runtimes (Chrome, Node.js, Deno, Cloudflare Workers local dev) with consistent API surface.
+- [AC-SS1] Given a target script URL, calling `setBlackboxPatterns` with node_modules and node internals patterns prevents stepInto from descending into third-party code, keeping execution visible only in user code.
+- [AC-SS2] When stepping through user code and execution lands in a blackboxed or non-target script, the system automatically issues `stepOut` or `resume` to return to user code without manual intervention.
+- [AC-SS3] Stepping sessions terminate after MAX_STEPS or when target script completes, preventing infinite stepping loops and ensuring clean exit with session cleanup.
 
 ## Out of Scope
 
@@ -56,13 +64,12 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 ## Future Considerations
 
 - Extend schema-based validation for specific protocol domains (Debugger, Runtime, Page, HeapProfiler, etc.).
-- Provide higher-level abstractions (e.g., `evaluate`, breakpoint management, `detectMemoryLeaks`) built atop raw command interface.
+- Provide higher-level abstractions (e.g., `evaluate`, breakpoint management, `detectMemoryLeaks`, `safeStepInto`) built atop raw command interface.
 - Explore persistent connection pooling and multiplexing for multiple runtimes.
 - Implement actor-based adapters for Firefox, Servo, and Ladybird using the documented watcher lifecycle.
 - Investigate bridging into React Native Hermes targets once protocol research completes.
 - Provide snapshot comparison utilities for automated leak detection (three-snapshot technique).
-- Integrate with tools like @memlab/api for advanced leak detection workflows.
-- Add heap snapshot parsing and querying capabilities (retainer paths, dominator trees, object filtering).
+-
 - Cloudflare Workers production observability integration (streaming patterns, tail workers client, memory/CPU guardrails, structured logging helpers).
 
 ## Testing Requirements
