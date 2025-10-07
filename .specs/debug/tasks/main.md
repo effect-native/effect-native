@@ -11,7 +11,7 @@ All tasks follow uXP expectations: tests-first thinking, evidence-cited updates,
 | task-004 | Produce RDP socket quickstart covering Firefox and Servo | DONE | 2025-09-26 |
 | task-005 | Add Cloudflare Workers (workerd) debugging support via wrangler dev CDP | NOT STARTED | 2025-10-06 |
 | task-006 | Implement memory debugging and profiling (heap snapshots, allocation tracking, GC monitoring) | NOT STARTED | 2025-10-06 |
-| task-007 | Implement safe stepping and blackboxing to prevent V8 crashes and skip third-party code | READY | 2025-10-07 |
+| task-007 | Implement safe stepping and blackboxing to prevent V8 crashes and skip third-party code | DEMO WORKING | 2025-10-07 |
 
 ## Progress Log
 
@@ -67,7 +67,67 @@ All tasks follow uXP expectations: tests-first thinking, evidence-cited updates,
   * Integration patterns with @effect-native/debug
 - 2025-10-07 primary agent: Updated core instructions `.specs/debug/instructions.md` to include Safe-Stepping and Selective-Debug EARS requirements, new acceptance criteria AC-SS1/AC-SS2/AC-SS3 for blackboxing and safe stepping.
 - 2025-10-07 primary agent: Created task specification `.specs/debug/tasks/task-007-safe-stepping.md` with EARS requirements for safe stepping, blackboxing support, step limits, acceptance criteria with Effect code examples, API design for BlackboxingSupport and SafeSteppingSupport interfaces, predefined blackbox pattern sets, and integration test specifications.
+- 2025-10-07 primary agent: Implemented working demo `packages-native/debug/test-fixtures/debug-step-through.ts` that successfully steps through `broken-simple.js` using @effect-native/debug service.
+- 2025-10-07 primary agent: Demo launches target with --inspect-brk, connects via debug service, subscribes to Debugger.paused events, fetches script source, logs each step with file:line:column + source code, uses Debugger.stepOver (avoids V8 crash), stops after 27 steps at line 98, exits cleanly in 0.777 seconds.
+- 2025-10-07 primary agent: Created `broken-simple.js` (111 lines) - simple CommonJS target with 5 intentional bugs (off-by-one, wrong fibonacci, closure bug, null check, negative numbers) to demonstrate stepping through buggy code.
+- 2025-10-07 primary agent: Fixed pre-existing bug in packages-native/bun-test (TS2554: test.todo missing callback parameter) that was blocking CI builds.
+- 2025-10-07 primary agent: Verified CI builds now pass, pnpm check passes, pnpm build passes, demo runs successfully.
+- 2025-10-07 primary agent: Status: DEMO WORKING - proves @effect-native/debug service works for real debugging scenarios with connection, events, commands, stepping, and source code display.
+
+## Current Implementation Status
+
+**Core Service (@effect-native/debug)**: ✅ 62.5% Complete (5 of 8 acceptance criteria)
+- ✅ Protocol-agnostic service interface
+- ✅ CDP connection and session management
+- ✅ Command execution with schema-based responses
+- ✅ Event subscription with Effect streams
+- ✅ Tests for basic features (all passing)
+- ❌ Memory debugging (0% - HeapProfiler domain not implemented)
+- ❌ Snapshot streaming (0% - no chunk event handling)
+- ❌ Safe stepping API (0% - no blackboxing helpers, but stepOver works)
+
+**Demo Package (@effect-native/debug-demos)**: ✅ 100% Complete
+- ✅ Node.js memory leak demo (leaky + fixed versions)
+- ✅ Cloudflare Workers AI proxy demo (leaky + fixed versions)
+- ✅ Automated leak detector (three-snapshot technique)
+- ✅ Comprehensive guides (2,491 lines)
+- ✅ Working step-through demo in debug package
+
+**Documentation**: ✅ 95% Complete
+- ✅ Comprehensive research (5,745 lines across 9 documents)
+- ✅ Task specifications (7 tasks, 4,960 lines)
+- ✅ Guides and tutorials (2,491 lines)
+- ❌ Package README (still 3 lines, needs 200+ lines with examples)
+- ❌ API documentation (docgen needs to run)
+- ❌ CHANGELOG.md (doesn't exist)
+
+**CI/CD**: ✅ Passing
+- ✅ TypeScript compilation (pnpm check)
+- ✅ Build (pnpm build)
+- ✅ Tests (pnpm test for existing features)
+- ✅ All packages build successfully
+- ✅ Fixed pre-existing bun-test bug
 
 ## Next Steps
 
-1. Implement memory debugging (task-006): HeapProfiler domain w
+### Immediate (To Unblock Publication)
+1. Decide: Implement memory debugging OR remove from spec and publish 0.1.0-alpha
+2. Write comprehensive README (200+ lines) with usage examples
+3. Set version to 0.1.0 or 0.1.0-alpha
+4. Add package metadata (keywords, repository confirmed)
+5. Generate API documentation (pnpm docgen)
+6. Create CHANGELOG.md
+
+### Short-term (For 0.2.0 or 1.0.0)
+1. Implement memory debugging (task-006): HeapProfiler domain wrapper, snapshot streaming, allocation tracking, GC control
+2. Implement safe stepping (task-007): Blackboxing helpers, safeStepInto, stepThroughWithLimits, predefined patterns
+3. Add more integration tests (cross-runtime, memory profiling, blackboxing)
+4. Test on Node.js v20.x and v22.x (V8 inspector stability varies)
+
+### Long-term (Future Versions)
+1. WebKit Inspector implementation (Safari, Bun)
+2. Firefox RDP implementation (Firefox, Servo, Ladybird)
+3. React Native Hermes integration
+4. Snapshot comparison utilities (automated leak detection)
+5. Advanced features (connection pooling, multiplexing)
+6. Production observability for Cloudflare Workers

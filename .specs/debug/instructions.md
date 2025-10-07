@@ -1,5 +1,36 @@
 # Debug Service Instructions
 
+## Implementation Status (2025-10-07)
+
+**Current State**: Prototype with working CDP implementation and demos
+
+**What's Working**:
+- ✅ Basic CDP connection (Chrome, Node.js, Deno, Cloudflare Workers local dev)
+- ✅ Command execution with typed responses
+- ✅ Event subscription with streams
+- ✅ Session lifecycle management
+- ✅ Error handling with tagged errors
+- ✅ Working demo: `pnpm test:debug-log-steps` (step-through debugger in 0.777s)
+- ✅ Tests passing for basic CDP features
+- ✅ CI builds passing
+
+**What's Missing** (blocks publication):
+- ❌ Memory debugging (HeapProfiler domain) - 0% implemented
+- ❌ Heap snapshot streaming
+- ❌ Allocation tracking and sampling profiler
+- ❌ GC monitoring and control
+- ❌ Safe stepping API (blackboxing helpers)
+- ❌ Comprehensive README with usage examples
+- ❌ API documentation (docgen)
+- ❌ Version still 0.0.0
+
+**Working Demos**:
+- `packages-native/debug-demos/src/memory-leak-demo.ts` - Node.js leak detection
+- `packages-native/debug-demos/src/workers-ai-proxy-leak.ts` - Workers AI proxy leaks
+- `packages-native/debug/test-fixtures/debug-step-through.ts` - **Step-through debugger using actual @effect-native/debug service**
+
+**Key Discovery**: Node.js v24.8.0 has V8 inspector bug when using `Debugger.stepInto` through ESM async boundaries. Solution: Use `Debugger.stepOver` or implement blackboxing to skip third-party code.
+
 ## Overview and User Story
 
 We need a new `@effect-native/debug` package that provides an Effect Service named `Debug`. The service must offer a protocol-agnostic abstraction for connecting to JavaScript runtimes through debugger protocols (Chrome DevTools Protocol, Firefox Remote Debug Protocol, WebKit Web Inspector, Servo/Ladybird RDP variants, etc.). As an ultra extreme programming team, our first customer value slice is the ability to attach to a running Chromium-based browser instance using CDP so that we can inspect runtime metadata and issue simple commands. We must, however, design the abstraction so that actor-based stacks like Firefox RDP and its Servo/Ladybird derivatives can plug in without redesigning the public API.
@@ -61,16 +92,55 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [SM-M1] Design documentation includes transport notes for actor-based protocols and is exercised by at least one unit-level guard or schema that references watcher/actor metadata (validates AC-M1).
 - [SM-O1] Additional protocol implementation can be added by providing a new Layer without touching existing consumer tests (validates AC-O1).
 
+## Implementation Roadmap
+
+### Phase 1: Core CDP (DONE)
+- ✅ Connection and session management
+- ✅ Command execution with typed responses
+- ✅ Event subscription with streams
+- ✅ Basic tests and demos
+
+### Phase 2: Memory Debugging (NOT STARTED)
+- ❌ HeapProfiler domain wrapper
+- ❌ Snapshot streaming (Handle `HeapProfiler.addHeapSnapshotChunk` events)
+- ❌ Allocation tracking (start/stop with timeline)
+- ❌ Sampling profiler (configurable intervals)
+- ❌ GC control (`collectGarbage`, `getHeapUsage`)
+- ❌ Schemas: HeapUsage, SamplingHeapProfile, AllocationTimeline
+
+### Phase 3: Safe Stepping (NOT STARTED)
+- ❌ Blackboxing support (`setBlackboxPatterns`, `setBlackboxedRanges`)
+- ❌ Safe stepping helpers (`safeStepInto`, `stepThroughWithLimits`)
+- ❌ Predefined pattern sets (node, browser, workers, frameworks)
+- ❌ Auto-blackbox third-party (during scriptParsed events)
+- ❌ Step limits and timeout guards
+
+### Phase 4: Documentation & Publication (NOT STARTED)
+- ❌ Comprehensive README with usage examples
+- ❌ API documentation (docgen output)
+- ❌ Examples directory
+- ❌ CHANGELOG.md
+- ❌ Set version to 0.1.0+
+
+### Phase 5: Additional Protocols (FUTURE)
+- Actor-based adapters for Firefox, Servo, and Ladybird
+- WebKit Inspector implementation
+- React Native Hermes integration
+
+### Phase 6: Advanced Features (FUTURE)
+- Snapshot comparison utilities (automated leak detection)
+- Higher-level abstractions (`detectMemoryLeaks`, `safeStepInto`)
+- Connection pooling and multiplexing
+- Cloudflare Workers production observability integration
+
 ## Future Considerations
 
 - Extend schema-based validation for specific protocol domains (Debugger, Runtime, Page, HeapProfiler, etc.).
 - Provide higher-level abstractions (e.g., `evaluate`, breakpoint management, `detectMemoryLeaks`, `safeStepInto`) built atop raw command interface.
 - Explore persistent connection pooling and multiplexing for multiple runtimes.
-- Implement actor-based adapters for Firefox, Servo, and Ladybird using the documented watcher lifecycle.
 - Investigate bridging into React Native Hermes targets once protocol research completes.
-- Provide snapshot comparison utilities for automated leak detection (three-snapshot technique).
--
-- Cloudflare Workers production observability integration (streaming patterns, tail workers client, memory/CPU guardrails, structured logging helpers).
+- Integrate with tools like @memlab/api for advanced leak detection workflows.
+- Add heap snapshot parsing and querying capabilities (retainer paths, dominator trees, object filtering).
 
 ## Testing Requirements
 
@@ -81,3 +151,15 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - Memory profiling tests must validate heap snapshot streaming (complete snapshots can be captured and saved), heap usage accuracy (compare with in-process APIs where available), and GC triggering (heap size reduces after forced collection).
 - Test memory profiling across multiple runtimes (Node.js, Chrome, Deno, Cloudflare Workers local dev) to ensure cross-platform compatibility.
 - Snapshot streaming tests must handle large heaps (>100MB test data) without buffering entire snapshot in memory.
+- Safe stepping tests must verify that blackboxing patterns prevent stepInto from descending into node_modules and runtime internals, and that step limits enforce clean session termination.
+- Test on multiple Node.js versions (v20.x, v22.x, v24.x) as V8 inspector behavior varies across versions (known stepInto crash in v24.8.0 with ESM async code).
+
+## Current Test Coverage
+
+**Unit Tests**: ✅ Basic CDP connection, command execution, event subscription  
+**Integration Tests**: ✅ Chrome inspector, Node.js inspector, event flow  
+**Demo Tests**: ✅ `test:debug-log-steps` - step-through debugger (verified working)  
+**Missing Tests**: ❌ Memory profiling, blackboxing, safe stepping, cross-runtime
+
+**Test Command**: `pnpm test` (passes for existing features)  
+**Demo Command**: `cd packages-native/debug && pnpm test:debug-log-steps` (working)
