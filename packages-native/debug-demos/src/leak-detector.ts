@@ -47,11 +47,12 @@ class SimulatedDebugService {
   constructor(private endpoint: string) {}
 
   connect() {
+    const endpoint = this.endpoint
     return Effect.gen(function*() {
-      yield* Console.log(`🔌 Connecting to inspector at ${this.endpoint}...`)
+      yield* Console.log(`🔌 Connecting to inspector at ${endpoint}...`)
       yield* Effect.sleep(Duration.millis(100))
       yield* Console.log("✅ Connected to inspector")
-    }.bind(this))
+    })
   }
 
   disconnect() {
