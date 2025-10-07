@@ -13,12 +13,12 @@
  * Run with: pnpm test:debug-log-steps
  */
 
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import { spawn } from "child_process"
 import * as Console from "effect/Console"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
@@ -275,7 +275,4 @@ const runnable = Effect.scoped(program).pipe(
 // Run
 // ============================================================================
 
-Effect.runPromise(runnable).catch((error) => {
-  console.error("❌ Fatal error:", error)
-  process.exit(1)
-})
+runnable.pipe(NodeRuntime.runMain)
