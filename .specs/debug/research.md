@@ -328,6 +328,7 @@ echo 'npx -y wscat -c "ws://<lynx-ws>" -x "{\"id\":1,\"method\":\"Runtime.evalua
 * **Pick your transport**: For browsers/Chromium-derivatives, CDP WS is the lingua franca. For Safari family, attach via WebKit’s Inspector. For Firefox, use DevTools RDP (interactive) or **BiDi** (portable automation). ([chromedevtools.github.io][1])
 * **Escalate capabilities** by domain: `Runtime` (eval) → `Debugger` (breakpoints/stepping) → `Network` (observe/modify) → `Profiler/Heap` (perf/memory) → `Target` (workers/iframes) → `Emulation` (devices). The nouns don’t change—only the wire grammar does. ([chromedevtools.github.io][1])
 * **Portability vs power**: CDP is rich but vendor-specific; **WebDriver BiDi** brings cross-browser parity and is now production-ready in Firefox with growing support elsewhere (Puppeteer, Cypress). Use BiDi when you must run everywhere; use native protocols when you need the deepest hooks. ([Chrome for Developers][19])
+* **Memory debugging workflow**: Start with `Runtime.getHeapUsage` to monitor trends, escalate to sampling heap profiler (low overhead) when growth is suspected, then capture full heap snapshots for leak analysis. Use three-snapshot technique (baseline → action → repeat → compare) to isolate leaked objects. Always force GC before snapshots for consistency. See `.specs/debug/research-memory.md` for heap snapshot format, allocation tracking, retainer path analysis, and cross-runtime profiling strategies.
 
 ---
 
