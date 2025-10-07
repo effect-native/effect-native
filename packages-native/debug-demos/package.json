@@ -1,0 +1,40 @@
+{
+  "name": "@effect-native/debug-demos",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Demonstration projects for memory debugging and profiling with @effect-native/debug",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/debug-demos"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "homepage": "https://github.com/effect-native/effect-native/tree/main/packages-native/debug-demos#readme",
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "scripts": {
+    "demo:leak": "node --inspect=9229 --expose-gc --loader tsx/esm src/memory-leak-demo.ts",
+    "demo:leak:wait": "node --inspect-brk=9229 --expose-gc --loader tsx/esm src/memory-leak-demo.ts",
+    "demo:fixed": "node --inspect=9229 --expose-gc --loader tsx/esm src/memory-leak-fixed.ts",
+    "demo:detector": "node --inspect=9229 --expose-gc --loader tsx/esm src/leak-detector.ts",
+    "demo:monitor": "node --inspect=9229 --expose-gc --loader tsx/esm src/heap-monitor.ts",
+    "build": "tsc --noEmit",
+    "clean": "rm -rf dist .tsbuildinfo node_modules/.cache"
+  },
+  "dependencies": {
+    "effect": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.10.0"
+  }
+}
