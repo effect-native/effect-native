@@ -34,7 +34,8 @@
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
-    "coverage": "vitest --coverage"
+    "coverage": "vitest --coverage",
+    "test:debug-log-steps": "node --import tsx/esm test-fixtures/debug-step-through.ts"
   },
   "peerDependencies": {
     "@effect/platform": "^0.91.1",
@@ -45,6 +46,7 @@
     "@effect/platform-node": "^0.97.1",
     "@effect/vitest": "^0.25.1",
     "effect": "^3.17.14",
+    "tsx": "^4.19.0",
     "ws": "^8.18.2",
     "@types/ws": "^8.18.1"
   }
