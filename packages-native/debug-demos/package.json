@@ -1,6 +1,7 @@
 {
   "name": "@effect-native/debug-demos",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "description": "Demonstration projects for memory debugging and profiling with @effect-native/debug",
   "license": "MIT",
@@ -13,10 +14,6 @@
     "url": "https://github.com/effect-native/effect-native/issues"
   },
   "homepage": "https://github.com/effect-native/effect-native/tree/main/packages-native/debug-demos#readme",
-  "publishConfig": {
-    "access": "public",
-    "directory": "dist"
-  },
   "scripts": {
     "demo:leak": "node --inspect=9229 --expose-gc --import tsx/esm src/memory-leak-demo.ts",
     "demo:leak:wait": "node --inspect-brk=9229 --expose-gc --import tsx/esm src/memory-leak-demo.ts",
