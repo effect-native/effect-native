@@ -18,28 +18,98 @@ This guide shows you how to find and fix memory leaks in Cloudflare Workers, usi
 
 ### The 128MB Limit
 
-Cloudflare Workers have a **hard 128MB memory limit** per request. This includes:
+Cloudflare Workers have a **hard 128MB memory limit per isolate**. This includes:
 
-- Your code and dependencies
-- Request/response data
+- Your code and dependencies (JS heap + Wasm)
+- Request/response data for **all concurrent requests** in that isolate
 - Any buffered content
 - Global state that persists across requests
 
-Unlike Node.js where you can increase heap size with `--max-old-space-size`, Workers give you **128MB and that's it**.
+**Critical distinction**: The 128MB limit is **per isolate, not per request**. A single isolate can serve multiple concurrent requests simultaneously, all sharing the same 128MB pool.
+
+Unlike Node.js where you can increase heap size with `--max-old-space-size`, Workers give you **128MB per isolate and that's it**.
 
 ### The Isolate Model
 
-Workers use V8 isolates, which can be reused across requests:
+Workers use V8 isolates, which can be reused across requests. **Important**: A single isolate can handle multiple concurrent requests simultaneously, all sharing the 128MB memory limit.
 
 ```
-Request 1 → Isolate A (fresh, 5 MB)
-Request 2 → Isolate A (reused, 8 MB)   ← Global state persists
-Request 3 → Isolate A (reused, 12 MB)  ← Leak accumulates
-...
-Request 100 → Isolate A (reused, 130 MB) → CRASH!
+Isolate A (128 MB total):
+├─ Request 1 (in progress, using 3 MB)
+├─ Request 2 (in progress, using 5 MB)
+├─ Request 3 (in progress, using 4 MB)
+└─ Global state (6 MB)
+   Total: 18 MB / 128 MB
+
+After 100 requests served (sequentially and concurrently):
+├─ Request 101 (in progress, using 3 MB)
+├─ Request 102 (in progress, using 5 MB)
+└─ Global state (120 MB) ← Leak accumulated!
+   Total: 128 MB / 128 MB → CRASH on next request!
 ```
 
-**Critical insight**: Global variables persist across requests in the same isolate. If you leak on each request, it compounds.
+**Critical insights**: 
+- Global variables persist across **all requests** in the same isolate
+- Multiple concurrent requests share the same 128MB pool
+- If you leak on each request, it compounds across both sequential and concurrent requests
+- Memory from concurrent requests must fit within the same 128MB limit
+
+### Concurrent Requests and Memory Sharing
+
+**The 128MB limit is shared across ALL concurrent requests in an isolate.**
+
+When your Worker handles multiple requests simultaneously:
+
+```
+Scenario: AI Proxy handling 10 concurrent requests
+
+Isolate A (128 MB total):
+├─ Request 1: Buffering 20 MB AI response
+├─ Request 2: Buffering 15 MB AI response
+├─ Request 3: Buffering 25 MB AI response
+├─ Request 4: Buffering 18 MB AI response
+├─ Request 5: Buffering 22 MB AI response
+└─ Global cache: 10 MB
+   Total: 110 MB / 128 MB
+
+Now request 6 arrives (needs 20 MB):
+110 MB + 20 MB = 130 MB → EXCEEDS LIMIT → CRASH!
+```
+
+**This is why buffering is catastrophic in Workers**:
+
+- One request buffering 50 MB? Annoying but manageable.
+- Ten concurrent requests each buffering 50 MB? **500 MB needed** but only 128 MB available → **instant crash**.
+
+**Real-world example**:
+
+```typescript
+// ❌ DISASTER with concurrent requests
+async function handleChat(request: Request) {
+  const response = await fetch(AI_API, { ... })
+  
+  // LEAK: Each concurrent request buffers 20-50 MB
+  const fullResponse = await response.text()
+  
+  // With 5 concurrent requests: 5 × 40 MB = 200 MB needed
+  // But you only have 128 MB → CRASH!
+  
+  return new Response(fullResponse)
+}
+
+// ✅ SAFE with concurrent requests
+async function handleChat(request: Request) {
+  const response = await fetch(AI_API, { ... })
+  
+  // Stream: Each concurrent request uses ~1-2 MB
+  // With 10 concurrent requests: 10 × 2 MB = 20 MB used
+  // Well within 128 MB limit!
+  
+  return new Response(response.body)
+}
+```
+
+**Key takeaway**: Memory leaks are amplified by concurrency. A 10 MB leak per request becomes a 100 MB problem with 10 concurrent requests.
 
 ### Production vs Development
 
@@ -81,7 +151,10 @@ async chat(request: ChatRequest): Promise<ChatResponse> {
 }
 ```
 
-**Why it leaks**: Each request buffers 10-100KB. After 1,000 requests, that's 10-100MB just from responses.
+**Why it leaks**: 
+- Sequential: Each request buffers 10-100KB. After 1,000 requests in global state, that's 10-100MB.
+- **Concurrent**: If 10 requests are being processed simultaneously, and each buffers 50KB, that's 500KB of active memory **right now**, plus whatever leaked from previous requests.
+- The problem compounds: leaked memory from past requests + memory from current concurrent requests.
 
 ### Leak #2: Global Request Cache
 
@@ -101,7 +174,7 @@ function handleRequest(req: Request) {
 }
 ```
 
-**Why it leaks**: In a long-lived isolate, this map can grow to thousands of entries, each holding the full prompt.
+**Why it leaks**: In a long-lived isolate serving concurrent requests, this map can grow to thousands of entries, each holding the full prompt. The map persists across ALL requests (sequential and concurrent), continuously growing.
 
 ### Leak #3: Response Buffer Accumulator
 
@@ -118,7 +191,7 @@ function bufferResponse(response: string) {
 }
 ```
 
-**Why it leaks**: After 100 requests with 50KB responses = 5MB. After 1,000 requests = 50MB.
+**Why it leaks**: After 100 requests with 50KB responses = 5MB in the global array. After 1,000 requests = 50MB. This global memory is **always allocated**, reducing the available pool for concurrent requests.
 
 ### Leak #4: Logging Full Content
 
@@ -141,15 +214,17 @@ function logRequest(prompt: string, response: string) {
 ### The Death Spiral
 
 ```
-Request    Cached    Buffered    Logs    Total Heap
--------------------------------------------------------
-10         10 KB     500 KB      500 KB    ~1 MB
-50         50 KB     2.5 MB      2.5 MB    ~5 MB
-100        100 KB    5 MB        5 MB      ~10 MB
-500        500 KB    25 MB       25 MB     ~50 MB
-1000       1 MB      50 MB       50 MB     ~100 MB
-1200       1.2 MB    60 MB       60 MB     ~128 MB → CRASH!
+Request    Cached    Buffered    Logs    Total Heap    Concurrent Impact
+-------------------------------------------------------------------------
+10         10 KB     500 KB      500 KB    ~1 MB        5 requests × 50KB = 250KB
+50         50 KB     2.5 MB      2.5 MB    ~5 MB        5 requests × 50KB = 250KB
+100        100 KB    5 MB        5 MB      ~10 MB       10 requests × 50KB = 500KB
+500        500 KB    25 MB       25 MB     ~50 MB       10 requests × 50KB = 500KB
+1000       1 MB      50 MB       50 MB     ~100 MB      10 requests × 50KB = 500KB
+1200       1.2 MB    60 MB       60 MB     ~128 MB → CRASH! (can't fit concurrent requests)
 ```
+
+**Note**: "Total Heap" includes leaked global state. "Concurrent Impact" shows additional memory needed for requests currently in flight. When Total + Concurrent > 128MB, the isolate crashes.
 
 ---
 
@@ -723,10 +798,11 @@ class MemoryTracker {
 
 Memory leaks in Cloudflare Workers are challenging because:
 
-1. **128MB hard limit** - No room for error
-2. **Isolate reuse** - Global state persists and compounds
-3. **No production debugging** - Must catch during development
-4. **Streaming is essential** - Buffering kills you fast
+1. **128MB hard limit per isolate** - No room for error, shared across all concurrent requests
+2. **Isolate reuse** - Global state persists and compounds across all requests
+3. **Concurrent request sharing** - Multiple requests in the same isolate share the 128MB pool
+4. **No production debugging** - Must catch during development
+5. **Streaming is essential** - Buffering kills you fast when handling concurrent requests
 
 The key principles:
 

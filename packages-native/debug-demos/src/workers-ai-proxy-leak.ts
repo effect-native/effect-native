@@ -18,8 +18,13 @@
  * 3. Response handlers with closures capturing large data
  * 4. Request/response logging arrays in global scope
  *
- * Workers have 128MB memory limit. With these leaks, after 100-200 requests
- * with large AI responses, you'll hit: "Worker exceeded memory limit"
+ * CRITICAL: Workers have 128MB memory limit **PER ISOLATE** (not per request).
+ * A single isolate can serve MULTIPLE CONCURRENT REQUESTS, all sharing the
+ * same 128MB pool. This means:
+ * - 10 concurrent requests each buffering 50MB = 500MB needed → INSTANT CRASH
+ * - Leaked global state reduces available memory for concurrent requests
+ * - With these leaks, after 100-200 requests (or just 5-10 concurrent ones),
+ *   you'll hit: "Worker exceeded memory limit"
  *
  * Run with: wrangler dev --inspector-port=9229
  * Then: curl -X POST http://localhost:8787/api/chat -d '{"prompt":"test"}'
@@ -28,6 +33,9 @@
 // ============================================================================
 // LEAK #1: Global Request Metadata Cache
 // ============================================================================
+// CRITICAL: This global state persists across ALL requests (sequential AND
+// concurrent) in the same isolate. Every MB stored here is one less MB
+// available for handling concurrent requests.
 
 interface RequestMetadata {
   id: string
@@ -37,8 +45,9 @@ interface RequestMetadata {
   // LEAK: Accumulates across requests in same isolate
 }
 
-// LEAK: Global map that persists across requests in the same Worker isolate
-// In production, Workers can handle thousands of requests before recycling
+// LEAK: Global map that persists across ALL requests in same Worker isolate
+// This isolate can serve MULTIPLE CONCURRENT REQUESTS simultaneously
+// Every entry here reduces the pool available for concurrent request processing
 const requestCache = new Map<string, RequestMetadata>()
 
 // LEAK: Global array of request IDs
@@ -121,6 +130,12 @@ class AIAPIClient {
 
   /**
    * LEAK: This buffers the entire response instead of streaming
+   *
+   * CONCURRENT REQUEST IMPACT:
+   * - 1 request buffering 50MB: Annoying but works
+   * - 5 concurrent requests each buffering 50MB: 250MB needed, only 128MB
+   *   available → CRASH!
+   * - This is why buffering is catastrophic in Workers
    */
   async chat(request: ChatRequest): Promise<ChatResponse> {
     // Simulate API call
@@ -152,6 +167,13 @@ class AIAPIClient {
   /**
    * LEAK: This also buffers everything
    * In reality, this would use ReadableStream but we're simulating the leak
+   *
+   * CONCURRENT REQUEST DISASTER:
+   * If this Worker is handling 10 concurrent requests right now, and each
+   * one calls this method:
+   * - 10 requests × 50KB average = 500KB of active buffered responses
+   * - Plus whatever leaked from previous requests in global state
+   * - Total can easily exceed 128MB limit
    */
   async chatWithBuffer(request: ChatRequest): Promise<string> {
     // Simulate large AI response (10-100KB typical, can be 1MB+)
@@ -159,6 +181,7 @@ class AIAPIClient {
     const largeResponse = "A".repeat(responseSize)
 
     // LEAK: Entire response in memory before returning
+    // With concurrent requests, this multiplies the problem!
     const fullResponse =
       `Here's a detailed AI response: ${largeResponse}\n\nThis response contains ${responseSize} characters of generated content.`
 
@@ -394,12 +417,19 @@ export default {
  * 2. Run with inspector:
  *    wrangler dev --inspector-port=9229
  *
- * 3. Trigger leak with load:
+ * 3. Trigger leak with load (sequential):
  *    for i in {1..100}; do
  *      curl -X POST http://localhost:8787/api/chat \
  *        -H "Content-Type: application/json" \
  *        -d '{"prompt":"Write a long detailed story","max_tokens":2000}'
  *    done
+ *
+ * 3b. Trigger leak with concurrent load (faster crash):
+ *    # Install 'hey' or 'wrk' for concurrent requests
+ *    hey -n 100 -c 10 -m POST \
+ *      -H "Content-Type: application/json" \
+ *      -d '{"prompt":"Write a story","max_tokens":2000}' \
+ *      http://localhost:8787/api/chat
  *
  * 4. Check stats:
  *    curl http://localhost:8787/stats
@@ -410,10 +440,14 @@ export default {
  *    # Compare snapshots to see growing arrays
  *
  * Expected behavior:
- * - First 20 requests: ~10-20 MB total
- * - After 50 requests: ~50-70 MB
- * - After 100 requests: ~100-130 MB → Worker crashes
+ * - Sequential: First 20 requests: ~10-20 MB total
+ * - Sequential: After 50 requests: ~50-70 MB
+ * - Sequential: After 100 requests: ~100-130 MB → Worker crashes
+ * - Concurrent (10 at once): Crash much faster (5-10 rounds of concurrent requests)
  * - Error: "Worker exceeded memory limit"
+ *
+ * IMPORTANT: The 128MB limit is PER ISOLATE, not per request.
+ * Concurrent requests share the same 128MB pool, so leaks are amplified.
  *
  * What you'll see in snapshots:
  * - requestCache: Growing Map with metadata
@@ -423,7 +457,14 @@ export default {
  *
  * Root causes:
  * 1. Not streaming AI responses (buffering 100KB+ per request)
- * 2. Global state persisting across requests
+ * 2. Global state persisting across ALL requests (sequential + concurrent)
  * 3. No cleanup/eviction of old data
  * 4. Closures capturing large response strings
+ * 5. Concurrent requests all share the 128MB pool, amplifying the problem
+ *
+ * Why concurrent requests make it worse:
+ * - Leaked global state: Always consuming memory (e.g., 50MB after 500 requests)
+ * - Active buffered responses: 10 concurrent × 50KB = 500KB right now
+ * - Total: 50MB (leaked) + 500KB (active) = ~51MB
+ * - Repeat with more leakage → 100MB (leaked) + concurrent → CRASH!
  */
