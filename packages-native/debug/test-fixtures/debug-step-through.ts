@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from "url"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 
 const TARGET_FILE_NAME = "broken-simple.js"
+const MAX_STEPS = 200
 
 interface SpawnedTarget {
   readonly port: number
@@ -154,7 +155,8 @@ const program = Effect.gen(function*() {
             const zeroBasedLine = location.lineNumber ?? 0
             const lineText = lines[zeroBasedLine] ?? ""
             const column = location.columnNumber ?? 0
-            const stepIndex = yield* Ref.getAndUpdate(stepCountRef, (n) => n + 1)
+            const nextStep = (yield* Ref.get(stepCountRef)) + 1
+            yield* Ref.set(stepCountRef, nextStep)
             const displayLine = zeroBasedLine + 1
             const functionName = frame.functionName && frame.functionName.length > 0
               ? frame.functionName
@@ -162,10 +164,19 @@ const program = Effect.gen(function*() {
             const shortPath = target.filePath.split("/").pop() ?? target.filePath
 
             yield* Console.log(
-              `[${stepIndex.toString().padStart(4, " ")}] ${shortPath}:${displayLine}:${column} ${functionName}`
+              `[${nextStep.toString().padStart(4, " ")}] ${shortPath}:${displayLine}:${column} ${functionName}`
             )
             yield* Console.log(`      > ${lineText.trimEnd()}`)
-            yield* Effect.fork(debug.sendCommand(session, StepOver))
+            if (displayLine >= 98 || nextStep >= MAX_STEPS) {
+              yield* Console.log("🏁 Completed stepping target script. Exiting debugger session.")
+              yield* debug.sendCommand(session, Resume)
+              yield* debug.disconnect(session)
+              yield* Effect.sync(() => target.process.kill("SIGKILL"))
+              yield* Console.log("✅ Finished stepping session")
+              yield* Effect.sync(() => process.exit(0))
+            } else {
+              yield* Effect.fork(debug.sendCommand(session, StepOver))
+            }
             return
           }
 
