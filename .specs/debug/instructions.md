@@ -1,11 +1,13 @@
 # Debug Service Instructions
 
 ## Overview and User Story
+
 We need a new `@effect-native/debug` package that provides an Effect Service named `Debug`. The service must offer a protocol-agnostic abstraction for connecting to JavaScript runtimes through debugger protocols (Chrome DevTools Protocol, Firefox Remote Debug Protocol, WebKit Web Inspector, Servo/Ladybird RDP variants, etc.). As an ultra extreme programming team, our first customer value slice is the ability to attach to a running Chromium-based browser instance using CDP so that we can inspect runtime metadata and issue simple commands. We must, however, design the abstraction so that actor-based stacks like Firefox RDP and its Servo/Ladybird derivatives can plug in without redesigning the public API.
 
 **User Story**: As a developer using the Effect Native toolkit, I want a `Debug` service that lets me attach to any supported JavaScript runtime via its debugger protocol so that I can drive the runtime from Effect programs (e.g., evaluate code, inspect targets, automate debugging tasks, profile memory allocations, detect memory leaks) without writing protocol-specific plumbing.
 
 ## Core Requirements (EARS)
+
 - [Ubiquitous] When an Effect program requests a debugger connection, the system shall expose a `Debug` service interface that is independent of any specific debugger protocol.
 - [Event-Driven] When given a Chrome DevTools Protocol WebSocket endpoint, the system shall establish a CDP session and expose a minimal command API for sending typed requests and receiving structured responses.
 - [State-Driven] While a debug session is active, the system shall maintain connection state (targets, session id, capabilities) in Effect-safe data structures so that multiple commands can be issued sequentially.
@@ -15,6 +17,7 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [Stream-Based] When capturing heap snapshots (which can be large), the system shall stream snapshot chunks as Effect Streams rather than buffering entire snapshots in memory.
 
 ## Technical Specifications
+
 - Define a new `Debug` Effect Service interface with capability-based operations (`connect`, `disconnect`, `sendCommand`, `subscribe` for events) returning typed Effects.
 - Represent messages with protocol-agnostic envelopes (`command`, `params`, `session`, `target`, `transport`) so that backends can translate to CDP method strings or RDP actor packets.
 - Provide a CDP implementation that can attach to a Chromium instance exposed via `--remote-debugging-port` or Chrome DevTools remote interface (WebSocket URL) and drive commands such as `Browser.getVersion`.
@@ -25,6 +28,7 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - Avoid type assertions; rely on schema-based validation where possible.
 
 ## Acceptance Criteria (mirrors EARS requirements)
+
 - [AC-U1] A consumer can access the `Debug` service via Effect Layer injection without referencing protocol-specific classes.
 - [AC-E1] Given a valid CDP WebSocket endpoint, calling `Debug.connect` followed by `Debug.sendCommand("Browser.getVersion")` returns the parsed browser version payload from a local Chrome instance.
 - [AC-S1] While issuing multiple commands over the same session, connection state is retained and commands execute sequentially without crashing.
@@ -35,12 +39,14 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [AC-M3] Allocation tracking and sampling heap profiler commands work across CDP runtimes (Chrome, Node.js, Deno, Cloudflare Workers local dev) with consistent API surface.
 
 ## Out of Scope
+
 - Full protocol coverage for CDP (only minimal command support required for prototype).
 - Implementations for Firefox, WebKit, or React Native at this stage (design must allow them later).
 - Browser automation features beyond sending raw commands (no high-level DOM automation yet).
 - GUI or CLI tooling that drives the service (focus on programmatic API).
 
 ## Success Metrics
+
 - [SM-U1] 100% of example usage imports the protocol-agnostic `Debug` service (validates AC-U1).
 - [SM-E1] Demo program successfully prints Chrome version info via `Debug.sendCommand` on the target machine (validates AC-E1).
 - [SM-S1] Integration test runs at least two sequential CDP commands over one session without reconnection (validates AC-S1).
@@ -48,6 +54,7 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - [SM-O1] Additional protocol implementation can be added by providing a new Layer without touching existing consumer tests (validates AC-O1).
 
 ## Future Considerations
+
 - Extend schema-based validation for specific protocol domains (Debugger, Runtime, Page, HeapProfiler, etc.).
 - Provide higher-level abstractions (e.g., `evaluate`, breakpoint management, `detectMemoryLeaks`) built atop raw command interface.
 - Explore persistent connection pooling and multiplexing for multiple runtimes.
@@ -56,8 +63,10 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - Provide snapshot comparison utilities for automated leak detection (three-snapshot technique).
 - Integrate with tools like @memlab/api for advanced leak detection workflows.
 - Add heap snapshot parsing and querying capabilities (retainer paths, dominator trees, object filtering).
+- Cloudflare Workers production observability integration (streaming patterns, tail workers client, memory/CPU guardrails, structured logging helpers).
 
 ## Testing Requirements
+
 - Use `@effect/vitest` with `it.effect` to cover service behaviors (`.patterns/testing-patterns.md`).
 - Provide a CDP integration test that spins up or attaches to a local Chrome instance with remote debugging enabled, using TestClock only if timing-sensitive operations are introduced.
 - Ensure tests fail loudly if Chrome CDP is unavailable (per Hard-Fail policy) and document the steps for enabling Chrome's remote debugging port.
@@ -65,4 +74,3 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - Memory profiling tests must validate heap snapshot streaming (complete snapshots can be captured and saved), heap usage accuracy (compare with in-process APIs where available), and GC triggering (heap size reduces after forced collection).
 - Test memory profiling across multiple runtimes (Node.js, Chrome, Deno, Cloudflare Workers local dev) to ensure cross-platform compatibility.
 - Snapshot streaming tests must handle large heaps (>100MB test data) without buffering entire snapshot in memory.
-
