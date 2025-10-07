@@ -1,14 +1,5 @@
-#!/usr/bin/env node --import tsx/esm
-/**
- * Debug Step-Through Demo
- *
- * Launches broken-app.ts with --inspect-brk, connects via @effect-native/debug,
- * and steps through every line of execution, logging file:line:function info.
- *
- * Run with: pnpm test:debug-log-steps
- */
-
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
+import type { ChildProcess } from "child_process"
 import { spawn } from "child_process"
 import * as Console from "effect/Console"
 import * as Duration from "effect/Duration"
@@ -17,117 +8,181 @@ import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 import { dirname, join } from "path"
-import { fileURLToPath } from "url"
+import { fileURLToPath, pathToFileURL } from "url"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 
-// ============================================================================
-// Launch Target with Inspector
-// ============================================================================
+const TARGET_FILE_NAME = "broken-simple.js"
 
-function launchDebugTarget() {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = dirname(__filename)
-  const targetScript = join(__dirname, "broken-app.ts")
+interface SpawnedTarget {
+  readonly port: number
+  readonly process: ChildProcess
+  readonly filePath: string
+  readonly fileUrl: string
+}
+
+const launchTarget = (): SpawnedTarget => {
+  const callerPath = fileURLToPath(import.meta.url)
+  const callerDir = dirname(callerPath)
+  const filePath = join(callerDir, TARGET_FILE_NAME)
+  const fileUrl = pathToFileURL(filePath).href
+
   const port = 9300 + Math.floor(Math.random() * 100)
+  console.log(`🚀 Launching: node --inspect-brk=${port} ${filePath}`)
 
-  console.log(`🚀 Launching: node --inspect-brk=${port} ${targetScript}`)
-
-  const child = spawn("node", ["--inspect-brk=" + port, "--import", "tsx/esm", targetScript], {
+  const child = spawn("node", ["--inspect-brk=" + port, filePath], {
     stdio: ["ignore", "pipe", "pipe"]
   })
 
-  child.stdout.on("data", (data) => process.stdout.write(`[target] ${data}`))
-  child.stderr.on("data", (data) => process.stderr.write(`[target] ${data}`))
+  child.stdout.on("data", (chunk) => process.stdout.write(`[target] ${chunk}`))
+  child.stderr.on("data", (chunk) => process.stderr.write(`[target] ${chunk}`))
 
-  return { port, process: child }
+  return { port, process: child, filePath, fileUrl }
 }
 
-async function getWebSocketUrl(port: number): Promise<string> {
-  await new Promise((resolve) => setTimeout(resolve, 1500))
-
-  for (let i = 0; i < 5; i++) {
+const fetchWebSocketUrl = async (port: number): Promise<string> => {
+  for (let attempt = 0; attempt < 20; attempt++) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`)
       const targets = (await response.json()) as Array<{ webSocketDebuggerUrl: string }>
-      if (targets.length > 0) return targets[0].webSocketDebuggerUrl
+      if (targets.length > 0) {
+        return targets[0].webSocketDebuggerUrl
+      }
     } catch {
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      // ignore, retry after delay
     }
+    await new Promise((resolve) => setTimeout(resolve, 250))
   }
-  throw new Error("Failed to get WebSocket URL")
+  throw new Error(`Unable to discover inspector endpoint on port ${port}`)
 }
-
-// ============================================================================
-// Main Program
-// ============================================================================
 
 const program = Effect.gen(function*() {
   yield* Console.log("🔍 Debug Step-Through Demo")
   yield* Console.log("━".repeat(80))
 
-  // Launch target
-  const { port, process: targetProcess } = launchDebugTarget()
-  const wsUrl = yield* Effect.promise(() => getWebSocketUrl(port))
-  yield* Console.log(`🔌 Connected to ${wsUrl}\n`)
+  const target = launchTarget()
+  yield* Effect.addFinalizer(() =>
+    Effect.sync(() => {
+      target.process.kill("SIGKILL")
+    })
+  )
 
-  // Connect debug service
+  const wsUrl = yield* Effect.promise(() => fetchWebSocketUrl(target.port))
+  yield* Console.log(`🔌 Connected to ${wsUrl}`)
+
   const debug = yield* Debug
-  const session = yield* debug.connect({ endpoint: wsUrl, transport: DebugTransport.cdp() })
+  const session = yield* debug.connect({
+    endpoint: wsUrl,
+    transport: DebugTransport.cdp()
+  })
 
-  // Track state
-  const scripts = yield* Ref.make(new Map<string, { url: string; source?: string }>())
-  const stepCount = yield* Ref.make(0)
+  const scriptSources = yield* Ref.make(new Map<string, { url: string; source?: string }>())
+  const stepCountRef = yield* Ref.make(0)
 
-  // Subscribe to events FIRST
+  const GetScriptSource = (scriptId: string) =>
+    debugCommand({
+      transport: DebugTransport.cdp(),
+      command: "Debugger.getScriptSource",
+      params: { scriptId },
+      response: Schema.Struct({ scriptSource: Schema.String })
+    })
+
+  const StepOver = debugCommand({
+    transport: DebugTransport.cdp(),
+    command: "Debugger.stepOver",
+    response: Schema.Struct({})
+  })
+
+  const Resume = debugCommand({
+    transport: DebugTransport.cdp(),
+    command: "Debugger.resume",
+    response: Schema.Struct({})
+  })
+
   const events = yield* debug.subscribe(session)
-
-  // Handle events in background
   yield* Effect.forkScoped(
     Stream.runForEach(events, (event) =>
       Effect.gen(function*() {
-        // Collect script sources
         if (event.method === "Debugger.scriptParsed") {
           const params = event.params as any
-          const scriptId = params.scriptId
-          const url = params.url || ""
-          yield* Ref.update(scripts, (map) => map.set(scriptId, { url }))
+          const scriptId: string = params.scriptId
+          const url: string = params.url ?? ""
+          yield* Ref.update(scriptSources, (map) => {
+            const previous = map.get(scriptId)
+            map.set(scriptId, { url, source: previous?.source })
+            return map
+          })
+          if (url === target.fileUrl) {
+            const sourceResponse = yield* debug.sendCommand(session, GetScriptSource(scriptId))
+            yield* Ref.update(scriptSources, (map) => {
+              map.set(scriptId, { url, source: sourceResponse.scriptSource })
+              return map
+            })
+          }
+          return
         }
 
-        // Handle paused - log and step
         if (event.method === "Debugger.paused") {
           const params = event.params as any
-          const callFrames = params.callFrames || []
-
-          if (callFrames.length > 0) {
-            const frame = callFrames[0]
-            const loc = frame.location
-            const scriptMap = yield* Ref.get(scripts)
-            const script = scriptMap.get(loc.scriptId)
-            const step = yield* Ref.getAndUpdate(stepCount, (n) => n + 1)
-
-            // Only log our broken-app, not node internals
-            if (script?.url.includes("broken-app")) {
-              const fileName = script.url.split("/").pop() || "???"
-              const funcName = frame.functionName || "(anonymous)"
-              yield* Console.log(
-                `[${step}] ${fileName}:${loc.lineNumber}:${loc.columnNumber || 0} in ${funcName}`
-              )
-            }
-
-            // Step into next line (don't wait for response)
-            const StepInto = debugCommand({
-              transport: DebugTransport.cdp(),
-              command: "Debugger.stepInto",
-              response: Schema.Struct({})
-            })
-            yield* Effect.fork(debug.sendCommand(session, StepInto))
+          const callFrames: Array<any> = params.callFrames ?? []
+          if (callFrames.length === 0) {
+            yield* debug.sendCommand(session, Resume)
+            return
           }
+
+          const frame = callFrames[0]
+          const location = frame.location as { scriptId: string; lineNumber: number; columnNumber?: number }
+          const scripts = yield* Ref.get(scriptSources)
+          const entry = scripts.get(location.scriptId)
+
+          if (!entry) {
+            yield* debug.sendCommand(session, Resume)
+            return
+          }
+
+          let sourceEntry = entry
+          if (sourceEntry.url === target.fileUrl && sourceEntry.source === undefined) {
+            const sourceResponse = yield* debug.sendCommand(session, GetScriptSource(location.scriptId))
+            sourceEntry = { url: sourceEntry.url, source: sourceResponse.scriptSource }
+            yield* Ref.update(scriptSources, (map) => {
+              map.set(location.scriptId, sourceEntry)
+              return map
+            })
+          }
+
+          if (sourceEntry.url === target.fileUrl && sourceEntry.source) {
+            const lines = sourceEntry.source.split(/\r?\n/)
+            const zeroBasedLine = location.lineNumber ?? 0
+            const lineText = lines[zeroBasedLine] ?? ""
+            const column = location.columnNumber ?? 0
+            const stepIndex = yield* Ref.getAndUpdate(stepCountRef, (n) => n + 1)
+            const displayLine = zeroBasedLine + 1
+            const functionName = frame.functionName && frame.functionName.length > 0
+              ? frame.functionName
+              : "(anonymous)"
+            const shortPath = target.filePath.split("/").pop() ?? target.filePath
+
+            yield* Console.log(
+              `[${stepIndex.toString().padStart(4, " ")}] ${shortPath}:${displayLine}:${column} ${functionName}`
+            )
+            yield* Console.log(`      > ${lineText.trimEnd()}`)
+            yield* Effect.fork(debug.sendCommand(session, StepOver))
+            return
+          }
+
+          yield* debug.sendCommand(session, Resume)
+          return
         }
-      }).pipe(Effect.catchAll(() => Effect.void)))
+
+        if (event.method === "Debugger.resumed") {
+          return
+        }
+      }).pipe(
+        Effect.catchAll((error) =>
+          Console.error(`❌ Event handler error: ${error instanceof Error ? error.message : String(error)}`)
+        )
+      ))
   )
 
-  // Enable debugger
-  yield* Console.log("🔧 Enabling Debugger...")
   const EnableDebugger = debugCommand({
     transport: DebugTransport.cdp(),
     command: "Debugger.enable",
@@ -136,38 +191,27 @@ const program = Effect.gen(function*() {
   yield* debug.sendCommand(session, EnableDebugger)
   yield* Console.log("✅ Debugger enabled")
 
-  // Call Runtime.runIfWaitingForDebugger to unpause from --inspect-brk
-  yield* Console.log("▶️  Starting execution from --inspect-brk...")
   const RunIfWaiting = debugCommand({
     transport: DebugTransport.cdp(),
     command: "Runtime.runIfWaitingForDebugger",
     response: Schema.Struct({})
   })
   yield* debug.sendCommand(session, RunIfWaiting)
+  yield* Console.log("▶️  runtime.runIfWaitingForDebugger invoked")
 
-  // Now pause again to start stepping
-  yield* Console.log("⏸️  Pausing to start stepping...")
   const Pause = debugCommand({
     transport: DebugTransport.cdp(),
     command: "Debugger.pause",
     response: Schema.Struct({})
   })
   yield* debug.sendCommand(session, Pause)
-
-  // Wait for paused event
-  yield* Effect.sleep(Duration.millis(100))
+  yield* Console.log("⏸️  Initial pause requested")
 
   yield* Console.log("🔁 Stepping through code (Ctrl+C to stop)...")
   yield* Console.log("━".repeat(80))
-  yield* Console.log("")
 
-  // Wait forever while stepping
   yield* Effect.never
 })
-
-// ============================================================================
-// Run
-// ============================================================================
 
 const runnable = Effect.scoped(program).pipe(
   Effect.provide(layerCdp),
