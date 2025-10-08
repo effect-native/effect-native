@@ -1,3 +1,19 @@
+/**
+ * @deprecated This test fixture has been extracted into a CLI tool.
+ *
+ * Instead of running this file directly, use:
+ *
+ *   npx @effect-native/debug steps [options] <file>
+ *
+ * Or via package script:
+ *
+ *   pnpm test:debug-log-steps
+ *
+ * See CLI.md for full documentation.
+ *
+ * This file is kept for reference on how to build similar tools programmatically.
+ */
+
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import type { ChildProcess } from "child_process"
 import { spawn } from "child_process"

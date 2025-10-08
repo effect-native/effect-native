@@ -195,6 +195,78 @@ pnpm add @effect-native/debug effect @effect/platform @effect/platform-node
 
 ---
 
+## CLI Tool: Debug Steps
+
+The package includes a **command-line tool** for stepping through Node.js scripts line-by-line. No code required!
+
+### Quick Start
+
+```bash
+# Step through any JavaScript or TypeScript file
+npx @effect-native/debug steps ./my-script.js
+
+# Limit the number of steps (useful for long scripts)
+npx @effect-native/debug steps --max-steps 500 ./my-script.ts
+
+# Use a specific inspector port
+npx @effect-native/debug steps --port 9229 ./my-script.js
+```
+
+### What It Does
+
+The CLI tool will:
+1. ✅ Launch your script with Node.js inspector enabled (`--inspect-brk`)
+2. ✅ Connect to the debugger protocol automatically
+3. ✅ Step through **every line of execution**
+4. ✅ Display function name, line number, column, and source code
+5. ✅ Stop after reaching the maximum step count (default: 200)
+
+### CLI Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `<file>` | Path to JavaScript/TypeScript file (required) | - |
+| `--max-steps <n>` | Maximum steps to execute | 200 |
+| `--port <n>` | Inspector port (1-65535) | Random (9300-9399) |
+| `-h, --help` | Show help message | - |
+
+### Example Output
+
+```
+🔍 Debug Step-Through
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 Launching: node --inspect-brk=9341 /path/to/my-script.js
+🔌 Connected to ws://127.0.0.1:9341/...
+✅ Debugger enabled
+▶️  Runtime.runIfWaitingForDebugger invoked
+⏸️  Initial pause requested
+🔁 Stepping through code (Ctrl+C to stop)...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[   1] my-script.js:10:0 (anonymous)
+      > console.log("Starting app")
+[   2] my-script.js:11:0 (anonymous)
+      > const result = processData(["a", "b", "c"])
+[   3] my-script.js:5:16 processData
+      > const results = []
+[   4] my-script.js:6:6 processData
+      > for (let i = 0; i < items.length; i++) {
+[   5] my-script.js:7:4 processData
+      > results.push(items[i].toUpperCase())
+...
+🏁 Reached maximum step count (200). Exiting debugger session.
+✅ Finished stepping session
+```
+
+### Use Cases
+
+- 🐛 **Debug production issues** - Step through problematic code without modifying it
+- 📚 **Learn codebases** - See execution flow of unfamiliar code
+- 🔍 **Trace bugs** - Follow exact execution path to find issues
+- 📊 **Analyze performance** - See which functions are called and in what order
+- 🎓 **Teaching** - Demonstrate code execution to students
+
+---
+
 ## Quick Start
 
 ### Step Through Your Code

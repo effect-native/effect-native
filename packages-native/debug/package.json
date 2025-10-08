@@ -4,6 +4,9 @@
   "type": "module",
   "license": "MIT",
   "description": "JS runtime debugger protocol abstraction",
+  "bin": {
+    "debug-steps": "./bin/debug-steps.js"
+  },
   "homepage": "https://github.com/effect-native/effect-native",
   "repository": {
     "type": "git",
@@ -24,6 +27,7 @@
     "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./Debug": "./src/Debug.ts",
+    "./cli/steps": "./src/cli/steps.ts",
     "./internal/*": null
   },
   "scripts": {
@@ -35,7 +39,7 @@
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "test:debug-log-steps": "node --import tsx/esm test-fixtures/debug-step-through.ts"
+    "test:debug-log-steps": "node bin/debug-steps.js --max-steps 50 test-fixtures/broken-simple.js"
   },
   "peerDependencies": {
     "@effect/platform": "^0.91.1",
