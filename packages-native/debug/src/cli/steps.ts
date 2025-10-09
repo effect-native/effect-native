@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { Args, Command, Options } from "@effect/cli"
+import * as NodeContext from "@effect/platform-node/NodeContext"
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import type { ChildProcess } from "child_process"
 import { spawn } from "child_process"
@@ -12,81 +15,6 @@ import { existsSync } from "fs"
 import { resolve } from "path"
 import { pathToFileURL } from "url"
 import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../Debug.js"
-
-interface CliArgs {
-  readonly filePath: string
-  readonly maxSteps: number
-  readonly port: number
-}
-
-const parseArgs = (): CliArgs | null => {
-  const args = process.argv.slice(2)
-
-  if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
-    console.log(`
-Usage: npx @effect-native/debug steps [options] <file>
-
-Step through a Node.js script line-by-line using the debugger protocol.
-
-Arguments:
-  <file>              Path to the JavaScript or TypeScript file to debug
-
-Options:
-  --max-steps <n>     Maximum number of steps to execute (default: 200)
-  --port <n>          Inspector port to use (default: random 9300-9399)
-  -h, --help          Show this help message
-
-Examples:
-  npx @effect-native/debug steps ./my-script.js
-  npx @effect-native/debug steps --max-steps 500 ./app.ts
-  npx @effect-native/debug steps --port 9229 ./index.js
-`)
-    return null
-  }
-
-  let filePath: string | undefined
-  let maxSteps = 200
-  let port = 9300 + Math.floor(Math.random() * 100)
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
-    if (arg === "--max-steps") {
-      const value = parseInt(args[++i], 10)
-      if (isNaN(value) || value <= 0) {
-        console.error("Error: --max-steps must be a positive number")
-        process.exit(1)
-      }
-      maxSteps = value
-    } else if (arg === "--port") {
-      const value = parseInt(args[++i], 10)
-      if (isNaN(value) || value <= 0 || value > 65535) {
-        console.error("Error: --port must be a valid port number (1-65535)")
-        process.exit(1)
-      }
-      port = value
-    } else if (!arg.startsWith("-")) {
-      filePath = arg
-    } else {
-      console.error(`Error: Unknown option '${arg}'`)
-      console.error("Use --help for usage information")
-      process.exit(1)
-    }
-  }
-
-  if (!filePath) {
-    console.error("Error: No file path provided")
-    console.error("Use --help for usage information")
-    process.exit(1)
-  }
-
-  const resolvedPath = resolve(filePath)
-  if (!existsSync(resolvedPath)) {
-    console.error(`Error: File not found: ${resolvedPath}`)
-    process.exit(1)
-  }
-
-  return { filePath: resolvedPath, maxSteps, port }
-}
 
 interface SpawnedTarget {
   readonly port: number
@@ -126,12 +54,12 @@ const fetchWebSocketUrl = async (port: number): Promise<string> => {
   throw new Error(`Unable to discover inspector endpoint on port ${port}`)
 }
 
-const createProgram = (args: CliArgs) =>
+const createProgram = (filePath: string, maxSteps: number, port: number) =>
   Effect.gen(function*() {
     yield* Console.log("🔍 Debug Step-Through")
     yield* Console.log("━".repeat(80))
 
-    const target = launchTarget(args.filePath, args.port)
+    const target = launchTarget(filePath, port)
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
         target.process.kill("SIGKILL")
@@ -243,8 +171,8 @@ const createProgram = (args: CliArgs) =>
               )
               yield* Console.log(`      > ${lineText.trimEnd()}`)
 
-              if (nextStep >= args.maxSteps) {
-                yield* Console.log(`🏁 Reached maximum step count (${args.maxSteps}). Exiting debugger session.`)
+              if (nextStep >= maxSteps) {
+                yield* Console.log(`🏁 Reached maximum step count (${maxSteps}). Exiting debugger session.`)
                 yield* debug.sendCommand(session, Resume)
                 yield* debug.disconnect(session)
                 yield* Effect.sync(() => target.process.kill("SIGKILL"))
@@ -300,22 +228,48 @@ const createProgram = (args: CliArgs) =>
     yield* Effect.never
   })
 
-const main = () => {
-  const args = parseArgs()
-  if (!args) {
-    process.exit(0)
-  }
+// Define CLI arguments and options
+const fileArg = Args.text({ name: "file" }).pipe(
+  Args.withDescription("Path to the JavaScript or TypeScript file to debug")
+)
 
-  const program = createProgram(args)
-  const runnable = Effect.scoped(program).pipe(
-    Effect.provide(layerCdp),
-    Effect.provide(NodeSocket.layerWebSocketConstructor)
-  )
+const maxStepsOption = Options.integer("max-steps").pipe(
+  Options.withDescription("Maximum number of steps to execute"),
+  Options.withDefault(200)
+)
 
-  Effect.runPromise(runnable).catch((error) => {
-    console.error("❌ Fatal error:", error)
-    process.exit(1)
-  })
-}
+const portOption = Options.integer("port").pipe(
+  Options.withDescription("Inspector port to use (random 9300-9399 by default)"),
+  Options.withDefault(9300 + Math.floor(Math.random() * 100))
+)
 
-main()
+// Create the command
+const stepsCommand = Command.make(
+  "steps",
+  { file: fileArg, maxSteps: maxStepsOption, port: portOption },
+  ({ file, maxSteps, port }) =>
+    Effect.gen(function*() {
+      const filePath = resolve(file)
+      if (!existsSync(filePath)) {
+        return yield* Effect.fail(new Error(`File not found: ${filePath}`))
+      }
+      return yield* Effect.scoped(createProgram(filePath, maxSteps, port))
+    }).pipe(
+      Effect.provide(layerCdp),
+      Effect.provide(NodeSocket.layerWebSocketConstructor),
+      Effect.provide(NodeContext.layer)
+    )
+).pipe(
+  Command.withDescription("Step through a Node.js script line-by-line using the debugger protocol")
+)
+
+// Run the CLI
+const cli = Command.run(stepsCommand, {
+  name: "Debug Steps",
+  version: "0.0.0"
+})
+
+Effect.suspend(() => cli(process.argv)).pipe(
+  Effect.tapErrorCause(Effect.logError),
+  NodeRuntime.runMain
+)
