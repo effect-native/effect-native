@@ -202,21 +202,31 @@ The package includes a **command-line tool** for stepping through Node.js script
 ### Quick Start
 
 ```bash
-# Step through any JavaScript or TypeScript file
-npx @effect-native/debug steps ./my-script.js
+# First, start your Node.js app with debugging enabled
+node --inspect-brk=9229 my-script.js
+
+# In another terminal, connect the stepper (auto-discovers WebSocket URL)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 
 # Limit the number of steps (useful for long scripts)
-npx @effect-native/debug steps --max-steps 500 ./my-script.ts
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
 
-# Use a specific inspector port
-npx @effect-native/debug steps --port 9229 ./my-script.js
+# You can also pass the full WebSocket URL if you have it:
+npx @effect-native/debug steps --ws-url ws://127.0.0.1:9229/abc-123-def-456
 ```
+
+**Works with any CDP-compatible endpoint**, including:
+- Node.js (`node --inspect-brk`)
+- Bun (`bun --inspect-brk`)
+- Deno (`deno run --inspect-brk`)
+- Chrome/Chromium browsers
+- Cloudflare Workers (local dev with `wrangler dev --inspector-port`)
 
 ### What It Does
 
 The CLI tool will:
-1. ✅ Launch your script with Node.js inspector enabled (`--inspect-brk`)
-2. ✅ Connect to the debugger protocol automatically
+1. ✅ Connect to any CDP-compatible WebSocket debugger endpoint
+2. ✅ Enable the debugger and resume execution
 3. ✅ Step through **every line of execution**
 4. ✅ Display function name, line number, column, and source code
 5. ✅ Stop after reaching the maximum step count (default: 200)
@@ -225,9 +235,8 @@ The CLI tool will:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `<file>` | Path to JavaScript/TypeScript file (required) | - |
+| `--ws-url <url>` | WebSocket URL or HTTP endpoint (e.g., `127.0.0.1:9229`, `http://127.0.0.1:9229`, or `ws://...`) | - |
 | `--max-steps <n>` | Maximum steps to execute | 200 |
-| `--port <n>` | Inspector port (1-65535) | Random (9300-9399) |
 | `-h, --help` | Show help message | - |
 
 ### Example Output
@@ -235,8 +244,7 @@ The CLI tool will:
 ```
 🔍 Debug Step-Through
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 Launching: node --inspect-brk=9341 /path/to/my-script.js
-🔌 Connected to ws://127.0.0.1:9341/...
+🔌 Connected to ws://127.0.0.1:9341/abc-123-def-456
 ✅ Debugger enabled
 ▶️  Runtime.runIfWaitingForDebugger invoked
 ⏸️  Initial pause requested
@@ -264,10 +272,139 @@ The CLI tool will:
 - 🔍 **Trace bugs** - Follow exact execution path to find issues
 - 📊 **Analyze performance** - See which functions are called and in what order
 - 🎓 **Teaching** - Demonstrate code execution to students
+- 🌐 **Multi-runtime support** - Works with Node.js, Bun, Deno, browsers, and more
+
+### Getting the WebSocket URL
+
+The `steps` command accepts either a simple endpoint (like `127.0.0.1:9229`) or a full WebSocket URL. The tool will automatically discover the WebSocket URL from the HTTP endpoint.
+
+**Simplest Usage** (recommended):
+```bash
+# Just pass the host:port - we'll discover the WebSocket URL
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+
+# Or with http:// prefix
+npx @effect-native/debug steps --ws-url http://127.0.0.1:9229
+```
+</text>
+
+<old_text line=281>
+When you start Node.js with `--inspect` or `--inspect-brk`, it outputs the WebSocket URL:
+
+```bash
+$ node --inspect-brk=9229 my-script.js
+Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+```
+
+**Copy the entire `ws://...` URL** and pass it to the `--ws-url` option.
+
+**Find it programmatically**:
+```bash
+# Query the inspector HTTP endpoint
+curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl'
+
+# Use in a one-liner
+npx @effect-native/debug steps --ws-url $(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl')
+
+# Or in a script
+WS_URL=$(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl')
+npx @effect-native/debug steps --ws-url "$WS_URL" --max-steps 500
+```
+
+#### Node.js
+
+When you start Node.js with `--inspect` or `--inspect-brk`, it outputs the WebSocket URL:
+
+```bash
+$ node --inspect-brk=9229 my-script.js
+Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+```
+
+**Copy the entire `ws://...` URL** and pass it to the `--ws-url` option.
+
+**Find it programmatically**:
+```bash
+# Query the inspector HTTP endpoint
+curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl'
+
+# Use in a one-liner
+npx @effect-native/debug steps --ws-url $(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl')
+
+# Or in a script
+WS_URL=$(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl')
+npx @effect-native/debug steps --ws-url "$WS_URL" --max-steps 500
+```
+
+#### Bun
+
+```bash
+$ bun --inspect-brk=9229 my-script.js
+Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+
+# Connect with:
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+#### Deno
+
+```bash
+$ deno run --inspect-brk=9229 my-script.ts
+Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+
+# Connect with:
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+#### Cloudflare Workers (Local)
+
+```bash
+$ wrangler dev --inspector-port=9229
+Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+
+# Connect with:
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+#### Chrome/Chromium Browsers
+
+1. Open `chrome://inspect` in Chrome
+2. Click "inspect" on your target
+3. Or connect programmatically:
+```bash
+# Simple endpoint
+npx @effect-native/debug steps --ws-url localhost:9222
+
+# Or get the full WebSocket URL
+curl http://localhost:9222/json | jq -r '.[0].webSocketDebuggerUrl'
+```
+
+#### Automation Script Example
+
+For CI/CD or automated testing, you can wrap the workflow in a script:
+
+```bash
+#!/bin/bash
+set -e
+
+# Start your app with inspector in background
+node --inspect=9229 app.js &
+APP_PID=$!
+
+# Wait for inspector to be ready
+sleep 1
+
+# Run steps (auto-discovers WebSocket URL)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
+
+# Cleanup
+kill $APP_PID
+```
 
 ---
 
 ## Quick Start
+</text>
+
 
 ### Step Through Your Code
 
@@ -392,40 +529,48 @@ yield* Stream.runForEach(events, (event) =>
 
 ## Real-World Example: The Step-Through Demo
 
-**See it in action**: `packages-native/debug/test-fixtures/debug-step-through.ts`
+**See it in action**: The `steps` CLI tool (`packages-native/debug/src/cli/steps.ts`)
 
 **Run it**:
 ```bash
-cd packages-native/debug
-pnpm test:debug-log-steps
+# Terminal 1: Start your Node.js app with debugging enabled
+node --inspect-brk=9229 my-script.js
+
+# Terminal 2: Connect the stepper (auto-discovers WebSocket URL)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 ```
 
 **What it does**:
-1. Launches `broken-simple.js` with `--inspect-brk` on a random port
-2. Discovers the WebSocket inspector URL
-3. Connects using the Debug service
-4. Subscribes to debugger events
-5. Enables the Debugger domain
-6. Calls `Runtime.runIfWaitingForDebugger` to start execution
-7. Pauses immediately
-8. For each `Debugger.paused` event:
+1. Connects to the provided WebSocket debugger endpoint
+2. Subscribes to debugger events
+3. Enables the Debugger domain
+4. Calls `Runtime.runIfWaitingForDebugger` to start execution
+5. Pauses immediately with `Debugger.pause`
+6. For each `Debugger.paused` event:
    - Fetches the script source (if needed)
    - Logs: `[step] file:line:column function`
    - Shows the source code line
    - Calls `Debugger.stepOver` to advance
-9. Stops after reaching line 98 or 200 steps
-10. Cleans up and exits
+7. Stops after reaching the maximum step count (default: 200)
+8. Disconnects and exits
 
-**Output** (27 steps in 0.777 seconds):
+**Works with any CDP-compatible runtime**:
+- Node.js: `node --inspect-brk`
+- Bun: `bun --inspect-brk`
+- Deno: `deno run --inspect-brk`
+- Cloudflare Workers: `wrangler dev --inspector-port=9229`
+- Chrome/Chromium browsers
+
+**Output**:
 ```
-[   1] broken-simple.js:1:0 (anonymous)
+[   1] my-script.js:1:0 (anonymous)
       > /**
-[   2] broken-simple.js:10:0 (anonymous)
+[   2] my-script.js:10:0 (anonymous)
       > console.log("🐛 Starting Simple Broken App")
-[   5] broken-simple.js:65:16 (anonymous)
+[   5] my-script.js:65:16 (anonymous)
       > const result1 = processItems(["a", "b", "c"])
 ...
-[  27] broken-simple.js:98:0 (anonymous)
+[  27] my-script.js:98:0 (anonymous)
       > setInterval(function() {
 🏁 Completed stepping target script. Exiting debugger session.
 ```

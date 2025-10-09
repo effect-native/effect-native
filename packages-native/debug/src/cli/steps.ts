@@ -13,6 +13,55 @@ import * as Stream from "effect/Stream"
 
 import * as Debug from "../Debug.js"
 
+// Helper to discover WebSocket URL from HTTP endpoint
+const discoverWebSocketUrl = (endpoint: string): Effect.Effect<string, Error> =>
+  Effect.gen(function*() {
+    // If it's already a WebSocket URL, return it as-is
+    if (endpoint.startsWith("ws://") || endpoint.startsWith("wss://")) {
+      return endpoint
+    }
+
+    // Convert http:// or just host:port to http://
+    let httpUrl = endpoint
+    if (!httpUrl.startsWith("http://") && !httpUrl.startsWith("https://")) {
+      httpUrl = `http://${httpUrl}`
+    }
+
+    // Ensure /json endpoint
+    if (!httpUrl.endsWith("/json")) {
+      httpUrl = `${httpUrl.replace(/\/$/, "")}/json`
+    }
+
+    yield* Console.log(`🔍 Discovering WebSocket URL from ${httpUrl}...`)
+
+    try {
+      const response = yield* Effect.promise(() => fetch(httpUrl))
+      if (!response.ok) {
+        return yield* Effect.fail(
+          new Error(`Failed to fetch ${httpUrl}: ${response.status} ${response.statusText}`)
+        )
+      }
+
+      const targets = yield* Effect.promise(() => response.json() as Promise<Array<any>>)
+
+      if (!Array.isArray(targets) || targets.length === 0) {
+        return yield* Effect.fail(new Error(`No debug targets found at ${httpUrl}`))
+      }
+
+      const wsUrl = targets[0].webSocketDebuggerUrl
+      if (!wsUrl || typeof wsUrl !== "string") {
+        return yield* Effect.fail(new Error(`No webSocketDebuggerUrl found in response from ${httpUrl}`))
+      }
+
+      yield* Console.log(`✅ Found WebSocket URL: ${wsUrl}`)
+      return wsUrl
+    } catch (error) {
+      return yield* Effect.fail(
+        new Error(`Failed to discover WebSocket URL: ${error instanceof Error ? error.message : String(error)}`)
+      )
+    }
+  })
+
 const GetScriptSource = (scriptId: string) =>
   Debug.cdpCommand({
     command: "Debugger.getScriptSource",
@@ -41,17 +90,20 @@ const stepsCommand = Command.make(
       Options.withDefault(200)
     ),
     wsUrl: Options.text("ws-url").pipe(
-      Options.withDescription("WebSocket URL of the Node.js inspector")
+      Options.withDescription("WebSocket URL or HTTP endpoint (e.g., ws://127.0.0.1:9229/... or http://127.0.0.1:9229)")
     )
   },
   Effect.fn(function*({ maxSteps, wsUrl }) {
     yield* Console.log("🔍 Debug Step-Through")
     yield* Console.log("━".repeat(80))
 
-    yield* Console.log(`🔌 Connected to ${wsUrl}`)
+    // Discover WebSocket URL if HTTP endpoint was provided
+    const resolvedWsUrl = yield* discoverWebSocketUrl(wsUrl)
+
+    yield* Console.log(`🔌 Connected to ${resolvedWsUrl}`)
 
     const debug = yield* Debug.Debug
-    const session = yield* debug.connect({ endpoint: wsUrl })
+    const session = yield* debug.connect({ endpoint: resolvedWsUrl })
 
     const scriptSources = yield* Ref.make(new Map<string, { url: string; source?: string }>())
     const stepCountRef = yield* Ref.make(0)
@@ -102,6 +154,16 @@ const stepsCommand = Command.make(
 
               if (!entry) {
                 yield* debug.sendCommand(session, yield* Resume)
+                return
+              }
+
+              // Skip Node.js internal modules and node_modules
+              if (
+                entry.url.startsWith("node:") ||
+                entry.url.includes("/node_modules/") ||
+                entry.url.includes("\\node_modules\\")
+              ) {
+                yield* debug.sendCommand(session, yield* StepOver)
                 return
               }
 

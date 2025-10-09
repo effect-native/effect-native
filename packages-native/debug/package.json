@@ -39,7 +39,7 @@
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "test:debug-log-steps": "node bin/debug-steps.js --max-steps 50 test-fixtures/broken-simple.js"
+    "test:debug-log-steps": "bash bin/test-steps.sh 50"
   },
   "peerDependencies": {
     "@effect/platform": "^0.91.1",

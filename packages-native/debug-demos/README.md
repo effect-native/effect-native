@@ -20,6 +20,177 @@ cd packages-native/debug-demos
 pnpm install
 ```
 
+## Quick Start: Using the Steps CLI
+
+The `@effect-native/debug steps` CLI tool lets you step through any of these demos line-by-line. Here's the basic workflow:
+
+**Step 1: Start a demo with the inspector enabled** (it already is by default):
+
+```bash
+pnpm demo:leak
+# Output: Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
+```
+
+**Step 2: In another terminal, connect the stepper** (it auto-discovers the WebSocket URL):
+
+```bash
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+**Step 4: Watch the execution unfold**:
+
+```
+🔍 Debug Step-Through
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔌 Connected to ws://127.0.0.1:9229/abc-123-def-456
+✅ Debugger enabled
+▶️  Runtime.runIfWaitingForDebugger invoked
+⏸️  Initial pause requested
+🔁 Stepping through code (Ctrl+C to stop)...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[   1] memory-leak-demo.ts:10:0 (anonymous)
+      > console.log("🚀 Starting Memory Leak Demo")
+[   2] memory-leak-demo.ts:11:0 (anonymous)
+      > const cache = new Map()
+...
+```
+
+Press `Ctrl+C` in either terminal to stop.
+
+**Pro tip**: Use `--max-steps` to limit execution:
+
+```bash
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 100
+```
+
+### Using with Automation Scripts
+
+The steps CLI accepts simple endpoints like `127.0.0.1:9229` and automatically discovers the WebSocket URL:
+
+```bash
+#!/bin/bash
+set -e
+
+# Start your app in background
+node --inspect=9229 app.js &
+APP_PID=$!
+
+# Wait for inspector to be ready
+sleep 1
+
+# Run steps (auto-discovers WebSocket URL from HTTP endpoint)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
+
+# Cleanup
+kill $APP_PID
+```
+
+**No need for `curl` or `jq`** - just pass the host:port!
+
+## Complete Workflow Examples
+
+### Example 1: Basic Step-Through with Node.js
+
+**Goal**: Step through the memory leak demo to understand the leak pattern.
+
+```bash
+# Terminal 1: Start the demo with inspector
+cd packages-native/debug-demos
+pnpm demo:leak
+```
+
+Then in another terminal:
+
+```bash
+# Terminal 2: Connect the stepper (auto-discovers WebSocket URL)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
+```
+
+You'll see each line execute, including where the cache grows unbounded:
+
+```
+[  45] memory-leak-demo.ts:55:4 crawlPage
+      > cache.set(url, data)  // 🔴 LEAK: Never evicts!
+[  46] memory-leak-demo.ts:56:4 crawlPage
+      > listeners.push(handler)  // 🔴 LEAK: Accumulates!
+```
+
+### Example 2: Multi-Runtime Support
+
+**With Bun**:
+```bash
+# Terminal 1
+bun --inspect-brk=9229 src/memory-leak-demo.ts
+
+# Terminal 2
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+**With Deno**:
+```bash
+# Terminal 1
+deno run --inspect-brk=9229 --allow-all src/memory-leak-demo.ts
+
+# Terminal 2
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+```
+
+### Example 3: Automated Leak Detection Workflow
+
+**Goal**: Use the leak detector to automatically identify memory growth.
+
+```bash
+# Terminal 1: Start the leaky app
+pnpm demo:leak
+
+# Terminal 2: Run the leak detector (when implemented)
+# Note: Currently uses simulated service
+pnpm demo:detector --ws-url 127.0.0.1:9229
+```
+
+The detector will:
+1. Take a baseline snapshot
+2. Trigger the leak action
+3. Take a second snapshot
+4. Repeat the action
+5. Take a third snapshot
+6. Analyze the growth
+
+### Example 4: Comparing Leaky vs Fixed
+
+**Test the leaky version**:
+```bash
+# Terminal 1
+pnpm demo:leak
+
+# Terminal 2
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 200
+# Watch for unbounded growth in cache.set(), listeners.push()
+```
+
+**Test the fixed version**:
+```bash
+# Terminal 1
+pnpm demo:fixed
+
+# Terminal 2
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 200
+# Watch for bounded LRU cache, proper cleanup
+```
+
+### Example 5: Cloudflare Workers (Local)
+
+**Debug a Worker locally**:
+```bash
+# In a Cloudflare Workers project
+wrangler dev --inspector-port=9229
+
+# In another terminal
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 1000
+```
+
+This lets you step through Worker code locally before deploying to production.
+
 ## Demos
 
 ### 1. Memory Leak Demo (Intentionally Leaky)
@@ -38,9 +209,13 @@ A realistic web crawler application with **four intentional memory leaks**:
 ```bash
 # Start with inspector on port 9229
 pnpm demo:leak
+```
 
-# Or start in break mode (wait for debugger)
-pnpm demo:leak:wait
+**Use with the steps debugger**:
+
+```bash
+# In another terminal, step through the leaky code
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
 ```
 
 **Expected Behavior**:
@@ -80,7 +255,15 @@ The same application with **all leaks fixed**:
 **Run**:
 
 ```bash
+# Start the fixed version with inspector
 pnpm demo:fixed
+```
+
+**Use with the steps debugger**:
+
+```bash
+# In another terminal, verify the fixes by stepping through
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 500
 ```
 
 **Expected Behavior**:
@@ -118,12 +301,14 @@ Implements the **three-snapshot technique** for automated leak detection:
 **Run**:
 
 ```bash
-# Start the leaky app first
+# Terminal 1: Start the leaky app with inspector
 pnpm demo:leak
 
-# Then run detector (in another terminal)
-pnpm demo:detector
+# Terminal 2: Run detector (auto-discovers WebSocket URL)
+pnpm demo:detector --ws-url 127.0.0.1:9229
 ```
+
+**Note**: The leak detector currently uses a simulated debug service. When the real `@effect-native/debug` implementation is complete, it will connect to the actual CDP endpoint.
 
 **Output**:
 
@@ -185,6 +370,13 @@ cp path/to/workers-ai-proxy-leak.ts src/index.ts
 wrangler dev --inspector-port=9229
 ```
 
+**Debug with steps**:
+
+```bash
+# In another terminal, step through the worker code
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229 --max-steps 1000
+```
+
 **Test**:
 
 ```bash
@@ -235,10 +427,9 @@ The leak detector saves three snapshot files:
 ### Using Chrome DevTools
 
 1. **Open DevTools**:
-   ```bash
-   # While your app is running with --inspect
-   chrome://inspect
-   ```
+   - Open Chrome and navigate to `chrome://inspect`
+   - Or click the WebSocket URL shown in the Node.js output
+   - Or use the `@effect-native/debug steps` CLI tool to step through programmatically
 
 2. **Load Snapshots**:
    - Click "Open dedicated DevTools for Node"
@@ -378,7 +569,27 @@ node --inspect=9229 your-app.js
 
 # Check if inspector is listening
 curl http://127.0.0.1:9229/json
+
+# Connect with steps (auto-discovers WebSocket URL)
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 ```
+
+### Simple Endpoint Format
+
+The `@effect-native/debug steps` command accepts simple endpoints and auto-discovers the WebSocket URL:
+
+```bash
+# Just pass the host:port
+npx @effect-native/debug steps --ws-url 127.0.0.1:9229
+
+# Or with http:// prefix
+npx @effect-native/debug steps --ws-url http://127.0.0.1:9229
+
+# Or the full WebSocket URL if you have it
+npx @effect-native/debug steps --ws-url ws://127.0.0.1:9229/abc-123-def-456
+```
+
+**No need for `curl` or `jq`** - the tool handles WebSocket URL discovery automatically!
 
 ### GC Not Available
 
