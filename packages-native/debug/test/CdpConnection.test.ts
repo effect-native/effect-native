@@ -16,7 +16,7 @@ import * as Net from "node:net"
 import * as Os from "node:os"
 import * as Path from "node:path"
 import { WebSocketServer } from "ws"
-import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
+import { cdpCommand, command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
 import type { Service as DebugService } from "../src/DebugModel.js"
 
 type CloseFn = () => Promise<void>
@@ -469,6 +469,35 @@ describe.sequential("Debug CDP connection", () => {
           const chunk = yield* Fiber.join(collector)
           const head = Chunk.head(chunk)
           expect(Option.map(head, (event) => event.method)).toEqual(Option.some("Runtime.consoleAPICalled"))
+        })
+      )
+    ).pipe(Effect.orDie))
+
+  it.effect("uses cdpCommand without explicit transport", () =>
+    withDebugEnvironment(
+      Effect.scoped(
+        Effect.gen(function*() {
+          const server = yield* makeTestCdpServer
+          const debug = yield* Debug
+          const session = yield* debug.connect({
+            endpoint: server.url
+          })
+
+          // Use cdpCommand helper that reads transport from context
+          const GetVersion = cdpCommand({
+            command: "Browser.getVersion",
+            response: Schema.Struct({
+              protocolVersion: Schema.String,
+              product: Schema.String,
+              revision: Schema.String,
+              userAgent: Schema.String
+            })
+          })
+
+          const version = yield* debug.sendCommand(session, yield* GetVersion)
+          expect(version.product).toBe("TestBrowser/1.0")
+          expect(version.userAgent).toBe("TestBrowser/1.0")
+          yield* debug.disconnect(session)
         })
       )
     ).pipe(Effect.orDie))
