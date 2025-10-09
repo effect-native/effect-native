@@ -110,7 +110,7 @@ export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> =
  */
 export const cdpCommand = <A, I = unknown>(
   options: Omit<Command<A, I>, "transport">
-): Effect.Effect<Command<A, I>, never, CurrentTransport> =>
+): Effect.Effect<Command<A, I>, never, Transport> =>
   Effect.gen(function*() {
     const transport = yield* CurrentTransport
     return { ...options, transport } as Command<A, I>
@@ -237,7 +237,7 @@ export type DebugError =
 export interface Service {
   readonly connect: (
     options: ConnectOptions
-  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor | CurrentTransport>
+  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor | Transport>
   readonly disconnect: (session: Session) => Effect.Effect<void, DebugError>
   readonly sendCommand: <A, I = unknown>(session: Session, cmd: Command<A, I>) => Effect.Effect<A, DebugError>
   readonly subscribe: (session: Session) => Effect.Effect<Stream.Stream<Event>, DebugError, Scope.Scope>

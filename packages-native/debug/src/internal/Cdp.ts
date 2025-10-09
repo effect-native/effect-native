@@ -176,7 +176,7 @@ const releaseSession = (session: Debug.Session): Effect.Effect<void> =>
 
 const createSession = (
   options: Debug.ConnectOptions
-): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor | Debug.CurrentTransport> =>
+): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor | Debug.Transport> =>
   Effect.gen(function*() {
     const transport = options.transport ?? (yield* Debug.CurrentTransport)
     if (transport._tag !== "Cdp") {
@@ -329,7 +329,7 @@ const makeService: Effect.Effect<Debug.Service, never> = Effect.succeed({
  * @internal
  * @since 0.0.0
  */
-export const layer: Layer.Layer<Debug.Service | Debug.CurrentTransport, never, Socket.WebSocketConstructor> = Layer
+export const layer: Layer.Layer<Debug.Service | Debug.Transport, never, Socket.WebSocketConstructor> = Layer
   .provideMerge(
     Layer.effect(Debug.Debug, makeService),
     Layer.succeed(Debug.CurrentTransport, Debug.Transport.cdp())
