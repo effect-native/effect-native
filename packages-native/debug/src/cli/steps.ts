@@ -4,7 +4,6 @@ import { Command, Options } from "@effect/cli"
 import * as NodeContext from "@effect/platform-node/NodeContext"
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import type * as child_process from "child_process"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -13,13 +12,6 @@ import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
 
 import * as Debug from "../Debug.js"
-
-interface SpawnedTarget {
-  readonly port: number
-  readonly process: child_process.ChildProcess
-  readonly filePath: string
-  readonly fileUrl: string
-}
 
 const GetScriptSource = (scriptId: string) =>
   Debug.cdpCommand({
