@@ -13,6 +13,15 @@ import * as Stream from "effect/Stream"
 
 import * as Debug from "../Debug.js"
 
+/**
+ * CLI command for stepping through Node.js scripts line-by-line using the Chrome DevTools Protocol.
+ *
+ * This module provides a debugger step-through utility that connects to a Node.js process via WebSocket
+ * and allows step-by-step execution of code, displaying each line as it executes.
+ *
+ * @since 1.0.0
+ */
+
 // Helper to discover WebSocket URL from HTTP endpoint
 const discoverWebSocketUrl = (endpoint: string): Effect.Effect<string, Error> =>
   Effect.gen(function*() {
