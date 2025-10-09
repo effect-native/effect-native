@@ -239,7 +239,7 @@ const createSession = (
     return session
   })
 
-const connect: Debug.Service["connect"] = (options) => Effect.acquireRelease(createSession(options), releaseSession)
+const connect = (options: Debug.ConnectOptions) => Effect.acquireRelease(createSession(options), releaseSession)
 
 const disconnect: Debug.Service["disconnect"] = (session) =>
   Effect.gen(function*() {
