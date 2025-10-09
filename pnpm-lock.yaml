@@ -211,19 +211,19 @@ importers:
 
   packages-native/debug:
     dependencies:
+      '@effect/cli':
+        specifier: ^0.58.1
+        version: 0.58.4(@effect/platform@0.91.1(effect@3.18.4))(@effect/printer-ansi@0.46.0(@effect/typeclass@0.37.0(effect@3.18.4))(effect@3.18.4))(@effect/printer@0.46.0(@effect/typeclass@0.37.0(effect@3.18.4))(effect@3.18.4))(effect@3.18.4)
+      '@effect/platform-node':
+        specifier: ^0.97.1
+        version: 0.97.1(@effect/cluster@0.50.4(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/sql@0.46.0(@effect/experimental@0.56.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/workflow@0.11.3(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/sql@0.46.0(@effect/experimental@0.56.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(effect@3.18.4)
       effect:
         specifier: latest
         version: 3.18.4
     devDependencies:
-      '@effect/cli':
-        specifier: ^0.58.1
-        version: 0.58.4(@effect/platform@0.91.1(effect@3.18.4))(@effect/printer-ansi@0.46.0(@effect/typeclass@0.37.0(effect@3.18.4))(effect@3.18.4))(@effect/printer@0.46.0(@effect/typeclass@0.37.0(effect@3.18.4))(effect@3.18.4))(effect@3.18.4)
       '@effect/platform':
         specifier: ^0.91.1
         version: 0.91.1(effect@3.18.4)
-      '@effect/platform-node':
-        specifier: ^0.97.1
-        version: 0.97.1(@effect/cluster@0.50.4(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/sql@0.46.0(@effect/experimental@0.56.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/workflow@0.11.3(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(@effect/rpc@0.71.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/sql@0.46.0(@effect/experimental@0.56.0(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(@effect/platform@0.91.1(effect@3.18.4))(effect@3.18.4))(effect@3.18.4)
       '@effect/vitest':
         specifier: ^0.25.1
         version: 0.25.1(effect@3.18.4)(vitest@3.2.4)
