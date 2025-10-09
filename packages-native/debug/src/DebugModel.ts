@@ -7,7 +7,7 @@
 import type * as Socket from "@effect/platform/Socket"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
-import type * as Effect from "effect/Effect"
+import * as Effect from "effect/Effect"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
@@ -52,6 +52,15 @@ export const Transport = {
 } as const
 
 /**
+ * Context tag for the current transport.
+ * Automatically provided by layer implementations (e.g., layerCdp).
+ *
+ * @category Transport
+ * @since 0.0.0
+ */
+export const CurrentTransport = Context.GenericTag<Transport>("@effect-native/debug/CurrentTransport")
+
+/**
  * Command envelope describing a debugger request.
  *
  * @category Command
@@ -75,6 +84,39 @@ export interface Command<A, I = unknown> {
 export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> => options
 
 /**
+ * Construct a CDP command envelope using the transport from context.
+ * This is a convenience function that automatically uses CurrentTransport.
+ *
+ * @category Command
+ * @since 0.0.0
+ * @example
+ * ```ts
+ * import { cdpCommand, CurrentTransport } from "@effect-native/debug"
+ * import * as Effect from "effect/Effect"
+ * import * as Schema from "effect/Schema"
+ *
+ * const EnableDebugger = cdpCommand({
+ *   command: "Debugger.enable",
+ *   response: Schema.Struct({ debuggerId: Schema.String })
+ * })
+ *
+ * // Use with layerCdp which provides CurrentTransport
+ * const program = Effect.gen(function*() {
+ *   const debug = yield* Debug
+ *   const session = yield* debug.connect({ endpoint: wsUrl })
+ *   yield* debug.sendCommand(session, EnableDebugger)
+ * })
+ * ```
+ */
+export const cdpCommand = <A, I = unknown>(
+  options: Omit<Command<A, I>, "transport">
+): Effect.Effect<Command<A, I>, never, CurrentTransport> =>
+  Effect.gen(function*() {
+    const transport = yield* CurrentTransport
+    return { ...options, transport } as Command<A, I>
+  })
+
+/**
  * Connection options for establishing a Debug session.
  *
  * @category Connection
@@ -82,7 +124,7 @@ export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> =
  */
 export interface ConnectOptions {
   readonly endpoint: string
-  readonly transport: Transport
+  readonly transport?: Transport
 }
 
 /**
@@ -195,7 +237,7 @@ export type DebugError =
 export interface Service {
   readonly connect: (
     options: ConnectOptions
-  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor>
+  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor | CurrentTransport>
   readonly disconnect: (session: Session) => Effect.Effect<void, DebugError>
   readonly sendCommand: <A, I = unknown>(session: Session, cmd: Command<A, I>) => Effect.Effect<A, DebugError>
   readonly subscribe: (session: Session) => Effect.Effect<Stream.Stream<Event>, DebugError, Scope.Scope>

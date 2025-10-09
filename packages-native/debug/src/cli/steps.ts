@@ -14,7 +14,7 @@ import * as Stream from "effect/Stream"
 import { existsSync } from "fs"
 import { resolve } from "path"
 import { pathToFileURL } from "url"
-import { command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../Debug.js"
+import { cdpCommand, Debug, layerCdp } from "../Debug.js"
 
 interface SpawnedTarget {
   readonly port: number
@@ -71,29 +71,25 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
 
     const debug = yield* Debug
     const session = yield* debug.connect({
-      endpoint: wsUrl,
-      transport: DebugTransport.cdp()
+      endpoint: wsUrl
     })
 
     const scriptSources = yield* Ref.make(new Map<string, { url: string; source?: string }>())
     const stepCountRef = yield* Ref.make(0)
 
     const GetScriptSource = (scriptId: string) =>
-      debugCommand({
-        transport: DebugTransport.cdp(),
+      cdpCommand({
         command: "Debugger.getScriptSource",
         params: { scriptId },
         response: Schema.Struct({ scriptSource: Schema.String })
       })
 
-    const StepOver = debugCommand({
-      transport: DebugTransport.cdp(),
+    const StepOver = cdpCommand({
       command: "Debugger.stepOver",
       response: Schema.Struct({})
     })
 
-    const Resume = debugCommand({
-      transport: DebugTransport.cdp(),
+    const Resume = cdpCommand({
       command: "Debugger.resume",
       response: Schema.Struct({})
     })
@@ -116,7 +112,7 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
               return map
             })
             if (url === target.fileUrl) {
-              const sourceResponse = yield* debug.sendCommand(session, GetScriptSource(scriptId))
+              const sourceResponse = yield* debug.sendCommand(session, yield* GetScriptSource(scriptId))
               yield* Ref.update(scriptSources, (map) => {
                 map.set(scriptId, { url, source: sourceResponse.scriptSource })
                 return map
@@ -129,7 +125,7 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
             const params = event.params as any
             const callFrames: Array<any> = params.callFrames ?? []
             if (callFrames.length === 0) {
-              yield* debug.sendCommand(session, Resume)
+              yield* debug.sendCommand(session, yield* Resume)
               return
             }
 
@@ -145,7 +141,7 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
 
             let sourceEntry = entry
             if (sourceEntry.url === target.fileUrl && sourceEntry.source === undefined) {
-              const sourceResponse = yield* debug.sendCommand(session, GetScriptSource(location.scriptId))
+              const sourceResponse = yield* debug.sendCommand(session, yield* GetScriptSource(location.scriptId))
               sourceEntry = { url: sourceEntry.url, source: sourceResponse.scriptSource }
               yield* Ref.update(scriptSources, (map) => {
                 map.set(location.scriptId, sourceEntry)
@@ -173,18 +169,18 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
 
               if (nextStep >= maxSteps) {
                 yield* Console.log(`🏁 Reached maximum step count (${maxSteps}). Exiting debugger session.`)
-                yield* debug.sendCommand(session, Resume)
+                yield* debug.sendCommand(session, yield* Resume)
                 yield* debug.disconnect(session)
                 yield* Effect.sync(() => target.process.kill("SIGKILL"))
                 yield* Console.log("✅ Finished stepping session")
                 yield* Effect.sync(() => process.exit(0))
               } else {
-                yield* Effect.fork(debug.sendCommand(session, StepOver))
+                yield* Effect.fork(debug.sendCommand(session, yield* StepOver))
               }
               return
             }
 
-            yield* debug.sendCommand(session, Resume)
+            yield* debug.sendCommand(session, yield* Resume)
             return
           }
 
@@ -198,28 +194,25 @@ const createProgram = (filePath: string, maxSteps: number, port: number) =>
         ))
     )
 
-    const EnableDebugger = debugCommand({
-      transport: DebugTransport.cdp(),
+    const EnableDebugger = cdpCommand({
       command: "Debugger.enable",
       response: Schema.Struct({ debuggerId: Schema.String })
     })
-    yield* debug.sendCommand(session, EnableDebugger)
+    yield* debug.sendCommand(session, yield* EnableDebugger)
     yield* Console.log("✅ Debugger enabled")
 
-    const RunIfWaiting = debugCommand({
-      transport: DebugTransport.cdp(),
+    const RunIfWaiting = cdpCommand({
       command: "Runtime.runIfWaitingForDebugger",
       response: Schema.Struct({})
     })
-    yield* debug.sendCommand(session, RunIfWaiting)
+    yield* debug.sendCommand(session, yield* RunIfWaiting)
     yield* Console.log("▶️  Runtime.runIfWaitingForDebugger invoked")
 
-    const Pause = debugCommand({
-      transport: DebugTransport.cdp(),
+    const Pause = cdpCommand({
       command: "Debugger.pause",
       response: Schema.Struct({})
     })
-    yield* debug.sendCommand(session, Pause)
+    yield* debug.sendCommand(session, yield* Pause)
     yield* Console.log("⏸️  Initial pause requested")
 
     yield* Console.log("🔁 Stepping through code (Ctrl+C to stop)...")

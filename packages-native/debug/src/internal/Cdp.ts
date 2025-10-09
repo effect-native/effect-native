@@ -176,12 +176,13 @@ const releaseSession = (session: Debug.Session): Effect.Effect<void> =>
 
 const createSession = (
   options: Debug.ConnectOptions
-): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor> =>
+): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor | Debug.CurrentTransport> =>
   Effect.gen(function*() {
-    if (options.transport._tag !== "Cdp") {
+    const transport = options.transport ?? (yield* Debug.CurrentTransport)
+    if (transport._tag !== "Cdp") {
       return yield* Effect.fail(
         new Debug.DebugStateError({
-          transport: options.transport,
+          transport,
           endpoint: options.endpoint,
           reason: "CDP layer only supports Cdp transport"
         })
@@ -198,7 +199,7 @@ const createSession = (
 
     const session: Debug.Session = {
       [Debug.SessionTypeId]: Debug.SessionTypeId,
-      transport: options.transport,
+      transport,
       endpoint: options.endpoint
     }
 
@@ -208,7 +209,7 @@ const createSession = (
       pending,
       nextId,
       subscribers,
-      transport: options.transport,
+      transport,
       endpoint: options.endpoint,
       closed
     }
@@ -328,4 +329,8 @@ const makeService: Effect.Effect<Debug.Service, never> = Effect.succeed({
  * @internal
  * @since 0.0.0
  */
-export const layer: Layer.Layer<Debug.Service> = Layer.effect(Debug.Debug, makeService)
+export const layer: Layer.Layer<Debug.Service | Debug.CurrentTransport, never, Socket.WebSocketConstructor> = Layer
+  .provideMerge(
+    Layer.effect(Debug.Debug, makeService),
+    Layer.succeed(Debug.CurrentTransport, Debug.Transport.cdp())
+  )

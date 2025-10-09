@@ -19,8 +19,9 @@ export * from "./DebugModel.js"
 
 /**
  * Live CDP layer implementation.
+ * Provides both the Debug service and CurrentTransport context.
  *
  * @category Layer
  * @since 0.0.0
  */
-export const layerCdp: Layer.Layer<Service, never, Socket.WebSocketConstructor> = layer
+export const layerCdp: Layer.Layer<Service | CurrentTransport, never, Socket.WebSocketConstructor> = layer
