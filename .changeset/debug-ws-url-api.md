@@ -1,5 +1,5 @@
 ---
-"@effect-native/debug": major
+"@effect-native/debug": minor
 ---
 
 **BREAKING CHANGE**: Refactored `steps` CLI to accept WebSocket URLs instead of launching Node.js processes
