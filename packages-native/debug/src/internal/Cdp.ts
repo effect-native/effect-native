@@ -318,11 +318,21 @@ const subscribe: Debug.Service["subscribe"] = (session) =>
     Effect.map(({ queue }) => Stream.fromQueue(queue, { shutdown: true }))
   )
 
-const makeService: Effect.Effect<Debug.Service, never> = Effect.succeed({
-  connect,
-  disconnect,
-  sendCommand,
-  subscribe
+const makeService: Effect.Effect<Debug.Service, never, Socket.WebSocketConstructor> = Effect.gen(function*() {
+  const webSocketConstructor = yield* Socket.WebSocketConstructor
+
+  const connectWithConstructor: Debug.Service["connect"] = (options) =>
+    Effect.provide(
+      connect(options),
+      Layer.succeed(Socket.WebSocketConstructor, webSocketConstructor)
+    )
+
+  return {
+    connect: connectWithConstructor,
+    disconnect,
+    sendCommand,
+    subscribe
+  }
 })
 
 /**

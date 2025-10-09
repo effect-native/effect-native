@@ -6,7 +6,7 @@
  */
 import type * as Socket from "@effect/platform/Socket"
 import type * as Layer from "effect/Layer"
-import type { Service } from "./DebugModel.js"
+import type { Service, Transport } from "./DebugModel.js"
 import { layer } from "./internal/Cdp.js"
 
 /**

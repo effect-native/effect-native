@@ -1,23 +1,17 @@
 #!/usr/bin/env node
 
-import { Args, Command, Options } from "@effect/cli"
-import * as PlatformNode from "@effect/platform-node"
+import { Command, Options } from "@effect/cli"
 import * as NodeContext from "@effect/platform-node/NodeContext"
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import * as FileSystem from "@effect/platform/FileSystem"
-import * as Path from "@effect/platform/Path"
 import type * as child_process from "child_process"
-import * as Config from "effect/Config"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
-import * as nodeFs from "fs"
-import * as nodePath from "path"
-import * as nodeUrl from "url"
+
 import * as Debug from "../Debug.js"
 
 interface SpawnedTarget {
@@ -187,7 +181,7 @@ const stepsCommand = Command.make(
     yield* Console.log("━".repeat(80))
 
     return yield* Effect.never
-  })
+  }, Effect.scoped)
 ).pipe(
   Command.withDescription("Step through a Node.js script line-by-line using the debugger protocol")
 )

@@ -237,7 +237,7 @@ export type DebugError =
 export interface Service {
   readonly connect: (
     options: ConnectOptions
-  ) => Effect.Effect<Session, DebugError, Scope.Scope | Socket.WebSocketConstructor | Transport>
+  ) => Effect.Effect<Session, DebugError, Scope.Scope | Transport>
   readonly disconnect: (session: Session) => Effect.Effect<void, DebugError>
   readonly sendCommand: <A, I = unknown>(session: Session, cmd: Command<A, I>) => Effect.Effect<A, DebugError>
   readonly subscribe: (session: Session) => Effect.Effect<Stream.Stream<Event>, DebugError, Scope.Scope>
