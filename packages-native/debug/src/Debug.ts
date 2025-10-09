@@ -24,4 +24,4 @@ export * from "./DebugModel.js"
  * @category Layer
  * @since 0.0.0
  */
-export const layerCdp: Layer.Layer<Service | CurrentTransport, never, Socket.WebSocketConstructor> = layer
+export const layerCdp: Layer.Layer<Service, never, Socket.WebSocketConstructor> = layer
