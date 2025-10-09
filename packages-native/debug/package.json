@@ -33,7 +33,7 @@
   "scripts": {
     "codegen": "echo '@effect-native/debug: no codegen'",
     "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3 && pnpm copy-bin",
-    "copy-bin": "mkdir -p dist/bin && cp bin/debug-steps-dist.js dist/bin/debug-steps.js && chmod +x dist/bin/debug-steps.js",
+    "copy-bin": "mkdir -p dist/bin && cp bin/debug-steps-dist.js dist/bin/debug-steps.js && chmod +x dist/bin/debug-steps.js && node -e \"const fs=require('fs');const p=JSON.parse(fs.readFileSync('dist/package.json','utf8'));p.type='module';fs.writeFileSync('dist/package.json',JSON.stringify(p,null,2)+'\\n')\"",
     "build-esm": "tsc -b tsconfig.build.json",
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
