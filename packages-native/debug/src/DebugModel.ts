@@ -4,7 +4,7 @@
  * @category Debug
  * @since 0.0.0
  */
-import type * as Socket from "@effect/platform/Socket"
+
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
