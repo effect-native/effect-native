@@ -91,7 +91,7 @@ export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> =
  * @since 0.0.0
  * @example
  * ```ts
- * import { cdpCommand, CurrentTransport } from "@effect-native/debug"
+ * import { Debug, cdpCommand } from "@effect-native/debug"
  * import * as Effect from "effect/Effect"
  * import * as Schema from "effect/Schema"
  *
@@ -101,10 +101,11 @@ export const command = <A, I = unknown>(options: Command<A, I>): Command<A, I> =
  * })
  *
  * // Use with layerCdp which provides CurrentTransport
- * const program = Effect.gen(function*() {
+ * const program = (wsUrl: string) => Effect.gen(function*() {
  *   const debug = yield* Debug
  *   const session = yield* debug.connect({ endpoint: wsUrl })
- *   yield* debug.sendCommand(session, EnableDebugger)
+ *   const cmd = yield* EnableDebugger
+ *   yield* debug.sendCommand(session, cmd)
  * })
  * ```
  */
