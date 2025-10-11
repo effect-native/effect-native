@@ -569,7 +569,7 @@ describe.sequential("Debug CDP connection", () => {
       )
     ).pipe(Effect.orDie))
 
-  it.effect(
+  it.effect.skipIf(!!process.env.CI)(
     "connects to Chrome remote debugging",
     () =>
       Effect.gen(function*() {
