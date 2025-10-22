@@ -24,9 +24,11 @@ The specification must remain implementation-agnostic while being rich enough fo
   - **Mandate / Authorization** (ACH authorization, SEPA mandate, card-on-file consent, trading power of attorney).
   - **Transfer Order** (one-off transfers, recurring schedules, approval workflows).
   - **Standing Instruction / Recurring Operation** (frequency, schedule, execution rules, retry policy).
+  - **Obligation / Billing Arrangement** (open-ended recurring charges, term-limited payment plans, debt amortization schedules, coverage or utility usage meters, variable pricing formulas, settlement destinations).
   - **Exchange Rate Quote** (source, timestamp, base/quote currency, rate type, spreads).
 - Schemas must capture status enums, references between entities, and auditing metadata (created/updated timestamps, versioning, provenance).
 - Provide extensibility hooks (e.g., `extensions?: Schema.Record<string, Schema.Json>` or branded `Unknown` fields) to allow driver-specific metadata while keeping the base schema immutable.
+- Recurring obligations must express recurrence cadence (calendar-anchored, usage-triggered, event-driven), pricing dimensions (fixed, tiered, index-linked, consumption-based), lifecycle (initiated, active, suspended, satisfied, defaulted), payoff math (amortized principal, interest accrual, balloon payments), and relationships to collateral or coverage assets (e.g., insurance cash value, prepaid balances).
 
 ### 2. Service Abstractions
 - Define Effect services for the following capability areas, each with explicit error models:
@@ -35,6 +37,7 @@ The specification must remain implementation-agnostic while being rich enough fo
   - **TransactionService** for paging, streaming, and reconciling transactions.
   - **TransferService** for initiating, tracking, and cancelling transfers.
   - **StandingInstructionService** for CRUD on recurring payments/transfers.
+  - **ObligationService** for managing recurring billing arrangements, forecasting expected charges, updating payment schedules, and reconciling obligations against actual payments.
   - **BalanceService** for real-time balance snapshots and historical balance timelines.
   - **StatementService** for retrieving statements and documents.
   - **ComplianceService** for managing mandates, consents, and regulatory evidence.
@@ -64,6 +67,7 @@ The specification must remain implementation-agnostic while being rich enough fo
 
 - **Consistency**: Align naming, module layout, and service patterns with `@effect/platform` to minimize cognitive load.
 - **Extensibility**: Support domain-specific extensions (treasury, wealth management, insurance) without breaking core contracts.
+- **Scenario Diversity**: Explicitly model unconventional obligations (usage-indexed utilities, debt repayment plans, hybrid insurance-investment policies, tax withholdings, subscriptions with rollover benefits) so driver authors can represent industry-specific billing constructs without resorting to vendor-specific fields.
 - **Internationalization**: Schemas must be currency-agnostic, support multiple locales, and allow varying identifier formats (IBAN, routing/account, SWIFT, IFSC, etc.).
 - **Observability**: Define events/logging expectations for critical operations (sync start/finish, transfer status change, compliance events).
 - **Performance**: Provide guidance on batching, pagination, streaming, and rate-limit handling to ensure scalable drivers.

@@ -27,6 +27,7 @@ packages/money/
       Mandate.ts
       Transfer.ts
       StandingInstruction.ts
+      Obligation.ts
       ExchangeRate.ts
       Common.ts (identifiers, enums, money amounts)
     Capability/
@@ -40,6 +41,7 @@ packages/money/
       Transactions.ts
       Transfers.ts
       StandingInstructions.ts
+      Obligations.ts
       Balances.ts
       Statements.ts
       Compliance.ts
@@ -60,6 +62,7 @@ packages/money/
 4. **Audit Fields**: Every entity includes `source`, `capturedAt`, `receivedAt`, `lastUpdatedAt`, and optional `provenance` objects describing the integration, API version, and credential reference.
 5. **Extension Slots**: Provide `extensions?: Schema.ReadonlyArray<ExtensionEnvelope>` where `ExtensionEnvelope` captures `{ namespace: Schema.NonEmptyString, data: Schema.JsonRecord }`, allowing institution-specific metadata without polluting the core schema.
 6. **Relationship References**: Use typed IDs and optional embedded summaries (e.g., `accountSummary?: AccountSummary`) to support efficient consumption without requiring secondary fetches.
+7. **Obligation Modeling**: Represent recurring obligations with normalized components (`ObligationTerm`, `ObligationCharge`, `UsageMeterReading`, `CoverageAsset`). Support fixed and floating schedules, evergreen commitments with renegotiation windows, debt amortization ladders, escrow-backed disbursements, and hybrid insurance-investment instruments by decomposing the obligation into commitments, pricing sources, and settlement instructions.
 
 ### Service Contracts
 
@@ -69,6 +72,7 @@ Each service module exports:
 - **Interface** describing operations with typed inputs/outputs (using `Effect` and `Stream`).
 - **Layer constructors** for composition (e.g., `InstitutionDirectory.layer`, `InstitutionDirectory.withClient`).
 - **Capability negotiation** functions enabling runtime checks (e.g., `hasCapability("transactions.streaming")`).
+- **Scenario primitives** for obligations (e.g., pricing snapshots, forecast generation) that allow applications to reconcile indefinite rent, consumption-indexed utilities, or insurance cash value adjustments with the same API surface.
 
 Example (pseudocode):
 
@@ -86,15 +90,17 @@ Error types (e.g., `InstitutionError`, `TransactionError`) extend `Data.TaggedEr
 
 The `Capability/descriptors.ts` module defines a hierarchical taxonomy:
 
-- **Domain** (`accounts`, `transactions`, `transfers`, `statements`, `fx`, `compliance`).
+- **Domain** (`accounts`, `transactions`, `transfers`, `statements`, `fx`, `compliance`, `obligations`).
 - **Features** (`realTime`, `historical`, `streaming`, `batch`, `sameDay`, `wire`, `ach`, `sepa`, etc.).
 - **Constraints** (limits, cutoff windows, supported currencies, jurisdictions).
+- Obligation features call out billing archetypes (`evergreen`, `term`, `balloon`, `metered`, `tieredPricing`, `indexLinked`, `coverageLinked`), tolerance policies (grace periods, dunning strategies), and settlement mechanisms (auto-debit, manual pay, escrow drawdown).
 
 Capabilities are modeled as schemas allowing drivers to advertise support, optionally including quantitative limits. Applications query capabilities before invoking services, enabling graceful degradation.
 
 ### Auditing & Observability
 
 - **Event schemas** describe standard events (`SyncStarted`, `SyncCompleted`, `TransferInitiated`, `TransferSettled`, `TransferFailed`, `MandateCreated`, `ConsentRevoked`).
+- Obligation events capture lifecycle transitions (`ObligationActivated`, `ObligationChargeForecasted`, `ObligationChargePosted`, `ObligationSatisfied`, `ObligationDelinquent`) along with pricing provenance (e.g., rate tables, meter readings, underwriting adjustments).
 - Services emit events via an optional `AuditEventSink` service defined in `@effect/money-storage`. Drivers depend on the sink but do not assume a specific implementation.
 
 ### Storage Abstractions

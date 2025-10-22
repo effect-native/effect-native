@@ -11,10 +11,11 @@
 ### M2 – Core Package Implementation (`@effect/money`)
 - [ ] Scaffold package structure and exports consistent with `@effect/platform` conventions.
 - [ ] Implement `Schema/Common` primitives and branded identifiers.
-- [ ] Implement entity schemas (Institution, Party, Account, Instrument, Transaction, Balance, Statement, Mandate, Transfer, StandingInstruction, ExchangeRate).
+- [ ] Implement entity schemas (Institution, Party, Account, Instrument, Transaction, Balance, Statement, Mandate, Transfer, StandingInstruction, Obligation, ExchangeRate).
 - [ ] Implement capability descriptors and matrix utilities.
 - [ ] Define `Data.TaggedError` hierarchies for each service domain.
 - [ ] Define service interfaces with method signatures, capability negotiation helpers, and documentation.
+- [ ] Prototype obligation modeling playbooks that cover evergreen rent, consumption-indexed utilities, amortizing loans, tax escrows, and hybrid insurance-investment policies with shared abstractions.
 - [ ] Draft contract-test interfaces for downstream drivers.
 
 ### M3 – Supporting Packages
@@ -22,6 +23,7 @@
 - [ ] Implement `@effect/money-storage` interfaces (`CredentialStore`, `SyncStateStore`, `TransferStore`, `AuditEventSink`).
 - [ ] Provide mock/in-memory reference implementations for testing.
 - [ ] Document Layer composition examples for applications.
+- [ ] Extend contract-test scenarios to include recurring obligation forecasting, reconciliation of billed vs. actual amounts, and lifecycle edge cases (delinquency, payoff, renegotiation).
 
 ### M4 – Pilot Driver & Persistence Integrations (Stretch Goal)
 - [ ] Choose one aggregator (e.g., Plaid sandbox) to validate account/transaction flows.
@@ -46,6 +48,7 @@ Each workstream will track tasks in the repository project board once the specif
 | Regulatory requirements differ by region | Medium | Model jurisdiction metadata explicitly and allow pluggable compliance validators. |
 | Contract tests become too heavyweight for driver authors | Medium | Offer modular test suites and documented minimum compliance sets. |
 | Capability taxonomy drifts over time | Medium | Establish governance process (RFC or ADR) for introducing new capabilities. |
+| Obligation scenarios diverge across industries | Medium | Provide canonical obligation archetypes (subscription, utility, debt, insurance) with extension hooks and encourage driver-authored examples. |
 
 ## Next Actions
 
@@ -53,3 +56,4 @@ Each workstream will track tasks in the repository project board once the specif
 - [ ] Collect sample payloads from existing integrations (Plaid, Teller, Stripe Treasury, Wise, IBKR) for schema validation.
 - [ ] Draft contribution guide for prospective `@effect/money-*` driver authors.
 - [ ] Evaluate alignment with existing accounting standards (OFX, ISO 20022, NACHA) for terminology consistency.
+- [ ] Research regulatory guidance for billing and insurance obligations (FTC recurring billing rules, PSD2 SCA for subscriptions, NAIC standards) to inform schema fields.
