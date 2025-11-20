@@ -1,0 +1,59 @@
+{
+  "name": "@effect-native/wrp",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Minimal wish/wrapper CLI for promptgraph workspaces",
+  "bin": {
+    "wrp": "./bin/wrp.js"
+  },
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/wrp"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts",
+    "./internal/*": null
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/wrp: nothing to codegen'",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.71.0",
+    "@effect/platform": "^0.91.1",
+    "@effect/platform-node": "^0.97.1",
+    "effect": "^3.18.4",
+    "tsx": "^4.20.5",
+    "yaml": "^2.5.1"
+  },
+  "devDependencies": {
+    "@effect/vitest": "latest"
+  },
+  "effect": {
+    "generateIndex": {
+      "include": [
+        "**/*"
+      ]
+    }
+  }
+}
