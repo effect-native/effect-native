@@ -20,7 +20,6 @@
     "./package.json": "./package.json",
     ".": "./src/index.ts",
     "./Note": "./src/Note.ts",
-    "./Slug": "./src/Slug.ts",
     "./Validate": "./src/Validate.ts",
     "./internal/*": null
   },
@@ -41,13 +40,14 @@
     "coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@effect/cli": "workspace:*",
-    "@effect/platform": "workspace:*",
-    "@effect/platform-node": "workspace:*",
-    "effect": "workspace:*"
+    "@effect/cli": "^0.69.2",
+    "@effect/platform": "^0.91.1",
+    "@effect/platform-node": "^0.96.1",
+    "@effect-native/schemas": "workspace:*",
+    "effect": "^3.17.13"
   },
   "devDependencies": {
-    "@effect/vitest": "workspace:*"
+    "@effect/vitest": "^0.25.1"
   },
   "files": [
     "build",

@@ -12,8 +12,8 @@ import { fileURLToPath, pathToFileURL } from "node:url"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const candidates = [
-  "../dist/bin.mjs",
-  "../build/esm/bin.js"
+  "./build/esm/bin.js",
+  "./dist/bin.mjs"
 ]
 
 let loaded = false
