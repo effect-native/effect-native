@@ -49,6 +49,11 @@ This document formalizes the requirements for a minimal CLI tool that creates ti
 - **When** the note content is generated,
   **then** the CLI shall write the file to the current working directory.
 
+### FR1.6.1 – No Overwrite
+- **If** a file with the generated filename already exists,
+  **then** the CLI shall abort with a non-zero code and print an error message indicating the file already exists.
+- **Rationale:** Prevents accidental data loss; user must explicitly handle conflicts.
+
 ### FR1.7 – Success Output
 - **When** the file is successfully created,
   **then** the CLI shall print to stdout: `✅ Created: <filename>`
@@ -60,6 +65,13 @@ This document formalizes the requirements for a minimal CLI tool that creates ti
 ### FR1.9 – Error Handling
 - **If** the file cannot be written (e.g., permission denied, disk full),
   **then** the CLI shall print an error message to stderr and exit with a non-zero code.
+
+### FR1.10 – Pretty Error Messages
+- **When** displaying error messages,
+  **then** the CLI shall:
+  - FR1.10.1: Show a concise, user-friendly message (not raw schema validation paths or stack traces)
+  - FR1.10.2: Include actionable guidance (e.g., "Usage: note <title words...>")
+  - FR1.10.3: Exit cleanly without logging internal Effect error structures
 
 ## NFR2 – Non-Functional Requirements
 
