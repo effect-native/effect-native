@@ -157,5 +157,5 @@ export const run = (args: ReadonlyArray<string>) =>
 // Run if executed directly
 run(process.argv).pipe(
   Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain({ disablePrettyLogger: true })
+  NodeRuntime.runMain({ disableErrorReporting: true })
 )

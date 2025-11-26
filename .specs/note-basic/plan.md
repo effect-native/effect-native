@@ -86,6 +86,7 @@ This document provides a step-by-step execution checklist for implementing the `
 ### C4. Test validation errors
 - Run with filename-like arg, flag-like arg, existing file
 - **Verify:** Each case aborts with appropriate error message
+- **Note:** Pretty error formatting (FR1.10) deferred pending guidance from Effect team on idiomatic approach
 
 ## Phase D: Build & Polish
 
