@@ -3,12 +3,6 @@ name: Test Effect GitHub Action
 on:
   pull_request:
     branches: ["*"]
-    paths:
-      - "packages-native/github-action-scratchpad/**"
-      - ".github/workflows/test-github-action-scratchpad.yml"
-  push:
-    branches:
-      - "tom/github-action-effect"
 
 permissions:
   contents: read
