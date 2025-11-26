@@ -77,17 +77,23 @@ Use the **Easy Approach to Requirements Syntax** patterns. Format for readabilit
 **Objective:** Define the technical architecture and implementation strategy.
 
 **✅ CONTENT:**
-- **Data Models:** Interfaces, Types, Database Schemas.
-- **API Signatures:** Function names, inputs, outputs.
-- **Module Architecture:** File structure, exports, dependencies.
-- **Algorithms:** Pseudo-code or logic flow for complex parts.
-- **Error Handling Strategy:** Specific error types and recovery flows.
-- **Test Strategy:** Unit vs. Integration, mocking strategies.
+- **Data Models:** Type names and their fields (not full TypeScript syntax)
+- **API Signatures:** Function names, inputs, outputs as prose or tables
+- **Module Architecture:** File/folder structure, dependency relationships
+- **Algorithms:** Plain English or numbered steps for complex logic
+- **Error Handling Strategy:** Error categories and recovery approaches
+- **Test Strategy:** What to test and how (unit vs integration)
 
 **🛑 FORBIDDEN IN THIS PHASE:**
-- **Full Implementation:** Do not write the actual function bodies (use comments/pseudo-code).
+- **Code blocks:** No TypeScript, JavaScript, JSON, or any executable syntax
+- **Full implementations:** Describe WHAT functions do, not HOW (no function bodies)
+- **Copy-pasteable configs:** Describe package.json structure, don't write it out
+- **Test implementations:** Describe test cases in prose, don't write test code
 - **Vague Hand-waving:** Do not say "We will handle errors." Define *exactly* how.
 - **Scope Creep:** Do not add features not listed in `requirements.md`.
+
+**💡 RULE OF THUMB:**
+If it could be copy-pasted into a `.ts`, `.js`, or `.json` file and executed, it does NOT belong in design.md. Use prose, tables, bullet points, and diagrams instead.
 
 ---
 
