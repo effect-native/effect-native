@@ -50,7 +50,7 @@ packages-native/note/
 | Note | `createNote` | options: NoteOptions | Effect\<NoteResult, PlatformError, FileSystem \| Path\> | Creates note file in cwd |
 | Validate | `looksLikeFilename` | arg: string | boolean | True if arg has dot and no spaces |
 | Validate | `looksLikeFlag` | arg: string | boolean | True if arg starts with `-`/`--` or contains `=` |
-| Validate | `validateArgs` | args: string[] | Effect\<void, ValidationError, FileSystem\> | Checks all args; fails if any look suspicious or match existing files |
+| Validate | `TitleWord` | — | Schema\<string, string\> | Schema that validates a string is a plain title word |
 
 ## Slug Algorithm
 
@@ -62,11 +62,13 @@ packages-native/note/
 
 ## CLI Structure
 
-- Use `@effect/cli` Command and Args modules
-- Define variadic text args with `Args.repeated` and `Args.atLeast(1)` for title
-- Before processing, run `validateArgs` on raw args to detect misuse
-- On validation failure, show help text and exit non-zero
-- Join args with spaces to form title string
+- Use `@effect/cli` Command and Args modules with Effect Schema for validation
+- Define a `TitleWord` schema that validates each argument is plain text (not a flag/filename)
+- Use `Args.text` with schema refinement to reject invalid args at parse time
+- Schema checks: not starting with `-`, not containing `=`, not looking like a filename
+- Use `Args.repeated` and `Args.atLeast(1)` for variadic title words
+- Existing file check happens in the command handler (requires FileSystem)
+- Join validated args with spaces to form title string
 - Provide `NodeContext.layer` for platform services
 - Run via `NodeRuntime.runMain`
 
