@@ -10,8 +10,10 @@
 ### 2. The "Authorization Gate" Protocol
 **NEVER** proceed to the next phase without explicit user approval.
 - **Stop** after completing a document.
+- **Commit** all phase artifacts to git before requesting approval.
 - **Present** the content to the user.
 - **Wait** for "Proceed" or "Approved".
+- **Commit** any refinements before moving to the next phase.
 
 ### 3. The "Single Source of Truth"
 The spec directory (e.g. `.specs/[feature-name]/` or `packages/[package-name]/SPEC/`) is the source of truth.
@@ -98,18 +100,29 @@ If it could be copy-pasted into a `.ts`, `.js`, or `.json` file and executed, it
 ---
 
 ### Phase 4: Plan (`plan.md`)
-**Objective:** Create a step-by-step execution checklist.
+**Objective:** Create a step-by-step execution checklist using **Red-Green-Refactor TDD**.
 
 **✅ CONTENT:**
-- **Phased Execution:** Break work into logical chunks (e.g., "Setup", "Core Logic", "API Layer", "Tests").
+- **Phased Execution:** Break work into logical chunks (e.g., "Setup", "Core Logic", "API Layer").
 - **Atomic Tasks:** Each task should be a single commit or PR.
 - **Verification Steps:** For each task, define how to verify it (e.g., "Run `npm test`", "Check linter").
 - **Dependency Order:** Ensure Task B implies Task A is done.
+
+**🔴🟢🔵 TDD STRUCTURE (Mandatory):**
+For each module/feature, structure tasks as:
+1. **RED:** Write failing tests first, with minimal stub implementation that compiles but fails tests
+2. **GREEN:** Implement just enough code to make tests pass
+3. **REFACTOR:** Clean up if needed (optional step, only if code is messy)
+
+Example task structure:
+- B1. Write Slug.test.ts (RED) — tests fail
+- B2. Implement Slug.ts (GREEN) — tests pass
 
 **🛑 FORBIDDEN IN THIS PHASE:**
 - **Time Estimates:** Do not estimate hours or days. Focus strictly on logical dependency and atomicity.
 - **Design Decisions:** If you are deciding *how* to do something here, go back to Phase 3.
 - **New Requirements:** If you find a missing requirement, go back to Phase 2.
+- **Implementation before tests:** Never write implementation code before the corresponding test exists.
 
 ---
 
