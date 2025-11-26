@@ -54,3 +54,4 @@ const program = Effect.gen(function* () {
   yield* GitHubActionRunner.setOutput("result", "success")
 })
 ```
+
