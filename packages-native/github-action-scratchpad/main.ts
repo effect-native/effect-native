@@ -6,9 +6,9 @@
  */
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as GitHubActionClient from "./src/GitHubActionClient.js"
-import * as GitHubActionRunner from "./src/GitHubActionRunner.js"
-import * as GitHubActionWorkflowContext from "./src/GitHubActionWorkflowContext.js"
+import * as GitHubActionClient from "./src/GitHubActionClient.ts"
+import * as GitHubActionRunner from "./src/GitHubActionRunner.ts"
+import * as GitHubActionWorkflowContext from "./src/GitHubActionWorkflowContext.ts"
 
 /**
  * The main action logic using Effect

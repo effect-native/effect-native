@@ -1,24 +1,22 @@
 #!/usr/bin/env node
 /**
  * Wrapper script to run main.ts with experimental-transform-types enabled.
- * This allows .js imports to be resolved to .ts files.
+ * This allows Node.js to natively execute TypeScript with .ts imports.
  */
-import { spawn } from "node:child_process"
+import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { dirname, join } from "node:path"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const mainTs = join(__dirname, "main.ts")
 
-const child = spawn(
+const result = spawnSync(
   process.execPath,
-  ["--experimental-transform-types", mainTs],
+  ["--experimental-transform-types", "--no-warnings", mainTs],
   {
     stdio: "inherit",
     env: process.env
   }
 )
 
-child.on("exit", (code) => {
-  process.exit(code ?? 0)
-})
+process.exit(result.status ?? 0)
