@@ -14,11 +14,17 @@ import * as Schema from "effect/Schema"
  * Returns true if the argument contains a dot AND has no spaces.
  * This catches cases like "file.md", "test.txt", "config.json".
  *
+ * @example
+ * import { looksLikeFilename } from "note/Validate"
+ *
+ * looksLikeFilename("file.md") // true
+ * looksLikeFilename("test.txt") // true
+ * looksLikeFilename("hello world") // false
+ *
  * @since 0.1.0
  * @category Validation
  */
-export const looksLikeFilename = (arg: string): boolean =>
-  arg.includes(".") && !arg.includes(" ")
+export const looksLikeFilename = (arg: string): boolean => arg.includes(".") && !arg.includes(" ")
 
 /**
  * Checks if an argument looks like a flag (starts with - or --, or contains =).
@@ -27,11 +33,18 @@ export const looksLikeFilename = (arg: string): boolean =>
  * - Starts with "-" (short flag or long flag)
  * - Contains "=" (key=value syntax)
  *
+ * @example
+ * import { looksLikeFlag } from "note/Validate"
+ *
+ * looksLikeFlag("--help") // true
+ * looksLikeFlag("-v") // true
+ * looksLikeFlag("key=value") // true
+ * looksLikeFlag("hello") // false
+ *
  * @since 0.1.0
  * @category Validation
  */
-export const looksLikeFlag = (arg: string): boolean =>
-  arg.startsWith("-") || arg.includes("=")
+export const looksLikeFlag = (arg: string): boolean => arg.startsWith("-") || arg.includes("=")
 
 /**
  * Schema that validates a string is a plain title word.
@@ -39,6 +52,14 @@ export const looksLikeFlag = (arg: string): boolean =>
  * Rejects strings that look like:
  * - Flags (starting with `-` or `--`, or containing `=`)
  * - Filenames (containing `.` with no spaces)
+ *
+ * @example
+ * import * as Schema from "effect/Schema"
+ * import { TitleWord } from "note/Validate"
+ *
+ * // Valid title words pass through
+ * Schema.decodeUnknownSync(TitleWord)("hello") // "hello"
+ * Schema.decodeUnknownSync(TitleWord)("my-title") // "my-title"
  *
  * @since 0.1.0
  * @category Schema
@@ -52,7 +73,8 @@ export const TitleWord = Schema.String.pipe(
   }),
   Schema.filter((s) => !looksLikeFilename(s), {
     message: (s) => ({
-      message: `"${s.actual}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`,
+      message:
+        `"${s.actual}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`,
       override: true
     })
   })
@@ -88,6 +110,13 @@ const MutableNonEmptyTitleWords = Schema.mutable(
  * into a TitleInput containing the derived title and slug.
  *
  * Uses mutable tuple type for compatibility with @effect/cli Args.atLeast(1).
+ *
+ * @example
+ * import * as Schema from "effect/Schema"
+ * import { TitleInput } from "note/Validate"
+ *
+ * const result = Schema.decodeUnknownSync(TitleInput)(["hello", "world"])
+ * // result: { words: ["hello", "world"], title: "hello world", slug: "hello-world" }
  *
  * @since 0.1.0
  * @category Schema

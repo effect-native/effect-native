@@ -133,7 +133,7 @@ const noteCommand = Command.make(
         Effect.mapError((cause) => new WriteError({ filename, cause }))
       )
 
-      yield* Console.log(`Created: ${filename}`)
+      yield* Console.log(`\u2705 Created: ${filename}`)
     }).pipe(
       Effect.catchTag("ExistingArgFile", handleNoteError),
       Effect.catchTag("FileAlreadyExists", handleNoteError),
@@ -154,8 +154,10 @@ export const run = (args: ReadonlyArray<string>) =>
     version: "0.1.0"
   })(args)
 
-// Run if executed directly
-run(process.argv).pipe(
-  Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain({ disableErrorReporting: true })
-)
+// Run if executed directly (not when imported as module for testing)
+if (process.argv[1]?.includes("bin")) {
+  run(process.argv).pipe(
+    Effect.provide(NodeContext.layer),
+    NodeRuntime.runMain({ disableErrorReporting: true })
+  )
+}

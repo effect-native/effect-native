@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@effect/vitest"
-import { makeFilename, makeContent } from "../src/Note.js"
+import { makeContent, makeFilename } from "../src/Note.js"
 
 describe("makeFilename", () => {
   it("generates correct filename format", () => {

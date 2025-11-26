@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
 import * as Schema from "effect/Schema"
-import { looksLikeFilename, looksLikeFlag, TitleWord } from "../src/Validate.js"
+import { looksLikeFilename, looksLikeFlag, TitleInput, TitleWord } from "../src/Validate.js"
 
 describe("looksLikeFilename", () => {
   it("returns true for file.md", () => {
@@ -79,5 +79,40 @@ describe("TitleWord schema", () => {
 
   it("rejects filename-like strings", () => {
     expect(() => Schema.decodeUnknownSync(TitleWord)("file.md")).toThrow()
+  })
+})
+
+describe("TitleInput schema", () => {
+  it("transforms word array to TitleInput", () => {
+    const result = Schema.decodeUnknownSync(TitleInput)(["hello", "world"])
+    expect(result.words).toEqual(["hello", "world"])
+    expect(result.title).toBe("hello world")
+    expect(result.slug).toBe("hello-world")
+  })
+
+  it("handles single word", () => {
+    const result = Schema.decodeUnknownSync(TitleInput)(["hello"])
+    expect(result.words).toEqual(["hello"])
+    expect(result.title).toBe("hello")
+    expect(result.slug).toBe("hello")
+  })
+
+  it("handles special characters in words", () => {
+    const result = Schema.decodeUnknownSync(TitleInput)(["Hello!", "World?"])
+    expect(result.slug).toBe("hello-world")
+  })
+
+  it("handles numbers in words", () => {
+    const result = Schema.decodeUnknownSync(TitleInput)(["chapter", "1"])
+    expect(result.title).toBe("chapter 1")
+    expect(result.slug).toBe("chapter-1")
+  })
+
+  it("rejects flag-like words", () => {
+    expect(() => Schema.decodeUnknownSync(TitleInput)(["--help"])).toThrow()
+  })
+
+  it("rejects filename-like words", () => {
+    expect(() => Schema.decodeUnknownSync(TitleInput)(["file.md"])).toThrow()
   })
 })

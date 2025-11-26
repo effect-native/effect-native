@@ -16,6 +16,12 @@ import * as Schema from "effect/Schema"
  * 4. Collapse consecutive hyphens
  * 5. Trim leading/trailing hyphens
  *
+ * @example
+ * import { slugify } from "@effect-native/schemas/Slug"
+ *
+ * slugify("Hello World") // "hello-world"
+ * slugify("This is My Title!") // "this-is-my-title"
+ *
  * @since 0.1.0
  * @category Slug
  */
@@ -29,6 +35,12 @@ export const slugify = (title: string): string =>
 
 /**
  * Schema that transforms a string into its slug form.
+ *
+ * @example
+ * import * as Schema from "effect/Schema"
+ * import { Slug } from "@effect-native/schemas/Slug"
+ *
+ * Schema.decodeUnknownSync(Slug)("Hello World") // "hello-world"
  *
  * @since 0.1.0
  * @category Schema
@@ -60,6 +72,13 @@ export type SlugBrand = typeof SlugBrandedString.Type
  * Schema for a branded slug type.
  *
  * The input string is slugified and branded.
+ *
+ * @example
+ * import * as Schema from "effect/Schema"
+ * import { SlugBranded } from "@effect-native/schemas/Slug"
+ *
+ * const slug = Schema.decodeUnknownSync(SlugBranded)("Hello World")
+ * // slug: SlugBrand = "hello-world"
  *
  * @since 0.1.0
  * @category Schema

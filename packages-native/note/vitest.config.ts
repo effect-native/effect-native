@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config"
+import { mergeConfig } from "vitest/config"
 import shared from "../../vitest.shared"
 
-export default defineConfig(shared as any)
+export default mergeConfig(shared, {})
