@@ -10,12 +10,9 @@ import {
   ActionContext,
   ActionRunner,
   Input,
-  PR as PRModule
+  PR
 } from "@effect-native/platform-github"
 import * as Effect from "effect/Effect"
-
-// PR is exported as a module namespace, access the class via PR.PR
-const { PR } = PRModule
 
 /**
  * The main action logic using Effect
