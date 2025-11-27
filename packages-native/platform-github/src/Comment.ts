@@ -35,7 +35,7 @@ import { getCommentPayload } from "./internal/payload.js"
  * @since 1.0.0
  * @category models
  */
- // FIXME: import type from @octokit/webhooks-types
+// FIXME: import type from @octokit/webhooks-types
 export type Reaction = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes"
 
 /**
@@ -44,7 +44,7 @@ export type Reaction = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" |
  * @since 1.0.0
  * @category models
  */
- // FIXME: import type from @octokit/webhooks-types
+// FIXME: import type from @octokit/webhooks-types
 export interface CommentInfo {
   readonly id: number
   readonly body: string
@@ -156,14 +156,16 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
       list: client.paginate<CommentData>(
         "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
         { owner, repo, issue_number: issueNumber }
-      ).pipe(Effect.map((comments) => comments.map((c) => ({
-        id: c.id,
-        body: c.body ?? "",
-        author: c.user?.login ?? "unknown",
-        htmlUrl: c.html_url,
-        createdAt: c.created_at,
-        updatedAt: c.updated_at
-      })))),
+      ).pipe(Effect.map((comments) =>
+        comments.map((c) => ({
+          id: c.id,
+          body: c.body ?? "",
+          author: c.user?.login ?? "unknown",
+          htmlUrl: c.html_url,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at
+        }))
+      )),
 
       /** Find a comment containing the given marker string. */
       findByMarker: (marker: string) =>
@@ -245,8 +247,7 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
         update: () => Effect.void,
         delete: Effect.void,
         list: Effect.sync(() => [...(options.comments ?? [])]),
-        findByMarker: (marker: string) =>
-          Effect.sync(() => options.comments?.find((c) => c.body.includes(marker))),
+        findByMarker: (marker: string) => Effect.sync(() => options.comments?.find((c) => c.body.includes(marker))),
         findOrUpdate: () => Effect.void
       })
     )

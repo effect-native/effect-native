@@ -188,8 +188,22 @@ describe("Comment", () => {
     it.effect("Comment.Test list returns mock comments", () =>
       Effect.gen(function*() {
         const mockComments = [
-          { id: 1, body: "first comment", author: "user1", htmlUrl: "url1", createdAt: "2024-01-01", updatedAt: "2024-01-01" },
-          { id: 2, body: "<!-- marker --> second", author: "user2", htmlUrl: "url2", createdAt: "2024-01-02", updatedAt: "2024-01-02" }
+          {
+            id: 1,
+            body: "first comment",
+            author: "user1",
+            htmlUrl: "url1",
+            createdAt: "2024-01-01",
+            updatedAt: "2024-01-01"
+          },
+          {
+            id: 2,
+            body: "<!-- marker --> second",
+            author: "user2",
+            htmlUrl: "url2",
+            createdAt: "2024-01-02",
+            updatedAt: "2024-01-02"
+          }
         ]
         const testLayer = Comment.Test({
           id: 1,
@@ -207,8 +221,22 @@ describe("Comment", () => {
     it.effect("Comment.Test findByMarker finds comment with marker", () =>
       Effect.gen(function*() {
         const mockComments = [
-          { id: 1, body: "first comment", author: "user1", htmlUrl: "url1", createdAt: "2024-01-01", updatedAt: "2024-01-01" },
-          { id: 2, body: "<!-- marker --> second", author: "user2", htmlUrl: "url2", createdAt: "2024-01-02", updatedAt: "2024-01-02" }
+          {
+            id: 1,
+            body: "first comment",
+            author: "user1",
+            htmlUrl: "url1",
+            createdAt: "2024-01-01",
+            updatedAt: "2024-01-01"
+          },
+          {
+            id: 2,
+            body: "<!-- marker --> second",
+            author: "user2",
+            htmlUrl: "url2",
+            createdAt: "2024-01-02",
+            updatedAt: "2024-01-02"
+          }
         ]
         const testLayer = Comment.Test({
           id: 1,

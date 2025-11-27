@@ -131,14 +131,34 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       { owner, repo, pull_number: prNumber }
     )
 
+    const fetchIssueDetails = client.request<IssueResponse>(
+      "GET /repos/{owner}/{repo}/issues/{issue_number}",
+      { owner, repo, issue_number: prNumber }
+    )
+
     return {
       /** The PR number. */
       number: Effect.sync(() => prNumber),
+
+      /** The PR payload. */
+      payload: prPayload
+        ? Effect.sync(() => prPayload)
+        : fetchPRDetails,
+
+      /** The head branch (source branch). */
+      head: prPayload
+        ? Effect.sync(() => prPayload.head)
+        : fetchPRDetails.pipe(Effect.map((pr) => pr.head)),
 
       /** The head branch ref (source branch). */
       headRef: prPayload
         ? Effect.sync(() => prPayload.head.ref)
         : fetchPRDetails.pipe(Effect.map((pr) => pr.head.ref)),
+
+      /** The base branch (target branch). */
+      base: prPayload
+        ? Effect.sync(() => prPayload.base)
+        : fetchPRDetails.pipe(Effect.map((pr) => pr.base)),
 
       /** The base branch ref (target branch). */
       baseRef: prPayload
@@ -224,10 +244,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
         }).pipe(Effect.asVoid),
 
       /** Get the PR's labels. */
-      labels: client.request<IssueResponse>(
-        "GET /repos/{owner}/{repo}/issues/{issue_number}",
-        { owner, repo, issue_number: prNumber }
-      ).pipe(Effect.map((issue) => issue.labels.map((l) => typeof l === "string" ? l : l.name)))
+      labels: fetchIssueDetails.pipe(Effect.map((issue) => issue.labels.map((l) => typeof l === "string" ? l : l.name)))
     } as const
   }),
   dependencies: [ActionContext.layer, ActionClient.Default]
@@ -253,7 +270,10 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       PR,
       new PR({
         number: Effect.sync(() => options?.number ?? 1),
+        payload: Effect.sync(() => ({}) as PullRequestResponse),
+        head: Effect.sync(() => ({ ref: options?.headRef ?? "feature-branch" }) as PullRequestResponse["head"]),
         headRef: Effect.sync(() => options?.headRef ?? "feature-branch"),
+        base: Effect.sync(() => ({ ref: options?.baseRef ?? "main" }) as PullRequestResponse["base"]),
         baseRef: Effect.sync(() => options?.baseRef ?? "main"),
         draft: Effect.sync(() => options?.draft ?? false),
         diff: Effect.sync(() => options?.diff ?? ""),
