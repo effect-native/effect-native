@@ -64,7 +64,7 @@ export class ActionInputError extends Schema.TaggedError<ActionInputError>()(
 export class ActionContextError extends Schema.TaggedError<ActionContextError>()(
   "ActionContextError",
   {
-    reason: Schema.Literal("MissingEnv", "InvalidPayload", "InvalidRepo"),
+    reason: Schema.Literal("MissingEnv", "InvalidPayload", "InvalidRepo", "EventMismatch"),
     description: Schema.optional(Schema.String),
     cause: Schema.optional(Schema.Defect)
   }

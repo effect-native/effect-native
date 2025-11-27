@@ -62,4 +62,9 @@ export * as Input from "./Input.js"
 /**
  * @since 1.0.0
  */
+export * as EventPayload from "./EventPayload.js"
+
+/**
+ * @since 1.0.0
+ */
 export * as ConsoleGitHubActions from "./ConsoleGitHubActions.js"

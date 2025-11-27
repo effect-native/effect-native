@@ -121,6 +121,52 @@ describe("ActionContext", () => {
       }))
   })
 
+  describe("typedPayload", () => {
+    it.effect("returns typed payload when event matches", () =>
+      Effect.gen(function*() {
+        const layer = makeTestLayer({
+          eventName: "issue_comment",
+          payload: {
+            action: "created",
+            comment: {
+              id: 123,
+              body: "Hello world",
+              user: { login: "monalisa" }
+            },
+            issue: { number: 42 },
+            repository: {
+              owner: { login: "my-org" },
+              name: "my-repo"
+            }
+          }
+        })
+        const payload = yield* ActionContext.typedPayload("issue_comment").pipe(
+          Effect.provide(layer)
+        )
+        // TypeScript knows this is IssueCommentEvent
+        expect(payload.action).toBe("created")
+        expect(payload.comment.body).toBe("Hello world")
+      }))
+
+    it.effect("fails when event does not match", () =>
+      Effect.gen(function*() {
+        const layer = makeTestLayer({
+          eventName: "push",
+          payload: { ref: "refs/heads/main" }
+        })
+        const result = yield* ActionContext.typedPayload("issue_comment").pipe(
+          Effect.provide(layer),
+          Effect.either
+        )
+        expect(result._tag).toBe("Left")
+        if (result._tag === "Left") {
+          expect(result.left._tag).toBe("ActionContextError")
+          expect(result.left.reason).toBe("EventMismatch")
+          expect(result.left.message).toContain("Expected event 'issue_comment' but got 'push'")
+        }
+      }))
+  })
+
   describe("computed properties", () => {
     it.effect("returns repo", () =>
       Effect.gen(function*() {

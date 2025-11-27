@@ -10,11 +10,36 @@
  *
  * @since 1.0.0
  */
+import type { EventPayloadMap, WebhookEventName } from "@octokit/webhooks-types"
 import type { Tag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
-import type { ActionContextError } from "./ActionError.js"
+import { ActionContextError } from "./ActionError.js"
 import * as internal from "./internal/actionContext.js"
+
+/**
+ * Re-export webhook types for convenience.
+ *
+ * @since 1.0.0
+ * @category types
+ */
+export type { EventPayloadMap, WebhookEventName }
+
+/**
+ * Re-export common event types for convenience.
+ *
+ * @since 1.0.0
+ * @category types
+ */
+export type {
+  IssueCommentEvent,
+  IssuesEvent,
+  PullRequestEvent,
+  PullRequestReviewEvent,
+  PullRequestReviewCommentEvent,
+  PushEvent,
+  WorkflowDispatchEvent
+} from "@octokit/webhooks-types"
 
 /**
  * @since 1.0.0
@@ -214,3 +239,42 @@ export const issue: Effect.Effect<IssueContext, ActionContextError, ActionContex
   ActionContext,
   (ctx) => ctx.issue
 )
+
+/**
+ * Get a typed payload for a specific event type.
+ *
+ * This allows you to get a fully-typed payload without manual casting.
+ * Fails with ActionContextError if the current event doesn't match the expected type.
+ *
+ * @example
+ * ```typescript
+ * import { ActionContext } from "@effect-native/platform-github"
+ * import { Effect } from "effect"
+ *
+ * const program = Effect.gen(function*() {
+ *   const payload = yield* ActionContext.typedPayload("issue_comment")
+ *   // payload is now IssueCommentEvent - fully typed!
+ *   console.log(payload.comment.body)
+ *   console.log(payload.action) // "created" | "deleted" | "edited"
+ * })
+ * ```
+ *
+ * @since 1.0.0
+ * @category accessors
+ */
+export const typedPayload: <E extends WebhookEventName>(
+  eventName: E
+) => Effect.Effect<EventPayloadMap[E], ActionContextError, ActionContext> = <E extends WebhookEventName>(
+  expectedEventName: E
+) =>
+    Effect.flatMap(ActionContext, (ctx) => {
+      if (ctx.eventName !== expectedEventName) {
+        return Effect.fail(
+          new ActionContextError({
+            reason: "EventMismatch",
+            description: `Expected event '${expectedEventName}' but got '${ctx.eventName}'`
+          })
+        )
+      }
+      return Effect.succeed(ctx.payload as EventPayloadMap[E])
+    })
