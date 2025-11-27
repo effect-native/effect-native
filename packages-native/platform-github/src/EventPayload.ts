@@ -182,37 +182,5 @@ export const raw: Effect.Effect<
   ActionContext.ActionContext
 > = ActionContext.payload
 
-// =============================================================================
-// Re-exports for convenience
-// =============================================================================
-
-/**
- * Re-export commonly used webhook event types for convenience.
- *
- * @since 1.0.0
- * @category types
- */
-export type {
-  CheckRunEvent,
-  CheckSuiteEvent,
-  CreateEvent,
-  DeleteEvent,
-  DeploymentEvent,
-  DeploymentStatusEvent,
-  ForkEvent,
-  IssueCommentEvent,
-  IssuesEvent,
-  LabelEvent,
-  MilestoneEvent,
-  PageBuildEvent,
-  PullRequestEvent,
-  PullRequestReviewCommentEvent,
-  PullRequestReviewEvent,
-  PushEvent,
-  ReleaseEvent,
-  StatusEvent,
-  WatchEvent,
-  WorkflowDispatchEvent,
-  WorkflowJobEvent,
-  WorkflowRunEvent
-} from "@octokit/webhooks-types"
+// Note: Event types are available from @octokit/webhooks-types
+// Import them directly: import type { IssueCommentEvent } from "@octokit/webhooks-types"

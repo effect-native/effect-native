@@ -17,29 +17,8 @@ import type * as Layer from "effect/Layer"
 import { ActionContextError } from "./ActionError.js"
 import * as internal from "./internal/actionContext.js"
 
-/**
- * Re-export webhook types for convenience.
- *
- * @since 1.0.0
- * @category types
- */
-export type { EventPayloadMap, WebhookEventName }
-
-/**
- * Re-export common event types for convenience.
- *
- * @since 1.0.0
- * @category types
- */
-export type {
-  IssueCommentEvent,
-  IssuesEvent,
-  PullRequestEvent,
-  PullRequestReviewCommentEvent,
-  PullRequestReviewEvent,
-  PushEvent,
-  WorkflowDispatchEvent
-} from "@octokit/webhooks-types"
+// Note: Event types are available from @octokit/webhooks-types
+// Import them directly: import type { EventPayloadMap, IssueCommentEvent } from "@octokit/webhooks-types"
 
 /**
  * @since 1.0.0

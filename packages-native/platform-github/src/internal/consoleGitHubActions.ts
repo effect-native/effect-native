@@ -1,6 +1,7 @@
 /**
  * Console implementation that uses ActionRunner for GitHub Actions output.
  *
+ * @since 1.0.0
  * @internal
  */
 import type * as Console from "effect/Console"

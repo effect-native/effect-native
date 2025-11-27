@@ -96,5 +96,5 @@ export const layer: Layer.Layer<
   ActionContext.ActionContext | ActionClient.ActionClient
 > = internal.layer
 
-// Re-export the event type for convenience
-export type { IssueCommentEvent } from "@octokit/webhooks-types"
+// Note: IssueCommentEvent type is available from @octokit/webhooks-types
+// Import it directly: import type { IssueCommentEvent } from "@octokit/webhooks-types"

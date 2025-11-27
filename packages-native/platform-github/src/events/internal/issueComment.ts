@@ -1,6 +1,7 @@
 /**
  * Internal implementation for IssueCommentContext.
  *
+ * @since 1.0.0
  * @internal
  */
 import type { IssueCommentEvent } from "@octokit/webhooks-types"
