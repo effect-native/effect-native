@@ -64,7 +64,7 @@ export class Issue extends Effect.Service<Issue>()("@effect-native/platform-gith
       )
     }
 
-    const { owner, repo, issue } = data
+    const { issue, owner, repo } = data
 
     return {
       /** The issue number. */

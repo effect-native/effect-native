@@ -172,12 +172,70 @@ describe("Comment", () => {
 
     it.effect("Comment.Test operations are no-ops", () =>
       Effect.gen(function*() {
-        const testLayer = Comment.Test({})
+        const testLayer = Comment.Test({
+          id: 1,
+          body: "test",
+          author: "user",
+          action: "created"
+        })
 
         // These should all succeed without error
         yield* Comment.react("eyes").pipe(Effect.provide(testLayer))
         yield* Comment.reply("test").pipe(Effect.provide(testLayer))
         yield* Comment.update("test").pipe(Effect.provide(testLayer))
+      }))
+
+    it.effect("Comment.Test list returns mock comments", () =>
+      Effect.gen(function*() {
+        const mockComments = [
+          { id: 1, body: "first comment", author: "user1", htmlUrl: "url1", createdAt: "2024-01-01", updatedAt: "2024-01-01" },
+          { id: 2, body: "<!-- marker --> second", author: "user2", htmlUrl: "url2", createdAt: "2024-01-02", updatedAt: "2024-01-02" }
+        ]
+        const testLayer = Comment.Test({
+          id: 1,
+          body: "trigger",
+          author: "user",
+          action: "created",
+          comments: mockComments
+        })
+
+        const list = yield* Comment.list.pipe(Effect.provide(testLayer))
+        expect(list).toHaveLength(2)
+        expect(list[0].body).toBe("first comment")
+      }))
+
+    it.effect("Comment.Test findByMarker finds comment with marker", () =>
+      Effect.gen(function*() {
+        const mockComments = [
+          { id: 1, body: "first comment", author: "user1", htmlUrl: "url1", createdAt: "2024-01-01", updatedAt: "2024-01-01" },
+          { id: 2, body: "<!-- marker --> second", author: "user2", htmlUrl: "url2", createdAt: "2024-01-02", updatedAt: "2024-01-02" }
+        ]
+        const testLayer = Comment.Test({
+          id: 1,
+          body: "trigger",
+          author: "user",
+          action: "created",
+          comments: mockComments
+        })
+
+        const found = yield* Comment.findByMarker("<!-- marker -->").pipe(Effect.provide(testLayer))
+        expect(found).toBeDefined()
+        expect(found?.id).toBe(2)
+        expect(found?.body).toContain("<!-- marker -->")
+      }))
+
+    it.effect("Comment.Test findByMarker returns undefined when not found", () =>
+      Effect.gen(function*() {
+        const testLayer = Comment.Test({
+          id: 1,
+          body: "trigger",
+          author: "user",
+          action: "created",
+          comments: []
+        })
+
+        const found = yield* Comment.findByMarker("<!-- nonexistent -->").pipe(Effect.provide(testLayer))
+        expect(found).toBeUndefined()
       }))
   })
 })

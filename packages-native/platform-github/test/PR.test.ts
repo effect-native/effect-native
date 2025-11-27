@@ -301,6 +301,8 @@ describe("PR", () => {
 
         yield* PR.merge().pipe(Effect.provide(testLayer))
         yield* PR.requestReview(["someone"]).pipe(Effect.provide(testLayer))
+        yield* PR.addLabel("bug").pipe(Effect.provide(testLayer))
+        yield* PR.removeLabel("bug").pipe(Effect.provide(testLayer))
       }))
 
     it.effect("PR.Test defaults", () =>
@@ -311,11 +313,23 @@ describe("PR", () => {
         const headRef = yield* PR.headRef.pipe(Effect.provide(testLayer))
         const baseRef = yield* PR.baseRef.pipe(Effect.provide(testLayer))
         const draft = yield* PR.draft.pipe(Effect.provide(testLayer))
+        const labels = yield* PR.labels.pipe(Effect.provide(testLayer))
 
         expect(num).toBe(1)
         expect(headRef).toBe("feature-branch")
         expect(baseRef).toBe("main")
         expect(draft).toBe(false)
+        expect(labels).toEqual([])
+      }))
+
+    it.effect("PR.Test labels returns mock labels", () =>
+      Effect.gen(function*() {
+        const testLayer = PR.Test({
+          labels: ["bug", "enhancement"]
+        })
+
+        const labels = yield* PR.labels.pipe(Effect.provide(testLayer))
+        expect(labels).toEqual(["bug", "enhancement"])
       }))
   })
 

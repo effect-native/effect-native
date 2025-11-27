@@ -94,12 +94,11 @@ export { Issue } from "./Issue.js"
  * High-level service for pull requests.
  * @since 1.0.0
  */
-export { PR, NotPullRequestError } from "./PR.js"
+export { NotPullRequestError, PR } from "./PR.js"
 
 /**
  * Types from the high-level modules.
  * @since 1.0.0
  */
-export type { Reaction, CommentAction } from "./Comment.js"
-export type { PRFile, PRCommit } from "./PR.js"
-
+export type { CommentAction, Reaction } from "./Comment.js"
+export type { PRCommit, PRFile } from "./PR.js"

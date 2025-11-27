@@ -38,6 +38,31 @@ import { getCommentPayload } from "./internal/payload.js"
 export type Reaction = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes"
 
 /**
+ * Comment data returned from listing comments.
+ *
+ * @since 1.0.0
+ * @category models
+ */
+export interface CommentInfo {
+  readonly id: number
+  readonly body: string
+  readonly author: string
+  readonly htmlUrl: string
+  readonly createdAt: string
+  readonly updatedAt: string
+}
+
+/** Internal type for API response */
+interface CommentData {
+  id: number
+  body?: string
+  user?: { login: string } | null
+  html_url: string
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Comment service providing operations on the triggering comment.
  *
  * Use this service via its static accessors (when `accessors: true`):
@@ -66,7 +91,7 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
       )
     }
 
-    const { owner, repo, issueNumber, comment, action } = data
+    const { action, comment, issueNumber, owner, repo } = data
 
     return {
       /** The comment ID. */
@@ -122,10 +147,70 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
         owner,
         repo,
         comment_id: comment.id
-      }).pipe(Effect.asVoid)
+      }).pipe(Effect.asVoid),
+
+      /** List all comments on the issue/PR. */
+      list: client.paginate<CommentData>(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+        { owner, repo, issue_number: issueNumber }
+      ).pipe(Effect.map((comments) => comments.map((c) => ({
+        id: c.id,
+        body: c.body ?? "",
+        author: c.user?.login ?? "unknown",
+        htmlUrl: c.html_url,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at
+      })))),
+
+      /** Find a comment containing the given marker string. */
+      findByMarker: (marker: string) =>
+        client.paginate<CommentData>(
+          "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+          { owner, repo, issue_number: issueNumber }
+        ).pipe(
+          Effect.map((comments) => {
+            const found = comments.find((c) => c.body?.includes(marker))
+            if (!found) return undefined
+            return {
+              id: found.id,
+              body: found.body ?? "",
+              author: found.user?.login ?? "unknown",
+              htmlUrl: found.html_url,
+              createdAt: found.created_at,
+              updatedAt: found.updated_at
+            }
+          })
+        ),
+
+      /** Find or create a comment with the given marker. Updates if exists, creates if not. */
+      findOrUpdate: (marker: string, body: string) =>
+        client.paginate<CommentData>(
+          "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+          { owner, repo, issue_number: issueNumber }
+        ).pipe(
+          Effect.flatMap((comments) => {
+            const existing = comments.find((c) => c.body?.includes(marker))
+            if (existing) {
+              return client.request("PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}", {
+                owner,
+                repo,
+                comment_id: existing.id,
+                body: `${marker}\n${body}`
+              }).pipe(Effect.asVoid)
+            }
+            return client.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: `${marker}\n${body}`
+            }).pipe(Effect.asVoid)
+          })
+        )
     } as const
   }),
-  dependencies: [ActionContext.layer, ActionClient.layer("")]
+  dependencies: [ActionContext.layer,
+    // FIXME: blank ActionClient.layer token is broken; need to think through how we are supposed to handle tokens idiomatically
+    ActionClient.layer("")]
 }) {
   /**
    * Test layer for Comment service.
@@ -141,6 +226,8 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
     readonly htmlUrl?: string
     readonly createdAt?: string
     readonly updatedAt?: string
+    /** Mock comments for list/findByMarker operations */
+    readonly comments?: ReadonlyArray<CommentInfo>
   }) =>
     Layer.succeed(
       Comment,
@@ -155,7 +242,11 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
         react: () => Effect.void,
         reply: () => Effect.void,
         update: () => Effect.void,
-        delete: Effect.void
+        delete: Effect.void,
+        list: Effect.sync(() => [...(options.comments ?? [])]),
+        findByMarker: (marker: string) =>
+          Effect.sync(() => options.comments?.find((c) => c.body.includes(marker))),
+        findOrUpdate: () => Effect.void
       })
     )
 }

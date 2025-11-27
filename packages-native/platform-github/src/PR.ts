@@ -115,7 +115,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       return yield* Effect.fail(new NotPullRequestError({ message: reason }))
     }
 
-    const { owner, repo, prNumber, pr: prPayload } = data
+    const { owner, pr: prPayload, prNumber, repo } = data
 
     const fetchPRDetails = client.request<{
       head: { ref: string }
@@ -163,11 +163,13 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       commits: client.paginate<{ sha: string; commit: { message: string; author: { name: string } | null } }>(
         "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
         { owner, repo, pull_number: prNumber }
-      ).pipe(Effect.map((commits) => commits.map((c) => ({
-        sha: c.sha,
-        message: c.commit.message,
-        author: c.commit.author?.name ?? "unknown"
-      })))),
+      ).pipe(Effect.map((commits) =>
+        commits.map((c) => ({
+          sha: c.sha,
+          message: c.commit.message,
+          author: c.commit.author?.name ?? "unknown"
+        }))
+      )),
 
       /** Check if the PR is mergeable. Returns null if still computing. */
       mergeable: client.request<{ mergeable: boolean | null }>(
@@ -193,7 +195,34 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
           repo,
           pull_number: prNumber,
           reviewers: [...reviewers]
-        }).pipe(Effect.asVoid)
+        }).pipe(Effect.asVoid),
+
+      /** Add one or more labels to the PR. */
+      addLabel: (label: string, ...labels: ReadonlyArray<string>) =>
+        client.request("POST /repos/{owner}/{repo}/issues/{issue_number}/labels", {
+          owner,
+          repo,
+          issue_number: prNumber,
+          labels: [label, ...labels]
+        }).pipe(Effect.asVoid),
+
+      /** Remove a label from the PR. */
+      removeLabel: (label: string) =>
+        client.request("DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}", {
+          owner,
+          repo,
+          issue_number: prNumber,
+          name: label
+        }).pipe(Effect.asVoid),
+
+      /** Get the PR's labels. */
+      labels: client.request<{ labels: Array<{ name: string }> }>(
+        "GET /repos/{owner}/{repo}/issues/{issue_number}",
+        { owner, repo, issue_number: prNumber }
+      ).pipe(Effect.map((issue) => {
+        const labels = (issue as any).labels ?? (issue as any).data?.labels ?? []
+        return labels.map((l: { name: string }) => l.name) as ReadonlyArray<string>
+      }))
     } as const
   }),
   dependencies: [ActionContext.layer, ActionClient.layer("")]
@@ -213,6 +242,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
     readonly files?: ReadonlyArray<PRFile>
     readonly commits?: ReadonlyArray<PRCommit>
     readonly mergeable?: boolean | null
+    readonly labels?: ReadonlyArray<string>
   }) =>
     Layer.succeed(
       PR,
@@ -226,7 +256,10 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
         commits: Effect.sync(() => [...(options?.commits ?? [])]),
         mergeable: Effect.sync(() => options?.mergeable ?? null),
         merge: () => Effect.void,
-        requestReview: () => Effect.void
+        requestReview: () => Effect.void,
+        addLabel: () => Effect.void,
+        removeLabel: () => Effect.void,
+        labels: Effect.sync(() => options?.labels ?? [])
       })
     )
 }
