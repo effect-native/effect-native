@@ -20,6 +20,7 @@
  *
  * @since 1.0.0
  */
+import type { components } from "@octokit/openapi-types"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -42,26 +43,20 @@ export class NotPullRequestError extends Data.TaggedError("NotPullRequestError")
 }> {}
 
 // =============================================================================
-// Types
+// Types from @octokit/openapi-types
 // =============================================================================
 
 /**
  * A file changed in a pull request.
+ * Uses the `diff-entry` schema from @octokit/openapi-types.
  *
  * @since 1.0.0
  * @category models
  */
-export interface PRFile {
-  readonly filename: string
-  readonly status: "added" | "removed" | "modified" | "renamed" | "copied" | "changed" | "unchanged"
-  readonly additions: number
-  readonly deletions: number
-  readonly changes: number
-  readonly patch?: string
-}
+export type PRFile = components["schemas"]["diff-entry"]
 
 /**
- * A commit in a pull request.
+ * A commit in a pull request (simplified).
  *
  * @since 1.0.0
  * @category models
@@ -72,28 +67,19 @@ export interface PRCommit {
   readonly author: string
 }
 
-// =============================================================================
-// Internal response types (GitHub REST API shapes)
-// =============================================================================
-
 /**
- * Subset of PR fields returned by GET /repos/{owner}/{repo}/pulls/{pull_number}
+ * Pull request details from GitHub API.
+ * Uses the `pull-request` schema from @octokit/openapi-types.
  * @internal
  */
-interface PullRequestResponse {
-  readonly head: { readonly ref: string }
-  readonly base: { readonly ref: string }
-  readonly draft?: boolean
-  readonly mergeable: boolean | null
-}
+type PullRequestResponse = components["schemas"]["pull-request"]
 
 /**
- * Subset of Issue fields returned by GET /repos/{owner}/{repo}/issues/{issue_number}
+ * Issue details from GitHub API.
+ * Uses the `issue` schema from @octokit/openapi-types.
  * @internal
  */
-interface IssueLabelsResponse {
-  readonly labels: ReadonlyArray<{ readonly name: string }>
-}
+type IssueResponse = components["schemas"]["issue"]
 
 // =============================================================================
 // Constants
@@ -238,10 +224,10 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
         }).pipe(Effect.asVoid),
 
       /** Get the PR's labels. */
-      labels: client.request<IssueLabelsResponse>(
+      labels: client.request<IssueResponse>(
         "GET /repos/{owner}/{repo}/issues/{issue_number}",
         { owner, repo, issue_number: prNumber }
-      ).pipe(Effect.map((issue) => issue.labels.map((l) => l.name)))
+      ).pipe(Effect.map((issue) => issue.labels.map((l) => typeof l === "string" ? l : l.name)))
     } as const
   }),
   dependencies: [ActionContext.layer, ActionClient.Default]

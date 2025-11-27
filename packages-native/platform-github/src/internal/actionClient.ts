@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 import * as github from "@actions/github"
+import type { RequestParameters } from "@octokit/types"
 import { GenericTag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -50,7 +51,7 @@ export const make = (token: string): Api.ActionClient => {
       return getOctokit()
     },
 
-    request: <T>(route: string, options?: Record<string, unknown>) =>
+    request: <T>(route: string, options?: RequestParameters) =>
       Effect.tryPromise({
         try: async () => {
           const response = await getOctokit().request(route, options)
@@ -76,7 +77,7 @@ export const make = (token: string): Api.ActionClient => {
           })
       }),
 
-    paginate: <T>(route: string, options?: Record<string, unknown>) =>
+    paginate: <T>(route: string, options?: RequestParameters) =>
       Effect.tryPromise({
         try: async () => {
           const data = await getOctokit().paginate(route, options)

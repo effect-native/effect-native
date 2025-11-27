@@ -10,6 +10,7 @@
  * @since 1.0.0
  */
 import type { GitHub } from "@actions/github/lib/utils.js"
+import type { RequestParameters } from "@octokit/types"
 import type { Tag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
@@ -52,7 +53,7 @@ export interface ActionClient {
    */
   readonly request: <T>(
     route: string,
-    options?: Record<string, unknown>
+    options?: RequestParameters
   ) => Effect.Effect<T, ActionApiError>
 
   /**
@@ -68,7 +69,7 @@ export interface ActionClient {
    */
   readonly paginate: <T>(
     route: string,
-    options?: Record<string, unknown>
+    options?: RequestParameters
   ) => Effect.Effect<ReadonlyArray<T>, ActionApiError>
 }
 
@@ -107,7 +108,7 @@ export const octokit: Effect.Effect<Octokit, never, ActionClient> = Effect.map(A
  */
 export const request: <T>(
   route: string,
-  options?: Record<string, unknown>
+  options?: RequestParameters
 ) => Effect.Effect<T, ActionApiError, ActionClient> = (route, options) =>
   Effect.flatMap(ActionClient, (client) => client.request(route, options))
 
@@ -127,6 +128,6 @@ export const graphql: <T>(
  */
 export const paginate: <T>(
   route: string,
-  options?: Record<string, unknown>
+  options?: RequestParameters
 ) => Effect.Effect<ReadonlyArray<T>, ActionApiError, ActionClient> = (route, options) =>
   Effect.flatMap(ActionClient, (client) => client.paginate(route, options))
