@@ -120,7 +120,7 @@ export class Issue extends Effect.Service<Issue>()("@effect-native/platform-gith
       }).pipe(Effect.asVoid)
     } as const
   }),
-  dependencies: [ActionContext.layer, ActionClient.layer("")]
+  dependencies: [ActionContext.layer, ActionClient.Default]
 }) {
   /**
    * Test layer for Issue service.

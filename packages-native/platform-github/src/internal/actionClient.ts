@@ -5,8 +5,10 @@ import * as github from "@actions/github"
 import { GenericTag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Redacted from "effect/Redacted"
 import type * as Api from "../ActionClient.js"
 import { ActionApiError } from "../ActionError.js"
+import * as GithubToken from "../GithubToken.js"
 
 /** @internal */
 export const TypeId: Api.TypeId = Symbol.for(
@@ -88,5 +90,18 @@ export const make = (token: string): Api.ActionClient => {
   }
 }
 
-/** @internal */
+/**
+ * Layer that creates ActionClient from a raw token string.
+ * @internal
+ * @deprecated Use `Default` which reads from GithubToken service
+ */
 export const layer = (token: string) => Layer.succeed(ActionClient, make(token))
+
+/**
+ * Default layer that reads token from GithubToken service.
+ * @internal
+ */
+export const Default: Layer.Layer<Api.ActionClient, never, GithubToken.GithubToken> = Layer.effect(
+  ActionClient,
+  Effect.map(GithubToken.GithubToken, (redactedToken) => make(Redacted.value(redactedToken)))
+)

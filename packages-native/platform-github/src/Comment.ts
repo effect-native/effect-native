@@ -35,6 +35,7 @@ import { getCommentPayload } from "./internal/payload.js"
  * @since 1.0.0
  * @category models
  */
+ // FIXME: import type from @octokit/webhooks-types
 export type Reaction = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes"
 
 /**
@@ -43,6 +44,7 @@ export type Reaction = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" |
  * @since 1.0.0
  * @category models
  */
+ // FIXME: import type from @octokit/webhooks-types
 export interface CommentInfo {
   readonly id: number
   readonly body: string
@@ -53,6 +55,7 @@ export interface CommentInfo {
 }
 
 /** Internal type for API response */
+// FIXME: import type from @octokit/webhooks-types
 interface CommentData {
   id: number
   body?: string
@@ -208,9 +211,7 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
         )
     } as const
   }),
-  dependencies: [ActionContext.layer,
-    // FIXME: blank ActionClient.layer token is broken; need to think through how we are supposed to handle tokens idiomatically
-    ActionClient.layer("")]
+  dependencies: [ActionContext.layer, ActionClient.Default]
 }) {
   /**
    * Test layer for Comment service.

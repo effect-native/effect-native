@@ -14,6 +14,7 @@ import type { Tag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
 import type { ActionApiError } from "./ActionError.js"
+import type * as GithubToken from "./GithubToken.js"
 import * as internal from "./internal/actionClient.js"
 
 /**
@@ -78,8 +79,19 @@ export interface ActionClient {
 export const ActionClient: Tag<ActionClient, ActionClient> = internal.ActionClient
 
 /**
+ * Default layer that reads token from GithubToken service.
+ *
  * @since 1.0.0
  * @category layers
+ */
+export const Default: Layer.Layer<ActionClient, never, GithubToken.GithubToken> = internal.Default
+
+/**
+ * Layer that creates ActionClient from a raw token string.
+ *
+ * @since 1.0.0
+ * @category layers
+ * @deprecated Use `Default` which reads from GithubToken service, or provide GithubToken.layerFromString
  */
 export const layer: (token: string) => Layer.Layer<ActionClient> = internal.layer
 

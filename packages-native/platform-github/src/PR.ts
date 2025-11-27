@@ -225,7 +225,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       }))
     } as const
   }),
-  dependencies: [ActionContext.layer, ActionClient.layer("")]
+  dependencies: [ActionContext.layer, ActionClient.Default]
 }) {
   /**
    * Test layer for PR service.

@@ -40,6 +40,12 @@ export * as ActionClient from "./ActionClient.js"
 export * as ActionClientTest from "./ActionClientTest.js"
 
 /**
+ * GitHub token service for secure API authentication.
+ * @since 1.0.0
+ */
+export * as GithubToken from "./GithubToken.js"
+
+/**
  * @since 1.0.0
  */
 export * as ActionSummary from "./ActionSummary.js"
