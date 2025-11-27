@@ -55,7 +55,10 @@ export const make = (token: string): Api.ActionClient => {
 
     request: <T>(route: string, options?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => getOctokit().request(route, options) as Promise<T>,
+        try: async () => {
+          const response = await getOctokit().request(route, options)
+          return response.data as T
+        },
         catch: (error) =>
           new ActionApiError({
             method: route,
@@ -78,7 +81,10 @@ export const make = (token: string): Api.ActionClient => {
 
     paginate: <T>(route: string, options?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => getOctokit().paginate(route, options) as Promise<ReadonlyArray<T>>,
+        try: async () => {
+          const data = await getOctokit().paginate(route, options)
+          return data as ReadonlyArray<T>
+        },
         catch: (error) =>
           new ActionApiError({
             method: route,

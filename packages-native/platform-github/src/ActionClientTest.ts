@@ -50,6 +50,9 @@ export interface TestOptions {
 /**
  * Creates a test layer for ActionClient with the given options.
  *
+ * The mock returns the `requestResult` directly (not wrapped in `{ data: ... }`),
+ * matching the behavior of the real ActionClient which extracts `.data` from responses.
+ *
  * @since 1.0.0
  * @category constructors
  */
@@ -59,7 +62,8 @@ export const make = (options: TestOptions = {}): Layer.Layer<ActionClient> => {
       if (options?.requestResult instanceof Error) {
         throw options.requestResult
       }
-      return options?.requestResult ?? { data: {} }
+      // Return as { data: ... } to match Octokit's response shape
+      return { data: options?.requestResult ?? {} }
     },
     graphql: async <T>(_query: string, _variables?: Record<string, unknown>) => {
       if (options?.graphqlResult instanceof Error) {
@@ -80,9 +84,13 @@ export const make = (options: TestOptions = {}): Layer.Layer<ActionClient> => {
 
     octokit: mockOctokit as unknown as Octokit,
 
+    // Mock extracts .data just like the real client does
     request: <T>(route: string, opts?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => mockOctokit.request(route, opts) as Promise<T>,
+        try: async () => {
+          const response = await mockOctokit.request(route, opts) as { data: T }
+          return response.data
+        },
         catch: (error) =>
           new ActionApiError({
             method: route,

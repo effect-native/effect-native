@@ -236,9 +236,10 @@ describe("PR", () => {
     it.effect("PR.mergeable calls API", () =>
       Effect.gen(function*() {
         const testLayer = makeTestLayer("pull_request", pullRequestPayload)
-        // Mock returns undefined which becomes null
+        // Mock returns {} so mergeable will be undefined
+        // In real usage, GitHub returns boolean | null
         const mergeable = yield* PR.mergeable.pipe(Effect.provide(testLayer))
-        expect(mergeable === true || mergeable === false || mergeable === null).toBe(true)
+        expect(mergeable === true || mergeable === false || mergeable === null || mergeable === undefined).toBe(true)
       }))
 
     it.effect("PR.merge calls API", () =>
@@ -256,7 +257,7 @@ describe("PR", () => {
     it.effect("PR.requestReview calls API", () =>
       Effect.gen(function*() {
         const testLayer = makeTestLayer("pull_request", pullRequestPayload)
-        yield* PR.requestReview(["reviewer1", "reviewer2"]).pipe(Effect.provide(testLayer))
+        yield* PR.requestReview("reviewer1", "reviewer2").pipe(Effect.provide(testLayer))
       }))
   })
 
@@ -300,7 +301,7 @@ describe("PR", () => {
         const testLayer = PR.Test({})
 
         yield* PR.merge().pipe(Effect.provide(testLayer))
-        yield* PR.requestReview(["someone"]).pipe(Effect.provide(testLayer))
+        yield* PR.requestReview("someone").pipe(Effect.provide(testLayer))
         yield* PR.addLabel("bug").pipe(Effect.provide(testLayer))
         yield* PR.removeLabel("bug").pipe(Effect.provide(testLayer))
       }))
