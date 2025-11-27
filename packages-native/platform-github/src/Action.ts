@@ -26,6 +26,7 @@ import * as ActionContext from "./ActionContext.js"
 import { isActionFailure } from "./ActionError.js"
 import * as ActionRunner from "./ActionRunner.js"
 import * as ActionSummary from "./ActionSummary.js"
+import * as ConsoleGitHubActions from "./internal/consoleGitHubActions.js"
 
 /**
  * @since 1.0.0
@@ -54,16 +55,33 @@ export type ActionRequirements =
 /**
  * Layer providing all GitHub Action services.
  *
+ * Includes:
+ * - ActionRunner for @actions/core functionality
+ * - ActionContext for workflow/event context
+ * - ActionClient for GitHub API access
+ * - ActionSummary for job summaries
+ * - Console layer that uses GitHub Actions workflow commands
+ *
  * @since 1.0.0
  * @category layers
  */
-export const layer = (token: string): Layer.Layer<ActionRequirements> =>
-  Layer.mergeAll(
+export const layer = (token: string): Layer.Layer<ActionRequirements> => {
+  // First create the Console layer backed by ActionRunner
+  const consoleLayer = ConsoleGitHubActions.layer.pipe(
+    Layer.provide(ActionRunner.layer)
+  )
+
+  // Then compose all services
+  return Layer.mergeAll(
     ActionRunner.layer,
     ActionContext.layer,
     ActionClient.layer(token),
     ActionSummary.layer
+  ).pipe(
+    // Merge the console layer (it's a Layer<never> so doesn't change requirements)
+    Layer.merge(consoleLayer)
   )
+}
 
 /**
  * Options for runMain.
