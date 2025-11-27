@@ -1,9 +1,9 @@
 import { describe, expect, it } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as IssueComment from "../../src/events/IssueComment.js"
 import * as ActionClientTest from "../../src/ActionClientTest.js"
 import * as ActionContextTest from "../../src/ActionContextTest.js"
+import * as IssueComment from "../../src/events/IssueComment.js"
 
 // Sample issue_comment payload
 const issueCommentPayload = {
@@ -26,7 +26,7 @@ const issueCommentPayload = {
 describe("IssueComment", () => {
   describe("layer", () => {
     it.effect("creates context from issue_comment event", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const testLayer = IssueComment.layer.pipe(
           Layer.provide(ActionContextTest.make({
             eventName: "issue_comment",
@@ -46,11 +46,10 @@ describe("IssueComment", () => {
         expect(ctx.commentBody).toBe("Hello world!")
         expect(ctx.commentAuthor).toBe("testuser")
         expect(ctx.isPullRequest).toBe(true)
-      })
-    )
+      }))
 
     it.effect("fails with EventMismatch for wrong event type", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const testLayer = IssueComment.layer.pipe(
           Layer.provide(ActionContextTest.make({
             eventName: "push",
@@ -69,11 +68,10 @@ describe("IssueComment", () => {
           expect(result.left._tag).toBe("ActionContextError")
           expect(result.left.reason).toBe("EventMismatch")
         }
-      })
-    )
+      }))
 
     it.effect("isPullRequest is false for regular issue comments", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const issuePayload = {
           ...issueCommentPayload,
           issue: {
@@ -95,13 +93,12 @@ describe("IssueComment", () => {
         )
 
         expect(ctx.isPullRequest).toBe(false)
-      })
-    )
+      }))
   })
 
   describe("addReaction", () => {
     it.effect("succeeds when called", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const testLayer = IssueComment.layer.pipe(
           Layer.provide(ActionContextTest.make({
             eventName: "issue_comment",
@@ -115,13 +112,12 @@ describe("IssueComment", () => {
         )
         // Just verify it doesn't throw
         yield* ctx.addReaction("eyes").pipe(Effect.provide(testLayer))
-      })
-    )
+      }))
   })
 
   describe("reply", () => {
     it.effect("succeeds when called", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const testLayer = IssueComment.layer.pipe(
           Layer.provide(ActionContextTest.make({
             eventName: "issue_comment",
@@ -135,7 +131,6 @@ describe("IssueComment", () => {
         )
         // Just verify it doesn't throw
         yield* ctx.reply("Thanks!").pipe(Effect.provide(testLayer))
-      })
-    )
+      }))
   })
 })

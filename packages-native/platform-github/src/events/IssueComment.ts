@@ -79,8 +79,7 @@ export type IssueCommentContext = internal.IssueCommentContext
  * @since 1.0.0
  * @category context
  */
-export const IssueCommentContext: Tag<IssueCommentContext, IssueCommentContext> =
-  internal.IssueCommentContext
+export const IssueCommentContext: Tag<IssueCommentContext, IssueCommentContext> = internal.IssueCommentContext
 
 /**
  * Layer that provides IssueCommentContext.

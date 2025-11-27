@@ -50,7 +50,7 @@ export const layer: Layer.Layer<
   ActionContext.ActionContext | ActionClient.ActionClient
 > = Layer.effect(
   IssueCommentContext,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const ctx = yield* ActionContext.ActionContext
     const client = yield* ActionClient.ActionClient
 
