@@ -85,6 +85,10 @@ type IssueResponse = components["schemas"]["issue"]
 // Constants
 // =============================================================================
 
+/**
+ * Maximum characters for diff output.
+ * Large diffs are truncated to stay within LLM context limits.
+ */
 const MAX_DIFF_CHARS = 100_000
 
 // =============================================================================
@@ -244,7 +248,11 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
         }).pipe(Effect.asVoid),
 
       /** Get the PR's labels. */
-      labels: fetchIssueDetails.pipe(Effect.map((issue) => issue.labels.map((l) => typeof l === "string" ? l : l.name)))
+      labels: fetchIssueDetails.pipe(Effect.map((issue) =>
+        issue.labels
+          .map((l) => typeof l === "string" ? l : l.name)
+          .filter((name): name is string => name !== undefined)
+      ))
     } as const
   }),
   dependencies: [ActionContext.layer, ActionClient.Default]
