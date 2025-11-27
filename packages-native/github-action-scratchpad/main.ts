@@ -1,161 +1,122 @@
 /**
- * Main entry point for the GitHub Action Demo
+ * GitHub Action Demo - @effect-native/platform-github
  *
- * This file demonstrates @effect-native/platform-github for building
- * GitHub Actions with Effect. Runs on Node.js 24 with native TypeScript support.
+ * Showcases the slickest DX for building GitHub Actions with Effect:
+ * - Console.log routes to GitHub Actions UI automatically
+ * - High-level Comment/Issue/PR services with static accessors
+ * - Type-safe inputs with Schema validation
+ * - Clean error handling with pit-of-success patterns
  */
-import {
-  Action,
-  ActionClient,
-  ActionContext,
-  ActionRunner,
-  Input,
-  PR
-} from "@effect-native/platform-github"
-import * as Effect from "effect/Effect"
+import { Action, ActionRunner, Comment, Input, Issue, PR } from "@effect-native/platform-github"
+import { Console, Effect, Layer } from "effect"
 
-/**
- * The main action logic using Effect
- *
- * Demonstrates the full Effect-based GitHub Action toolkit:
- * - Reading inputs via Input module (Schema-first parsing)
- * - Accessing workflow context via ActionContext
- * - Making API calls via ActionClient (Octokit)
- * - High-level PR operations via PR module
- * - Structured logging with groups
- * - Setting outputs
- */
 const program = Effect.gen(function*() {
-  // Parse inputs using the new Input module
-  // github-token is handled internally by Action.runMain via GITHUB_TOKEN env var
-  // Here we demonstrate optional inputs with defaults
-  const verbose = yield* Input.boolean("verbose").pipe(
-    Effect.orElseSucceed(() => false)
-  )
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Console.log just works - routes to GitHub Actions UI via ConsoleGitHubActions
+  // ─────────────────────────────────────────────────────────────────────────────
+  yield* Console.log("Starting Effect GitHub Action demo...")
 
-  // Get workflow context
-  const eventName = yield* ActionContext.eventName
-  const actor = yield* ActionContext.actor
-  const sha = yield* ActionContext.sha
-  const ref = yield* ActionContext.ref
-  const workflow = yield* ActionContext.workflow
-  const runId = yield* ActionContext.runId
-  const runNumber = yield* ActionContext.runNumber
-  const serverUrl = yield* ActionContext.serverUrl
-  const repo = yield* ActionContext.repo
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Type-safe inputs with Schema validation
+  // ─────────────────────────────────────────────────────────────────────────────
+  const verbose = yield* Input.boolean("verbose").pipe(Effect.orElseSucceed(() => false))
 
-  yield* ActionRunner.group("Workflow Context", () =>
-    Effect.gen(function*() {
-      yield* ActionRunner.info(`Event: ${eventName}`)
-      yield* ActionRunner.info(`Repository: ${repo.owner}/${repo.repo}`)
-      yield* ActionRunner.info(`Actor: ${actor}`)
-      yield* ActionRunner.info(`SHA: ${sha.substring(0, 7)}`)
-      yield* ActionRunner.info(`Ref: ${ref}`)
-      yield* ActionRunner.info(`Workflow: ${workflow}`)
-      yield* ActionRunner.info(`Run ID: ${runId}`)
-      yield* ActionRunner.info(`Run Number: ${runNumber}`)
-      if (verbose) {
-        yield* ActionRunner.debug(`Server URL: ${serverUrl}`)
-        yield* ActionRunner.debug(`Full SHA: ${sha}`)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // High-level Issue service - clean accessor syntax
+  // ─────────────────────────────────────────────────────────────────────────────
+  const issueNumber = yield* Issue.number
+  const issueTitle = yield* Issue.title
+  const isPR = yield* Issue.isPullRequest
+  const labels = yield* Issue.labels
+
+  yield* Console.log(`Issue #${issueNumber}: ${issueTitle}`)
+  yield* Console.log(`Labels: ${labels.length > 0 ? labels.join(", ") : "(none)"}`)
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PR service - auto-fails if not a PR (pit of success!)
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (isPR) {
+    const headRef = yield* PR.headRef
+    const baseRef = yield* PR.baseRef
+    const files = yield* PR.files
+    const draft = yield* PR.draft
+
+    yield* Console.log(`PR: ${headRef} → ${baseRef} (${files.length} files${draft ? ", draft" : ""})`)
+
+    if (verbose) {
+      for (const file of files.slice(0, 5)) {
+        yield* Console.log(`  ${file.status}: ${file.filename}`)
       }
-    })
-  )
-
-  // Try to use the high-level PR module - it auto-fails if not a PR context
-  // This demonstrates the "pit of success" pattern
-  const prResult = yield* Effect.either(
-    Effect.gen(function*() {
-      // These accessors are provided by Effect.Service with accessors: true
-      const prNumber = yield* PR.number
-      const headRef = yield* PR.headRef
-      const baseRef = yield* PR.baseRef
-      const draft = yield* PR.draft
-      const files = yield* PR.files
-
-      return { prNumber, headRef, baseRef, draft, files }
-    }).pipe(Effect.provide(PR.Default))
-  )
-
-  if (prResult._tag === "Right") {
-    const { prNumber, headRef, baseRef, draft, files } = prResult.right
-
-    yield* ActionRunner.group("Creating PR Comment", () =>
-      Effect.gen(function*() {
-        yield* ActionRunner.info(`PR #${prNumber} detected via PR module`)
-
-        // Summarize files changed
-        const filesSummary = files.length > 5
-          ? `${files.slice(0, 5).map((f) => `\`${f.filename}\``).join(", ")} and ${files.length - 5} more`
-          : files.map((f) => `\`${f.filename}\``).join(", ") || "No files"
-
-        const commentBody = [
-          "## Effect GitHub Action Demo",
-          "",
-          "This comment was created using **@effect-native/platform-github** running on Node.js with native TypeScript support.",
-          "",
-          "### Workflow Context",
-          "",
-          "| Property | Value |",
-          "|----------|-------|",
-          `| Event | \`${eventName}\` |`,
-          `| Actor | @${actor} |`,
-          `| SHA | \`${sha.substring(0, 7)}\` |`,
-          `| Ref | \`${ref}\` |`,
-          `| Workflow | ${workflow} |`,
-          `| Run | [#${runNumber}](${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}) |`,
-          "",
-          "### PR Details (via PR module)",
-          "",
-          "| Property | Value |",
-          "|----------|-------|",
-          `| Branch | \`${headRef}\` → \`${baseRef}\` |`,
-          `| Draft | ${draft ? "Yes" : "No"} |`,
-          `| Files Changed | ${files.length} |`,
-          `| Files | ${filesSummary} |`,
-          "",
-          "### Technical Details",
-          "",
-          "- **Runtime**: Node.js 24 with native TypeScript support",
-          "- **Package**: `@effect-native/platform-github`",
-          "- **Services Used**:",
-          "  - `Input` - Schema-first input parsing",
-          "  - `ActionRunner` - Logging, outputs",
-          "  - `ActionContext` - Workflow metadata",
-          "  - `ActionClient` - Octokit API client",
-          "  - `PR` - High-level PR operations",
-          "",
-          "---",
-          `*Timestamp: ${new Date().toISOString()}*`
-        ].join("\n")
-
-        // Create the comment using ActionClient
-        yield* ActionClient.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-          owner: repo.owner,
-          repo: repo.repo,
-          issue_number: prNumber,
-          body: commentBody
-        })
-
-        yield* ActionRunner.info(`Comment created on PR #${prNumber}`)
-      })
-    )
-  } else {
-    yield* ActionRunner.info("Not a PR event, skipping comment creation")
+      if (files.length > 5) {
+        yield* Console.log(`  ... and ${files.length - 5} more`)
+      }
+    }
   }
 
-  // Set outputs
-  yield* ActionRunner.setOutput("repo", `${repo.owner}/${repo.repo}`)
-  yield* ActionRunner.setOutput("sha", sha)
-  yield* ActionRunner.setOutput("actor", actor)
-  yield* ActionRunner.setOutput("event", eventName)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Comment service - react and reply to the triggering comment
+  // ─────────────────────────────────────────────────────────────────────────────
+  const commentBody = yield* Comment.body
+  const commentAuthor = yield* Comment.author
 
-  yield* ActionRunner.notice(`Effect GitHub Action completed successfully!`, {
-    title: "Action Complete"
-  })
+  yield* Console.log(`Comment by @${commentAuthor}: "${commentBody.slice(0, 50)}${commentBody.length > 50 ? "..." : ""}"`)
 
-  return { repo, sha, actor }
+  // React with eyes to acknowledge we saw it
+  yield* Comment.react("eyes")
+
+  // Build a nice reply
+  const replyBody = [
+    "## Effect GitHub Action Demo",
+    "",
+    `Thanks for the comment, @${commentAuthor}!`,
+    "",
+    "This reply was created using **@effect-native/platform-github**.",
+    "",
+    "### What's happening here?",
+    "",
+    "```typescript",
+    'import { Action, Comment, Issue, PR } from "@effect-native/platform-github"',
+    'import { Console, Effect } from "effect"',
+    "",
+    "const program = Effect.gen(function*() {",
+    "  yield* Console.log('Just works!')  // Routes to GitHub UI",
+    "  yield* Comment.react('eyes')       // React to comment",
+    "  yield* Comment.reply('Hello!')     // Reply to issue/PR",
+    "})",
+    "",
+    "Action.runMain(program)",
+    "```",
+    "",
+    "### Services Used",
+    "",
+    `| Service | Usage |`,
+    `|---------|-------|`,
+    `| \`Console\` | Logs to GitHub Actions UI |`,
+    `| \`Comment\` | Read/react/reply to comments |`,
+    `| \`Issue\` | Access issue #${issueNumber} |`,
+    isPR ? `| \`PR\` | Access PR details |` : "",
+    "",
+    "---",
+    `*${new Date().toISOString()}*`
+  ].filter(Boolean).join("\n")
+
+  yield* Comment.reply(replyBody)
+  yield* Console.log("Reply posted!")
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Set outputs and finish
+  // ─────────────────────────────────────────────────────────────────────────────
+  yield* ActionRunner.setOutput("issue-number", String(issueNumber))
+  yield* ActionRunner.setOutput("is-pr", String(isPR))
+  yield* ActionRunner.notice("Effect GitHub Action completed!", { title: "Success" })
 })
 
-// Run the action - errors are handled automatically by runMain
-// InputValidationFailure and ActionFailed are formatted nicely for GitHub UI
-Action.runMain(program)
+// Provide high-level service layers, then run
+// Action.runMain provides the base layers (ActionRunner, ActionContext, ActionClient)
+const DxLayer = Layer.mergeAll(
+  Comment.Default,
+  Issue.Default,
+  PR.Default
+)
+
+Action.runMain(program.pipe(Effect.provide(DxLayer)))
