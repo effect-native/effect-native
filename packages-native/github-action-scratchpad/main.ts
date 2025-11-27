@@ -9,9 +9,13 @@ import {
   ActionClient,
   ActionContext,
   ActionRunner,
-  Input
+  Input,
+  PR as PRModule
 } from "@effect-native/platform-github"
 import * as Effect from "effect/Effect"
+
+// PR is exported as a module namespace, access the class via PR.PR
+const { PR } = PRModule
 
 /**
  * The main action logic using Effect
@@ -20,10 +24,11 @@ import * as Effect from "effect/Effect"
  * - Reading inputs via Input module (Schema-first parsing)
  * - Accessing workflow context via ActionContext
  * - Making API calls via ActionClient (Octokit)
+ * - High-level PR operations via PR module
  * - Structured logging with groups
  * - Setting outputs
  */
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Parse inputs using the new Input module
   // github-token is handled internally by Action.runMain via GITHUB_TOKEN env var
   // Here we demonstrate optional inputs with defaults
@@ -40,11 +45,10 @@ const program = Effect.gen(function* () {
   const runId = yield* ActionContext.runId
   const runNumber = yield* ActionContext.runNumber
   const serverUrl = yield* ActionContext.serverUrl
-  const payload = yield* ActionContext.payload
   const repo = yield* ActionContext.repo
 
   yield* ActionRunner.group("Workflow Context", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       yield* ActionRunner.info(`Event: ${eventName}`)
       yield* ActionRunner.info(`Repository: ${repo.owner}/${repo.repo}`)
       yield* ActionRunner.info(`Actor: ${actor}`)
@@ -60,12 +64,32 @@ const program = Effect.gen(function* () {
     })
   )
 
-  // Only comment on PRs
-  const prNumber = (payload as { pull_request?: { number?: number } }).pull_request?.number
-  if (prNumber) {
+  // Try to use the high-level PR module - it auto-fails if not a PR context
+  // This demonstrates the "pit of success" pattern
+  const prResult = yield* Effect.either(
+    Effect.gen(function*() {
+      // These accessors are provided by Effect.Service with accessors: true
+      const prNumber = yield* PR.number
+      const headRef = yield* PR.headRef
+      const baseRef = yield* PR.baseRef
+      const draft = yield* PR.draft
+      const files = yield* PR.files
+
+      return { prNumber, headRef, baseRef, draft, files }
+    }).pipe(Effect.provide(PR.Default))
+  )
+
+  if (prResult._tag === "Right") {
+    const { prNumber, headRef, baseRef, draft, files } = prResult.right
+
     yield* ActionRunner.group("Creating PR Comment", () =>
-      Effect.gen(function* () {
-        yield* ActionRunner.info(`PR #${prNumber} detected`)
+      Effect.gen(function*() {
+        yield* ActionRunner.info(`PR #${prNumber} detected via PR module`)
+
+        // Summarize files changed
+        const filesSummary = files.length > 5
+          ? `${files.slice(0, 5).map((f) => `\`${f.filename}\``).join(", ")} and ${files.length - 5} more`
+          : files.map((f) => `\`${f.filename}\``).join(", ") || "No files"
 
         const commentBody = [
           "## Effect GitHub Action Demo",
@@ -83,6 +107,15 @@ const program = Effect.gen(function* () {
           `| Workflow | ${workflow} |`,
           `| Run | [#${runNumber}](${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}) |`,
           "",
+          "### PR Details (via PR module)",
+          "",
+          "| Property | Value |",
+          "|----------|-------|",
+          `| Branch | \`${headRef}\` → \`${baseRef}\` |`,
+          `| Draft | ${draft ? "Yes" : "No"} |`,
+          `| Files Changed | ${files.length} |`,
+          `| Files | ${filesSummary} |`,
+          "",
           "### Technical Details",
           "",
           "- **Runtime**: Node.js 24 with native TypeScript support",
@@ -92,6 +125,7 @@ const program = Effect.gen(function* () {
           "  - `ActionRunner` - Logging, outputs",
           "  - `ActionContext` - Workflow metadata",
           "  - `ActionClient` - Octokit API client",
+          "  - `PR` - High-level PR operations",
           "",
           "---",
           `*Timestamp: ${new Date().toISOString()}*`
