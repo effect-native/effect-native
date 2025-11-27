@@ -20,12 +20,12 @@
  *
  * @since 1.0.0
  */
-import type { IssueCommentEvent, PullRequestEvent } from "@octokit/webhooks-types"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as ActionClient from "./ActionClient.js"
 import * as ActionContext from "./ActionContext.js"
+import { getPRPayload } from "./internal/payload.js"
 
 // =============================================================================
 // Errors
@@ -107,144 +107,75 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
     const ctx = yield* ActionContext.ActionContext
     const client = yield* ActionClient.ActionClient
 
-    // Parse payload and validate PR context
-    let owner: string
-    let repo: string
-    let prNumber: number
-    let headRef: string
-    let baseRef: string
-    let isDraft: boolean
-
-    if (ctx.eventName === "issue_comment") {
-      const payload = ctx.payload as unknown as IssueCommentEvent
-      // For issue_comment, check if it's on a PR
-      if (!payload.issue.pull_request) {
-        return yield* Effect.fail(
-          new NotPullRequestError({
-            message: "PR operations require a pull request context, but this is a regular issue"
-          })
-        )
-      }
-      owner = payload.repository.owner.login
-      repo = payload.repository.name
-      prNumber = payload.issue.number
-      // These need to be fetched for issue_comment events
-      headRef = ""
-      baseRef = ""
-      isDraft = false
-    } else if (
-      ctx.eventName === "pull_request" || ctx.eventName === "pull_request_review" ||
-      ctx.eventName === "pull_request_review_comment"
-    ) {
-      const payload = ctx.payload as unknown as PullRequestEvent
-      owner = payload.repository.owner.login
-      repo = payload.repository.name
-      prNumber = payload.pull_request.number
-      headRef = payload.pull_request.head.ref
-      baseRef = payload.pull_request.base.ref
-      isDraft = payload.pull_request.draft ?? false
-    } else {
-      return yield* Effect.fail(
-        new NotPullRequestError({
-          message: `PR operations require a PR-related event, got '${ctx.eventName}'`
-        })
-      )
+    const data = getPRPayload(ctx)
+    if (!data) {
+      const reason = ctx.eventName === "issue_comment"
+        ? "PR operations require a pull request context, but this is a regular issue"
+        : `PR operations require a PR-related event, got '${ctx.eventName}'`
+      return yield* Effect.fail(new NotPullRequestError({ message: reason }))
     }
 
-    // Helper to fetch PR details (for issue_comment events)
-    const fetchPRDetails = Effect.gen(function*() {
-      const response = yield* client.request<
-        { data: { head: { ref: string }; base: { ref: string }; draft: boolean } }
-      >(
-        "GET /repos/{owner}/{repo}/pulls/{pull_number}",
-        { owner, repo, pull_number: prNumber }
-      )
-      return response
-    })
+    const { owner, repo, prNumber, pr: prPayload } = data
+
+    const fetchPRDetails = client.request<{
+      head: { ref: string }
+      base: { ref: string }
+      draft: boolean
+    }>("GET /repos/{owner}/{repo}/pulls/{pull_number}", { owner, repo, pull_number: prNumber })
 
     return {
-      /**
-       * The PR number.
-       */
-      number: Effect.succeed(prNumber),
+      /** The PR number. */
+      number: Effect.sync(() => prNumber),
 
-      /**
-       * The head branch ref (source branch).
-       * For issue_comment events, this fetches from the API.
-       */
-      headRef: headRef
-        ? Effect.succeed(headRef)
-        : fetchPRDetails.pipe(Effect.map((pr) => (pr as any).head?.ref ?? (pr as any).data?.head?.ref ?? "")),
+      /** The head branch ref (source branch). */
+      headRef: prPayload
+        ? Effect.sync(() => prPayload.head.ref)
+        : fetchPRDetails.pipe(Effect.map((pr) => (pr as any).head?.ref ?? (pr as any).data?.head?.ref)),
 
-      /**
-       * The base branch ref (target branch).
-       * For issue_comment events, this fetches from the API.
-       */
-      baseRef: baseRef
-        ? Effect.succeed(baseRef)
-        : fetchPRDetails.pipe(Effect.map((pr) => (pr as any).base?.ref ?? (pr as any).data?.base?.ref ?? "")),
+      /** The base branch ref (target branch). */
+      baseRef: prPayload
+        ? Effect.sync(() => prPayload.base.ref)
+        : fetchPRDetails.pipe(Effect.map((pr) => (pr as any).base?.ref ?? (pr as any).data?.base?.ref)),
 
-      /**
-       * Whether the PR is a draft.
-       */
-      draft: Effect.succeed(isDraft),
+      /** Whether the PR is a draft. */
+      draft: prPayload
+        ? Effect.sync(() => prPayload.draft ?? false)
+        : fetchPRDetails.pipe(Effect.map((pr) => (pr as any).draft ?? (pr as any).data?.draft ?? false)),
 
-      /**
-       * Get the PR diff.
-       * Large diffs are truncated to prevent memory issues.
-       */
-      diff: Effect.gen(function*() {
-        const response = yield* client.request<string>(
-          "GET /repos/{owner}/{repo}/pulls/{pull_number}",
-          {
-            owner,
-            repo,
-            pull_number: prNumber,
-            mediaType: { format: "diff" }
-          }
-        )
+      /** Get the PR diff. Large diffs are truncated. */
+      diff: client.request<string>(
+        "GET /repos/{owner}/{repo}/pulls/{pull_number}",
+        { owner, repo, pull_number: prNumber, mediaType: { format: "diff" } }
+      ).pipe(Effect.map((response) => {
         const diff = typeof response === "string" ? response : String(response)
         return diff.length > MAX_DIFF_CHARS
           ? `${diff.slice(0, MAX_DIFF_CHARS)}\n\n... (diff truncated)`
           : diff
-      }),
+      })),
 
-      /**
-       * Get the list of files changed in the PR.
-       */
+      /** Get the list of files changed in the PR. */
       files: client.paginate<PRFile>(
         "GET /repos/{owner}/{repo}/pulls/{pull_number}/files",
         { owner, repo, pull_number: prNumber }
       ),
 
-      /**
-       * Get the list of commits in the PR.
-       */
+      /** Get the list of commits in the PR. */
       commits: client.paginate<{ sha: string; commit: { message: string; author: { name: string } | null } }>(
         "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
         { owner, repo, pull_number: prNumber }
-      ).pipe(
-        Effect.map((commits) =>
-          commits.map((c) => ({
-            sha: c.sha,
-            message: c.commit.message,
-            author: c.commit.author?.name ?? "unknown"
-          }))
-        )
-      ),
+      ).pipe(Effect.map((commits) => commits.map((c) => ({
+        sha: c.sha,
+        message: c.commit.message,
+        author: c.commit.author?.name ?? "unknown"
+      })))),
 
-      /**
-       * Check if the PR is mergeable.
-       * Returns null if GitHub is still computing mergeability.
-       */
+      /** Check if the PR is mergeable. Returns null if still computing. */
       mergeable: client.request<{ mergeable: boolean | null }>(
         "GET /repos/{owner}/{repo}/pulls/{pull_number}",
         { owner, repo, pull_number: prNumber }
       ).pipe(Effect.map((pr) => (pr as any).mergeable ?? (pr as any).data?.mergeable ?? null)),
 
-      /**
-       * Merge the PR.
-       */
+      /** Merge the PR. */
       merge: (options?: { method?: "merge" | "squash" | "rebase"; commitTitle?: string; commitMessage?: string }) =>
         client.request("PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge", {
           owner,
@@ -255,9 +186,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
           commit_message: options?.commitMessage
         }).pipe(Effect.asVoid),
 
-      /**
-       * Request reviewers for the PR.
-       */
+      /** Request reviewers for the PR. */
       requestReview: (reviewers: ReadonlyArray<string>) =>
         client.request("POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", {
           owner,
@@ -275,7 +204,7 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
    * @since 1.0.0
    * @category layers
    */
-  static Test = (options: {
+  static Test = (options?: {
     readonly number?: number
     readonly headRef?: string
     readonly baseRef?: string
@@ -288,14 +217,14 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
     Layer.succeed(
       PR,
       new PR({
-        number: Effect.succeed(options.number ?? 1),
-        headRef: Effect.succeed(options.headRef ?? "feature-branch"),
-        baseRef: Effect.succeed(options.baseRef ?? "main"),
-        draft: Effect.succeed(options.draft ?? false),
-        diff: Effect.succeed(options.diff ?? ""),
-        files: Effect.succeed([...(options.files ?? [])]),
-        commits: Effect.succeed([...(options.commits ?? [])]),
-        mergeable: Effect.succeed(options.mergeable ?? true),
+        number: Effect.sync(() => options?.number ?? 1),
+        headRef: Effect.sync(() => options?.headRef ?? "feature-branch"),
+        baseRef: Effect.sync(() => options?.baseRef ?? "main"),
+        draft: Effect.sync(() => options?.draft ?? false),
+        diff: Effect.sync(() => options?.diff ?? ""),
+        files: Effect.sync(() => [...(options?.files ?? [])]),
+        commits: Effect.sync(() => [...(options?.commits ?? [])]),
+        mergeable: Effect.sync(() => options?.mergeable ?? null),
         merge: () => Effect.void,
         requestReview: () => Effect.void
       })

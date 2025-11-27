@@ -22,12 +22,12 @@
  *
  * @since 1.0.0
  */
-import type { IssueCommentEvent } from "@octokit/webhooks-types"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as ActionClient from "./ActionClient.js"
 import * as ActionContext from "./ActionContext.js"
 import { ActionContextError } from "./ActionError.js"
+import { getCommentPayload } from "./internal/payload.js"
 
 /**
  * Reaction types supported by GitHub.
@@ -56,8 +56,8 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
     const ctx = yield* ActionContext.ActionContext
     const client = yield* ActionClient.ActionClient
 
-    // Validate we're in an issue_comment event
-    if (ctx.eventName !== "issue_comment") {
+    const data = getCommentPayload(ctx)
+    if (!data) {
       return yield* Effect.fail(
         new ActionContextError({
           reason: "EventMismatch",
@@ -66,48 +66,40 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
       )
     }
 
-    const payload = ctx.payload as unknown as IssueCommentEvent
-
-    const owner = payload.repository.owner.login
-    const repo = payload.repository.name
-    const issueNumber = payload.issue.number
-    const commentId = payload.comment.id
+    const { owner, repo, issueNumber, comment, action } = data
 
     return {
-      /**
-       * The comment ID.
-       */
-      id: Effect.succeed(commentId),
+      /** The comment ID. */
+      id: Effect.sync(() => comment.id),
 
-      /**
-       * The comment body text.
-       */
-      body: Effect.succeed(payload.comment.body),
+      /** The comment body text. */
+      body: Effect.sync(() => comment.body),
 
-      /**
-       * The comment author's GitHub login.
-       */
-      author: Effect.succeed(payload.comment.user.login),
+      /** The comment author's GitHub login. */
+      author: Effect.sync(() => comment.user.login),
 
-      /**
-       * The action that triggered this event: "created", "edited", or "deleted".
-       */
-      action: Effect.succeed(payload.action),
+      /** The action that triggered this event: "created", "edited", or "deleted". */
+      action: Effect.sync(() => action),
 
-      /**
-       * Add a reaction to the comment.
-       */
+      /** The URL to this comment on GitHub. */
+      htmlUrl: Effect.sync(() => comment.html_url),
+
+      /** When the comment was created (ISO 8601). */
+      createdAt: Effect.sync(() => comment.created_at),
+
+      /** When the comment was last updated (ISO 8601). */
+      updatedAt: Effect.sync(() => comment.updated_at),
+
+      /** Add a reaction to the comment. */
       react: (reaction: Reaction) =>
         client.request("POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", {
           owner,
           repo,
-          comment_id: commentId,
+          comment_id: comment.id,
           content: reaction
         }).pipe(Effect.asVoid),
 
-      /**
-       * Reply to the issue/PR with a new comment.
-       */
+      /** Reply to the issue/PR with a new comment. */
       reply: (body: string) =>
         client.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
           owner,
@@ -116,16 +108,21 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
           body
         }).pipe(Effect.asVoid),
 
-      /**
-       * Update this comment's body.
-       */
+      /** Update this comment's body. */
       update: (body: string) =>
         client.request("PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}", {
           owner,
           repo,
-          comment_id: commentId,
+          comment_id: comment.id,
           body
-        }).pipe(Effect.asVoid)
+        }).pipe(Effect.asVoid),
+
+      /** Delete this comment. */
+      delete: client.request("DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}", {
+        owner,
+        repo,
+        comment_id: comment.id
+      }).pipe(Effect.asVoid)
     } as const
   }),
   dependencies: [ActionContext.layer, ActionClient.layer("")]
@@ -137,21 +134,28 @@ export class Comment extends Effect.Service<Comment>()("@effect-native/platform-
    * @category layers
    */
   static Test = (options: {
-    readonly id?: number
-    readonly body?: string
-    readonly author?: string
-    readonly action?: "created" | "edited" | "deleted"
+    readonly id: number
+    readonly body: string
+    readonly author: string
+    readonly action: "created" | "edited" | "deleted"
+    readonly htmlUrl?: string
+    readonly createdAt?: string
+    readonly updatedAt?: string
   }) =>
     Layer.succeed(
       Comment,
       new Comment({
-        id: Effect.succeed(options.id ?? 1),
-        body: Effect.succeed(options.body ?? "test comment"),
-        author: Effect.succeed(options.author ?? "testuser"),
-        action: Effect.succeed(options.action ?? "created"),
+        id: Effect.sync(() => options.id),
+        body: Effect.sync(() => options.body),
+        author: Effect.sync(() => options.author),
+        action: Effect.sync(() => options.action),
+        htmlUrl: Effect.sync(() => options.htmlUrl ?? ""),
+        createdAt: Effect.sync(() => options.createdAt ?? new Date().toISOString()),
+        updatedAt: Effect.sync(() => options.updatedAt ?? new Date().toISOString()),
         react: () => Effect.void,
         reply: () => Effect.void,
-        update: () => Effect.void
+        update: () => Effect.void,
+        delete: Effect.void
       })
     )
 }

@@ -24,12 +24,12 @@
  *
  * @since 1.0.0
  */
-import type { IssueCommentEvent, IssuesEvent } from "@octokit/webhooks-types"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as ActionClient from "./ActionClient.js"
 import * as ActionContext from "./ActionContext.js"
 import { ActionContextError } from "./ActionError.js"
+import { getIssuePayload } from "./internal/payload.js"
 
 /**
  * Issue service providing operations on the parent issue.
@@ -47,43 +47,15 @@ import { ActionContextError } from "./ActionError.js"
  * @since 1.0.0
  * @category service
  */
+
 export class Issue extends Effect.Service<Issue>()("@effect-native/platform-github/Issue", {
   accessors: true,
   effect: Effect.gen(function*() {
     const ctx = yield* ActionContext.ActionContext
     const client = yield* ActionClient.ActionClient
 
-    // Parse payload based on event type
-    let owner: string
-    let repo: string
-    let issueNumber: number
-    let issueTitle: string
-    let issueBody: string | null
-    let issueState: "open" | "closed" | "unknown"
-    let isPR: boolean
-    let issueLabels: ReadonlyArray<string>
-
-    if (ctx.eventName === "issue_comment") {
-      const payload = ctx.payload as unknown as IssueCommentEvent
-      owner = payload.repository.owner.login
-      repo = payload.repository.name
-      issueNumber = payload.issue.number
-      issueTitle = payload.issue.title
-      issueBody = payload.issue.body
-      issueState = payload.issue.state
-      isPR = payload.issue.pull_request !== undefined
-      issueLabels = payload.issue.labels?.map((l) => l.name) ?? []
-    } else if (ctx.eventName === "issues") {
-      const payload = ctx.payload as unknown as IssuesEvent
-      owner = payload.repository.owner.login
-      repo = payload.repository.name
-      issueNumber = payload.issue.number
-      issueTitle = payload.issue.title
-      issueBody = payload.issue.body
-      issueState = payload.issue.state ?? "unknown"
-      isPR = payload.issue.pull_request !== undefined
-      issueLabels = payload.issue.labels?.map((l) => l.name) ?? []
-    } else {
+    const data = getIssuePayload(ctx)
+    if (!data) {
       return yield* Effect.fail(
         new ActionContextError({
           reason: "EventMismatch",
@@ -92,76 +64,58 @@ export class Issue extends Effect.Service<Issue>()("@effect-native/platform-gith
       )
     }
 
+    const { owner, repo, issue } = data
+
     return {
-      /**
-       * The issue number.
-       */
-      number: Effect.succeed(issueNumber),
+      /** The issue number. */
+      number: Effect.sync(() => issue.number),
 
-      /**
-       * The issue title.
-       */
-      title: Effect.succeed(issueTitle),
+      /** The issue title. */
+      title: Effect.sync(() => issue.title),
 
-      /**
-       * The issue body (may be null).
-       */
-      body: Effect.succeed(issueBody),
+      /** The issue body (may be null). */
+      body: Effect.sync(() => issue.body ?? null),
 
-      /**
-       * The issue state: "open" or "closed".
-       */
-      state: Effect.succeed(issueState),
+      /** The issue state: "open" or "closed". */
+      state: Effect.sync(() => issue.state as "open" | "closed"),
 
-      /**
-       * Whether this issue is actually a pull request.
-       */
-      isPullRequest: Effect.succeed(isPR),
+      /** Whether this issue is actually a pull request. */
+      isPullRequest: Effect.sync(() => issue.pull_request !== undefined),
 
-      /**
-       * The issue's labels.
-       */
-      labels: Effect.succeed(issueLabels),
+      /** The issue's labels. */
+      labels: Effect.sync((): ReadonlyArray<string> => issue.labels?.map((l) => l.name) ?? []),
 
-      /**
-       * Add a label to the issue.
-       */
-      addLabel: (label: string) =>
+      /** Add one or more labels to the issue. */
+      addLabel: (label: string, ...labels: ReadonlyArray<string>) =>
         client.request("POST /repos/{owner}/{repo}/issues/{issue_number}/labels", {
           owner,
           repo,
-          issue_number: issueNumber,
-          labels: [label]
+          issue_number: issue.number,
+          labels: [label, ...labels]
         }).pipe(Effect.asVoid),
 
-      /**
-       * Remove a label from the issue.
-       */
+      /** Remove a label from the issue. */
       removeLabel: (label: string) =>
         client.request("DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}", {
           owner,
           repo,
-          issue_number: issueNumber,
+          issue_number: issue.number,
           name: label
         }).pipe(Effect.asVoid),
 
-      /**
-       * Close the issue.
-       */
+      /** Close the issue. */
       close: client.request("PATCH /repos/{owner}/{repo}/issues/{issue_number}", {
         owner,
         repo,
-        issue_number: issueNumber,
+        issue_number: issue.number,
         state: "closed"
       }).pipe(Effect.asVoid),
 
-      /**
-       * Reopen the issue.
-       */
+      /** Reopen the issue. */
       reopen: client.request("PATCH /repos/{owner}/{repo}/issues/{issue_number}", {
         owner,
         repo,
-        issue_number: issueNumber,
+        issue_number: issue.number,
         state: "open"
       }).pipe(Effect.asVoid)
     } as const
@@ -175,22 +129,22 @@ export class Issue extends Effect.Service<Issue>()("@effect-native/platform-gith
    * @category layers
    */
   static Test = (options: {
-    readonly number?: number
-    readonly title?: string
-    readonly body?: string | null
-    readonly state?: "open" | "closed" | "unknown"
-    readonly isPullRequest?: boolean
+    readonly number: number
+    readonly title: string
+    readonly body: string | null
+    readonly state: "open" | "closed"
+    readonly isPullRequest: boolean
     readonly labels?: ReadonlyArray<string>
   }) =>
     Layer.succeed(
       Issue,
       new Issue({
-        number: Effect.succeed(options.number ?? 1),
-        title: Effect.succeed(options.title ?? "Test Issue"),
-        body: Effect.succeed(options.body ?? null),
-        state: Effect.succeed(options.state ?? "open"),
-        isPullRequest: Effect.succeed(options.isPullRequest ?? false),
-        labels: Effect.succeed(options.labels ?? []),
+        number: Effect.sync(() => options.number),
+        title: Effect.sync(() => options.title),
+        body: Effect.sync(() => options.body),
+        state: Effect.sync(() => options.state),
+        isPullRequest: Effect.sync(() => options.isPullRequest),
+        labels: Effect.sync(() => options.labels ?? []),
         addLabel: () => Effect.void,
         removeLabel: () => Effect.void,
         close: Effect.void,
