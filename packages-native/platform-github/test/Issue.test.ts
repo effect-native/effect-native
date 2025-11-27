@@ -245,7 +245,13 @@ describe("Issue", () => {
 
     it.effect("Issue.Test operations are no-ops", () =>
       Effect.gen(function*() {
-        const testLayer = Issue.Test({})
+        const testLayer = Issue.Test({
+          number: 1,
+          title: "Test",
+          body: "Test body",
+          state: "open",
+          isPullRequest: false
+        })
 
         yield* Issue.addLabel("test").pipe(Effect.provide(testLayer))
         yield* Issue.removeLabel("test").pipe(Effect.provide(testLayer))

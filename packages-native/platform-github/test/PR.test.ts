@@ -270,6 +270,7 @@ describe("PR", () => {
           baseRef: "main",
           draft: true,
           diff: "diff --git a/file.ts",
+          // @ts-expect-error - partial mock for testing
           files: [{ filename: "file.ts", status: "modified", additions: 10, deletions: 5, changes: 15 }],
           commits: [{ sha: "abc123", message: "test commit", author: "tester" }],
           mergeable: true

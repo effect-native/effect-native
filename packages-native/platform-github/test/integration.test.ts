@@ -286,6 +286,7 @@ describe("Integration", () => {
             baseRef: "main",
             draft: false,
             diff: "diff content",
+            // @ts-expect-error - partial mock for testing
             files: [{ filename: "test.ts", status: "modified", additions: 1, deletions: 0, changes: 1 }],
             commits: [{ sha: "abc", message: "test", author: "tester" }],
             mergeable: true
