@@ -29,21 +29,18 @@ export const ActionClient = GenericTag<Api.ActionClient>(
  * @internal
  */
 export const make = (token: string): Api.ActionClient => {
+  // eager validation -- config issues should happen fast and loud
+  if (!token) {
+    throw new Error(
+      "GitHub token is required for API access. " +
+        "Provide it via the 'github-token' input or GITHUB_TOKEN environment variable."
+    )
+  }
+
   // Lazy initialization - only create octokit when first needed
   let octokit: ReturnType<typeof github.getOctokit> | undefined
 
-  const getOctokit = (): ReturnType<typeof github.getOctokit> => {
-    if (!octokit) {
-      if (!token) {
-        throw new Error(
-          "GitHub token is required for API access. " +
-            "Provide it via the 'github-token' input or GITHUB_TOKEN environment variable."
-        )
-      }
-      octokit = github.getOctokit(token)
-    }
-    return octokit
-  }
+  const getOctokit = () => octokit ??= github.getOctokit(token)
 
   return {
     [TypeId]: TypeId,
