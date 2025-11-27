@@ -68,3 +68,54 @@ export * as EventPayload from "./EventPayload.js"
  * @since 1.0.0
  */
 export * as ConsoleGitHubActions from "./ConsoleGitHubActions.js"
+
+// =============================================================================
+// High-level DX modules (Effect.Service with accessors)
+// =============================================================================
+
+/**
+ * High-level operations on the triggering comment.
+ *
+ * @example
+ * ```ts
+ * import { Comment } from "@effect-native/platform-github"
+ *
+ * yield* Comment.react("eyes")
+ * yield* Comment.reply("Thanks!")
+ * ```
+ *
+ * @since 1.0.0
+ */
+export * as Comment from "./Comment.js"
+
+/**
+ * High-level operations on the parent issue.
+ *
+ * @example
+ * ```ts
+ * import { Issue } from "@effect-native/platform-github"
+ *
+ * const num = yield* Issue.number
+ * const isPR = yield* Issue.isPullRequest
+ * ```
+ *
+ * @since 1.0.0
+ */
+export * as Issue from "./Issue.js"
+
+/**
+ * High-level operations on pull requests.
+ *
+ * Note: All PR accessors auto-fail if not in a PR context (pit of success).
+ *
+ * @example
+ * ```ts
+ * import { PR } from "@effect-native/platform-github"
+ *
+ * const diff = yield* PR.diff
+ * const files = yield* PR.files
+ * ```
+ *
+ * @since 1.0.0
+ */
+export * as PR from "./PR.js"
