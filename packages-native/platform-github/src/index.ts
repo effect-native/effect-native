@@ -72,27 +72,34 @@ export * as ConsoleGitHubActions from "./ConsoleGitHubActions.js"
 // =============================================================================
 // High-level DX modules (Effect.Service with accessors)
 //
-// Import the class directly for cleaner usage:
+// These services provide clean, Effect-idiomatic APIs:
 //   import { Comment, Issue, PR } from "@effect-native/platform-github"
-//   yield* Comment.Comment.body  // with namespace
-//
-// Or use subpath imports:
-//   import { Comment } from "@effect-native/platform-github/Comment"
-//   yield* Comment.body  // direct accessor!
+//   yield* Comment.body      // accessor Effect
+//   yield* Comment.react("eyes")  // method
 // =============================================================================
 
 /**
+ * High-level service for the triggering comment.
  * @since 1.0.0
  */
-export * as Comment from "./Comment.js"
+export { Comment } from "./Comment.js"
 
 /**
+ * High-level service for the parent issue.
  * @since 1.0.0
  */
-export * as Issue from "./Issue.js"
+export { Issue } from "./Issue.js"
 
 /**
+ * High-level service for pull requests.
  * @since 1.0.0
  */
-export * as PR from "./PR.js"
+export { PR, NotPullRequestError } from "./PR.js"
+
+/**
+ * Types from the high-level modules.
+ * @since 1.0.0
+ */
+export type { Reaction, CommentAction } from "./Comment.js"
+export type { PRFile, PRCommit } from "./PR.js"
 
