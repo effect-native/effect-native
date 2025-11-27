@@ -35,8 +35,8 @@ export type {
   IssueCommentEvent,
   IssuesEvent,
   PullRequestEvent,
-  PullRequestReviewEvent,
   PullRequestReviewCommentEvent,
+  PullRequestReviewEvent,
   PushEvent,
   WorkflowDispatchEvent
 } from "@octokit/webhooks-types"
@@ -267,14 +267,14 @@ export const typedPayload: <E extends WebhookEventName>(
 ) => Effect.Effect<EventPayloadMap[E], ActionContextError, ActionContext> = <E extends WebhookEventName>(
   expectedEventName: E
 ) =>
-    Effect.flatMap(ActionContext, (ctx) => {
-      if (ctx.eventName !== expectedEventName) {
-        return Effect.fail(
-          new ActionContextError({
-            reason: "EventMismatch",
-            description: `Expected event '${expectedEventName}' but got '${ctx.eventName}'`
-          })
-        )
-      }
-      return Effect.succeed(ctx.payload as EventPayloadMap[E])
-    })
+  Effect.flatMap(ActionContext, (ctx) => {
+    if (ctx.eventName !== expectedEventName) {
+      return Effect.fail(
+        new ActionContextError({
+          reason: "EventMismatch",
+          description: `Expected event '${expectedEventName}' but got '${ctx.eventName}'`
+        })
+      )
+    }
+    return Effect.succeed(ctx.payload as EventPayloadMap[E])
+  })

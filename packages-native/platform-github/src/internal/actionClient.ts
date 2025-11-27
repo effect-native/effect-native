@@ -18,18 +18,42 @@ export const ActionClient = GenericTag<Api.ActionClient>(
   "@effect-native/platform-github/ActionClient"
 )
 
-/** @internal */
+/**
+ * Create ActionClient with lazy Octokit initialization.
+ *
+ * The Octokit client is created on first use, not at layer construction time.
+ * This allows actions that don't use the GitHub API to run without a token.
+ *
+ * @internal
+ */
 export const make = (token: string): Api.ActionClient => {
-  const octokit = github.getOctokit(token)
+  // Lazy initialization - only create octokit when first needed
+  let octokit: ReturnType<typeof github.getOctokit> | undefined
+
+  const getOctokit = (): ReturnType<typeof github.getOctokit> => {
+    if (!octokit) {
+      if (!token) {
+        throw new Error(
+          "GitHub token is required for API access. " +
+            "Provide it via the 'github-token' input or GITHUB_TOKEN environment variable."
+        )
+      }
+      octokit = github.getOctokit(token)
+    }
+    return octokit
+  }
 
   return {
     [TypeId]: TypeId,
 
-    octokit,
+    // Getter that lazily creates the octokit
+    get octokit() {
+      return getOctokit()
+    },
 
     request: <T>(route: string, options?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => octokit.request(route, options) as Promise<T>,
+        try: () => getOctokit().request(route, options) as Promise<T>,
         catch: (error) =>
           new ActionApiError({
             method: route,
@@ -41,7 +65,7 @@ export const make = (token: string): Api.ActionClient => {
 
     graphql: <T>(query: string, variables?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => octokit.graphql<T>(query, variables),
+        try: () => getOctokit().graphql<T>(query, variables),
         catch: (error) =>
           new ActionApiError({
             method: "graphql",
@@ -52,7 +76,7 @@ export const make = (token: string): Api.ActionClient => {
 
     paginate: <T>(route: string, options?: Record<string, unknown>) =>
       Effect.tryPromise({
-        try: () => octokit.paginate(route, options) as Promise<ReadonlyArray<T>>,
+        try: () => getOctokit().paginate(route, options) as Promise<ReadonlyArray<T>>,
         catch: (error) =>
           new ActionApiError({
             method: route,

@@ -173,12 +173,14 @@ export const runMain = <E, A>(
   effect: Effect.Effect<A, E, ActionRequirements>,
   options?: RunMainOptions
 ): void => {
-  // Get token from options, action input, or environment
-  // GitHub Actions exposes inputs as INPUT_<NAME> env vars (uppercase, hyphens become underscores)
+  // Get token from options, action input (via @actions/core), or environment.
+  // Using core.getInput handles the INPUT_<NAME> env var lookup correctly.
+  // Note: GitHub Actions preserves hyphens in env vars, so 'github-token' becomes
+  // INPUT_GITHUB-TOKEN (not INPUT_GITHUB_TOKEN).
   const githubToken = options?.token
-    ?? process.env.INPUT_GITHUB_TOKEN
-    ?? process.env.GITHUB_TOKEN
-    ?? ""
+    || core.getInput("github-token")
+    || process.env.GITHUB_TOKEN
+    || ""
   const actionLayer = layer(githubToken)
 
   // Provide the layer

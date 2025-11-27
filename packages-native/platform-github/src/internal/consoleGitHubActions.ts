@@ -4,9 +4,9 @@
  * @internal
  */
 import type * as Console from "effect/Console"
+import * as ConsoleModule from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ConsoleModule from "effect/Console"
 import type * as ActionRunnerApi from "../ActionRunner.js"
 import * as ActionRunner from "./actionRunner.js"
 
@@ -24,8 +24,7 @@ const formatArgs = (args: ReadonlyArray<unknown>): string =>
 const make = Effect.map(ActionRunner.ActionRunner, (runner): Console.Console => ({
   [ConsoleModule.TypeId]: ConsoleModule.TypeId,
 
-  assert: (condition, ...args) =>
-    condition ? Effect.void : runner.warning(`Assertion failed: ${formatArgs(args)}`),
+  assert: (condition, ...args) => condition ? Effect.void : runner.warning(`Assertion failed: ${formatArgs(args)}`),
 
   clear: Effect.void, // No-op in GitHub Actions
 
@@ -70,5 +69,6 @@ const make = Effect.map(ActionRunner.ActionRunner, (runner): Console.Console => 
  * Requires ActionRunner to be provided.
  * @internal
  */
-export const layer: Layer.Layer<never, never, ActionRunnerApi.ActionRunner> =
-  Layer.unwrapEffect(Effect.map(make, ConsoleModule.setConsole))
+export const layer: Layer.Layer<never, never, ActionRunnerApi.ActionRunner> = Layer.unwrapEffect(
+  Effect.map(make, ConsoleModule.setConsole)
+)
