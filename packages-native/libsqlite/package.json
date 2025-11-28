@@ -39,7 +39,7 @@
     "prepublishOnly": "pnpm build && node scripts/verify-exports.mjs"
   },
   "peerDependencies": {
-    "effect": "^3.0.0"
+    "effect": "^3.19.0"
   },
   "peerDependenciesMeta": {
     "effect": {

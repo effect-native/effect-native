@@ -34,7 +34,7 @@
   },
   "peerDependencies": {
     "@effect/sql": "*",
-    "effect": "^3.0.0"
+    "effect": "^3.19.0"
   },
   "devDependencies": {
     "@effect-native/libcrsql": "workspace:^",
