@@ -2,25 +2,14 @@ import * as Fs from "node:fs"
 import * as Path from "node:path"
 
 function packages() {
-  const packagesInMain = Fs.readdirSync("packages")
-  const packagesInAi = Fs.readdirSync("packages/ai").map((dir) => ({
-    name: Path.join("ai", dir),
-    basePath: Path.join("packages", "ai", dir)
-  }))
-
   const packagesInNative = Fs.existsSync("packages-native")
     ? Fs.readdirSync("packages-native").map((dir) => ({
-      name: Path.join("native", dir), // Safe identifier without ../
+      name: dir,
       basePath: Path.join("packages-native", dir)
     }))
     : []
 
-  const mainPackages = packagesInMain.map((dir) => ({
-    name: dir,
-    basePath: Path.join("packages", dir)
-  }))
-
-  return [...mainPackages, ...packagesInAi, ...packagesInNative].filter(
+  return packagesInNative.filter(
     (pkg) =>
       Fs.existsSync(Path.join(pkg.basePath, "package.json")) &&
       Fs.existsSync(Path.join(pkg.basePath, "docs/modules"))
@@ -35,7 +24,7 @@ function pkgName(pkg) {
 function copyFiles(pkg) {
   const name = pkgName(pkg)
   const docs = Path.join(pkg.basePath, "docs/modules")
-  const dest = Path.join("docs", pkg.name) // Safe: no path traversal possible
+  const dest = Path.join("docs", pkg.name)
   const files = Fs.readdirSync(docs, { withFileTypes: true })
 
   function handleFiles(root, files) {

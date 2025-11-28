@@ -155,26 +155,20 @@ In practice: relying on `nix develop` 100% of the time avoids ABI mismatches and
 
 ### Repository Context
 
-This is the `effect-native/effect-native` repository - a fork of `Effect-TS/effect` with additional native packages and tooling.
+This is the `effect-native/effect-native` repository - a standalone Effect-based monorepo for native platform packages and tooling. Effect is used as a dependency, not as an upstream source.
 
-- **origin**: `https://github.com/effect-native/effect-native.git` (our fork)
-- **upstream**: `https://github.com/Effect-TS/effect.git` (upstream Effect-TS)
+- **origin**: `https://github.com/effect-native/effect-native.git`
 
 ### Pull Request Defaults
 
-**When creating pull requests, ALWAYS target the `effect-native/effect-native` repository by default:**
+**Use standard `gh pr create` behavior - no special handling needed:**
 
 ```bash
-# ✅ Correct - PR to our fork
-gh pr create --repo effect-native/effect-native --base effect-native/main --head feature-branch
+# Standard PR creation
+gh pr create --base main
 
-# ❌ Wrong - PR to upstream (only do this when explicitly asked)
-gh pr create # defaults to upstream when in a fork
+# Or with explicit repo (equivalent)
+gh pr create --repo effect-native/effect-native --base main
 ```
 
-**Rationale:**
-- Most development happens in our fork
-- PRs to upstream require explicit intent and coordination
-- Accidentally creating PRs to upstream creates noise and confusion
-
-**Exception:** Only create PRs to upstream `Effect-TS/effect` when explicitly asked to contribute changes upstream.
+**Note:** Always use `main` as the base branch for PRs in this repository.
