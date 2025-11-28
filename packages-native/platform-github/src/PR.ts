@@ -278,10 +278,14 @@ export class PR extends Effect.Service<PR>()("@effect-native/platform-github/PR"
       PR,
       new PR({
         number: Effect.sync(() => options?.number ?? 1),
-        payload: Effect.sync(() => ({}) as PullRequestResponse),
-        head: Effect.sync(() => ({ ref: options?.headRef ?? "feature-branch" }) as PullRequestResponse["head"]),
+        payload: Effect.sync(() => (({}) as PullRequestResponse)),
+        head: Effect.sync(() => (({
+          ref: options?.headRef ?? "feature-branch"
+        }) as PullRequestResponse["head"])),
         headRef: Effect.sync(() => options?.headRef ?? "feature-branch"),
-        base: Effect.sync(() => ({ ref: options?.baseRef ?? "main" }) as PullRequestResponse["base"]),
+        base: Effect.sync(() => (({
+          ref: options?.baseRef ?? "main"
+        }) as PullRequestResponse["base"])),
         baseRef: Effect.sync(() => options?.baseRef ?? "main"),
         draft: Effect.sync(() => options?.draft ?? false),
         diff: Effect.sync(() => options?.diff ?? ""),
