@@ -23,7 +23,7 @@
     "@effect-native/platform-github": "workspace:*"
   },
   "peerDependencies": {
-    "effect": "*"
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "effect": "latest"

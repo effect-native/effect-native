@@ -37,7 +37,7 @@
   },
   "peerDependencies": {
     "@types/bun": "*",
-    "effect": "*"
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.21",
