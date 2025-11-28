@@ -1,0 +1,6 @@
+[submodule "refs/effect-smol"]
+	path = refs/effect-smol
+	url = https://github.com/Effect-TS/effect-smol.git
+[submodule "refs/effect"]
+	path = refs/effect
+	url = https://github.com/Effect-TS/effect.git
