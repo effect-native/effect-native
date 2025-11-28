@@ -40,14 +40,14 @@
     "coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@effect/cli": "^0.69.2",
-    "@effect/platform": "^0.91.1",
-    "@effect/platform-node": "^0.96.1",
     "@effect-native/schemas": "workspace:*",
-    "effect": "^3.17.13"
+    "@effect/cli": "latest",
+    "@effect/platform": "latest",
+    "@effect/platform-node": "latest",
+    "effect": "latest"
   },
   "devDependencies": {
-    "@effect/vitest": "^0.25.1"
+    "@effect/vitest": "latest"
   },
   "files": [
     "build",

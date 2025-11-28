@@ -39,9 +39,9 @@
     "coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@effect/cli": "^0.69.2",
-    "@effect/platform-node": "^0.96.1",
-    "effect": "^3.17.13"
+    "@effect/cli": "latest",
+    "@effect/platform-node": "latest",
+    "effect": "latest"
   },
   "files": [
     "build",

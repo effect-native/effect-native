@@ -38,7 +38,7 @@
     "coverage": "vitest --coverage"
   },
   "peerDependencies": {
-    "effect": "*"
+    "effect": "^3.19.0"
   },
   "devDependencies": {
     "effect": "latest",
