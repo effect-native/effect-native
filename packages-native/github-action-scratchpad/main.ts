@@ -7,7 +7,7 @@
  * - Type-safe inputs with Schema validation
  * - Clean error handling with pit-of-success patterns
  */
-import { Action, ActionRunner, Comment, Input, Issue, PR } from "@effect-native/platform-github"
+import { Action, ActionRunner, Comment, GithubToken, Input, Issue, PR } from "@effect-native/platform-github"
 import { Console, Effect, Layer } from "effect"
 
 const program = Effect.gen(function*() {
@@ -111,12 +111,22 @@ const program = Effect.gen(function*() {
   yield* ActionRunner.notice("Effect GitHub Action completed!", { title: "Success" })
 })
 
-// Provide high-level service layers, then run
-// Action.runMain provides the base layers (ActionRunner, ActionContext, ActionClient)
-const DxLayer = Layer.mergeAll(
+// Build the full layer:
+// 1. GithubToken.layer provides the token from env
+// 2. Action.Default uses GithubToken to provide ActionRequirements (incl. ActionRunner)
+// 3. Comment/Issue/PR.Default use ActionContext and ActionClient
+// Use provideMerge to keep Action.Default's outputs available
+const FullLayer = Layer.mergeAll(
   Comment.Default,
   Issue.Default,
   PR.Default
+).pipe(
+  Layer.provideMerge(Action.Default),
+  Layer.provide(GithubToken.layer)
 )
 
-Action.runMain(program.pipe(Effect.provide(DxLayer)))
+// Run the program with all dependencies satisfied
+Effect.runPromise(Effect.provide(program, FullLayer)).catch((e) => {
+  console.error(e)
+  process.exit(1)
+})
