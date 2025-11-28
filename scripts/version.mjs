@@ -1,9 +1,3 @@
-import * as Fs from "node:fs"
-import Package from "../packages/effect/package.json" with { type: "json" }
-
-const tpl = Fs.readFileSync("./scripts/version.template.txt").toString("utf8")
-
-Fs.writeFileSync(
-  "packages/effect/src/internal/version.ts",
-  tpl.replace("VERSION", Package.version)
-)
+// No-op: This script was used to update effect's internal version.ts
+// After breaking the fork from Effect-TS/effect, this is no longer needed.
+// Keeping the file as a no-op to avoid breaking the changeset-version script.
