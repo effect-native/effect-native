@@ -1,130 +1,88 @@
 /**
- * Main entry point for the GitHub Action Demo
+ * GitHub Action Test - @effect-native/platform-github
  *
- * This file demonstrates @effect-native/platform-github for building
- * GitHub Actions with Effect. Runs on Node.js 24 with native TypeScript support.
+ * Tests the core functionality on pull_request events:
+ * - Console.log routes to GitHub Actions UI automatically
+ * - ActionContext provides event/repo context
+ * - ActionClient provides GitHub API access
+ * - Type-safe inputs with Schema validation
  */
-import {
-  Action,
-  ActionClient,
-  ActionContext,
-  ActionRunner,
-  Input
-} from "@effect-native/platform-github"
-import * as Effect from "effect/Effect"
+import { Action, ActionContext, ActionRunner, GithubToken, Input, PR } from "@effect-native/platform-github"
+import { Console, Effect, Layer } from "effect"
 
-/**
- * The main action logic using Effect
- *
- * Demonstrates the full Effect-based GitHub Action toolkit:
- * - Reading inputs via Input module (Schema-first parsing)
- * - Accessing workflow context via ActionContext
- * - Making API calls via ActionClient (Octokit)
- * - Structured logging with groups
- * - Setting outputs
- */
-const program = Effect.gen(function* () {
-  // Parse inputs using the new Input module
-  // github-token is handled internally by Action.runMain via GITHUB_TOKEN env var
-  // Here we demonstrate optional inputs with defaults
-  const verbose = yield* Input.boolean("verbose").pipe(
-    Effect.orElseSucceed(() => false)
-  )
+const program = Effect.gen(function*() {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Console.log just works - routes to GitHub Actions UI via ConsoleGitHubActions
+  // ─────────────────────────────────────────────────────────────────────────────
+  yield* Console.log("Starting Effect GitHub Action test...")
 
-  // Get workflow context
-  const eventName = yield* ActionContext.eventName
-  const actor = yield* ActionContext.actor
-  const sha = yield* ActionContext.sha
-  const ref = yield* ActionContext.ref
-  const workflow = yield* ActionContext.workflow
-  const runId = yield* ActionContext.runId
-  const runNumber = yield* ActionContext.runNumber
-  const serverUrl = yield* ActionContext.serverUrl
-  const payload = yield* ActionContext.payload
-  const repo = yield* ActionContext.repo
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Type-safe inputs with Schema validation
+  // ─────────────────────────────────────────────────────────────────────────────
+  const verbose = yield* Input.boolean("verbose").pipe(Effect.orElseSucceed(() => false))
 
-  yield* ActionRunner.group("Workflow Context", () =>
-    Effect.gen(function* () {
-      yield* ActionRunner.info(`Event: ${eventName}`)
-      yield* ActionRunner.info(`Repository: ${repo.owner}/${repo.repo}`)
-      yield* ActionRunner.info(`Actor: ${actor}`)
-      yield* ActionRunner.info(`SHA: ${sha.substring(0, 7)}`)
-      yield* ActionRunner.info(`Ref: ${ref}`)
-      yield* ActionRunner.info(`Workflow: ${workflow}`)
-      yield* ActionRunner.info(`Run ID: ${runId}`)
-      yield* ActionRunner.info(`Run Number: ${runNumber}`)
-      if (verbose) {
-        yield* ActionRunner.debug(`Server URL: ${serverUrl}`)
-        yield* ActionRunner.debug(`Full SHA: ${sha}`)
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ActionContext - works for any event type
+  // ─────────────────────────────────────────────────────────────────────────────
+  const ctx = yield* ActionContext.ActionContext
+  const repoCtx = yield* ctx.repo
+
+  yield* Console.log(`Event: ${ctx.eventName}`)
+  yield* Console.log(`Repo: ${repoCtx.owner}/${repoCtx.repo}`)
+  yield* Console.log(`Actor: ${ctx.actor}`)
+  yield* Console.log(`SHA: ${ctx.sha.slice(0, 7)}`)
+  yield* Console.log(`Ref: ${ctx.ref}`)
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PR service - only used when event is pull_request
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (ctx.eventName === "pull_request") {
+    const prNumber = yield* PR.number
+    const headRef = yield* PR.headRef
+    const baseRef = yield* PR.baseRef
+    const files = yield* PR.files
+    const draft = yield* PR.draft
+
+    yield* Console.log(`PR #${prNumber}: ${headRef} → ${baseRef}`)
+    yield* Console.log(`Files changed: ${files.length}${draft ? " (draft)" : ""}`)
+
+    if (verbose) {
+      for (const file of files.slice(0, 5)) {
+        yield* Console.log(`  ${file.status}: ${file.filename}`)
       }
-    })
-  )
+      if (files.length > 5) {
+        yield* Console.log(`  ... and ${files.length - 5} more`)
+      }
+    }
 
-  // Only comment on PRs
-  const prNumber = (payload as { pull_request?: { number?: number } }).pull_request?.number
-  if (prNumber) {
-    yield* ActionRunner.group("Creating PR Comment", () =>
-      Effect.gen(function* () {
-        yield* ActionRunner.info(`PR #${prNumber} detected`)
-
-        const commentBody = [
-          "## Effect GitHub Action Demo",
-          "",
-          "This comment was created using **@effect-native/platform-github** running on Node.js with native TypeScript support.",
-          "",
-          "### Workflow Context",
-          "",
-          "| Property | Value |",
-          "|----------|-------|",
-          `| Event | \`${eventName}\` |`,
-          `| Actor | @${actor} |`,
-          `| SHA | \`${sha.substring(0, 7)}\` |`,
-          `| Ref | \`${ref}\` |`,
-          `| Workflow | ${workflow} |`,
-          `| Run | [#${runNumber}](${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}) |`,
-          "",
-          "### Technical Details",
-          "",
-          "- **Runtime**: Node.js 24 with native TypeScript support",
-          "- **Package**: `@effect-native/platform-github`",
-          "- **Services Used**:",
-          "  - `Input` - Schema-first input parsing",
-          "  - `ActionRunner` - Logging, outputs",
-          "  - `ActionContext` - Workflow metadata",
-          "  - `ActionClient` - Octokit API client",
-          "",
-          "---",
-          `*Timestamp: ${new Date().toISOString()}*`
-        ].join("\n")
-
-        // Create the comment using ActionClient
-        yield* ActionClient.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
-          owner: repo.owner,
-          repo: repo.repo,
-          issue_number: prNumber,
-          body: commentBody
-        })
-
-        yield* ActionRunner.info(`Comment created on PR #${prNumber}`)
-      })
-    )
-  } else {
-    yield* ActionRunner.info("Not a PR event, skipping comment creation")
+    // Set outputs
+    yield* ActionRunner.setOutput("pr-number", String(prNumber))
   }
 
-  // Set outputs
-  yield* ActionRunner.setOutput("repo", `${repo.owner}/${repo.repo}`)
-  yield* ActionRunner.setOutput("sha", sha)
-  yield* ActionRunner.setOutput("actor", actor)
-  yield* ActionRunner.setOutput("event", eventName)
-
-  yield* ActionRunner.notice(`Effect GitHub Action completed successfully!`, {
-    title: "Action Complete"
-  })
-
-  return { repo, sha, actor }
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Set outputs and finish
+  // ─────────────────────────────────────────────────────────────────────────────
+  yield* ActionRunner.setOutput("repo", `${repoCtx.owner}/${repoCtx.repo}`)
+  yield* ActionRunner.setOutput("sha", ctx.sha)
+  yield* ActionRunner.setOutput("actor", ctx.actor)
+  yield* ActionRunner.setOutput("event", ctx.eventName)
+  yield* ActionRunner.notice("Effect GitHub Action completed!", { title: "Success" })
 })
 
-// Run the action - errors are handled automatically by runMain
-// InputValidationFailure and ActionFailed are formatted nicely for GitHub UI
-Action.runMain(program)
+// Build the layer:
+// 1. Action.Default provides ActionRequirements but requires GithubToken
+// 2. PR.Default provides PR service but requires ActionContext and ActionClient
+// 3. GithubToken.layer provides the token from env
+// We need to provide GithubToken to both Action.Default and PR.Default's dependencies
+const FullLayer = Layer.mergeAll(
+  Action.Default,
+  PR.Default
+).pipe(
+  Layer.provide(GithubToken.layer)
+)
+
+// Run the program with all dependencies satisfied
+Effect.runPromise(Effect.provide(program, FullLayer)).catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

@@ -10,10 +10,12 @@
  * @since 1.0.0
  */
 import type { GitHub } from "@actions/github/lib/utils.js"
+import type { RequestParameters } from "@octokit/types"
 import type { Tag } from "effect/Context"
 import * as Effect from "effect/Effect"
 import type * as Layer from "effect/Layer"
 import type { ActionApiError } from "./ActionError.js"
+import type * as GithubToken from "./GithubToken.js"
 import * as internal from "./internal/actionClient.js"
 
 /**
@@ -51,7 +53,7 @@ export interface ActionClient {
    */
   readonly request: <T>(
     route: string,
-    options?: Record<string, unknown>
+    options?: RequestParameters
   ) => Effect.Effect<T, ActionApiError>
 
   /**
@@ -67,7 +69,7 @@ export interface ActionClient {
    */
   readonly paginate: <T>(
     route: string,
-    options?: Record<string, unknown>
+    options?: RequestParameters
   ) => Effect.Effect<ReadonlyArray<T>, ActionApiError>
 }
 
@@ -78,8 +80,19 @@ export interface ActionClient {
 export const ActionClient: Tag<ActionClient, ActionClient> = internal.ActionClient
 
 /**
+ * Default layer that reads token from GithubToken service.
+ *
  * @since 1.0.0
  * @category layers
+ */
+export const Default: Layer.Layer<ActionClient, never, GithubToken.GithubToken> = internal.Default
+
+/**
+ * Layer that creates ActionClient from a raw token string.
+ *
+ * @since 1.0.0
+ * @category layers
+ * @deprecated Use `Default` which reads from GithubToken service, or provide GithubToken.layerFromString
  */
 export const layer: (token: string) => Layer.Layer<ActionClient> = internal.layer
 
@@ -95,7 +108,7 @@ export const octokit: Effect.Effect<Octokit, never, ActionClient> = Effect.map(A
  */
 export const request: <T>(
   route: string,
-  options?: Record<string, unknown>
+  options?: RequestParameters
 ) => Effect.Effect<T, ActionApiError, ActionClient> = (route, options) =>
   Effect.flatMap(ActionClient, (client) => client.request(route, options))
 
@@ -115,6 +128,6 @@ export const graphql: <T>(
  */
 export const paginate: <T>(
   route: string,
-  options?: Record<string, unknown>
+  options?: RequestParameters
 ) => Effect.Effect<ReadonlyArray<T>, ActionApiError, ActionClient> = (route, options) =>
   Effect.flatMap(ActionClient, (client) => client.paginate(route, options))

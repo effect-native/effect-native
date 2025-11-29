@@ -40,6 +40,12 @@ export * as ActionClient from "./ActionClient.js"
 export * as ActionClientTest from "./ActionClientTest.js"
 
 /**
+ * GitHub token service for secure API authentication.
+ * @since 1.0.0
+ */
+export * as GithubToken from "./GithubToken.js"
+
+/**
  * @since 1.0.0
  */
 export * as ActionSummary from "./ActionSummary.js"
@@ -58,3 +64,47 @@ export * as Action from "./Action.js"
  * @since 1.0.0
  */
 export * as Input from "./Input.js"
+
+/**
+ * @since 1.0.0
+ */
+export * as EventPayload from "./EventPayload.js"
+
+/**
+ * @since 1.0.0
+ */
+export * as ConsoleGitHubActions from "./ConsoleGitHubActions.js"
+
+// =============================================================================
+// High-level DX modules (Effect.Service with accessors)
+//
+// These services provide clean, Effect-idiomatic APIs:
+//   import { Comment, Issue, PR } from "@effect-native/platform-github"
+//   yield* Comment.body      // accessor Effect
+//   yield* Comment.react("eyes")  // method
+// =============================================================================
+
+/**
+ * High-level service for the triggering comment.
+ * @since 1.0.0
+ */
+export { Comment } from "./Comment.js"
+
+/**
+ * High-level service for the parent issue.
+ * @since 1.0.0
+ */
+export { Issue } from "./Issue.js"
+
+/**
+ * High-level service for pull requests.
+ * @since 1.0.0
+ */
+export { NotPullRequestError, PR } from "./PR.js"
+
+/**
+ * Types from the high-level modules.
+ * @since 1.0.0
+ */
+export type { CommentAction, Reaction } from "./Comment.js"
+export type { PRCommit, PRFile } from "./PR.js"

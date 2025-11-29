@@ -26,6 +26,8 @@ import * as ActionContext from "./ActionContext.js"
 import { isActionFailure } from "./ActionError.js"
 import * as ActionRunner from "./ActionRunner.js"
 import * as ActionSummary from "./ActionSummary.js"
+import * as GithubToken from "./GithubToken.js"
+import * as ConsoleGitHubActions from "./internal/consoleGitHubActions.js"
 
 /**
  * @since 1.0.0
@@ -54,16 +56,56 @@ export type ActionRequirements =
 /**
  * Layer providing all GitHub Action services.
  *
+ * Includes:
+ * - ActionRunner for @actions/core functionality
+ * - ActionContext for workflow/event context
+ * - ActionClient for GitHub API access (requires GithubToken)
+ * - ActionSummary for job summaries
+ * - Console layer that uses GitHub Actions workflow commands
+ *
  * @since 1.0.0
  * @category layers
  */
-export const layer = (token: string): Layer.Layer<ActionRequirements> =>
-  Layer.mergeAll(
+export const Default: Layer.Layer<ActionRequirements, never, GithubToken.GithubToken> = (() => {
+  // First create the Console layer backed by ActionRunner
+  const consoleLayer = ConsoleGitHubActions.layer.pipe(
+    Layer.provide(ActionRunner.layer)
+  )
+
+  // Then compose all services
+  return Layer.mergeAll(
     ActionRunner.layer,
     ActionContext.layer,
-    ActionClient.layer(token),
+    ActionClient.Default,
     ActionSummary.layer
+  ).pipe(
+    // Merge the console layer (it's a Layer<never> so doesn't change requirements)
+    Layer.merge(consoleLayer)
   )
+})()
+
+/**
+ * Layer providing all GitHub Action services with token from environment.
+ *
+ * This is the most common layer - reads token from `github-token` input
+ * or `GITHUB_TOKEN` environment variable.
+ *
+ * @since 1.0.0
+ * @category layers
+ */
+export const layer: Layer.Layer<ActionRequirements> = Default.pipe(
+  Layer.provide(GithubToken.layer)
+)
+
+/**
+ * Create a layer with a specific token.
+ *
+ * @since 1.0.0
+ * @category layers
+ * @deprecated Use `layer` (reads from env) or provide GithubToken.layerFromString to `Default`
+ */
+export const layerFromToken = (token: string): Layer.Layer<ActionRequirements> =>
+  Default.pipe(Layer.provide(GithubToken.layerFromString(token)))
 
 /**
  * Options for runMain.
@@ -155,13 +197,10 @@ export const runMain = <E, A>(
   effect: Effect.Effect<A, E, ActionRequirements>,
   options?: RunMainOptions
 ): void => {
-  // Get token from options, action input, or environment
-  // GitHub Actions exposes inputs as INPUT_<NAME> env vars (uppercase, hyphens become underscores)
-  const githubToken = options?.token
-    ?? process.env.INPUT_GITHUB_TOKEN
-    ?? process.env.GITHUB_TOKEN
-    ?? ""
-  const actionLayer = layer(githubToken)
+  // Determine which layer to use based on options
+  const actionLayer = options?.token
+    ? layerFromToken(options.token)
+    : layer
 
   // Provide the layer
   const withLayer = Effect.provide(effect, actionLayer)
@@ -229,9 +268,9 @@ export const runMain = <E, A>(
  * @category running
  */
 export const makeRuntime = (
-  token: string
+  token?: string
 ): Effect.Effect<Runtime.Runtime<ActionRequirements>, never, never> => {
-  const actionLayer = layer(token)
+  const actionLayer = token ? layerFromToken(token) : layer
   return Effect.scoped(
     Effect.map(Layer.toRuntime(actionLayer), (rt) => rt as Runtime.Runtime<ActionRequirements>)
   )

@@ -51,8 +51,8 @@ importers:
         specifier: ^0.8.9
         version: 0.8.9
       '@effect/docgen':
-        specifier: ^0.4.7
-        version: 0.4.7(tsx@4.20.6)(typescript@5.9.3)
+        specifier: ^0.5.2
+        version: 0.5.2(tsx@4.20.6)(typescript@5.9.3)
       '@effect/eslint-plugin':
         specifier: ^0.3.2
         version: 0.3.2
@@ -316,6 +316,15 @@ importers:
       '@actions/github':
         specifier: ^6.0.1
         version: 6.0.1
+      '@octokit/openapi-types':
+        specifier: ^27.0.0
+        version: 27.0.0
+      '@octokit/types':
+        specifier: ^16.0.0
+        version: 16.0.0
+      '@octokit/webhooks-types':
+        specifier: ^7.6.1
+        version: 7.6.1
       effect:
         specifier: latest
         version: 3.19.8
@@ -999,8 +1008,8 @@ packages:
       '@effect/workflow': ^0.14.0
       effect: ^3.19.8
 
-  '@effect/docgen@0.4.7':
-    resolution: {integrity: sha512-sSObzYun8bEEQZp0jCYLya4S0kGNsZueuycmxl1Bdcfcd+vcZz47+WqK28+vyXHyGaBYSLAzt/CUJdT/9JzJFw==}
+  '@effect/docgen@0.5.2':
+    resolution: {integrity: sha512-gqBxAhp58R18vT5+ORobWRQ/2MaF5vH0k1zggSct54J41k8TKF5mYIW1qG5tkOVCejet+8K5MKsWK3gzIkaoMw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -1692,6 +1701,9 @@ packages:
   '@octokit/openapi-types@24.2.0':
     resolution: {integrity: sha512-9sIH3nSUttelJSXUrmGzl7QUBFul0/mB8HRYl3fOlgHbIWG+WnYDXU3v/2zMtAvuzZ/ed00Ei6on975FhBfzrg==}
 
+  '@octokit/openapi-types@27.0.0':
+    resolution: {integrity: sha512-whrdktVs1h6gtR+09+QsNk2+FO+49j6ga1c55YZudfEG+oKJVvJLQi3zkOm5JjiUXAagWK2tI2kTGKJ2Ys7MGA==}
+
   '@octokit/plugin-paginate-rest@9.2.2':
     resolution: {integrity: sha512-u3KYkGF7GcZnSD/3UP0S7K5XUFT2FkOQdcfXZGZQPGv3lm4F2Xbf71lvjldr8c1H3nNbF+33cLEkWYbokGWqiQ==}
     engines: {node: '>= 18'}
@@ -1717,6 +1729,12 @@ packages:
 
   '@octokit/types@13.10.0':
     resolution: {integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==}
+
+  '@octokit/types@16.0.0':
+    resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
+
+  '@octokit/webhooks-types@7.6.1':
+    resolution: {integrity: sha512-S8u2cJzklBC0FgTwWVLaM8tMrDuDMVE4xiTK4EYXM9GntyvrdbSoxqDQa+Fh57CCNApyIpyeqPhhFEmHPfrXgw==}
 
   '@op-engineering/op-sqlite@7.1.0':
     resolution: {integrity: sha512-tF+YLwAyV/52r7k3BCFRareiTIzR2bGVQbW54/zJgyL+lzoGJ7bHTGBauXGJAPIYKLxGq0zFxI4HbfzsNQOWgg==}
@@ -6819,7 +6837,7 @@ snapshots:
       effect: 3.19.8
       kubernetes-types: 1.30.0
 
-  '@effect/docgen@0.4.7(tsx@4.20.6)(typescript@5.9.3)':
+  '@effect/docgen@0.5.2(tsx@4.20.6)(typescript@5.9.3)':
     dependencies:
       '@effect/markdown-toc': 0.1.0
       doctrine: 3.0.0
@@ -7484,6 +7502,8 @@ snapshots:
 
   '@octokit/openapi-types@24.2.0': {}
 
+  '@octokit/openapi-types@27.0.0': {}
+
   '@octokit/plugin-paginate-rest@9.2.2(@octokit/core@5.2.2)':
     dependencies:
       '@octokit/core': 5.2.2
@@ -7514,6 +7534,12 @@ snapshots:
   '@octokit/types@13.10.0':
     dependencies:
       '@octokit/openapi-types': 24.2.0
+
+  '@octokit/types@16.0.0':
+    dependencies:
+      '@octokit/openapi-types': 27.0.0
+
+  '@octokit/webhooks-types@7.6.1': {}
 
   '@op-engineering/op-sqlite@7.1.0(react-native@0.82.1(@babel/core@7.28.5)(react@19.2.0))(react@19.2.0)':
     dependencies:

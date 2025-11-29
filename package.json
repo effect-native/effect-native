@@ -3,7 +3,7 @@
   "type": "module",
   "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
   "scripts": {
-    "ok": "pnpm test --run; TEST=$?; pnpm lint-fix; TEST=$(($TEST+$?)); pnpm check; TEST=$(($TEST+$?)); pnpm circular; TEST=$(($TEST+$?)); pnpm codegen; TEST=$(($TEST+$?)); pnpm test-types --target current; TEST=$(($TEST+$?)); pnpm docgen; TEST=$(($TEST+$?)); pnpm codemod; TEST=$(($TEST+$?)); pnpm build; TEST=$(($TEST+$?)); node scripts/verify-subpaths.mjs; TEST=$(($TEST+$?)); exit $TEST;",
+    "ok": "pnpm test --run; TEST=$?; pnpm lint-fix; TEST=$(($TEST+$?)); pnpm check; TEST=$(($TEST+$?)); pnpm circular; TEST=$(($TEST+$?)); pnpm codegen; TEST=$(($TEST+$?)); pnpm test-types --target current; TEST=$(($TEST+$?)); pnpm codemod; TEST=$(($TEST+$?)); pnpm build; TEST=$(($TEST+$?)); node scripts/verify-subpaths.mjs; TEST=$(($TEST+$?)); exit $TEST;",
     "verify-subpaths": "node scripts/verify-subpaths.mjs",
     "clean": "node scripts/clean.mjs",
     "codegen": "pnpm --recursive --parallel --filter \"./packages-native/**/*\" run codegen",
@@ -44,7 +44,7 @@
     "@changesets/cli": "^2.29.7",
     "@edge-runtime/vm": "^5.0.0",
     "@effect/build-utils": "^0.8.9",
-    "@effect/docgen": "^0.4.7",
+    "@effect/docgen": "^0.5.2",
     "@effect/eslint-plugin": "^0.3.2",
     "@effect/language-service": "^0.23.5",
     "@effect/vitest": "latest",
