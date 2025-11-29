@@ -3,7 +3,7 @@
  *
  * Provides the GitHub token as a `Redacted<string>` for secure handling.
  * The token is automatically sourced from:
- * 1. The `github-token` action input
+ * 1. The `githubToken` action input
  * 2. The `GITHUB_TOKEN` environment variable
  *
  * @example
@@ -56,7 +56,7 @@ export class GithubToken extends Context.Tag("@effect-native/platform-github/Git
  * Layer that reads the GitHub token from the action input or environment.
  *
  * Looks up in order:
- * 1. `github-token` action input (via @actions/core)
+ * 1. `githubToken` action input (via @actions/core)
  * 2. `GITHUB_TOKEN` environment variable
  *
  * @since 1.0.0
@@ -67,7 +67,7 @@ export const layer: Layer.Layer<GithubToken> = Layer.effect(
   Effect.sync(() => {
     // Get token from action input (via @actions/core) or environment
     // Using core.getInput handles the INPUT_<NAME> env var lookup correctly
-    const token = ActionsCore.getInput("github-token") || process.env.GITHUB_TOKEN || ""
+    const token = ActionsCore.getInput("githubToken") || process.env.GITHUB_TOKEN || ""
     return Redacted.make(token)
   })
 )

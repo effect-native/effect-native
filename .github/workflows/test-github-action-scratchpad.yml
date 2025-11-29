@@ -25,4 +25,4 @@ jobs:
       - name: Run Effect GitHub Action
         uses: ./packages-native/github-action-scratchpad
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
