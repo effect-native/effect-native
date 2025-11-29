@@ -1,20 +1,20 @@
 /**
- * GitHub Action Demo - @effect-native/platform-github
+ * GitHub Action Test - @effect-native/platform-github
  *
- * Showcases the slickest DX for building GitHub Actions with Effect:
+ * Tests the core functionality on pull_request events:
  * - Console.log routes to GitHub Actions UI automatically
- * - High-level Comment/Issue/PR services with static accessors
+ * - ActionContext provides event/repo context
+ * - ActionClient provides GitHub API access
  * - Type-safe inputs with Schema validation
- * - Clean error handling with pit-of-success patterns
  */
-import { Action, ActionRunner, Comment, GithubToken, Input, Issue, PR } from "@effect-native/platform-github"
+import { Action, ActionContext, ActionRunner, GithubToken, Input, PR } from "@effect-native/platform-github"
 import { Console, Effect, Layer } from "effect"
 
 const program = Effect.gen(function*() {
   // ─────────────────────────────────────────────────────────────────────────────
   // Console.log just works - routes to GitHub Actions UI via ConsoleGitHubActions
   // ─────────────────────────────────────────────────────────────────────────────
-  yield* Console.log("Starting Effect GitHub Action demo...")
+  yield* Console.log("Starting Effect GitHub Action test...")
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Type-safe inputs with Schema validation
@@ -22,26 +22,29 @@ const program = Effect.gen(function*() {
   const verbose = yield* Input.boolean("verbose").pipe(Effect.orElseSucceed(() => false))
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // High-level Issue service - clean accessor syntax
+  // ActionContext - works for any event type
   // ─────────────────────────────────────────────────────────────────────────────
-  const issueNumber = yield* Issue.number
-  const issueTitle = yield* Issue.title
-  const isPR = yield* Issue.isPullRequest
-  const labels = yield* Issue.labels
+  const ctx = yield* ActionContext.ActionContext
+  const repoCtx = yield* ctx.repo
 
-  yield* Console.log(`Issue #${issueNumber}: ${issueTitle}`)
-  yield* Console.log(`Labels: ${labels.length > 0 ? labels.join(", ") : "(none)"}`)
+  yield* Console.log(`Event: ${ctx.eventName}`)
+  yield* Console.log(`Repo: ${repoCtx.owner}/${repoCtx.repo}`)
+  yield* Console.log(`Actor: ${ctx.actor}`)
+  yield* Console.log(`SHA: ${ctx.sha.slice(0, 7)}`)
+  yield* Console.log(`Ref: ${ctx.ref}`)
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // PR service - auto-fails if not a PR (pit of success!)
+  // PR service - only used when event is pull_request
   // ─────────────────────────────────────────────────────────────────────────────
-  if (isPR) {
+  if (ctx.eventName === "pull_request") {
+    const prNumber = yield* PR.number
     const headRef = yield* PR.headRef
     const baseRef = yield* PR.baseRef
     const files = yield* PR.files
     const draft = yield* PR.draft
 
-    yield* Console.log(`PR: ${headRef} → ${baseRef} (${files.length} files${draft ? ", draft" : ""})`)
+    yield* Console.log(`PR #${prNumber}: ${headRef} → ${baseRef}`)
+    yield* Console.log(`Files changed: ${files.length}${draft ? " (draft)" : ""}`)
 
     if (verbose) {
       for (const file of files.slice(0, 5)) {
@@ -51,77 +54,30 @@ const program = Effect.gen(function*() {
         yield* Console.log(`  ... and ${files.length - 5} more`)
       }
     }
+
+    // Set outputs
+    yield* ActionRunner.setOutput("pr-number", String(prNumber))
   }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Comment service - react and reply to the triggering comment
-  // ─────────────────────────────────────────────────────────────────────────────
-  const commentBody = yield* Comment.body
-  const commentAuthor = yield* Comment.author
-
-  yield* Console.log(`Comment by @${commentAuthor}: "${commentBody.slice(0, 50)}${commentBody.length > 50 ? "..." : ""}"`)
-
-  // React with eyes to acknowledge we saw it
-  yield* Comment.react("eyes")
-
-  // Build a nice reply
-  const replyBody = [
-    "## Effect GitHub Action Demo",
-    "",
-    `Thanks for the comment, @${commentAuthor}!`,
-    "",
-    "This reply was created using **@effect-native/platform-github**.",
-    "",
-    "### What's happening here?",
-    "",
-    "```typescript",
-    'import { Action, Comment, Issue, PR } from "@effect-native/platform-github"',
-    'import { Console, Effect } from "effect"',
-    "",
-    "const program = Effect.gen(function*() {",
-    "  yield* Console.log('Just works!')  // Routes to GitHub UI",
-    "  yield* Comment.react('eyes')       // React to comment",
-    "  yield* Comment.reply('Hello!')     // Reply to issue/PR",
-    "})",
-    "",
-    "Action.runMain(program)",
-    "```",
-    "",
-    "### Services Used",
-    "",
-    `| Service | Usage |`,
-    `|---------|-------|`,
-    `| \`Console\` | Logs to GitHub Actions UI |`,
-    `| \`Comment\` | Read/react/reply to comments |`,
-    `| \`Issue\` | Access issue #${issueNumber} |`,
-    isPR ? `| \`PR\` | Access PR details |` : "",
-    "",
-    "---",
-    `*${new Date().toISOString()}*`
-  ].filter(Boolean).join("\n")
-
-  yield* Comment.reply(replyBody)
-  yield* Console.log("Reply posted!")
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Set outputs and finish
   // ─────────────────────────────────────────────────────────────────────────────
-  yield* ActionRunner.setOutput("issue-number", String(issueNumber))
-  yield* ActionRunner.setOutput("is-pr", String(isPR))
+  yield* ActionRunner.setOutput("repo", `${repoCtx.owner}/${repoCtx.repo}`)
+  yield* ActionRunner.setOutput("sha", ctx.sha)
+  yield* ActionRunner.setOutput("actor", ctx.actor)
+  yield* ActionRunner.setOutput("event", ctx.eventName)
   yield* ActionRunner.notice("Effect GitHub Action completed!", { title: "Success" })
 })
 
-// Build the full layer:
-// 1. GithubToken.layer provides the token from env
-// 2. Action.Default uses GithubToken to provide ActionRequirements (incl. ActionRunner)
-// 3. Comment/Issue/PR.Default use ActionContext and ActionClient
-// Use provideMerge to keep Action.Default's outputs available
+// Build the layer:
+// 1. Action.Default provides ActionRequirements but requires GithubToken
+// 2. PR.Default provides PR service but requires ActionContext and ActionClient
+// 3. GithubToken.layer provides the token from env
+// We need to provide GithubToken to both Action.Default and PR.Default's dependencies
 const FullLayer = Layer.mergeAll(
-  Comment.Default,
-  Issue.Default,
+  Action.Default,
   PR.Default
 ).pipe(
-  Layer.provideMerge(Action.Default),
   Layer.provide(GithubToken.layer)
 )
 
