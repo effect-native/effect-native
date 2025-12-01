@@ -14,6 +14,12 @@ try {
   throw new Error(`note: expected ESM build at ${source}`, { cause: error })
 }
 
+// Rewrite relative imports to point to dist/esm/ since bin.mjs is at package root
+content = content.replace(
+  /from "\.\/([A-Z][^"]+\.js)"/g,
+  "from \"./dist/esm/$1\""
+)
+
 await mkdir(dirname(target), { recursive: true })
 await writeFile(target, content, "utf8")
 await chmod(target, 0o755)
