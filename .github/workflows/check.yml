@@ -18,20 +18,24 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/setup
-      - run: pnpm check
-      - run: pnpm test-types --target '>=5.4'
+       - uses: actions/checkout@v4
+         with:
+           clean: false
+       - name: Install dependencies
+         uses: ./.github/actions/setup
+       - run: pnpm check
+       - run: pnpm test-types --target '>=5.4'
 
-  lint:
-    name: Lint
-    runs-on: self-hosted
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/setup
+   lint:
+     name: Lint
+     runs-on: self-hosted
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
+         with:
+           clean: false
+       - name: Install dependencies
+         uses: ./.github/actions/setup
       - run: pnpm circular
       - run: pnpm lint
       - run: pnpm codegen
@@ -48,19 +52,23 @@ jobs:
         shard: [1/4, 2/4, 3/4, 4/4]
         # runtime: [Node, Bun] # TODO: Re-enable bun test suite after https://github.com/oven-sh/bun/issues/4145 is resolved
         runtime: [Node]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/setup
-      - uses: oven-sh/setup-bun@v1
-        if: matrix.runtime == 'Bun'
-  verify-subpaths:
-    name: Verify Subpaths
-    runs-on: self-hosted
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        uses: ./.github/actions/setup
-      - name: Verify effect subpath builds
-        run: pnpm verify-subpaths
+     steps:
+       - uses: actions/checkout@v4
+         with:
+           clean: false
+       - name: Install dependencies
+         uses: ./.github/actions/setup
+       - uses: oven-sh/setup-bun@v1
+         if: matrix.runtime == 'Bun'
+   verify-subpaths:
+     name: Verify Subpaths
+     runs-on: self-hosted
+     timeout-minutes: 10
+     steps:
+       - uses: actions/checkout@v4
+         with:
+           clean: false
+       - name: Install dependencies
+         uses: ./.github/actions/setup
+       - name: Verify effect subpath builds
+         run: pnpm verify-subpaths

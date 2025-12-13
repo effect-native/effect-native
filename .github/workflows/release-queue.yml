@@ -19,10 +19,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.EFFECT_BOT_GH }}
+       - uses: actions/checkout@v4
+         with:
+           fetch-depth: 0
+           token: ${{ secrets.EFFECT_BOT_GH }}
+           clean: false
       - run: gh pr checkout ${{ github.event.pull_request.number }}
         if: github.event.pull_request
         env:
