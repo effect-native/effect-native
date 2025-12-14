@@ -4,6 +4,7 @@ An ecosystem of native platform tools built on [Effect](https://effect.website).
 
 |Status|Package|Purpose|
 |---|---|---|
+|![](https://img.shields.io/npm/v/note)|npx note|capture notes|
 |![](https://img.shields.io/npm/v/@effect-native/bun-test)|@effect-native/bun-test|Unit test helpers for bun:test (clone of @effect/vitest)|
 |![](https://img.shields.io/npm/v/@effect-native/libsqlite)|@effect-native/libsqlite|Latest native SQLite3 dynamic library, pre-compiled|
 |![](https://img.shields.io/npm/v/@effect-native/libcrsql)|@effect-native/libcrsql|Latest native CR-SQLite extension, pre-compiled|
