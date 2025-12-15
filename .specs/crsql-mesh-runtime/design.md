@@ -6,12 +6,18 @@ Define a Node.js runtime adapter that wires platform capabilities (filesystem pe
 
 This runtime does not define network transports; it provides a database connection and lifecycle integration suitable for running mesh sync.
 
-## Dependencies
+## Inputs / Dependencies
 
-- `@effect/platform` capabilities for filesystem and process lifecycle.
+- `@effect/platform` capabilities for filesystem access and process lifecycle.
 - `@effect-native/crsql` for SQLite + CR-SQLite integration.
 - `@effect-native/crsql-mesh` engine.
 - `@effect-native/crsql-mesh-protocol` for protocol initialization (including `unhex()` check).
+
+## Design Constraints
+
+- Runtime responsibilities stay narrow (provide DB + lifecycle wiring).
+- Runtime does not select transports or topology.
+- Shutdown is driven by structured concurrency (scope closure), not global mutable flags.
 
 ## Configuration Model
 
@@ -22,6 +28,18 @@ This runtime does not define network transports; it provides a database connecti
 
 No default values are required by this design; callers may provide their own defaults.
 
+## Module Architecture
+
+Suggested layout:
+
+| File | Responsibility |
+| --- | --- |
+| `src/index.ts` | Re-exports public surface. |
+| `src/NodeRuntime.ts` | Config model + `NodeRuntimeLive` layer constructor. |
+| `src/NodeRuntimeError.ts` | `DatabasePathInvalid`, `ShutdownTimeout` error types. |
+| `src/internal/database.ts` | DB open, CR-SQLite extension loading, and close. |
+| `src/internal/lifecycle.ts` | Signal handling and shutdown orchestration. |
+
 ## Provided Capabilities
 
 ### Database connection
@@ -29,31 +47,53 @@ No default values are required by this design; callers may provide their own def
 - Open a SQLite database located at `databasePath`.
 - Load the CR-SQLite extension.
 - Ensure protocol initialization succeeded (including `unhex()` availability).
+- Provide the database connection service required by the mesh engine.
 
 ### Process lifecycle
 
-On process termination signals:
+On process termination signals (SIGTERM, SIGINT):
 
-- Stop the mesh sync loop.
+- Stop mesh background fibers.
 - Close the database connection.
 - Enforce `shutdownTimeout`.
 
-## Errors
-
-| Error | Meaning |
-| --- | --- |
-| `DatabasePathInvalid` | Provided `databasePath` cannot be used for persistence. |
-| `ShutdownTimeout` | Shutdown exceeded `shutdownTimeout`. |
-
 ## Layering Strategy
 
-- Export a single “live” runtime layer (`NodeRuntimeLive`) that:
+- Export a single “live” runtime layer (`NodeRuntimeLive`) implemented as `Layer.scoped`.
+- The layer acquisition:
   - Validates configuration
   - Initializes protocol
   - Opens the database connection
-  - Wires lifecycle hooks
+  - Starts mesh work only if the caller composes the mesh layer
+- The layer finalizer:
+  - Ensures database close
+  - Ensures lifecycle hooks are removed
 
-The runtime’s responsibilities stay narrow so that transport selection and topology remain composed outside this package.
+Note: The runtime is intended to be composed with `crsql-mesh-transport` and `crsql-mesh` rather than bundling those decisions.
+
+## Error Handling Strategy
+
+| Error | Meaning | Recovery |
+| --- | --- | --- |
+| `DatabasePathInvalid` | Provided `databasePath` cannot be used for persistence | Caller fixes configuration or filesystem permissions. |
+| `ShutdownTimeout` | Shutdown exceeded `shutdownTimeout` | Caller increases timeout or reduces shutdown work. |
+
+The runtime propagates `UnhexUnavailable` from the protocol layer without fallback.
+
+## Test Strategy
+
+### Unit tests (config + layer wiring)
+
+- Invalid `databasePath` fails with `DatabasePathInvalid`.
+- Protocol initialization is required and `UnhexUnavailable` fails the runtime.
+
+### Integration tests (process lifecycle)
+
+- Compose the runtime layer with an in-memory transport and a minimal mesh.
+- Simulate shutdown (or invoke the shutdown path directly) and assert:
+  - mesh fibers stop
+  - database closes
+  - timeout enforcement behaves as specified
 
 ## Out of Scope
 
