@@ -7,7 +7,6 @@
 The Transport shall define a minimal interface with:
 - A `send` operation accepting a peer identifier and opaque byte payload
 - A `receive` stream emitting incoming messages with sender identifier
-- A `broadcast` operation sending to all reachable peers (optional capability)
 
 ### In-Memory Transport (FR-TRANS-002)
 
@@ -23,10 +22,10 @@ The Transport shall provide an `InMemoryTransport` implementation that:
 
 ### Message Delivery Semantics (FR-TRANS-004)
 
-The Transport interface shall declare:
-- At-most-once delivery (no built-in retries; callers handle retransmission)
-- No ordering guarantees (messages may arrive out of order)
-- No persistence (messages are not durably stored)
+The Transport interface shall not require any delivery guarantees (ordering, retries, or persistence).
+
+**When** delivery guarantees are needed,
+**Then** callers (such as Mesh) shall implement them above the Transport.
 
 ### Transport Lifecycle (FR-TRANS-005)
 
@@ -34,8 +33,8 @@ The Transport shall define lifecycle operations:
 - `open`: establish the transport (connect, bind, etc.)
 - `close`: tear down the transport (disconnect, unbind, etc.)
 
-**When** `close` is called,
-**Then** the Transport shall complete all pending `send` operations or cancel them with `TransportClosed` error.
+**When** the Transport is closed,
+**Then** subsequent operations shall fail with `TransportClosed`.
 
 ### Transport Errors (FR-TRANS-006)
 

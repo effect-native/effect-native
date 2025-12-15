@@ -35,7 +35,7 @@ The Protocol shall define a `DiffRequest` message containing:
 ### Diff Response (FR-PROTO-005)
 
 The Protocol shall define a `DiffResponse` message containing:
-- An array of `ChangeRowSerialized` (or `ChangeArray`) rows
+- An array of `ChangeRowSerialized` rows
 - A boolean indicating whether more changes remain beyond this batch
 - The sender's current `VersionSummary` after the batch
 
@@ -49,7 +49,7 @@ The Protocol shall define a `MeshMessage` envelope containing:
 ### Effect Schema Encoding (FR-PROTO-007)
 
 The Protocol shall provide Effect Schema definitions for all message types, enabling:
-- JSON encoding/decoding via `Schema.encode` / `Schema.decode`
+- Encoding and decoding of messages
 - Runtime validation of incoming messages
 
 ## Non-Functional Requirements
@@ -62,11 +62,11 @@ The Protocol introduces only types necessary for mesh coordination that do not a
 
 ## Constraints
 
-### C-PROTO-001: SQLite Version
-Requires SQLite >= 3.50.2 for `unhex()` support.
+### C-PROTO-001: unhex()
+Requires a SQLite build that provides `unhex()`.
 
-### C-PROTO-002: No Custom Serialization
-All serialization uses Effect Schema. No hand-rolled JSON parsing or binary protocols in Phase 1.
+### C-PROTO-002: Schema-First Serialization
+All serialization uses Effect Schema. No hand-rolled JSON parsing or binary protocols in this phase.
 
 ## Out of Scope
 

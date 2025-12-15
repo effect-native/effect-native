@@ -4,9 +4,9 @@
 
 The CR-SQLite mesh sync engine (`@effect-native/crsql-mesh`) is platform-agnostic. It requires runtime adapters to provide persistence coordination and lifecycle management for each target platform.
 
-React Native apps on iOS and Android use native SQLite bindings, not WASM. As of Expo SDK 54 (2025-09-10), `expo-sqlite` added `loadExtensionAsync()` / `loadExtensionSync()` APIs that allow loading custom native extensions by path. This package provides the runtime adapter for React Native apps using `expo-sqlite`.
+React Native apps on iOS and Android use native SQLite bindings, not WASM. Some Expo configurations support loading custom native SQLite extensions. This package provides the runtime adapter for React Native apps using `expo-sqlite`.
 
-**Extension loading assumption**: `expo-sqlite` loads the CR-SQLite extension as a **native shared library** (`.dylib` on iOS, `.so` on Android) at runtime. This is not WASM. The extension binary is bundled with the app and loaded via `expo-sqlite`'s `loadExtensionAsync()` or `loadExtensionSync()` API.
+**Extension loading assumption**: This runtime uses a **native** CR-SQLite extension (not WASM). The extension is bundled with the app and loaded via `expo-sqlite`'s extension-loading support.
 
 ## User Story
 
@@ -22,7 +22,7 @@ React Native apps on iOS and Android use native SQLite bindings, not WASM. As of
 - Handle React Native app lifecycle (foreground, background, termination)
 - Coordinate database access within the app process
 - Support iOS and Android platforms via `expo-sqlite`'s cross-platform API
-- Require Expo SDK 54+ for extension loading support
+- Require an Expo configuration that supports loading native SQLite extensions
 
 ## Out of Scope
 

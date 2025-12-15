@@ -4,11 +4,8 @@
 
 ### Anti-Entropy Loop (FR-MESH-001)
 
-The Mesh shall implement an anti-entropy synchronization loop that:
-- Periodically exchanges `VersionSummary` messages with connected peers
-- Computes missing changes by comparing local vs. remote version vectors
-- Requests missing changes via `DiffRequest`
-- Applies received changes via `DiffResponse`
+**When** the Mesh is connected to a peer and the sync loop is running,
+**Then** the Mesh shall exchange `VersionSummary` and transfer missing change rows until no missing rows remain for that peer.
 
 ### Version Vector Management (FR-MESH-002)
 
@@ -20,8 +17,7 @@ The Mesh shall maintain an in-memory version vector:
 ### Change Pull (FR-MESH-003)
 
 **When** a peer sends a `DiffRequest`,
-**Then** the Mesh shall query local `crsql_changes` for rows the requester is missing,
-respecting the optional batch size limit.
+**Then** the Mesh shall compute which change rows the requester is missing (from the requester's `VersionSummary`) and respond with up to the requested batch size.
 
 ### Change Apply (FR-MESH-004)
 
@@ -40,9 +36,9 @@ respecting the optional batch size limit.
 
 The Mesh shall not block or intercept local writes. Applications write directly to SQLite; the Mesh only observes and propagates changes.
 
-### DB Version Observable (FR-MESH-007)
+### DB Version Observation (FR-MESH-007)
 
-The Mesh shall provide an observable stream of local `db_version` changes, enabling UI refresh patterns ("db changed, re-query").
+The Mesh shall provide a way for callers to observe when local `db_version` advances ("db changed, re-query").
 
 ### Transport Integration (FR-MESH-008)
 

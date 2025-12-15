@@ -6,7 +6,7 @@ The CR-SQLite mesh sync engine (`@effect-native/crsql-mesh`) is platform-agnosti
 
 React Native apps on iOS and Android use native SQLite bindings, not WASM. The `op-sqlite` library (https://github.com/OP-Engineering/op-sqlite) is a high-performance React Native SQLite binding that supports loading native extensions. This package provides the runtime adapter for React Native apps using `op-sqlite`.
 
-**Extension loading assumption**: `op-sqlite` loads the CR-SQLite extension as a **native shared library** (`.dylib` on iOS, `.so` on Android) at runtime. This is not WASM. The extension binary is bundled with the app and loaded via `op-sqlite`'s extension loading API.
+**Extension loading assumption**: This runtime uses a **native** CR-SQLite extension (not WASM). The extension is bundled with the app and loaded via `op-sqlite`'s extension-loading support.
 
 ## User Story
 
