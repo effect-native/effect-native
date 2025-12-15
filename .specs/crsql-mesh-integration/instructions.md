@@ -4,7 +4,7 @@
 
 The `@effect-native/crsql` package already provides CR-SQLite operations through an Effect service layer. It wraps CR-SQLite functions like `crsql_site_id()`, `crsql_db_version()`, and exposes helpers like `pullChanges` and `applyChanges` that work with the `crsql_changes` virtual table.
 
-The upcoming global mesh architecture introduces a new package (`@effect-native/crsql-mesh-core`) that implements the sync engine: anti-entropy loops, version vector tracking, and peer coordination. This sync engine needs to read and write change data from local CR-SQLite databases.
+The upcoming global mesh architecture introduces a new package (`@effect-native/crsql-mesh`) that implements the sync engine: anti-entropy loops, version vector tracking, and peer coordination. This sync engine needs to read and write change data from local CR-SQLite databases.
 
 Currently, the `@effect-native/crsql` package has working `pullChanges` and `applyChanges` methods, but they were designed for direct use in application code rather than integration with a sync engine. The sync engine has specific needs:
 
@@ -23,7 +23,7 @@ The existing package should remain usable standalone without mesh dependencies. 
 
 ## User Story
 
-As a sync engine developer building `@effect-native/crsql-mesh-core`,
+As a sync engine developer building `@effect-native/crsql-mesh`,
 
 I want typed helpers in `@effect-native/crsql` that let me efficiently pull ordered changes and apply incoming change batches,
 
@@ -49,11 +49,11 @@ So that I can implement anti-entropy synchronization without reimplementing low-
 
 ### Package Boundary Principles
 
-The split between `@effect-native/crsql` and `@effect-native/crsql-mesh-core` should follow these principles:
+The split between `@effect-native/crsql` and `@effect-native/crsql-mesh` should follow these principles:
 
 - **`@effect-native/crsql`**: Database primitives. Reading and writing data. Schema operations. Single-node operations. No awareness of peers or network.
 
-- **`@effect-native/crsql-mesh-core`**: Sync orchestration. Version vector management. Peer tracking. Anti-entropy loops. Multi-peer coordination. Depends on crsql for database access.
+- **`@effect-native/crsql-mesh`**: Sync orchestration. Version vector management. Peer tracking. Anti-entropy loops. Multi-peer coordination. Depends on crsql for database access.
 
 The integration points are:
 - Typed change row structures (schema definition)

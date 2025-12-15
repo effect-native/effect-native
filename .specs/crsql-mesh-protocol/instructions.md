@@ -17,6 +17,7 @@ so that I can implement mesh synchronization without inventing my own protocol a
 ## High-Level Goals
 
 - Define the message vocabulary for anti-entropy synchronization between CR-SQLite peers
+- Reuse the existing schema vocabulary in `@effect-native/crsql` where possible (reduce new Things)
 - Establish data structures for version summaries (how peers describe what they know)
 - Specify message envelopes for requesting and delivering change data
 - Provide a runtime-agnostic, transport-agnostic protocol definition
@@ -24,6 +25,17 @@ so that I can implement mesh synchronization without inventing my own protocol a
 - Keep the protocol minimal — only what is necessary for convergence
 
 ## What This Package Covers
+
+### Schema reuse (important)
+
+Prefer reusing the existing schemas and tests in `effect-native/packages-native/crsql/`:
+- `effect-native/packages-native/crsql/src/CrSqlSchema.ts`
+- `effect-native/packages-native/crsql/test/`
+
+This reduces protocol-specific serialization/deserialization work and keeps the protocol types consistent with the DB boundary.
+
+Product decision: rely on SQLite `unhex()` (SQLite >= 3.50.2). If `unhex()` is missing/disabled, fail fast with `UnhexUnavailable` during layer creation.
+
 
 ### Summary Exchange
 Peers need to tell each other what data versions they have seen from various sites in the mesh. This enables efficient diff-based synchronization rather than broadcasting everything.

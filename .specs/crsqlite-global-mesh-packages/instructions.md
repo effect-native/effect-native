@@ -40,6 +40,7 @@ The existing packages were not designed for this scope. We need to define clear 
 - Provide **runtime adapters** as separate packages (one per platform/environment)
 - Integrate cleanly with **upstream Effect SQL** abstractions
 - Allow **existing `@effect-native/crsql` users** to adopt mesh features incrementally
+  - NOTE: zero known production users at this time
 - Support the full range of environments: browser, Node/Bun/Deno, React Native, edge workers
 
 ---
@@ -51,7 +52,7 @@ The existing packages were not designed for this scope. We need to define clear 
 1. **`@effect-native/crsql-mesh-protocol`**
    - Message type definitions for peer communication (summary exchange, diff request, change batch, etc.)
 
-2. **`@effect-native/crsql-mesh-core`**
+2. **`@effect-native/crsql-mesh`**
    - The sync engine: anti-entropy loop, version vector tracking, batch apply logic
    - Transport-agnostic (depends on a transport interface, not a concrete transport)
 
@@ -80,6 +81,12 @@ The existing packages were not designed for this scope. We need to define clear 
 10. **`@effect-native/crsql-mesh-runtime-bun`**
     - Bun-specific runtime adapter (if Bun diverges from Node patterns)
 
+11. **`@effect-native/crsql-mesh-runtime-react-native-op-sqlite`**
+    - React Native runtime adapter (powered by https://github.com/OP-Engineering/op-sqlite)
+
+12. **`@effect-native/crsql-mesh-runtime-react-native-expo-sqlite`**
+    - As of Expo SDK 54 (2025-09-10), expo-sqlite added loadExtensionAsync() / loadExtensionSync() and the docs explicitly show loading a custom extension by path.
+
 ### Existing Packages to Modify
 
 1. **`@effect-native/crsql`**
@@ -89,6 +96,7 @@ The existing packages were not designed for this scope. We need to define clear 
 2. **`@effect-native/libcrsql`**
    - No functional changes required for mesh
    - Continue to provide native extension binaries
+   - Update with the latest libcrsql builds from our new zig implementation
 
 ### Upstream Effect SQL Packages (integration targets)
 

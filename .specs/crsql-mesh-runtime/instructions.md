@@ -2,7 +2,7 @@
 
 ## Context
 
-The CR-SQLite mesh sync engine (defined in `@effect-native/crsql-mesh-core`) is deliberately transport-agnostic and persistence-agnostic. It operates on abstract interfaces: "send bytes", "receive bytes", "persist database", "read database". The engine does not know or care whether bytes travel via BroadcastChannel or WebRTC, or whether the database lives in OPFS or on a filesystem.
+The CR-SQLite mesh sync engine (defined in `@effect-native/crsql-mesh`) is deliberately transport-agnostic and persistence-agnostic. It operates on abstract interfaces: "send bytes", "receive bytes", "persist database", "read database". The engine does not know or care whether bytes travel via BroadcastChannel or WebRTC, or whether the database lives in OPFS or on a filesystem.
 
 However, real applications run on real platforms. Each platform has fundamentally different:
 
@@ -50,11 +50,14 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 
 ### 2. Node/Bun/Deno Runtime (`@effect-native/crsql-mesh-runtime-node`)
 
+Note: Bun support is folded into this package unless proven necessary.
+
 **Why separate**: Server-side JavaScript runtimes share enough common ground (filesystem access, process model, similar APIs) to warrant a single package. They differ significantly from browsers in persistence (filesystem vs OPFS), threading (Worker Threads vs Web Workers), and lifecycle (long-running processes vs ephemeral tabs).
 
 **Target environments**: Node.js 18+, Bun, Deno. Uses runtime detection to adapt where APIs differ.
 
 **Key responsibilities**:
+- Use `@effect/platform` for runtime integration (filesystem, process lifecycle)
 - Filesystem-based persistence (configurable database path)
 - Worker Thread coordination for concurrent access patterns
 - Inter-process coordination via Unix domain sockets or TCP (for multi-process deployments)
@@ -74,15 +77,9 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 - Handle app lifecycle (background, foreground, termination)
 - Battery and network-aware sync scheduling
 
-### 4. Electron Runtime (`@effect-native/crsql-mesh-runtime-electron`)
+### 4. Electron Runtime
 
-**Why separate (or why merged)**: Electron is a hybrid — it has both a browser-like renderer process and a Node-like main process. Developers may want:
-- Database in the main process (filesystem access, no OPFS)
-- Renderer processes that coordinate via IPC to the main process
-
-This could potentially be composed from the browser and node packages, but may warrant its own package if the coordination patterns are unique enough.
-
-**Decision point**: This package may not be needed initially if Electron apps can effectively use the Node runtime in main process and browser runtime in renderers. Defer to requirements phase.
+Out of scope.
 
 ## Why Not a Single "Universal" Adapter?
 
