@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["test"],
+  "references": [
+    { "path": "tsconfig.src.json" },
+    { "path": "../crsql/tsconfig.src.json" },
+    { "path": "../libcrsql/tsconfig.src.json" }
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
+    "rootDir": "test",
+    "noEmit": true,
+    "types": ["node", "vitest"],
+    "paths": {
+      "@effect-native/crsql-mesh-protocol": ["./src/index.ts"],
+      "@effect-native/crsql-mesh-protocol/*": ["./src/*.ts"],
+      "@effect-native/crsql": ["../crsql/src/index.ts"],
+      "@effect-native/crsql/*": ["../crsql/src/*.ts"],
+      "@effect-native/libcrsql": ["../libcrsql/src/index.ts"],
+      "@effect-native/libcrsql/*": ["../libcrsql/src/*.ts"]
+    }
+  }
+}

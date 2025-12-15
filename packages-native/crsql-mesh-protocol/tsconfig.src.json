@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"],
+  "references": [
+    { "path": "../crsql/tsconfig.src.json" }
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/src.tsbuildinfo",
+    "rootDir": "src",
+    "outDir": "build/src",
+    "types": ["node"],
+    "paths": {
+      "@effect-native/crsql": ["../crsql/src/index.ts"],
+      "@effect-native/crsql/*": ["../crsql/src/*.ts"]
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "@effect-native/crsql-mesh-protocol",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Transport-agnostic message vocabulary for CR-SQLite mesh synchronization",
+  "homepage": "https://github.com/effect-native/effect-native/tree/main/packages-native/crsql-mesh-protocol",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native",
+    "directory": "packages-native/crsql-mesh-protocol"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "scripts": {
+    "codegen": "build-utils prepare-v3",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "peerDependencies": {
+    "effect": "^3.19.0"
+  },
+  "devDependencies": {
+    "@effect-native/crsql": "workspace:^",
+    "@effect-native/libcrsql": "workspace:^",
+    "@effect/sql": "latest",
+    "@effect/sql-sqlite-node": "latest",
+    "@effect/vitest": "latest",
+    "effect": "latest"
+  }
+}
