@@ -17,6 +17,8 @@ export {
   Mesh,
   MeshConfig,
   type MeshConfigShape,
+  type MeshDatabase,
+  MeshDatabaseTag,
   MeshLive,
   type MeshService,
   type ProgressEvent,

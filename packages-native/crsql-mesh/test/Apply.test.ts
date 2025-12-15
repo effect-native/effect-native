@@ -7,12 +7,20 @@ import { Transport } from "@effect-native/crsql-mesh-transport"
 import * as InMemoryTransport from "@effect-native/crsql-mesh-transport/InMemoryTransport"
 import { describe, expect, it } from "@effect/vitest"
 import { Chunk, Effect, Layer, Ref, Stream } from "effect"
-import { Mesh, MeshConfig, MeshLive } from "../src/index.js"
+import { Mesh, MeshConfig, MeshDatabaseTag, MeshLive } from "../src/index.js"
 
 const SITE_A = "00000000000000000000000000000001" as Messages.SiteIdHex
 
 const TestConfig = Layer.succeed(MeshConfig, {
   syncInterval: 1000
+})
+
+// Mock database for tests
+const MockDatabase = Layer.succeed(MeshDatabaseTag, {
+  getSiteId: () => Effect.succeed(SITE_A),
+  getDbVersion: () => Effect.succeed("0" as Messages.VersionString),
+  pullChanges: () => Effect.succeed([]),
+  applyChanges: () => Effect.succeed(0)
 })
 
 describe("Transactional apply", () => {
@@ -119,7 +127,8 @@ describe("Progress observation", () => {
         const TransportLayer = Layer.succeed(Transport, transport)
         const TestLayer = MeshLive.pipe(
           Layer.provide(TransportLayer),
-          Layer.provide(TestConfig)
+          Layer.provide(TestConfig),
+          Layer.provide(MockDatabase)
         )
 
         yield* Effect.gen(function*() {
@@ -149,7 +158,8 @@ describe("Progress observation", () => {
         const TransportLayer = Layer.succeed(Transport, transport)
         const TestLayer = MeshLive.pipe(
           Layer.provide(TransportLayer),
-          Layer.provide(TestConfig)
+          Layer.provide(TestConfig),
+          Layer.provide(MockDatabase)
         )
 
         yield* Effect.gen(function*() {

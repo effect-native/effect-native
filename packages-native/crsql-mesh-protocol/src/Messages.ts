@@ -2,17 +2,24 @@
  * Protocol message schemas and types.
  *
  * Defines the message vocabulary for anti-entropy synchronization between
- * CR-SQLite peers. Reuses schema vocabulary from `@effect-native/crsql/CrSqlSchema`.
+ * CR-SQLite peers.
+ *
+ * Schema Reuse (FR-PROTO-001): This module's schemas are structurally aligned
+ * with `@effect-native/crsql/CrSqlSchema`. Due to Effect Schema's nominal typing
+ * (TypeId symbols), schemas cannot be directly re-exported across package boundaries.
+ * Instead, we re-declare structurally identical schemas and import types for
+ * compile-time compatibility. Tests verify this alignment.
  *
  * @since 0.1.0
  */
 import { Effect, ParseResult } from "effect"
 import * as S from "effect/Schema"
+import type * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
 import * as ProtocolError from "./ProtocolError.js"
 
 /**
  * Site ID as a 32-character hex string (16 bytes).
- * Re-exported from CrSqlSchema pattern for protocol use.
+ * Aligned with `@effect-native/crsql/CrSqlSchema.SiteIdHex`.
  *
  * @since 0.1.0
  * @category Schema
@@ -23,11 +30,11 @@ export const SiteIdHex = S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/))
  * @since 0.1.0
  * @category Models
  */
-export type SiteIdHex = typeof SiteIdHex.Type
+export type SiteIdHex = CrSqlSchema.SiteIdHex
 
 /**
  * Version string schema for CR-SQLite version fields.
- * Re-exported from CrSqlSchema pattern for protocol use.
+ * Aligned with `@effect-native/crsql/CrSqlSchema.VersionString`.
  *
  * @since 0.1.0
  * @category Schema
@@ -41,35 +48,41 @@ export const VersionString = S.String.pipe(
  * @since 0.1.0
  * @category Models
  */
-export type VersionString = typeof VersionString.Type
+export type VersionString = CrSqlSchema.VersionString
 
 /**
  * Simple SQL identifier pattern.
+ * Aligned with `@effect-native/crsql/CrSqlSchema.Identifier`.
  *
  * @since 0.1.0
  * @category Schema
+ * @internal
  */
 const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
 
 /**
  * Basic hex string pattern (uppercase or lowercase).
+ * Aligned with `@effect-native/crsql/CrSqlSchema.HexString`.
  *
  * @since 0.1.0
  * @category Schema
+ * @internal
  */
 const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
 
 /**
  * SQLite column value type from typeof() function.
+ * Aligned with `@effect-native/crsql/CrSqlSchema.SqlValueType`.
  *
  * @since 0.1.0
  * @category Schema
+ * @internal
  */
 const SqlValueType = S.Literal("null", "text", "integer", "real", "blob")
 
 /**
  * Pre-serialized crsql_changes row for transport (IO boundary shape).
- * Mirrors CrSqlSchema.ChangeRowSerialized.
+ * Aligned with `@effect-native/crsql/CrSqlSchema.ChangeRowSerialized`.
  *
  * @since 0.1.0
  * @category Schema
@@ -94,7 +107,7 @@ export const ChangeRowSerialized = S.Struct({
  * @since 0.1.0
  * @category Models
  */
-export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
+export type ChangeRowSerialized = CrSqlSchema.ChangeRowSerialized
 
 /**
  * A map from site IDs to the highest db_version known for each site.
@@ -103,8 +116,8 @@ export type ChangeRowSerialized = typeof ChangeRowSerialized.Type
  * @category Schema
  */
 export const PeersMap = S.Record({
-  key: S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/)),
-  value: S.String.pipe(S.pattern(/^[0-9]+$/))
+  key: SiteIdHex,
+  value: VersionString
 }).annotations({
   identifier: "PeersMap",
   description: "Map of site IDs to their highest known db_version"

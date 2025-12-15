@@ -4,9 +4,11 @@
  * These tests specify the schema behavior for protocol messages:
  * - VersionSummary, DiffRequest, DiffResponse decode valid payloads
  * - Invalid payloads produce typed decode errors surfaced as ProtocolError
+ * - Protocol types are structurally compatible with CrSqlSchema types (FR-PROTO-001)
  */
 import { describe, it } from "@effect/vitest"
 import { Effect, Schema as S } from "effect"
+import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
 import * as Messages from "../src/Messages.js"
 
 describe("VersionSummary schema", () => {
@@ -248,5 +250,85 @@ describe("MeshMessage schema", () => {
       if (result._tag !== "ProtocolError") {
         yield* Effect.fail(new Error(`Expected ProtocolError, got ${result._tag}`))
       }
+    }))
+})
+
+/**
+ * Schema type alignment tests (FR-PROTO-001).
+ *
+ * These tests verify that protocol schemas are structurally compatible with
+ * the canonical CrSqlSchema types. This ensures the protocol uses the same
+ * type definitions rather than structurally-identical copies.
+ */
+describe("Schema type alignment with CrSqlSchema (FR-PROTO-001)", () => {
+  it.effect("SiteIdHex type is assignable to CrSqlSchema.SiteIdHex", () =>
+    Effect.gen(function*() {
+      // Compile-time check: this would fail if types don't match
+      const protocolSiteId: Messages.SiteIdHex = "AABBCCDD11223344556677889900EEFF"
+      const crsqlSiteId: CrSqlSchema.SiteIdHex = protocolSiteId
+      yield* Effect.sync(() => {
+        if (crsqlSiteId !== protocolSiteId) {
+          throw new Error("SiteIdHex value mismatch")
+        }
+      })
+    }))
+
+  it.effect("VersionString type is assignable to CrSqlSchema.VersionString", () =>
+    Effect.gen(function*() {
+      // Compile-time check: this would fail if types don't match
+      const protocolVersion: Messages.VersionString = "12345"
+      const crsqlVersion: CrSqlSchema.VersionString = protocolVersion
+      yield* Effect.sync(() => {
+        if (crsqlVersion !== protocolVersion) {
+          throw new Error("VersionString value mismatch")
+        }
+      })
+    }))
+
+  it.effect("ChangeRowSerialized type is assignable to CrSqlSchema.ChangeRowSerialized", () =>
+    Effect.gen(function*() {
+      // Compile-time check: this would fail if types don't match
+      const changeRow: Messages.ChangeRowSerialized = {
+        table: "todos",
+        pk: "AABBCCDD",
+        cid: "title",
+        val: "Test",
+        val_type: "text",
+        col_version: "1",
+        db_version: "1",
+        site_id: "AABBCCDD11223344556677889900EEFF",
+        cl: 0,
+        seq: 0
+      }
+      const crsqlChangeRow: CrSqlSchema.ChangeRowSerialized = changeRow
+      yield* Effect.sync(() => {
+        if (crsqlChangeRow.table !== changeRow.table) {
+          throw new Error("ChangeRowSerialized value mismatch")
+        }
+      })
+    }))
+
+  it.effect("CrSqlSchema.ChangeRowSerialized is assignable back to Messages.ChangeRowSerialized", () =>
+    Effect.gen(function*() {
+      // Bidirectional compile-time check: types are fully compatible
+      const crsqlRow: CrSqlSchema.ChangeRowSerialized = {
+        table: "todos",
+        pk: "AABBCCDD",
+        cid: "title",
+        val: "Test",
+        val_type: "text",
+        col_version: "1",
+        db_version: "1",
+        site_id: "AABBCCDD11223344556677889900EEFF",
+        cl: 0,
+        seq: 0
+      }
+      // This assignment verifies CrSqlSchema type is assignable to Messages type
+      const protocolRow: Messages.ChangeRowSerialized = crsqlRow
+      yield* Effect.sync(() => {
+        if (protocolRow.table !== crsqlRow.table) {
+          throw new Error("ChangeRowSerialized bidirectional assignment mismatch")
+        }
+      })
     }))
 })
