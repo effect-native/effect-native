@@ -30,7 +30,11 @@ Verify that the final implementation meets all specified requirements and mainta
 - [x] **[CR-SQLite Global Mesh — Package Map](./crsqlite-global-mesh-packages/)** (Phase 1 complete)
   - Source proposal: [`../../research/zig-cr/102-proposal-crsqlite-global-mesh.md`](../../research/zig-cr/102-proposal-crsqlite-global-mesh.md)
   - Task card: [`../../.tasks/done/TASK-039-spec-global-mesh-package-map.md`](../../.tasks/done/TASK-039-spec-global-mesh-package-map.md)
-  - Notes: package-level planning for `@effect-native/crsql-mesh*`
+  - Notes: initial package-level planning for `@effect-native/crsql-mesh*`
+
+### Global Mesh (product spec)
+- [ ] **[CR-SQLite Global Mesh — Unified Product Spec](./crsql-mesh/)**
+  - Notes: single source of truth for mesh behavior; package boundaries deferred (Thing Golf)
 
 
 ### Infrastructure & Development Workflow

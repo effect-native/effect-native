@@ -1,5 +1,19 @@
 # crsql-mesh — Phase 3: Design
 
+## Product-Level Module Map
+
+The crsql-mesh system spans multiple concerns. This section provides a high-level map of how they relate.
+
+| Concern | Responsibility | Primary Runtime |
+| --- | --- | --- |
+| Mesh Engine | Transport-agnostic sync: compare summaries, request/apply diffs | Any (Node, Bun, Browser Worker) |
+| Browser Multi-Tab Orchestration | Coordinate OPFS access across tabs; elect provider; route SQL | Browser only |
+| Protocol | Encode/decode MeshMessage envelopes | Any |
+| Transport | Best-effort send/receive of payloads | Varies by environment |
+| Database Connection | SQLite + CR-SQLite access | Varies by runtime |
+
+The Mesh Engine (described below) is runtime-agnostic. The Browser Multi-Tab design (described in a later section) is a browser-specific orchestration layer that ensures only one tab owns the OPFS database connection at a time.
+
 ## Purpose
 
 Provide a transport-agnostic synchronization engine that:
@@ -224,3 +238,115 @@ Key cases:
 - Compaction and garbage collection.
 - Authentication and authorization.
 - Schema migration coordination.
+
+---
+
+## Browser Multi-Tab Design (crsqlite-web-multitab)
+
+This section describes the browser-specific orchestration layer that enables multiple tabs to share a single OPFS-backed CR-SQLite database safely.
+
+### Problem Statement
+
+In browsers, OPFS (Origin Private File System) does not safely support concurrent access from multiple tabs. Opening the same database from multiple tabs causes corruption. Additionally, SharedArrayBuffer-based solutions require COOP/COEP headers, which many applications cannot deploy.
+
+The solution is a "browser database daemon" pattern: one tab owns the database connection, and all other tabs proxy their requests through it.
+
+### Architectural Roles
+
+| Role | Runtime Location | Responsibility |
+| --- | --- | --- |
+| Coordinator | SharedWorker (preferred) or ServiceWorker (fallback) | Elects the provider tab, holds MessagePorts for all connected clients, routes requests from clients to provider, detects provider death and triggers re-election |
+| Provider | Dedicated Worker in one tab | Owns the OPFS database connection, loads the sqlite+crsqlite wasm bundle, executes SQL requests sequentially, broadcasts notifications |
+| Client | Main thread of any tab | Uses a DbClient proxy to issue SQL requests, receives notifications of db_version advances, re-queries on notification |
+
+### The "Only Provider Touches OPFS" Invariant
+
+At any moment, exactly one provider worker holds the OPFS database connection. No other tab or worker may open the database file directly. This invariant eliminates corruption risk and removes the need for SharedArrayBuffer or COOP/COEP headers.
+
+All SQL execution flows through the provider:
+
+- Client tabs send requests to the coordinator
+- Coordinator forwards requests to the provider
+- Provider executes SQL and returns results via coordinator
+- Provider broadcasts db_version changes through coordinator to all clients
+
+### Provider Election Strategy (MVP)
+
+Election uses Web Locks, a browser API that provides cross-tab mutual exclusion.
+
+**Lock name convention:** Each logical database uses a lock named by pattern, such as combining a prefix with the database name.
+
+**Election process:**
+
+1. When a tab wants to become provider, it requests an exclusive Web Lock for that database name
+2. The first tab to acquire the lock becomes provider
+3. The tab holds the lock for the lifetime of its provider role
+4. If the provider tab closes or crashes, the lock is released, and another waiting tab acquires it
+
+**Coordinator role in election:**
+
+- The coordinator does not hold the Web Lock itself
+- The coordinator tracks which client port belongs to the current provider
+- When a new provider acquires the lock, it registers with the coordinator
+
+### Liveness and Death Detection
+
+**Provider liveness:** The coordinator monitors the MessagePort to the provider. If the port disconnects (tab closed, worker crashed), the coordinator:
+
+1. Marks the provider as dead
+2. Notifies clients that provider is unavailable
+3. Waits for a new provider to register (another tab will acquire the Web Lock and register)
+
+**Client liveness (optional enhancement):** Clients can hold their own Web Locks (shared mode) so the provider can detect when a client disappears and clean up per-client subscriptions.
+
+### Notification Pathway for db_version Advances
+
+When the provider applies changes (either from local writes or from mesh sync), it must notify clients so they can refresh their views.
+
+**Notification flow:**
+
+1. After any write transaction commits, the provider checks the current db_version
+2. If db_version has advanced, the provider sends a notification message through its port to the coordinator
+3. The coordinator broadcasts this notification to all connected client ports
+4. Each client's DbClient proxy receives the notification and can trigger re-queries or UI updates
+
+**Notification content (minimal):** The database name and the new db_version value. Clients do not receive the actual changed data; they re-query as needed.
+
+### Request/Response Flow
+
+**For a SQL query from Tab A:**
+
+1. Tab A's main thread calls DbClient with a query
+2. DbClient sends a request (with a unique request ID) to the coordinator
+3. Coordinator forwards the request to the provider worker
+4. Provider executes the query against the OPFS-backed database
+5. Provider sends the result (with the same request ID) back to the coordinator
+6. Coordinator routes the result to Tab A
+7. DbClient resolves the pending promise
+
+**Serial execution:** The provider processes requests sequentially (single queue). This avoids overlapping transactions and simplifies correctness.
+
+### Migration Safety (Provider Death Mid-Request)
+
+When a provider dies while a request is in flight, the client cannot know if a write committed.
+
+**MVP approach:** For write operations, clients supply a transaction ID. The provider uses an idempotency guard (a small tracking table) so that retrying the same transaction ID is safe. If the previous attempt committed, the retry detects this and returns success without re-executing. If it failed, the retry executes normally.
+
+### Coordinator Implementation Options
+
+| Option | Availability | Notes |
+| --- | --- | --- |
+| SharedWorker | Most desktop browsers; limited on Android | Preferred; survives tab navigation; natural fit for port management |
+| ServiceWorker | Broad availability | Fallback; requires different lifecycle management; no sync OPFS handles |
+
+The coordinator does not touch OPFS; it only routes messages and manages ports.
+
+### Integration with Mesh Engine
+
+The browser multi-tab layer is orthogonal to the Mesh Engine. The provider worker can run the Mesh sync loop internally:
+
+- The provider's database connection is the Mesh's database dependency
+- The Mesh's "observe local progress" capability feeds into the notification broadcast
+- Clients are unaware of mesh sync; they simply see db_version advances
+
+This separation means the Mesh Engine design (transport-agnostic sync) remains unchanged. The browser orchestration is purely a runtime integration concern.

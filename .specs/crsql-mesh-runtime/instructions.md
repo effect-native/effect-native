@@ -1,3 +1,9 @@
+> **Note:** This spec directory is now reference material.
+> The primary spec is the unified product spec at `effect-native/.specs/crsql-mesh/`.
+> Package boundaries are deferred until they block progress (see `research/thing-golf.md`).
+
+---
+
 # @effect-native/crsql-mesh-runtime-* — Instructions
 
 ## Context

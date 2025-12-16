@@ -1,6 +1,19 @@
+# CR-SQLite Global Mesh — Unified Product Spec (Phase 1: Instructions)
+
+> Note: This spec is intentionally product-shaped (not package-shaped).
+> Package boundaries and npm names are deferred until they block progress (see `research/thing-golf.md`).
+
 # @effect-native/crsql-mesh — Instructions
 
 ## Context
+
+This spec follows the “minimize new Things until necessary” principle in `research/thing-golf.md`.
+
+Accordingly, it describes the full mesh product surface in one place first, and only later (when blocked) do we:
+- decide package boundaries
+- decide npm names
+- decide which module lives in which package
+
 
 CR-SQLite provides conflict-free replicated SQLite databases, but it only provides the merge semantics and storage. There is currently no standard way to coordinate synchronization between multiple replicas running across different processes, threads, devices, or network boundaries.
 
@@ -20,6 +33,8 @@ As a developer building local-first applications, I want a transport-agnostic sy
 
 - **Transport-agnostic core**: The sync engine operates on abstract "send bytes" and "receive bytes" operations; it does not care whether bytes travel via WebSocket, WebRTC, IPC, shared memory, or carrier pigeon.
 
+- **Runtime-agnostic adapters**: The product includes runtime adapters (browser, node-like, react-native) that wire the mesh core to platform persistence + coordination.
+
 - **Anti-entropy loop management**: The engine maintains version vector summaries, computes what changes are missing between peers, requests missing data, and applies incoming batches.
 
 - **Transactional change application**: Incoming change batches are applied within SQLite transactions to ensure atomicity.
@@ -32,9 +47,13 @@ As a developer building local-first applications, I want a transport-agnostic sy
 
 - **Observable progress**: Callers can observe when the local replica's version advances, enabling UI refresh patterns based on "db_version changed" notifications.
 
+- **Browser multi-tab safety (crsqlite-web-multitab)**: One OPFS-backed database is safely usable from many tabs without corruption, without requiring COOP/COEP.
+
 ## Out of Scope
 
-The following are explicitly NOT part of this package:
+The following are explicitly NOT part of this product spec:
+
+- **Final package boundaries and naming**: We defer carving the product into npm packages (and naming those packages) until boundaries block progress (Thing Golf: avoid new Things until necessary).
 
 - **Transport implementations**: No WebSocket, WebRTC, HTTP, IPC, or any concrete transport code. Transport adapters are separate packages that plug into this engine.
 
