@@ -420,3 +420,233 @@ describe("Coordinator db_version Notification Broadcast", () => {
     expect(versionChangeCalls.length).toBe(0)
   })
 })
+
+describe("Coordinator Provider Migration (F13-F14)", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("triggers re-election when provider port disconnects", () => {
+    const coordinator = new Coordinator("migration-test")
+    const providerPort = createMockMessagePort()
+    const clientPort1 = createMockMessagePort()
+    const clientPort2 = createMockMessagePort()
+
+    // Setup provider
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup two clients
+    coordinator.handleConnection(clientPort1 as unknown as MessagePort)
+    coordinator.handleConnection(clientPort2 as unknown as MessagePort)
+
+    // Verify provider is set
+    expect(coordinator.getProviderId()).not.toBeNull()
+    const originalProviderId = coordinator.getProviderId()
+
+    // Clear previous calls
+    clientPort1.postMessage.mockClear()
+    clientPort2.postMessage.mockClear()
+
+    // Provider disconnects (simulating tab close)
+    coordinator.handleDisconnect(providerPort as unknown as MessagePort)
+
+    // Provider ID is cleared
+    expect(coordinator.getProviderId()).toBeNull()
+
+    // At least one remaining client receives try-become-provider
+    const client1TryBecomeProvider = clientPort1.postMessage.mock.calls.some(
+      (call) => call[0]?.type === "try-become-provider"
+    )
+    const client2TryBecomeProvider = clientPort2.postMessage.mock.calls.some(
+      (call) => call[0]?.type === "try-become-provider"
+    )
+    expect(client1TryBecomeProvider || client2TryBecomeProvider).toBe(true)
+
+    // Client 1 becomes new provider
+    coordinator.handleMessage(clientPort1 as unknown as MessagePort, { type: "became-provider" })
+
+    // New provider is elected (different from original)
+    expect(coordinator.getProviderId()).not.toBeNull()
+    expect(coordinator.getProviderId()).not.toBe(originalProviderId)
+
+    // Client 1 is notified they are the provider
+    expect(clientPort1.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "provider-elected",
+        isYou: true
+      })
+    )
+  })
+
+  it("queues requests during provider migration and processes them after new provider elected", () => {
+    const coordinator = new Coordinator("queue-test")
+    const providerPort = createMockMessagePort()
+    const clientPort = createMockMessagePort()
+    const newProviderPort = createMockMessagePort()
+
+    // Setup initial provider
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup client
+    coordinator.handleConnection(clientPort as unknown as MessagePort)
+    const clientId = clientPort.postMessage.mock.calls.find(
+      (call) => call[0]?.type === "connected"
+    )?.[0]?.clientId
+
+    // Provider disconnects
+    coordinator.handleDisconnect(providerPort as unknown as MessagePort)
+
+    // Client sends a request while no provider exists
+    const request = {
+      type: "query",
+      requestId: "migration-req-1",
+      payload: { sql: "SELECT 1" }
+    }
+    coordinator.handleMessage(clientPort as unknown as MessagePort, request)
+
+    // New tab becomes provider
+    coordinator.handleConnection(newProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(newProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // The queued request is forwarded to the new provider at the time of election
+    // Check that the forward-request was sent (don't clear mocks before checking)
+    expect(newProviderPort.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "forward-request",
+        clientId,
+        request
+      })
+    )
+  })
+
+  it("clients continue to exec after provider migration", () => {
+    const coordinator = new Coordinator("exec-after-migration")
+    const oldProviderPort = createMockMessagePort()
+    const newProviderPort = createMockMessagePort()
+    const clientPort = createMockMessagePort()
+
+    // Setup initial provider
+    coordinator.handleConnection(oldProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(oldProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup client
+    coordinator.handleConnection(clientPort as unknown as MessagePort)
+    const clientId = clientPort.postMessage.mock.calls.find(
+      (call) => call[0]?.type === "connected"
+    )?.[0]?.clientId
+
+    // Old provider disconnects
+    coordinator.handleDisconnect(oldProviderPort as unknown as MessagePort)
+
+    // New provider connects and becomes provider
+    coordinator.handleConnection(newProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(newProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Clear previous calls
+    newProviderPort.postMessage.mockClear()
+
+    // Client sends exec request after migration
+    const execRequest = {
+      type: "exec",
+      requestId: "post-migration-exec",
+      payload: { sql: "INSERT INTO test VALUES (1)", txId: "tx-123" }
+    }
+    coordinator.handleMessage(clientPort as unknown as MessagePort, execRequest)
+
+    // Request is forwarded to new provider
+    expect(newProviderPort.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "forward-request",
+        clientId,
+        request: execRequest
+      })
+    )
+  })
+
+  it("clients continue to query after provider migration", () => {
+    const coordinator = new Coordinator("query-after-migration")
+    const oldProviderPort = createMockMessagePort()
+    const newProviderPort = createMockMessagePort()
+    const clientPort = createMockMessagePort()
+
+    // Setup initial provider
+    coordinator.handleConnection(oldProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(oldProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup client
+    coordinator.handleConnection(clientPort as unknown as MessagePort)
+    const clientId = clientPort.postMessage.mock.calls.find(
+      (call) => call[0]?.type === "connected"
+    )?.[0]?.clientId
+
+    // Old provider disconnects
+    coordinator.handleDisconnect(oldProviderPort as unknown as MessagePort)
+
+    // New provider connects and becomes provider
+    coordinator.handleConnection(newProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(newProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Clear previous calls
+    newProviderPort.postMessage.mockClear()
+
+    // Client sends query request after migration
+    const queryRequest = {
+      type: "query",
+      requestId: "post-migration-query",
+      payload: { sql: "SELECT * FROM test" }
+    }
+    coordinator.handleMessage(clientPort as unknown as MessagePort, queryRequest)
+
+    // Request is forwarded to new provider
+    expect(newProviderPort.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "forward-request",
+        clientId,
+        request: queryRequest
+      })
+    )
+  })
+
+  it("notifies all clients when new provider is elected after migration", () => {
+    const coordinator = new Coordinator("notify-all-test")
+    const oldProviderPort = createMockMessagePort()
+    const newProviderPort = createMockMessagePort()
+    const clientPort1 = createMockMessagePort()
+    const clientPort2 = createMockMessagePort()
+
+    // Setup initial provider
+    coordinator.handleConnection(oldProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(oldProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup clients
+    coordinator.handleConnection(clientPort1 as unknown as MessagePort)
+    coordinator.handleConnection(clientPort2 as unknown as MessagePort)
+
+    // Old provider disconnects
+    coordinator.handleDisconnect(oldProviderPort as unknown as MessagePort)
+
+    // Clear previous calls
+    clientPort1.postMessage.mockClear()
+    clientPort2.postMessage.mockClear()
+
+    // New provider connects and becomes provider
+    coordinator.handleConnection(newProviderPort as unknown as MessagePort)
+    coordinator.handleMessage(newProviderPort as unknown as MessagePort, { type: "became-provider" })
+
+    // All clients receive provider-elected notification
+    expect(clientPort1.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "provider-elected",
+        isYou: false
+      })
+    )
+    expect(clientPort2.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "provider-elected",
+        isYou: false
+      })
+    )
+  })
+})

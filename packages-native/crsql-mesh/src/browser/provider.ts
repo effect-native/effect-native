@@ -85,6 +85,7 @@ const createErrorResponse = (requestId: string, code: string, message: string): 
  * - Owns the single OPFS database connection
  * - Processes requests serially on a queue
  * - Uses opfs-sahpool VFS (no SharedArrayBuffer requirement)
+ * - Enforces idempotent writes via txId guard (F13-F14)
  *
  * @since 0.1.0
  */
@@ -109,6 +110,9 @@ export class Provider {
   // db_version tracking and notification
   private lastKnownDbVersion: number | null = null
   private readonly versionChangeCallbacks: Set<VersionChangeCallback> = new Set()
+
+  // Idempotency guard: tracks last committed txId per clientId
+  private readonly committedTxIds = new Map<string, string>()
 
   constructor(config: ProviderConfig) {
     this.dbName = config.dbName
@@ -301,6 +305,18 @@ export class Provider {
     this.db = new this.sqlJs.Database()
     this.owner = true
 
+    // Initialize idempotency guard table for migration-safe writes (F13-F14)
+    // This table tracks the last committed txId per clientId to prevent duplicate commits
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS crsqlite_web_last_tx (
+        clientId TEXT PRIMARY KEY,
+        txId TEXT NOT NULL
+      )
+    `)
+
+    // Clear in-memory cache since we have a fresh DB
+    this.committedTxIds.clear()
+
     // Initialize lastKnownDbVersion to current version so we only emit on advances
     this.lastKnownDbVersion = this.getDbVersion()
 
@@ -322,18 +338,76 @@ export class Provider {
 
   /**
    * Handle exec (write) request.
+   *
+   * Write operations require txId and clientId for idempotency during provider migration.
+   * If a txId has already been committed for a clientId, returns DUPLICATE_TX error.
    */
   private async handleExec(request: RpcRequest): Promise<RpcResponse> {
     if (!this.db) {
       return createErrorResponse(request.requestId, "DB_NOT_OPEN", "Database not open")
     }
 
-    const payload = request.payload as { sql: string; bind?: unknown[] } | undefined
+    const payload = request.payload as {
+      sql: string
+      bind?: unknown[]
+      txId?: string
+      clientId?: string
+    } | undefined
     if (!payload?.sql) {
       return createErrorResponse(request.requestId, "INVALID_REQUEST", "Missing SQL")
     }
 
+    // Write operations require txId for idempotency guard (F13-F14)
+    if (!payload.txId || !payload.clientId) {
+      return createErrorResponse(
+        request.requestId,
+        "TXID_REQUIRED",
+        "Write operations require txId and clientId for migration safety"
+      )
+    }
+
+    const { txId, clientId } = payload
+
+    // Check idempotency: has this txId already been committed for this client?
+    // First check in-memory cache
+    if (this.committedTxIds.get(clientId) === txId) {
+      return createErrorResponse(
+        request.requestId,
+        "DUPLICATE_TX",
+        "Transaction already committed"
+      )
+    }
+
+    // Also check database in case provider was restarted
+    try {
+      const existingTx = this.db.exec(
+        `SELECT txId FROM crsqlite_web_last_tx WHERE clientId = '${clientId}'`
+      )
+      if (existingTx.length > 0 && existingTx[0].values.length > 0) {
+        const storedTxId = existingTx[0].values[0][0] as string
+        if (storedTxId === txId) {
+          // Update in-memory cache
+          this.committedTxIds.set(clientId, txId)
+          return createErrorResponse(
+            request.requestId,
+            "DUPLICATE_TX",
+            "Transaction already committed"
+          )
+        }
+      }
+    } catch {
+      // Table may not exist yet if DB was just opened - that's OK
+    }
+
+    // Execute the SQL
     this.db.run(payload.sql, payload.bind)
+
+    // Record the txId as committed
+    this.db.run(
+      `INSERT OR REPLACE INTO crsqlite_web_last_tx (clientId, txId) VALUES (?, ?)`,
+      [clientId, txId]
+    )
+    this.committedTxIds.set(clientId, txId)
 
     // Check if db_version advanced and notify subscribers
     this.checkAndNotifyVersionChange()
