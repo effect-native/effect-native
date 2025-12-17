@@ -284,3 +284,139 @@ describe("Coordinator MessagePort Routing", () => {
     expect(coordinator.getClient(clientId)).toBeUndefined()
   })
 })
+
+describe("Coordinator db_version Notification Broadcast", () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("broadcasts db_version notification from provider to all clients", () => {
+    const coordinator = new Coordinator("test-db")
+    const providerPort = createMockMessagePort()
+    const clientPort1 = createMockMessagePort()
+    const clientPort2 = createMockMessagePort()
+
+    // Setup provider
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup clients
+    coordinator.handleConnection(clientPort1 as unknown as MessagePort)
+    coordinator.handleConnection(clientPort2 as unknown as MessagePort)
+
+    // Clear previous calls
+    clientPort1.postMessage.mockClear()
+    clientPort2.postMessage.mockClear()
+    providerPort.postMessage.mockClear()
+
+    // Provider sends db_version notification
+    coordinator.handleMessage(providerPort as unknown as MessagePort, {
+      type: "db-version-changed",
+      dbName: "test-db",
+      dbVersion: 42
+    })
+
+    // All clients should receive the notification
+    expect(clientPort1.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "db-version-changed",
+        dbName: "test-db",
+        dbVersion: 42
+      })
+    )
+    expect(clientPort2.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "db-version-changed",
+        dbName: "test-db",
+        dbVersion: 42
+      })
+    )
+  })
+
+  it("does not send notification back to the provider", () => {
+    const coordinator = new Coordinator("test-db")
+    const providerPort = createMockMessagePort()
+    const clientPort = createMockMessagePort()
+
+    // Setup provider and client
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+    coordinator.handleConnection(clientPort as unknown as MessagePort)
+
+    // Clear previous calls
+    providerPort.postMessage.mockClear()
+    clientPort.postMessage.mockClear()
+
+    // Provider sends db_version notification
+    coordinator.handleMessage(providerPort as unknown as MessagePort, {
+      type: "db-version-changed",
+      dbName: "test-db",
+      dbVersion: 10
+    })
+
+    // Client receives notification
+    expect(clientPort.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "db-version-changed",
+        dbName: "test-db",
+        dbVersion: 10
+      })
+    )
+
+    // Provider does NOT receive its own notification back
+    const providerCalls = providerPort.postMessage.mock.calls.filter(
+      (call) => call[0]?.type === "db-version-changed"
+    )
+    expect(providerCalls.length).toBe(0)
+  })
+
+  it("handles notification when no clients are connected", () => {
+    const coordinator = new Coordinator("test-db")
+    const providerPort = createMockMessagePort()
+
+    // Setup provider only
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Clear previous calls
+    providerPort.postMessage.mockClear()
+
+    // Provider sends db_version notification - no error thrown
+    expect(() => {
+      coordinator.handleMessage(providerPort as unknown as MessagePort, {
+        type: "db-version-changed",
+        dbName: "test-db",
+        dbVersion: 5
+      })
+    }).not.toThrow()
+  })
+
+  it("only broadcasts notifications from the current provider", () => {
+    const coordinator = new Coordinator("test-db")
+    const providerPort = createMockMessagePort()
+    const clientPort = createMockMessagePort()
+
+    // Setup provider
+    coordinator.handleConnection(providerPort as unknown as MessagePort)
+    coordinator.handleMessage(providerPort as unknown as MessagePort, { type: "became-provider" })
+
+    // Setup client
+    coordinator.handleConnection(clientPort as unknown as MessagePort)
+
+    // Clear previous calls
+    clientPort.postMessage.mockClear()
+
+    // Notification from non-provider (client) is ignored
+    coordinator.handleMessage(clientPort as unknown as MessagePort, {
+      type: "db-version-changed",
+      dbName: "test-db",
+      dbVersion: 99
+    })
+
+    // Client receives no db-version-changed (only the provider can broadcast)
+    const versionChangeCalls = clientPort.postMessage.mock.calls.filter(
+      (call) => call[0]?.type === "db-version-changed"
+    )
+    expect(versionChangeCalls.length).toBe(0)
+  })
+})

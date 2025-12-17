@@ -34,6 +34,15 @@ export interface ErrorResponse {
 /** RPC response union */
 export type RpcResponse = ResultResponse | ErrorResponse
 
+/** db_version change notification */
+export interface DbVersionNotification {
+  readonly dbName: string
+  readonly dbVersion: number
+}
+
+/** Notification callback type */
+export type VersionChangeCallback = (notification: DbVersionNotification) => void
+
 /** Provider configuration */
 export interface ProviderConfig {
   readonly dbName: string
@@ -97,6 +106,10 @@ export class Provider {
   }> = []
   private processing = false
 
+  // db_version tracking and notification
+  private lastKnownDbVersion: number | null = null
+  private readonly versionChangeCallbacks: Set<VersionChangeCallback> = new Set()
+
   constructor(config: ProviderConfig) {
     this.dbName = config.dbName
     this.vfs = config.vfs ?? "opfs-sahpool"
@@ -130,6 +143,58 @@ export class Provider {
    */
   isOwner(): boolean {
     return this.owner
+  }
+
+  /**
+   * Subscribe to db_version change notifications.
+   * Returns an unsubscribe function.
+   */
+  onVersionChange(callback: VersionChangeCallback): () => void {
+    this.versionChangeCallbacks.add(callback)
+    return () => {
+      this.versionChangeCallbacks.delete(callback)
+    }
+  }
+
+  /**
+   * Query the current db_version from the database.
+   */
+  private getDbVersion(): number | null {
+    if (!this.db) {
+      return null
+    }
+    try {
+      const results = this.db.exec("SELECT crsql_db_version()")
+      if (results.length > 0 && results[0].values.length > 0) {
+        const version = results[0].values[0][0]
+        return typeof version === "number" ? version : null
+      }
+    } catch {
+      // crsql_db_version() may not be available in tests without cr-sqlite
+      return null
+    }
+    return null
+  }
+
+  /**
+   * Check if db_version advanced and emit notification if so.
+   */
+  private checkAndNotifyVersionChange(): void {
+    const currentVersion = this.getDbVersion()
+    if (currentVersion === null) {
+      return
+    }
+
+    if (this.lastKnownDbVersion === null || currentVersion > this.lastKnownDbVersion) {
+      this.lastKnownDbVersion = currentVersion
+      const notification: DbVersionNotification = {
+        dbName: this.dbName,
+        dbVersion: currentVersion
+      }
+      for (const callback of this.versionChangeCallbacks) {
+        callback(notification)
+      }
+    }
   }
 
   /**
@@ -236,6 +301,9 @@ export class Provider {
     this.db = new this.sqlJs.Database()
     this.owner = true
 
+    // Initialize lastKnownDbVersion to current version so we only emit on advances
+    this.lastKnownDbVersion = this.getDbVersion()
+
     return createResultResponse(request.requestId, { success: true, persistent: false })
   }
 
@@ -266,6 +334,9 @@ export class Provider {
     }
 
     this.db.run(payload.sql, payload.bind)
+
+    // Check if db_version advanced and notify subscribers
+    this.checkAndNotifyVersionChange()
 
     return createResultResponse(request.requestId, { changes: 0 })
   }

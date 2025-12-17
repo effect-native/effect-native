@@ -60,6 +60,13 @@ export interface DisconnectMessage {
   readonly type: "disconnect"
 }
 
+/** db_version changed notification from provider */
+export interface DbVersionChangedMessage {
+  readonly type: "db-version-changed"
+  readonly dbName: string
+  readonly dbVersion: number
+}
+
 /** RPC request message */
 export interface RpcRequestMessage {
   readonly type: string
@@ -175,6 +182,10 @@ export class Coordinator {
         this.handleProviderResponse(msg as ForwardResponseMessage)
         break
 
+      case "db-version-changed":
+        this.handleDbVersionChanged(clientId, msg as DbVersionChangedMessage)
+        break
+
       default:
         // Treat as an RPC request to forward to provider
         this.forwardRequestToProvider(clientId, message)
@@ -280,6 +291,24 @@ export class Coordinator {
 
     // Forward the response to the requesting client
     client.port.postMessage(msg.response)
+  }
+
+  /**
+   * Handle db_version change notification from provider.
+   * Broadcasts to all non-provider clients.
+   */
+  private handleDbVersionChanged(senderId: ClientId, msg: DbVersionChangedMessage): void {
+    // Only accept notifications from the current provider
+    if (senderId !== this.currentProviderId) {
+      return
+    }
+
+    // Broadcast to all clients except the provider
+    for (const [clientId, conn] of this.clients) {
+      if (clientId !== this.currentProviderId) {
+        conn.port.postMessage(msg)
+      }
+    }
   }
 
   /**

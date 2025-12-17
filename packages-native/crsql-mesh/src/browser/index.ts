@@ -33,6 +33,7 @@ export {
   type TryBecomeProviderMessage,
   type ForwardRequestMessage,
   type ForwardResponseMessage,
+  type DbVersionChangedMessage,
   createSharedWorkerScript
 } from "./coordinator.js"
 
@@ -48,5 +49,17 @@ export {
   type RpcResponse,
   type ResultResponse,
   type ErrorResponse,
+  type DbVersionNotification,
+  type VersionChangeCallback,
   createProviderWorkerScript
 } from "./provider.js"
+
+/**
+ * Service Worker Coordinator fallback for environments without SharedWorker.
+ *
+ * Use this when SharedWorker is unavailable (e.g., some mobile browsers).
+ * Provides the same election and routing semantics as the SharedWorker coordinator.
+ *
+ * @since 0.1.0
+ */
+export { ServiceWorkerCoordinator, createServiceWorkerScript } from "./coordinator-sw.js"
