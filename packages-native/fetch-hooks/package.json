@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/effect-ts/effect-native.git",
+    "url": "https://github.com/effect-native/effect-native.git",
     "directory": "packages-native/fetch-hooks"
   },
   "engines": {
