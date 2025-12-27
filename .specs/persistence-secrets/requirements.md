@@ -58,9 +58,13 @@ Each store shall be isolated by its identifier so keys in different stores do no
 **FR-6.1** (Ubiquitous)
 The set operation shall accept a TTL parameter for interface compatibility.
 
-**FR-6.2** (State-Driven)
+**FR-6.2** (Event-Driven)
+When a TTL value is provided,
+the System shall emit a warning that TTL is not supported and will be ignored.
+
+**FR-6.3** (State-Driven)
 While the underlying storage does not support expiration,
-the System shall ignore the TTL parameter.
+the System shall ignore the TTL parameter (after warning).
 
 ---
 
