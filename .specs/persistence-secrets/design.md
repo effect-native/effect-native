@@ -20,11 +20,18 @@ The backing store implementation with fields:
 - storeId: String identifier used to namespace keys in the keychain
 - get, getMany, set, setMany, remove, clear: Operations matching BackingPersistenceStore
 
+### RedactedValue
+
+All secret values returned from get operations are wrapped in Effect's Redacted type:
+- The Redacted wrapper prevents accidental logging or inclusion in error messages
+- Callers must explicitly call Redacted.value to access the underlying value
+- This provides automatic protection against secret leakage in logs, errors, and stack traces
+
 ### KeyNamespace
 
 Internal model for constructing keychain identifiers:
-- service: The store identifier (e.g., "npm-snipe")
-- account: The key name within the store
+- service: The store identifier (e.g., "npmjs.com")
+- account: The key name within the store (e.g. "thomasaylott")
 
 The combination of service and account forms a unique identifier in the OS keychain. This maps to Bun.secrets which uses "service" and "name" parameters.
 
@@ -37,7 +44,7 @@ The combination of service and account forms a unique identifier in the OS keych
 | Export | Type | Description |
 |--------|------|-------------|
 | layerBunSecrets | Layer providing BackingPersistence | Creates backing persistence using Bun.secrets |
-| layerTest | Layer providing BackingPersistence | In-memory implementation for testing without keychain access |
+| layerInMemory | Layer providing BackingPersistence | In-memory implementation without keychain access |
 
 ### Internal Functions
 
@@ -80,7 +87,7 @@ To prevent key collisions and maintain store isolation:
 2. The key becomes the "name" (or "account") parameter
 3. This naturally provides the isolation required by FR-5.1
 
-For example, store "npm-snipe" with key "token" maps to service="npm-snipe", name="token" in the keychain.
+For example, store "npmjs.com" with key "token" maps to service="npmjs.com", name="token" in the keychain.
 
 ---
 
@@ -92,8 +99,10 @@ For example, store "npm-snipe" with key "token" maps to service="npm-snipe", nam
 2. Construct keychain identifier from storeId and key
 3. Call Bun.secrets.get with service and name
 4. If null returned, yield Option.none
-5. If string returned, deserialize JSON and yield Option.some with the value
-6. If error thrown, wrap in PersistenceBackingError and fail
+5. If string returned, deserialize JSON
+6. Wrap the deserialized value in Redacted.make
+7. Yield Option.some with the Redacted value
+8. If error thrown, wrap in PersistenceBackingError and fail
 
 ### Set Operation
 
@@ -163,6 +172,14 @@ Per NFR-1.3 through NFR-1.5:
 - Redact any accidental secret exposure before constructing errors
 - Error causes should contain key names but never values
 
+### Redacted Return Values
+
+All values returned from get operations use Effect's Redacted type:
+- Redacted values automatically display as "<redacted>" when logged or stringified
+- Callers must explicitly call Redacted.value(secret) to access the underlying value
+- This makes secret leakage in logs and errors structurally impossible
+- The Redacted wrapper is a zero-cost abstraction at runtime once unwrapped
+
 ### Call-to-Action Messages
 
 Per NFR-1.9, errors include actionable guidance:
@@ -185,10 +202,12 @@ Per NFR-1.9, errors include actionable guidance:
 | Serialization round-trip | Values survive JSON encode/decode |
 | Option handling | None returned for missing keys, Some for existing |
 | Error wrapping | All error types produce correct PersistenceBackingError |
-| TTL ignored | Set operation accepts TTL without error but does not use it |
+| TTL warning | Set operation with TTL emits warning and proceeds |
 | Batch ordering | getMany returns results in same order as input keys |
+| Redacted values | get returns Redacted-wrapped values that display as redacted |
+| Redacted unwrap | Redacted.value reveals the actual secret value |
 
-Unit tests use the layerTest (in-memory) implementation to run without keychain access.
+Unit tests use the layerInMemory (in-memory) implementation to run without keychain access.
 
 ### Integration Tests
 
@@ -218,6 +237,7 @@ The API makes secure behavior automatic:
 - No configuration needed for encryption (OS provides it)
 - Default layer uses real keychain (test layer must be explicitly chosen)
 - No plaintext fallback option
+- All returned secrets are Redacted by default, requiring explicit unwrap to use
 
 ### Fail Closed (NFR-1.7)
 
