@@ -20,14 +20,24 @@ The backing store implementation with fields:
 - storeId: String identifier used to namespace keys in the keychain
 - get, getMany, set, setMany, remove, clear: Operations matching BackingPersistenceStore
 
-### RedactedValue
+### Interface Compliance
 
-All secret values use Effect's Redacted type for both input and output:
-- Get operations return values wrapped in Redacted
-- Set operations accept values wrapped in Redacted
-- The Redacted wrapper prevents accidental logging or inclusion in error messages
-- Callers must explicitly call Redacted.value to access the underlying value
-- This provides automatic protection against secret leakage in logs, errors, and stack traces
+The package implements the standard BackingPersistence interface from @effect/experimental:
+- get returns `Option.Option<unknown>`
+- set accepts `value: unknown`
+- This matches the existing layerMemory and layerKeyValueStore implementations
+
+### SecretsPersistence (Higher-Level API)
+
+In addition to the raw BackingPersistence implementation, the package provides a secrets-aware API:
+- SecretsPersistence wraps BackingPersistence with Redacted semantics
+- get operations return `Option.Option<Redacted<A>>` 
+- set operations accept `Redacted<A>` values
+- This layer automatically wraps/unwraps Redacted to prevent accidental secret leakage
+
+Callers choose which API to use:
+- Use BackingPersistence directly for compatibility with ResultPersistence (schema-based)
+- Use SecretsPersistence for direct secret storage with Redacted protection
 
 ### Supported Value Types
 
@@ -36,7 +46,7 @@ Values stored can be any JSON-serializable type:
 - Objects (complex credentials with multiple fields, OAuth tokens with metadata)
 - Arrays, numbers, booleans, null
 
-The serialization layer handles JSON encoding/decoding transparently. Callers pass typed values and receive typed values back (wrapped in Redacted).
+The serialization layer handles JSON encoding/decoding transparently.
 
 ### KeyNamespace
 
@@ -50,12 +60,24 @@ The combination of service and account forms a unique identifier in the OS keych
 
 ## API Signatures
 
-### Primary Layer
+### Primary Layers
 
 | Export | Type | Description |
 |--------|------|-------------|
 | layerBunSecrets | Layer providing BackingPersistence | Creates backing persistence using Bun.secrets |
 | layerInMemory | Layer providing BackingPersistence | In-memory implementation without keychain access |
+
+### Secrets-Aware API
+
+| Export | Type | Description |
+|--------|------|-------------|
+| SecretsPersistence | Service tag | Higher-level API with Redacted semantics |
+| layerSecretsPersistence | Layer providing SecretsPersistence | Wraps BackingPersistence with Redacted handling |
+
+The SecretsPersistence service provides:
+- get: returns `Effect<Option<Redacted<A>>, PersistenceError>`
+- set: accepts `Redacted<A>` values
+- Internally unwraps Redacted before storage and wraps on retrieval
 
 ### Internal Functions
 
@@ -104,26 +126,37 @@ For example, store "npmjs.com" with key "token" maps to service="npmjs.com", nam
 
 ## Algorithms
 
-### Get Operation
+### Get Operation (BackingPersistence)
 
 1. Receive key string from caller
 2. Construct keychain identifier from storeId and key
 3. Call Bun.secrets.get with service and name
 4. If null returned, yield Option.none
 5. If string returned, deserialize JSON
-6. Wrap the deserialized value in Redacted.make
-7. Yield Option.some with the Redacted value
-8. If error thrown, wrap in PersistenceBackingError and fail
+6. Yield Option.some with the deserialized value (unknown type per interface)
+7. If error thrown, wrap in PersistenceBackingError and fail
 
-### Set Operation
+### Set Operation (BackingPersistence)
 
-1. Receive key, Redacted value, and optional TTL from caller
+1. Receive key, value (unknown), and optional TTL from caller
 2. If TTL is provided, emit warning that TTL is not supported
-3. Unwrap the Redacted value using Redacted.value
-4. Serialize the unwrapped value to JSON string (handles objects, arrays, primitives)
-5. Construct keychain identifier from storeId and key
-6. Call Bun.secrets.set with service, name, and serialized value
-7. If error thrown, wrap in PersistenceBackingError and fail (without exposing the value)
+3. Serialize the value to JSON string (handles objects, arrays, primitives)
+4. Construct keychain identifier from storeId and key
+5. Call Bun.secrets.set with service, name, and serialized value
+6. If error thrown, wrap in PersistenceBackingError and fail (without exposing the value)
+
+### Get Operation (SecretsPersistence)
+
+1. Delegate to underlying BackingPersistence get
+2. If Option.none, return Option.none
+3. If Option.some, wrap the value in Redacted.make
+4. Return Option.some with Redacted value
+
+### Set Operation (SecretsPersistence)
+
+1. Receive key and Redacted value from caller
+2. Unwrap the Redacted value using Redacted.value
+3. Delegate to underlying BackingPersistence set with unwrapped value
 
 ### GetMany Operation
 
@@ -184,13 +217,15 @@ Per NFR-1.3 through NFR-1.5:
 - Redact any accidental secret exposure before constructing errors
 - Error causes should contain key names but never values
 
-### Redacted Return Values
+### Redacted Values (SecretsPersistence API)
 
-All values returned from get operations use Effect's Redacted type:
+The SecretsPersistence API provides Redacted semantics on top of BackingPersistence:
 - Redacted values automatically display as "<redacted>" when logged or stringified
 - Callers must explicitly call Redacted.value(secret) to access the underlying value
 - This makes secret leakage in logs and errors structurally impossible
 - The Redacted wrapper is a zero-cost abstraction at runtime once unwrapped
+
+Note: The raw BackingPersistence interface returns `unknown` per the @effect/experimental contract. Use SecretsPersistence when you want automatic Redacted wrapping.
 
 ### Call-to-Action Messages
 
@@ -217,9 +252,12 @@ Per NFR-1.9, errors include actionable guidance:
 | Error wrapping | All error types produce correct PersistenceBackingError |
 | TTL warning | Set operation with TTL emits warning and proceeds |
 | Batch ordering | getMany returns results in same order as input keys |
-| Redacted input | set accepts Redacted-wrapped values |
-| Redacted output | get returns Redacted-wrapped values that display as redacted |
+| BackingPersistence interface | Conforms to @effect/experimental BackingPersistence contract |
+| SecretsPersistence Redacted input | SecretsPersistence.set accepts Redacted-wrapped values |
+| SecretsPersistence Redacted output | SecretsPersistence.get returns Redacted-wrapped values |
+| Redacted display | Redacted values display as "<redacted>" when stringified |
 | Redacted unwrap | Redacted.value reveals the actual secret value |
+| ResultPersistence compatibility | Can be used with layerResult for schema-based persistence |
 
 Unit tests use the layerInMemory (in-memory) implementation to run without keychain access.
 
@@ -251,7 +289,8 @@ The API makes secure behavior automatic:
 - No configuration needed for encryption (OS provides it)
 - Default layer uses real keychain (test layer must be explicitly chosen)
 - No plaintext fallback option
-- All returned secrets are Redacted by default, requiring explicit unwrap to use
+- SecretsPersistence API returns Redacted by default, requiring explicit unwrap to use
+- BackingPersistence API available for ResultPersistence/Schema integration
 
 ### Fail Closed (NFR-1.7)
 

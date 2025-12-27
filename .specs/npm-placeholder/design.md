@@ -80,11 +80,13 @@ Outcome of a publish operation:
 | Operation | Inputs | Output | Description |
 |-----------|--------|--------|-------------|
 | getPassword | none | Effect yielding Option of Redacted password | Load cached password |
-| setPassword | password | Effect yielding void | Cache password |
+| setPassword | Redacted password | Effect yielding void | Cache password |
 | clearPassword | none | Effect yielding void | Remove cached password |
 | getToken | none | Effect yielding Option of Redacted token | Load cached token |
-| setToken | token | Effect yielding void | Cache token |
+| setToken | Redacted token | Effect yielding void | Cache token |
 | clearToken | none | Effect yielding void | Remove cached token |
+
+CredentialStore is implemented using SecretsPersistence from @effect-native/persistence-secrets, which provides automatic Redacted wrapping/unwrapping.
 
 **Terminal**
 
