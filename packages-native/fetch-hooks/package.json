@@ -41,7 +41,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "^22.15.32"
+    "@types/node": "^22.19.3"
   },
   "peerDependencies": {
     "bun": ">=1.0.0"
