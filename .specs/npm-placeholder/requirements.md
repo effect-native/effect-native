@@ -137,6 +137,18 @@ Subprocess output that may contain secrets shall be sanitized before logging or 
 **NFR-1.6**
 Error stack traces shall not contain secret values.
 
+**NFR-1.7** (Ubiquitous)
+The System shall be a security pit of success: the default behavior shall always be the secure behavior.
+
+**NFR-1.8** (Ubiquitous)
+The System shall fail closed: when in doubt, deny the operation rather than proceed insecurely.
+
+**NFR-1.9** (Ubiquitous)
+The System shall fail secure: failures shall not leak secrets, leave credentials exposed, or leave the system in an insecure state.
+
+**NFR-1.10** (Unwanted Behavior)
+If any security-related operation fails, the System shall provide a clear call-to-action explaining what went wrong and how to resolve it.
+
 ### NFR-2: Reliability
 
 **NFR-2.1**
