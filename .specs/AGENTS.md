@@ -72,6 +72,13 @@ Use the **Easy Approach to Requirements Syntax** patterns. Format for readabilit
 - **Ambiguity:** Words like "fast", "easy", "user-friendly", "robust" (Use metrics instead: "under 200ms").
 - **Implementation Specifics:** Do not dictate *which* library or algorithm to use (that is Design).
 - **Pseudo-code:** No code blocks.
+- **Technical Implementation Details:** Do not specify exact commands, file paths, API calls, or service names. Requirements describe WHAT the system does for the user, not HOW it does it technically. For example:
+    * WRONG: "The System shall run `npm view {package} --json`"
+    * RIGHT: "The System shall check if the package name is available on the registry"
+    * WRONG: "The System shall use service `com.npmjs.registry` and key `token`"
+    * RIGHT: "The System shall securely cache authentication credentials"
+    * WRONG: "The CLI shall use `CliApp.run` with proper layer composition"
+    * RIGHT: "The CLI shall provide standard help and version flags"
 
 ---
 

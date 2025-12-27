@@ -2,113 +2,109 @@
 
 ## Functional Requirements
 
-### FR-1: Layer Construction
+### FR-1: Persistence Interface
 
-**FR-1.1** The package shall export a `layerBunSecrets` layer that provides `BackingPersistence`.
+**FR-1.1** (Ubiquitous)
+The package shall provide a backing persistence implementation compatible with the Effect experimental persistence abstraction.
 
-**FR-1.2** The package shall export a `layerBunSecretsResult` layer that provides `ResultPersistence` using the `layerBunSecrets` backing.
+**FR-1.2** (Ubiquitous)
+The backing shall support creating scoped stores by identifier.
 
-### FR-2: Store Creation
+### FR-2: Basic Operations
 
-**FR-2.1** When `BackingPersistence.make(storeId)` is called,  
-**Then** the system shall return a `BackingPersistenceStore` scoped to that `storeId`.
+**FR-2.1** (Event-Driven)
+When getting a key that exists,
+the System shall return the stored value.
 
-**FR-2.2** The system shall use the `storeId` as the keychain service identifier for all secrets in that store.
+**FR-2.2** (Event-Driven)
+When getting a key that does not exist,
+the System shall indicate absence (not error).
 
-### FR-3: Get Operations
+**FR-2.3** (Event-Driven)
+When setting a key,
+the System shall store the value persistently in secure OS storage.
 
-**FR-3.1** When `store.get(key)` is called with a key that exists in the keychain,  
-**Then** the system shall return `Option.some` containing the JSON-parsed value.
+**FR-2.4** (Event-Driven)
+When removing a key that exists,
+the System shall delete it from storage.
 
-**FR-3.2** When `store.get(key)` is called with a key that does not exist in the keychain,  
-**Then** the system shall return `Option.none`.
+**FR-2.5** (Event-Driven)
+When removing a key that does not exist,
+the System shall succeed without error.
 
-**FR-3.3** When `store.getMany(keys)` is called,  
-**Then** the system shall return an array of `Option` values in the same order as the input keys.
+### FR-3: Batch Operations
 
-**FR-3.4** When `store.get(key)` retrieves a value that cannot be parsed as JSON,  
-**Then** the system shall return a `PersistenceBackingError` with method "get".
+**FR-3.1** (Event-Driven)
+When getting multiple keys,
+the System shall return results in the same order as requested.
 
-### FR-4: Set Operations
+**FR-3.2** (Event-Driven)
+When setting multiple keys,
+the System shall store all values.
 
-**FR-4.1** When `store.set(key, value, ttl)` is called,  
-**Then** the system shall JSON-stringify the value and store it in the keychain under `storeId/key`.
+### FR-4: Clear Operation
 
-**FR-4.2** The `ttl` parameter shall be accepted but ignored (keychain does not support expiration).
+**FR-4.1** (Unwanted Behavior)
+If clear is called and the underlying storage does not support enumeration,
+the System shall fail with a clear error explaining the limitation.
 
-**FR-4.3** When `store.setMany(entries)` is called,  
-**Then** the system shall store each entry sequentially (no batch API available).
+### FR-5: Store Isolation
 
-**FR-4.4** When `store.set(key, value, ttl)` fails due to keychain access error,  
-**Then** the system shall return a `PersistenceBackingError` with method "set".
+**FR-5.1** (Ubiquitous)
+Each store shall be isolated by its identifier so keys in different stores do not conflict.
 
-### FR-5: Remove Operations
+### FR-6: TTL Handling
 
-**FR-5.1** When `store.remove(key)` is called with a key that exists,  
-**Then** the system shall delete the secret from the keychain.
+**FR-6.1** (Ubiquitous)
+The set operation shall accept a TTL parameter for interface compatibility.
 
-**FR-5.2** When `store.remove(key)` is called with a key that does not exist,  
-**Then** the system shall succeed without error.
+**FR-6.2** (State-Driven)
+While the underlying storage does not support expiration,
+the System shall ignore the TTL parameter.
 
-### FR-6: Clear Operation
-
-**FR-6.1** When `store.clear` is called,  
-**Then** the system shall return a `PersistenceBackingError` with method "clear" and a descriptive cause.
-
-**Rationale:** Bun.secrets provides no enumeration API, making it impossible to discover and delete all keys for a given storeId. Callers must track their own keys if bulk deletion is required.
-
-### FR-7: Key Naming
-
-**FR-7.1** The system shall construct keychain secret names using the pattern `{storeId}/{key}`.
-
-**FR-7.2** The system shall use `storeId` as the service name parameter for `Bun.secrets` operations.
-
-### FR-8: Testing Support
-
-**FR-8.1** The package shall export a `layerTest` layer that provides an in-memory `BackingPersistence` for unit testing.
-
-**FR-8.2** The `layerTest` layer shall have identical behavior to `layerBunSecrets` except for actual keychain access.
+---
 
 ## Non-Functional Requirements
 
-### NFR-1: Runtime Dependency
+### NFR-1: Security
 
-**NFR-1.1** The `layerBunSecrets` layer shall require Bun runtime.
+**NFR-1.1**
+Values shall be stored using OS-native secure credential storage (e.g., macOS Keychain, Windows Credential Manager, Linux Secret Service).
 
-**NFR-1.2** When running outside Bun runtime, importing `layerBunSecrets` shall fail with a clear error message indicating Bun is required.
+**NFR-1.2**
+The implementation shall rely on OS-provided encryption rather than custom encryption.
 
 ### NFR-2: Error Handling
 
-**NFR-2.1** All keychain errors shall be wrapped in `PersistenceBackingError` with the appropriate method name.
+**NFR-2.1**
+Storage errors shall be wrapped in appropriate persistence error types.
 
-**NFR-2.2** Error messages shall preserve the original error cause for debugging.
+**NFR-2.2**
+Error messages shall preserve underlying cause for debugging.
 
-### NFR-3: Data Format
+### NFR-3: Testability
 
-**NFR-3.1** All values shall be stored as JSON strings (Bun.secrets is string-only).
+**NFR-3.1**
+The package shall provide a test implementation that works identically but without actual secure storage access.
 
-**NFR-3.2** Values that cannot be JSON-serialized shall result in a `PersistenceBackingError`.
-
-### NFR-4: Effect Patterns
-
-**NFR-4.1** All public exports shall include JSDoc with `@since` and `@category` tags.
-
-**NFR-4.2** The package shall follow Effect's TypeId pattern for service identification.
-
-**NFR-4.3** The package shall use `Context.GenericTag` for service tags.
+---
 
 ## Constraints
 
-### C-1: API Limitations
+### C-1: Data Format
 
-**C-1.1** The implementation shall not provide TTL-based expiration (keychain limitation).
-
-**C-1.2** The implementation shall not provide batch operations optimization (no keychain batch API).
-
-**C-1.3** The implementation shall not support binary data (Bun.secrets is string-only).
+**C-1.1**
+Values must be serializable (the implementation may require string serialization).
 
 ### C-2: Platform Support
 
-**C-2.1** The implementation shall support macOS Keychain, Linux libsecret, and Windows Credential Manager (via Bun.secrets abstraction).
+**C-2.1**
+The implementation shall support macOS, Linux, and Windows through OS-native credential storage.
 
-**C-2.2** Platform-specific behavior shall be delegated entirely to Bun.secrets.
+### C-3: Limitations
+
+**C-3.1**
+The implementation is not required to support TTL-based automatic expiration.
+
+**C-3.2**
+The implementation is not required to support enumeration of all keys.
