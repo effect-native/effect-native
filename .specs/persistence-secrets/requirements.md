@@ -93,7 +93,7 @@ The System shall fail closed: when in doubt, deny the operation rather than proc
 The System shall fail secure: failures shall not leak secrets or leave the system in an insecure state.
 
 **NFR-1.9** (Unwanted Behavior)
-If any security-related operation fails, the System shall provide a clear call-to-action explaining what went wrong and how to resolve it.
+If any operation fails, the System shall provide a clear call-to-action explaining what went wrong and how to resolve it.
 
 ### NFR-2: Error Handling
 
