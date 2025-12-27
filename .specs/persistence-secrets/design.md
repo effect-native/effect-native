@@ -22,10 +22,21 @@ The backing store implementation with fields:
 
 ### RedactedValue
 
-All secret values returned from get operations are wrapped in Effect's Redacted type:
+All secret values use Effect's Redacted type for both input and output:
+- Get operations return values wrapped in Redacted
+- Set operations accept values wrapped in Redacted
 - The Redacted wrapper prevents accidental logging or inclusion in error messages
 - Callers must explicitly call Redacted.value to access the underlying value
 - This provides automatic protection against secret leakage in logs, errors, and stack traces
+
+### Supported Value Types
+
+Values stored can be any JSON-serializable type:
+- Strings (simple passwords, tokens)
+- Objects (complex credentials with multiple fields, OAuth tokens with metadata)
+- Arrays, numbers, booleans, null
+
+The serialization layer handles JSON encoding/decoding transparently. Callers pass typed values and receive typed values back (wrapped in Redacted).
 
 ### KeyNamespace
 
@@ -52,8 +63,8 @@ The combination of service and account forms a unique identifier in the OS keych
 |----------|--------|--------|-------------|
 | makeStore | storeId (string) | Effect yielding BackingPersistenceStore | Creates a scoped store for the given identifier |
 | makeSecretKey | storeId, key | string | Combines store ID and key into a keychain service name |
-| serializeValue | unknown | string | JSON-serializes a value for storage |
-| deserializeValue | string | unknown | JSON-parses a stored string value |
+| serializeValue | unknown | string | JSON-serializes any value (string, object, array, etc.) for storage |
+| deserializeValue | string | unknown | JSON-parses a stored string back to its original type |
 
 ---
 
@@ -106,12 +117,13 @@ For example, store "npmjs.com" with key "token" maps to service="npmjs.com", nam
 
 ### Set Operation
 
-1. Receive key, value, and optional TTL from caller
-2. Ignore TTL parameter (keychain does not support expiration)
-3. Serialize value to JSON string
-4. Construct keychain identifier from storeId and key
-5. Call Bun.secrets.set with service, name, and serialized value
-6. If error thrown, wrap in PersistenceBackingError and fail
+1. Receive key, Redacted value, and optional TTL from caller
+2. If TTL is provided, emit warning that TTL is not supported
+3. Unwrap the Redacted value using Redacted.value
+4. Serialize the unwrapped value to JSON string (handles objects, arrays, primitives)
+5. Construct keychain identifier from storeId and key
+6. Call Bun.secrets.set with service, name, and serialized value
+7. If error thrown, wrap in PersistenceBackingError and fail (without exposing the value)
 
 ### GetMany Operation
 
@@ -199,12 +211,14 @@ Per NFR-1.9, errors include actionable guidance:
 | Test Area | What to Verify |
 |-----------|----------------|
 | Key namespace construction | Store ID and key combine correctly into keychain identifiers |
-| Serialization round-trip | Values survive JSON encode/decode |
+| Serialization round-trip | Values survive JSON encode/decode (strings, objects, arrays) |
+| Complex object storage | JSON objects with nested fields store and retrieve correctly |
 | Option handling | None returned for missing keys, Some for existing |
 | Error wrapping | All error types produce correct PersistenceBackingError |
 | TTL warning | Set operation with TTL emits warning and proceeds |
 | Batch ordering | getMany returns results in same order as input keys |
-| Redacted values | get returns Redacted-wrapped values that display as redacted |
+| Redacted input | set accepts Redacted-wrapped values |
+| Redacted output | get returns Redacted-wrapped values that display as redacted |
 | Redacted unwrap | Redacted.value reveals the actual secret value |
 
 Unit tests use the layerInMemory (in-memory) implementation to run without keychain access.

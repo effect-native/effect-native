@@ -113,20 +113,22 @@ The package lives at packages/npm-placeholder with the following organization:
 ### Dependency Relationships
 
 External dependencies:
-- effect: Core library
+- effect: Core library (including Redacted for secret values)
 - @effect/cli: Command, Args, Options, CliApp
-- @effect/platform: Process, Terminal
+- @effect/platform: Terminal, Command, FileSystem, Path
+- @effect/platform-bun: BunContext, BunRuntime for Bun-specific platform layer
 - @effect-native/persistence-secrets: BackingPersistence for credential storage
 
-The CLI entry point composes all services into layers and runs via CliApp.
+The CLI entry point composes all services into layers and runs via CliApp with BunRuntime.
 
 ### Layer Composition
 
 The main program requires these layers:
-1. Terminal layer (platform-specific)
-2. NpmCli layer (depends on Terminal for PTY)
-3. CredentialStore layer (depends on persistence-secrets BackingPersistence)
-4. PackagePublisher layer (depends on NpmCli, CredentialStore, Terminal)
+1. Platform layer (@effect/platform-bun for Bun runtime)
+2. Terminal layer (from @effect/platform)
+3. NpmCli layer (depends on Terminal, Command from @effect/platform)
+4. CredentialStore layer (depends on persistence-secrets BackingPersistence)
+5. PackagePublisher layer (depends on NpmCli, CredentialStore, Terminal)
 
 For testing, each layer can be replaced with a mock implementation.
 
