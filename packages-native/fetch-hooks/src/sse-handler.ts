@@ -1,4 +1,4 @@
-import type { JsonlRecord, TimedChunk } from "./types.ts"
+import type { JsonlRecord, TimedChunk } from "./types.js"
 
 export function isSSEResponse(headers: Headers): boolean {
   const contentType = headers.get("content-type") ?? ""

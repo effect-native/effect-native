@@ -1,4 +1,4 @@
-import type { CacheOptions, CacheStorage } from "./types"
+import type { CacheOptions, CacheStorage } from "./types.js"
 
 import {
   getCachedResponse,
@@ -6,10 +6,10 @@ import {
   setInternalFetchForCache,
   storeRequest,
   storeResponse
-} from "./cache-manager"
-import { getCacheDir, isCacheEnabled, isProduction, isReplayOnly } from "./environment"
-import { createFilesystemStorage } from "./filesystem-storage"
-import { hashRequest, headersToRecord } from "./request-hasher"
+} from "./cache-manager.js"
+import { getCacheDir, isCacheEnabled, isProduction, isReplayOnly } from "./environment.js"
+import { createFilesystemStorage } from "./filesystem-storage.js"
+import { hashRequest, headersToRecord } from "./request-hasher.js"
 
 // Only export the public API - internal implementation details are not exported
 export type {
@@ -23,11 +23,11 @@ export type {
   StorableResponse,
   TimedChunk,
   TransformHook
-} from "./types"
+} from "./types.js"
 
 // Export storage factories for custom implementations
-export { createFilesystemStorage } from "./filesystem-storage"
-export { createFlatFileStorage } from "./flat-file-storage"
+export { createFilesystemStorage } from "./filesystem-storage.js"
+export { createFlatFileStorage } from "./flat-file-storage.js"
 
 const CACHE_ENABLED_BANNER = `
 ╔══════════════════════════════════════════════════════════════╗
@@ -78,7 +78,9 @@ async function extractBodyInit(bodyInit: RequestInit["body"]): Promise<string | 
   if (bodyInit instanceof FormData) {
     const pairs: Array<string> = []
     for (const [key, value] of bodyInit.entries()) {
-      pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      // FormDataEntryValue can be File or string; File needs to be converted to string
+      const stringValue = typeof value === "string" ? value : value.name
+      pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(stringValue)}`)
     }
     return pairs.join("&")
   }

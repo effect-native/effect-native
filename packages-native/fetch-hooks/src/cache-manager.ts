@@ -10,7 +10,7 @@ import type {
   StorableResponse,
   TimedChunk,
   TransformHook
-} from "./types"
+} from "./types.js"
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
@@ -20,9 +20,9 @@ import {
   readBinaryFile,
   restoreDataUrls,
   writeBinaryFile
-} from "./binary-extractor"
-import { getCacheDir } from "./environment"
-import { getStorableHeaders, hashRequest, headersToRecord } from "./request-hasher"
+} from "./binary-extractor.js"
+import { getCacheDir } from "./environment.js"
+import { getStorableHeaders, hashRequest, headersToRecord } from "./request-hasher.js"
 import {
   isSSEResponse,
   jsonlToTimedChunks,
@@ -30,7 +30,7 @@ import {
   replayStreamFromAsyncIterable,
   replayStreamWithTiming,
   timedChunksToJsonl
-} from "./sse-handler"
+} from "./sse-handler.js"
 
 const DEV_FS_LOGS_PORT = 1090
 

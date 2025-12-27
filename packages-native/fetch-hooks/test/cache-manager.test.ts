@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createCachedFetch } from "../src/index"
@@ -24,7 +24,7 @@ function createMockFetch(handler: (url: string) => Response | Promise<Response>)
 
 /** Find cached request.json in a cache directory */
 function findCachedRequest(cacheDir: string): CachedRequest | null {
-  const entries = existsSync(cacheDir) ? require("node:fs").readdirSync(cacheDir) : []
+  const entries = existsSync(cacheDir) ? readdirSync(cacheDir) : []
   for (const entry of entries) {
     const requestPath = join(cacheDir, entry, "request.json")
     if (existsSync(requestPath)) {
@@ -36,7 +36,7 @@ function findCachedRequest(cacheDir: string): CachedRequest | null {
 
 /** Find cached response in a cache directory (handles both old and new storage formats) */
 function findCachedResponse(cacheDir: string): { body: string; meta: unknown } | null {
-  const entries = existsSync(cacheDir) ? require("node:fs").readdirSync(cacheDir) : []
+  const entries = existsSync(cacheDir) ? readdirSync(cacheDir) : []
   for (const entry of entries) {
     const responsePath = join(cacheDir, entry, "response.json")
     const metaPath = join(cacheDir, entry, "response.meta.json")
@@ -255,7 +255,7 @@ describe("Request body caching format", () => {
 
   function findCachedRequest(): CachedRequest | null {
     const entries = existsSync(testCacheDir)
-      ? require("node:fs").readdirSync(testCacheDir)
+      ? readdirSync(testCacheDir)
       : []
     for (const entry of entries) {
       const requestPath = join(testCacheDir, entry, "request.json")
@@ -493,7 +493,7 @@ describe("Lifecycle hooks", () => {
       })
 
       // Find the cache entry directory - should have model prefix
-      const entries = require("node:fs").readdirSync(testCacheDir) as Array<string>
+      const entries = readdirSync(testCacheDir) as Array<string>
       expect(entries.length).toBe(1)
       expect(entries[0]).toMatch(/^gpt-4_[0-9A-Za-z]+$/)
     })
@@ -534,7 +534,7 @@ describe("Lifecycle hooks", () => {
       await cachedFetch("https://api.example.com/simple", { method: "GET" })
 
       // Cache entry should just be the hash (no prefix)
-      const entries = require("node:fs").readdirSync(testCacheDir) as Array<string>
+      const entries = readdirSync(testCacheDir) as Array<string>
       expect(entries.length).toBe(1)
       expect(entries[0]).toMatch(/^[0-9A-Za-z]+$/) // Just base62 chars
     })
@@ -623,10 +623,11 @@ describe("Custom CacheStorage", () => {
         }
       },
       async set([key]: CacheKey, values: Array<TimedChunk> | AsyncIterable<TimedChunk>): Promise<void> {
-        const chunks: Array<TimedChunk> = []
+        let chunks: Array<TimedChunk>
         if (Array.isArray(values)) {
-          chunks.push(...values)
+          chunks = values.slice()
         } else {
+          chunks = []
           for await (const chunk of values) {
             chunks.push(chunk)
           }

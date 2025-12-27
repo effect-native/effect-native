@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createBinaryFileKV, createJsonFileKV, createJsonlFileKVStream } from "../src/filesystem-storage"
-import { createFlatJsonFileKV } from "../src/flat-file-storage"
 import type { TimedChunk } from "../src/types"
 
 const TEST_DIR = join(process.cwd(), "packages-native/fetch-hooks/.test-cache-kv")

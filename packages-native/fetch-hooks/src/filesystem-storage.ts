@@ -1,8 +1,8 @@
-import type { CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, KV, KVStream, TimedChunk } from "./types"
+import type { CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, KV, KVStream, TimedChunk } from "./types.js"
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { jsonlToTimedChunks, timedChunksToJsonl } from "./sse-handler"
+import { jsonlToTimedChunks, timedChunksToJsonl } from "./sse-handler.js"
 
 function ensureCacheDir(baseDir: string, cacheKey: string): string {
   const cacheDir = join(baseDir, cacheKey)
@@ -22,7 +22,7 @@ function ensureCacheDir(baseDir: string, cacheKey: string): string {
 /** Create a KV store backed by JSON files */
 export function createJsonFileKV<T>(baseDir: string, filename: string): KV<CacheKey, T> {
   return {
-    async get([key]): Promise<T | null> {
+    async get([key]: CacheKey): Promise<T | null> {
       const filePath = join(baseDir, key, filename)
       if (!existsSync(filePath)) {
         return null
@@ -31,13 +31,13 @@ export function createJsonFileKV<T>(baseDir: string, filename: string): KV<Cache
       return JSON.parse(content) as T
     },
 
-    async set([key], value): Promise<void> {
+    async set([key]: CacheKey, value: T): Promise<void> {
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
       writeFileSync(filePath, JSON.stringify(value, null, 2), "utf-8")
     },
 
-    async has([key]): Promise<boolean> {
+    async has([key]: CacheKey): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
     }
@@ -47,7 +47,7 @@ export function createJsonFileKV<T>(baseDir: string, filename: string): KV<Cache
 /** Create a KV store backed by binary files */
 export function createBinaryFileKV(baseDir: string, filename: string): KV<CacheKey, Uint8Array> {
   return {
-    async get([key]): Promise<Uint8Array | null> {
+    async get([key]: CacheKey): Promise<Uint8Array | null> {
       const filePath = join(baseDir, key, filename)
       if (!existsSync(filePath)) {
         return null
@@ -56,13 +56,13 @@ export function createBinaryFileKV(baseDir: string, filename: string): KV<CacheK
       return new Uint8Array(buffer)
     },
 
-    async set([key], value): Promise<void> {
+    async set([key]: CacheKey, value: Uint8Array): Promise<void> {
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
       writeFileSync(filePath, value)
     },
 
-    async has([key]): Promise<boolean> {
+    async has([key]: CacheKey): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
     }
@@ -72,7 +72,7 @@ export function createBinaryFileKV(baseDir: string, filename: string): KV<CacheK
 /** Create a streaming KV store for SSE chunks backed by JSONL files */
 export function createJsonlFileKVStream(baseDir: string, filename: string): KVStream<CacheKey, TimedChunk> {
   return {
-    async *get([key]): AsyncIterable<TimedChunk> {
+    async *get([key]: CacheKey): AsyncIterable<TimedChunk> {
       const filePath = join(baseDir, key, filename)
       if (!existsSync(filePath)) {
         return
@@ -87,7 +87,7 @@ export function createJsonlFileKVStream(baseDir: string, filename: string): KVSt
       }
     },
 
-    async set([key], values): Promise<void> {
+    async set([key]: CacheKey, values: Array<TimedChunk> | AsyncIterable<TimedChunk>): Promise<void> {
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
 
@@ -106,7 +106,7 @@ export function createJsonlFileKVStream(baseDir: string, filename: string): KVSt
       writeFileSync(filePath, jsonl, "utf-8")
     },
 
-    async has([key]): Promise<boolean> {
+    async has([key]: CacheKey): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
     }

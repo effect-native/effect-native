@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import type { RawCachedRequest } from "./types"
+import type { RawCachedRequest } from "./types.js"
 
 const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
