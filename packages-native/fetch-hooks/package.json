@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/fetch-hooks",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Fetch caching utilities for deterministic API replay",
   "type": "module",
   "main": "./dist/index.js",
