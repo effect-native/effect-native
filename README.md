@@ -13,6 +13,7 @@ An ecosystem of native platform tools built on [Effect](https://effect.website).
 |![](https://img.shields.io/npm/v/@effect-native/patterns)|@effect-native/patterns|Experimental patterns library|
 |![](https://img.shields.io/npm/v/@effect-native/schemas)|@effect-native/schemas|Reusable Effect schemas|
 |![](https://img.shields.io/npm/v/@effect-native/fetch-hooks)|@effect-native/fetch-hooks|globalThis.fetch wrapper with replay cache and lifecycle hooks|
+|![](https://img.shields.io/npm/v/@effect-native/openrouter)|@effect-native/openrouter|effect native openrouter callModel|
 
 ## Roadmap
 
