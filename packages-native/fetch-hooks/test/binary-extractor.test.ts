@@ -22,7 +22,7 @@ describe("extractDataUrls/restoreDataUrls - round-trip symmetry", () => {
   beforeEach(() => {
     testDir = join(tmpdir(), `dev-fetch-cache-test-${Date.now()}`)
     mkdirSync(testDir, {
-      recursive: true,
+      recursive: true
     })
   })
 
@@ -30,7 +30,7 @@ describe("extractDataUrls/restoreDataUrls - round-trip symmetry", () => {
     if (existsSync(testDir)) {
       rmSync(testDir, {
         recursive: true,
-        force: true,
+        force: true
       })
     }
   })
@@ -61,7 +61,7 @@ describe("extractDataUrls/restoreDataUrls - round-trip symmetry", () => {
   })
 
   it("preserves content without data URLs unchanged", () => {
-    const original = '{"message": "hello world", "count": 42}'
+    const original = "{\"message\": \"hello world\", \"count\": 42}"
     const assetsDir = join(testDir, "assets")
 
     const { content: extracted, extractedFiles } = extractDataUrls(original, assetsDir)
@@ -112,7 +112,7 @@ describe("restoreDataUrls - missing file handling", () => {
   beforeEach(() => {
     testDir = join(tmpdir(), `dev-fetch-cache-test-${Date.now()}`)
     mkdirSync(testDir, {
-      recursive: true,
+      recursive: true
     })
   })
 
@@ -120,13 +120,13 @@ describe("restoreDataUrls - missing file handling", () => {
     if (existsSync(testDir)) {
       rmSync(testDir, {
         recursive: true,
-        force: true,
+        force: true
       })
     }
   })
 
   it("preserves sidecar reference when file is missing", () => {
-    const contentWithSidecar = '{"image": "data:image/png;base64,__sidecar:0001.png__"}'
+    const contentWithSidecar = "{\"image\": \"data:image/png;base64,__sidecar:0001.png__\"}"
     const assetsDir = join(testDir, "nonexistent-assets")
 
     const restored = restoreDataUrls(contentWithSidecar, assetsDir)

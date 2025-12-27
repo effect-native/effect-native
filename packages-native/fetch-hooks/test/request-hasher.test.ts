@@ -16,7 +16,7 @@ describe("getStorableHeaders - sensitive header filtering", () => {
   it("filters authorization header regardless of case", () => {
     const headers = {
       Authorization: "Bearer secret-token",
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     }
     const result = getStorableHeaders(headers)
 
@@ -28,7 +28,7 @@ describe("getStorableHeaders - sensitive header filtering", () => {
   it("filters UPPERCASE authorization header", () => {
     const headers = {
       AUTHORIZATION: "Bearer secret-token",
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     }
     const result = getStorableHeaders(headers)
 
@@ -48,7 +48,7 @@ describe("getStorableHeaders - sensitive header filtering", () => {
       "x-auth-token": "auth-token",
       "x-access-token": "access-token",
       bearer: "bearer-value",
-      "content-type": "application/json",
+      "content-type": "application/json"
     }
     const result = getStorableHeaders(headers)
 
@@ -60,14 +60,14 @@ describe("getStorableHeaders - sensitive header filtering", () => {
     const headers = {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
-      "X-Custom-Header": "custom-value",
+      "X-Custom-Header": "custom-value"
     }
     const result = getStorableHeaders(headers)
 
     expect(result).toEqual({
       "Content-Type": "application/json",
       Accept: "text/event-stream",
-      "X-Custom-Header": "custom-value",
+      "X-Custom-Header": "custom-value"
     })
   })
 })
@@ -87,17 +87,17 @@ describe("hashRequest - consistency", () => {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
     const request2 = {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: {
-        "content-type": "application/json",
+        "content-type": "application/json"
       },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
 
     expect(hashRequest(request1)).toBe(hashRequest(request2))
@@ -108,13 +108,13 @@ describe("hashRequest - consistency", () => {
       url: "https://api.example.com/v1/chat",
       method: "post",
       headers: {},
-      body: undefined,
+      body: undefined
     }
     const request2 = {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: {},
-      body: undefined,
+      body: undefined
     }
 
     expect(hashRequest(request1)).toBe(hashRequest(request2))
@@ -125,13 +125,13 @@ describe("hashRequest - consistency", () => {
       url: "https://api.example.com/v1/chat/",
       method: "GET",
       headers: {},
-      body: undefined,
+      body: undefined
     }
     const request2 = {
       url: "https://api.example.com/v1/chat",
       method: "GET",
       headers: {},
-      body: undefined,
+      body: undefined
     }
 
     expect(hashRequest(request1)).toBe(hashRequest(request2))
@@ -142,13 +142,13 @@ describe("hashRequest - consistency", () => {
       url: "https://api.example.com/v1/chat?a=1&b=2",
       method: "GET",
       headers: {},
-      body: undefined,
+      body: undefined
     }
     const request2 = {
       url: "https://api.example.com/v1/chat?b=2&a=1",
       method: "GET",
       headers: {},
-      body: undefined,
+      body: undefined
     }
 
     expect(hashRequest(request1)).toBe(hashRequest(request2))
@@ -160,18 +160,18 @@ describe("hashRequest - consistency", () => {
       method: "POST",
       headers: {
         Authorization: "Bearer secret-token-1",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
     const requestWithDifferentAuth = {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: {
         Authorization: "Bearer different-token",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
 
     expect(hashRequest(requestWithAuth)).toBe(hashRequest(requestWithDifferentAuth))
@@ -184,7 +184,7 @@ describe("hashRequest - format", () => {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
     const hash = hashRequest(request)
 
@@ -200,7 +200,7 @@ describe("hashRequest - format", () => {
       url: "https://api.example.com/v1/chat",
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: '{"message":"hello"}',
+      body: "{\"message\":\"hello\"}"
     }
 
     const hash1 = hashRequest(request)

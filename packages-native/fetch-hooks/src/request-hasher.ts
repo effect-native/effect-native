@@ -22,7 +22,7 @@ const SENSITIVE_HEADERS = new Set([
   "set-cookie",
   "x-auth-token",
   "x-access-token",
-  "bearer",
+  "bearer"
 ])
 
 function normalizeUrl(url: string): string {
@@ -34,7 +34,7 @@ function normalizeUrl(url: string): string {
 
 function filterHeaders(
   headers: Record<string, string>,
-  getOutputKey: (originalKey: string, lowerKey: string) => string,
+  getOutputKey: (originalKey: string, lowerKey: string) => string
 ): Record<string, string> {
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(headers)) {
@@ -53,10 +53,10 @@ function normalizeHeaders(headers: Record<string, string>): Record<string, strin
 }
 
 function filterSensitiveHeaders(headers: Record<string, string>): Record<string, string> {
-  return filterHeaders(headers, originalKey => originalKey)
+  return filterHeaders(headers, (originalKey) => originalKey)
 }
 
-export function hashRequest({ url, method, headers, body }: RawCachedRequest): string {
+export function hashRequest({ body, headers, method, url }: RawCachedRequest): string {
   // Build content string for hashing
   let content = normalizeUrl(url) + "\n" + method.toUpperCase()
   const normalizedHeaders = normalizeHeaders(headers)

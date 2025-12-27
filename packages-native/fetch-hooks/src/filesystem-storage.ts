@@ -40,7 +40,7 @@ export function createJsonFileKV<T>(baseDir: string, filename: string): KV<Cache
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -65,7 +65,7 @@ export function createBinaryFileKV(baseDir: string, filename: string): KV<CacheK
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -92,7 +92,7 @@ export function createJsonlFileKVStream(baseDir: string, filename: string): KVSt
       const filePath = join(cacheDir, filename)
 
       // Collect all values if async iterable
-      let chunks: TimedChunk[]
+      let chunks: Array<TimedChunk>
       if (Array.isArray(values)) {
         chunks = values
       } else {
@@ -109,7 +109,7 @@ export function createJsonlFileKVStream(baseDir: string, filename: string): KVSt
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -120,6 +120,6 @@ export function createFilesystemStorage(baseDir: string): CacheStorage {
     responseMeta: createJsonFileKV<CachedResponseMeta>(baseDir, "response.meta.json"),
     responseBody: createJsonFileKV<string>(baseDir, "response.json"),
     binaryBody: createBinaryFileKV(baseDir, "response.bin"),
-    sseChunks: createJsonlFileKVStream(baseDir, "response.jsonl"),
+    sseChunks: createJsonlFileKVStream(baseDir, "response.jsonl")
   }
 }

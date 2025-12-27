@@ -24,7 +24,7 @@ export interface KV<K, V> {
 /** Generic streaming key-value storage interface */
 export interface KVStream<K, V> {
   get(key: K): AsyncIterable<V>
-  set(key: K, values: V[] | AsyncIterable<V>): Promise<void>
+  set(key: K, values: Array<V> | AsyncIterable<V>): Promise<void>
   has(key: K): Promise<boolean>
   delete?(key: K): Promise<void>
 }
@@ -43,7 +43,7 @@ export type TransformHook<T> = (value: T) => T | Promise<T>
 
 /** Generator transform hook for streaming data */
 export type GeneratorTransformHook<T> = (
-  chunks: AsyncIterable<T>,
+  chunks: AsyncIterable<T>
 ) => AsyncIterable<T>
 
 /** Response data for storage hooks */
@@ -110,17 +110,17 @@ export interface TimedChunk {
  */
 export type JsonlRecord =
   | {
-      json: unknown
-    }
+    json: unknown
+  }
   | {
-      text: string
-    }
+    text: string
+  }
   | {
-      comment: string
-    }
+    comment: string
+  }
   | {
-      delay_ms: number
-    }
+    delay_ms: number
+  }
 
 export interface CachedResponseMeta {
   status: number

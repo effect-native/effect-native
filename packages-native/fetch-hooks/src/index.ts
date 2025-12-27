@@ -5,7 +5,7 @@ import {
   getCacheKeyFromUrl,
   setInternalFetchForCache,
   storeRequest,
-  storeResponse,
+  storeResponse
 } from "./cache-manager"
 import { getCacheDir, isCacheEnabled, isProduction, isReplayOnly } from "./environment"
 import { createFilesystemStorage } from "./filesystem-storage"
@@ -22,7 +22,7 @@ export type {
   KVStream,
   StorableResponse,
   TimedChunk,
-  TransformHook,
+  TransformHook
 } from "./types"
 
 // Export storage factories for custom implementations
@@ -76,7 +76,7 @@ async function extractBodyInit(bodyInit: RequestInit["body"]): Promise<string | 
     return bodyInit.text()
   }
   if (bodyInit instanceof FormData) {
-    const pairs: string[] = []
+    const pairs: Array<string> = []
     for (const [key, value] of bodyInit.entries()) {
       pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
     }
@@ -90,7 +90,7 @@ async function extractBodyInit(bodyInit: RequestInit["body"]): Promise<string | 
   }
   if (bodyInit instanceof ReadableStream) {
     const reader = bodyInit.getReader()
-    const chunks: Uint8Array[] = []
+    const chunks: Array<Uint8Array> = []
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -143,13 +143,13 @@ export function createCachedFetch(baseFetch: typeof globalThis.fetch, options?: 
         cacheKeyFromUrl,
         options?.afterLoadResponse,
         options?.transformSSEChunk,
-        storage,
+        storage
       )
       if (cached) {
         return cached
       }
       return new Response("Cache entry not found", {
-        status: 404,
+        status: 404
       })
     }
 
@@ -175,7 +175,7 @@ export function createCachedFetch(baseFetch: typeof globalThis.fetch, options?: 
       cacheKey,
       options?.afterLoadResponse,
       options?.transformSSEChunk,
-      storage,
+      storage
     )
     if (cached) {
       return cached
@@ -183,7 +183,7 @@ export function createCachedFetch(baseFetch: typeof globalThis.fetch, options?: 
 
     if (replayOnly) {
       return new Response("Cache miss in replay-only mode", {
-        status: 503,
+        status: 503
       })
     }
 
@@ -193,12 +193,12 @@ export function createCachedFetch(baseFetch: typeof globalThis.fetch, options?: 
         url: requestToStore.url,
         method: requestToStore.method,
         headers: requestToStore.headers,
-        body: requestToStore.body,
+        body: requestToStore.body
       },
       cacheKey,
       options?.beforeStoreRequest !== undefined, // skip header filtering if hook provided
       storage,
-      hashableRequest,
+      hashableRequest
     )
 
     const response = await baseFetch(input, init)
@@ -223,7 +223,7 @@ export function enableDevFetchCache(options?: CacheOptions): void {
   originalFetch = globalThis.fetch
   const cachedFetch = createCachedFetch(originalFetch, {
     ...options,
-    internalFetch: options?.internalFetch ?? originalFetch,
+    internalFetch: options?.internalFetch ?? originalFetch
   })
 
   // Cast to typeof fetch to include preconnect method

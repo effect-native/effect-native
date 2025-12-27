@@ -16,7 +16,7 @@ const MIME_TO_EXTENSION: Record<string, string> = {
   "audio/ogg": ".ogg",
   "video/mp4": ".mp4",
   "video/webm": ".webm",
-  "application/pdf": ".pdf",
+  "application/pdf": ".pdf"
 }
 
 function getExtensionForMime(mimeType: string): string {
@@ -25,12 +25,12 @@ function getExtensionForMime(mimeType: string): string {
 
 export function extractDataUrls(
   content: string,
-  assetsDir: string,
+  assetsDir: string
 ): {
   content: string
-  extractedFiles: string[]
+  extractedFiles: Array<string>
 } {
-  const extractedFiles: string[] = []
+  const extractedFiles: Array<string> = []
   let fileIndex = 0
 
   const modifiedContent = content.replace(DATA_URL_REGEX, (_match, mimeType: string, base64Data: string) => {
@@ -42,7 +42,7 @@ export function extractDataUrls(
 
     if (!existsSync(assetsDir)) {
       mkdirSync(assetsDir, {
-        recursive: true,
+        recursive: true
       })
     }
 
@@ -55,7 +55,7 @@ export function extractDataUrls(
 
   return {
     content: modifiedContent,
-    extractedFiles,
+    extractedFiles
   }
 }
 
@@ -81,16 +81,16 @@ export function isBinaryContentType(contentType: string): boolean {
     "video/",
     "application/pdf",
     "application/zip",
-    "application/gzip",
+    "application/gzip"
   ]
-  return binaryTypes.some(type => contentType.startsWith(type))
+  return binaryTypes.some((type) => contentType.startsWith(type))
 }
 
 export function writeBinaryFile(filePath: string, data: Uint8Array): void {
   const dir = dirname(filePath)
   if (!existsSync(dir)) {
     mkdirSync(dir, {
-      recursive: true,
+      recursive: true
     })
   }
   writeFileSync(filePath, data)

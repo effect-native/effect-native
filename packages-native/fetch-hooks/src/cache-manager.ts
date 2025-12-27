@@ -9,7 +9,7 @@ import type {
   RawCachedRequest,
   StorableResponse,
   TimedChunk,
-  TransformHook,
+  TransformHook
 } from "./types"
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -19,7 +19,7 @@ import {
   isBinaryContentType,
   readBinaryFile,
   restoreDataUrls,
-  writeBinaryFile,
+  writeBinaryFile
 } from "./binary-extractor"
 import { getCacheDir } from "./environment"
 import { getStorableHeaders, hashRequest, headersToRecord } from "./request-hasher"
@@ -29,7 +29,7 @@ import {
   recordStreamWithTiming,
   replayStreamFromAsyncIterable,
   replayStreamWithTiming,
-  timedChunksToJsonl,
+  timedChunksToJsonl
 } from "./sse-handler"
 
 const DEV_FS_LOGS_PORT = 1090
@@ -46,20 +46,20 @@ async function tryDevFsLogsWrite(cacheId: string, data: unknown): Promise<boolea
   return _internalFetch(`http://localhost:${DEV_FS_LOGS_PORT}/cache`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       cacheId,
-      data,
-    }),
+      data
+    })
   })
-    .then(response => response.ok)
+    .then((response) => response.ok)
     .catch(() => false)
 }
 
 async function tryDevFsLogsRead(cacheId: string): Promise<unknown | null> {
   return _internalFetch(`http://localhost:${DEV_FS_LOGS_PORT}/cache/${cacheId}`)
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         return null
       }
@@ -74,7 +74,7 @@ function ensureCacheDir(cacheKey: string): string {
   if (!existsSync(cacheDir)) {
     try {
       mkdirSync(cacheDir, {
-        recursive: true,
+        recursive: true
       })
     } catch (error: unknown) {
       // Handle potential race condition where the directory was created
@@ -111,7 +111,7 @@ function readTextFile(filePath: string): string | null {
 }
 
 /** Convert an array to an async iterable for generator hooks */
-async function* arrayToAsyncIterable<T>(arr: T[]): AsyncIterable<T> {
+async function* arrayToAsyncIterable<T>(arr: Array<T>): AsyncIterable<T> {
   for (const item of arr) {
     yield item
   }
@@ -134,21 +134,21 @@ export async function storeRequest(
   providedCacheKey?: string,
   skipHeaderFiltering?: boolean,
   storage?: CacheStorage,
-  hashableRequest?: HashableRequest,
+  hashableRequest?: HashableRequest
 ): Promise<string> {
-  const { url, method, headers, body } = params
+  const { body, headers, method, url } = params
   const cacheKey = providedCacheKey ?? hashRequest({
     url,
     method,
     headers,
-    body,
+    body
   })
 
   const request: CachedRequest = {
     url,
     method,
     headers: skipHeaderFiltering ? headers : getStorableHeaders(headers),
-    body: parseRequestBody(body),
+    body: parseRequestBody(body)
   }
 
   if (storage) {
@@ -171,7 +171,7 @@ export async function storeResponse(
   response: Response,
   beforeStoreResponse?: TransformHook<StorableResponse>,
   storage?: CacheStorage,
-  hashableRequest?: HashableRequest,
+  hashableRequest?: HashableRequest
 ): Promise<Response> {
   const key: CacheKey = hashableRequest ? [cacheKey, hashableRequest] : [cacheKey]
   const startTime = Date.now()
@@ -188,7 +188,7 @@ export async function storeResponse(
     total_ms: 0,
     is_sse: isSSE,
     is_binary: isBinary,
-    cached_at: new Date().toISOString(),
+    cached_at: new Date().toISOString()
   }
 
   if (!response.body) {
@@ -204,7 +204,7 @@ export async function storeResponse(
     return new Response(null, {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers
     })
   }
 
@@ -215,7 +215,7 @@ export async function storeResponse(
     const binaryMeta = {
       ...meta,
       size: data.length,
-      content_type: contentType,
+      content_type: contentType
     }
     if (storage) {
       await storage.responseMeta.set(key, binaryMeta)
@@ -231,7 +231,7 @@ export async function storeResponse(
     return new Response(responseArrayBuffer, {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers
     })
   }
 
@@ -261,7 +261,7 @@ export async function storeResponse(
     return new Response(returnStream, {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers
     })
   }
 
@@ -284,19 +284,19 @@ export async function storeResponse(
     const { content: extractedContent } = extractDataUrls(transformedResponse.body ?? "", assetsDir)
     writeJsonFile(jsonPath, {
       body: extractedContent,
-      meta: transformedResponse.meta,
+      meta: transformedResponse.meta
     })
   }
 
   await tryDevFsLogsWrite(`${cacheKey}/response`, {
     body: transformedResponse.body,
-    meta: transformedResponse.meta,
+    meta: transformedResponse.meta
   })
 
   return new Response(text, {
     status: response.status,
     statusText: response.statusText,
-    headers: response.headers,
+    headers: response.headers
   })
 }
 
@@ -304,7 +304,7 @@ export async function getCachedResponse(
   cacheKey: string,
   afterLoadResponse?: TransformHook<StorableResponse>,
   transformSSEChunk?: GeneratorTransformHook<TimedChunk>,
-  storage?: CacheStorage,
+  storage?: CacheStorage
 ): Promise<Response | null> {
   const key: CacheKey = [cacheKey]
 
@@ -358,7 +358,7 @@ export async function getCachedResponse(
     return new Response(arrayBuffer, {
       status: responseMeta.status,
       statusText: responseMeta.statusText,
-      headers,
+      headers
     })
   }
 
@@ -371,7 +371,7 @@ export async function getCachedResponse(
       const first = await iterator.next()
       if (first.done) {
         // No chunks in storage, try dev-fs-logs fallback
-        const devFsChunks = (await tryDevFsLogsRead(`${cacheKey}/sse`)) as TimedChunk[] | null
+        const devFsChunks = (await tryDevFsLogsRead(`${cacheKey}/sse`)) as Array<TimedChunk> | null
         if (!devFsChunks) {
           return null
         }
@@ -381,7 +381,7 @@ export async function getCachedResponse(
         return new Response(stream, {
           status: responseMeta.status,
           statusText: responseMeta.statusText,
-          headers,
+          headers
         })
       }
       // Reconstruct the async iterable with the first chunk prepended
@@ -398,7 +398,7 @@ export async function getCachedResponse(
       return new Response(stream, {
         status: responseMeta.status,
         statusText: responseMeta.statusText,
-        headers,
+        headers
       })
     }
 
@@ -409,7 +409,7 @@ export async function getCachedResponse(
     let jsonlContent = readTextFile(jsonlPath)
 
     if (!jsonlContent) {
-      const devFsChunks = (await tryDevFsLogsRead(`${cacheKey}/sse`)) as TimedChunk[] | null
+      const devFsChunks = (await tryDevFsLogsRead(`${cacheKey}/sse`)) as Array<TimedChunk> | null
       if (!devFsChunks) {
         return null
       }
@@ -419,7 +419,7 @@ export async function getCachedResponse(
       return new Response(stream, {
         status: responseMeta.status,
         statusText: responseMeta.statusText,
-        headers,
+        headers
       })
     }
 
@@ -432,7 +432,7 @@ export async function getCachedResponse(
     return new Response(stream, {
       status: responseMeta.status,
       statusText: responseMeta.statusText,
-      headers,
+      headers
     })
   }
 
@@ -471,7 +471,7 @@ export async function getCachedResponse(
     return new Response(transformed.body, {
       status: transformed.meta.status,
       statusText: transformed.meta.statusText,
-      headers: new Headers(transformed.meta.headers),
+      headers: new Headers(transformed.meta.headers)
     })
   }
 
@@ -484,7 +484,7 @@ export async function getCachedResponse(
   return new Response(transformedResponse.body, {
     status: transformedResponse.meta.status,
     statusText: transformedResponse.meta.statusText,
-    headers: new Headers(transformedResponse.meta.headers),
+    headers: new Headers(transformedResponse.meta.headers)
   })
 }
 

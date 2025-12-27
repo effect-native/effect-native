@@ -1,7 +1,7 @@
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
+import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createCachedFetch } from "../src/index"
-import { rmSync, mkdirSync, existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
 import type { CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, TimedChunk } from "../src/types"
 
 /** Creates a mock fetch that tracks calls, ignoring internal localhost calls */
@@ -18,7 +18,7 @@ function createMockFetch(handler: (url: string) => Response | Promise<Response>)
   }
   return {
     fetch: mockFetch as unknown as typeof fetch,
-    getCallCount: () => callCount,
+    getCallCount: () => callCount
   }
 }
 
@@ -103,7 +103,7 @@ describe("SSE stream caching - full integration", () => {
       { type: "response.output_text.delta", delta: " world" },
       { type: "response.output_text.done", text: "Hello world" },
       { type: "response.output_item.done", item: { type: "message", id: "msg-1", content: [{ text: "Hello world" }] } },
-      { type: "response.completed", response: { id: "test-123", status: "completed", output: [] } },
+      { type: "response.completed", response: { id: "test-123", status: "completed", output: [] } }
     ]
 
     let index = 0
@@ -114,12 +114,12 @@ describe("SSE stream caching - full integration", () => {
           return
         }
         // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 5))
+        await new Promise((resolve) => setTimeout(resolve, 5))
         const event = events[index]!
         const sseData = `data: ${JSON.stringify(event)}\n\n`
         controller.enqueue(encoder.encode(sseData))
         index++
-      },
+      }
     })
   }
 
@@ -130,8 +130,8 @@ describe("SSE stream caching - full integration", () => {
         status: 200,
         statusText: "OK",
         headers: {
-          "content-type": "text/event-stream",
-        },
+          "content-type": "text/event-stream"
+        }
       })
     }
 
@@ -141,28 +141,28 @@ describe("SSE stream caching - full integration", () => {
     const response1 = await cachedFetch("https://api.example.com/stream", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt: "test" }),
+      body: JSON.stringify({ prompt: "test" })
     })
 
     // Consume the first response fully
     const events1 = await collectSSEEvents(response1)
 
     // Verify all events were received on first call
-    expect(events1.map(e => e.type)).toEqual([
+    expect(events1.map((e) => e.type)).toEqual([
       "response.created",
       "response.output_item.added",
       "response.output_text.delta",
       "response.output_text.delta",
       "response.output_text.done",
       "response.output_item.done",
-      "response.completed",
+      "response.completed"
     ])
 
     // Second call - should hit cache
     const response2 = await cachedFetch("https://api.example.com/stream", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt: "test" }),
+      body: JSON.stringify({ prompt: "test" })
     })
 
     // Consume the cached response fully
@@ -170,18 +170,18 @@ describe("SSE stream caching - full integration", () => {
 
     // THIS IS THE CRITICAL ASSERTION:
     // The cached response must include ALL events, especially response.completed
-    expect(events2.map(e => e.type)).toEqual([
+    expect(events2.map((e) => e.type)).toEqual([
       "response.created",
       "response.output_item.added",
       "response.output_text.delta",
       "response.output_text.delta",
       "response.output_text.done",
       "response.output_item.done",
-      "response.completed",
+      "response.completed"
     ])
 
     // Verify the response.completed event has the correct structure
-    const completedEvent = events2.find(e => e.type === "response.completed") as
+    const completedEvent = events2.find((e) => e.type === "response.completed") as
       | { type: string; response?: { status?: string } }
       | undefined
     expect(completedEvent).toBeDefined()
@@ -195,7 +195,7 @@ describe("SSE stream caching - full integration", () => {
       { type: "start" },
       { type: "data", value: 1 },
       { type: "data", value: 2 },
-      { type: "end" },
+      { type: "end" }
     ]
 
     const mockFetch = async (_input: Request | string | URL, _init?: RequestInit): Promise<Response> => {
@@ -207,15 +207,15 @@ describe("SSE stream caching - full integration", () => {
             return
           }
           // Variable delays to simulate real network conditions
-          await new Promise(resolve => setTimeout(resolve, index * 10))
+          await new Promise((resolve) => setTimeout(resolve, index * 10))
           const event = events[index]!
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
           index++
-        },
+        }
       })
       return new Response(stream, {
         status: 200,
-        headers: { "content-type": "text/event-stream" },
+        headers: { "content-type": "text/event-stream" }
       })
     }
 
@@ -273,7 +273,7 @@ describe("Request body caching format", () => {
     await cachedFetch("https://api.example.com/test", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message: "hello", count: 42 }),
+      body: JSON.stringify({ message: "hello", count: 42 })
     })
 
     const cached = findCachedRequest()
@@ -288,7 +288,7 @@ describe("Request body caching format", () => {
     await cachedFetch("https://api.example.com/test", {
       method: "POST",
       headers: { "content-type": "text/plain" },
-      body: "plain text body",
+      body: "plain text body"
     })
 
     const cached = findCachedRequest()
@@ -303,7 +303,7 @@ describe("Request body caching format", () => {
     const request = new Request("https://api.example.com/test", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ fromRequest: true }),
+      body: JSON.stringify({ fromRequest: true })
     })
 
     await cachedFetch(request)
@@ -318,7 +318,7 @@ describe("Request body caching format", () => {
     const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
 
     await cachedFetch("https://api.example.com/test", {
-      method: "GET",
+      method: "GET"
     })
 
     const cached = findCachedRequest()
@@ -347,15 +347,15 @@ describe("Lifecycle hooks", () => {
 
   describe("beforeHash", () => {
     it("transforms request data before hashing (affects cache key)", async () => {
-      const mock = createMockFetch(_url => new Response("response-1", { status: 200 }))
-      
+      const mock = createMockFetch((_url) => new Response("response-1", { status: 200 }))
+
       let hookCallCount = 0
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Strip timestamp from URL before hashing - different timestamps hit same cache
-        beforeHash: async req => {
+        beforeHash: async (req) => {
           hookCallCount++
           return { ...req, url: req.url.replace(/\?ts=\d+/, "") }
-        },
+        }
       })
 
       const response1 = await cachedFetch("https://api.example.com/data?ts=123", { method: "GET" })
@@ -369,32 +369,32 @@ describe("Lifecycle hooks", () => {
     })
 
     it("defaults to identity function when not provided", async () => {
-      const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
+      const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
       const cachedFetch = createCachedFetch(mock.fetch)
 
       await cachedFetch("https://api.example.com/uniqueA", { method: "GET" })
       await cachedFetch("https://api.example.com/uniqueB", { method: "GET" })
-      
+
       expect(mock.getCallCount()).toBe(2) // Both requests hit network (different cache keys)
     })
   })
 
   describe("beforeStoreRequest", () => {
     it("transforms request data before storing to disk", async () => {
-      const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
-      
+      const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
+
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Redact authorization header before storing
-        beforeStoreRequest: async req => ({
+        beforeStoreRequest: async (req) => ({
           ...req,
-          headers: { ...req.headers, authorization: "[REDACTED]" },
-        }),
+          headers: { ...req.headers, authorization: "[REDACTED]" }
+        })
       })
 
       await cachedFetch("https://api.example.com/secret", {
         method: "POST",
         headers: { authorization: "Bearer secret-token-123", "content-type": "application/json" },
-        body: JSON.stringify({ data: "test" }),
+        body: JSON.stringify({ data: "test" })
       })
 
       // Find and read the cached request
@@ -407,17 +407,19 @@ describe("Lifecycle hooks", () => {
 
   describe("beforeStoreResponse", () => {
     it("transforms response body before storing to disk", async () => {
-      const mock = createMockFetch(_url => new Response(
-        JSON.stringify({ secret: "password123", data: "public" }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ))
-      
+      const mock = createMockFetch((_url) =>
+        new Response(
+          JSON.stringify({ secret: "password123", data: "public" }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        )
+      )
+
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Redact secrets from response body before storing
-        beforeStoreResponse: async res => ({
+        beforeStoreResponse: async (res) => ({
           ...res,
-          body: res.body?.replace(/"secret":"[^"]*"/, '"secret":"[REDACTED]"'),
-        }),
+          body: res.body?.replace(/"secret":"[^"]*"/, "\"secret\":\"[REDACTED]\"")
+        })
       })
 
       // First call - stores to cache
@@ -427,48 +429,50 @@ describe("Lifecycle hooks", () => {
       // Find and read the cached response
       const cached = findCachedResponse(testCacheDir)
       expect(cached).not.toBeNull()
-      expect(cached!.body).toContain('"secret":"[REDACTED]"')
-      expect(cached!.body).toContain('"data":"public"')
+      expect(cached!.body).toContain("\"secret\":\"[REDACTED]\"")
+      expect(cached!.body).toContain("\"data\":\"public\"")
     })
   })
 
   describe("afterLoadResponse", () => {
     it("transforms response body after loading from cache", async () => {
-      const mock = createMockFetch(_url => new Response(
-        JSON.stringify({ timestamp: "2024-01-01", data: "cached" }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ))
+      const mock = createMockFetch((_url) =>
+        new Response(
+          JSON.stringify({ timestamp: "2024-01-01", data: "cached" }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        )
+      )
 
       let hookCallCount = 0
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Inject current timestamp when replaying from cache
-        afterLoadResponse: async res => {
+        afterLoadResponse: async (res) => {
           hookCallCount++
           return {
             ...res,
-            body: res.body?.replace(/"timestamp":"[^"]*"/, '"timestamp":"INJECTED"'),
+            body: res.body?.replace(/"timestamp":"[^"]*"/, "\"timestamp\":\"INJECTED\"")
           }
-        },
+        }
       })
 
       // First call - stores to cache (hook should NOT be called)
       const response1 = await cachedFetch("https://api.example.com/timestamped")
       const text1 = await response1.text()
-      expect(text1).toContain('"timestamp":"2024-01-01"') // Original value
+      expect(text1).toContain("\"timestamp\":\"2024-01-01\"") // Original value
       expect(hookCallCount).toBe(0) // Hook not called on fresh fetch
 
       // Second call - loads from cache (hook SHOULD be called)
       const response2 = await cachedFetch("https://api.example.com/timestamped")
       const text2 = await response2.text()
-      expect(text2).toContain('"timestamp":"INJECTED"') // Transformed value
+      expect(text2).toContain("\"timestamp\":\"INJECTED\"") // Transformed value
       expect(hookCallCount).toBe(1) // Hook called on cache hit
     })
   })
 
   describe("transformCacheKey", () => {
     it("transforms the cache key after hashing with access to request", async () => {
-      const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
-      
+      const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
+
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Add model name prefix extracted from request body
         transformCacheKey: (cacheKey, request) => {
@@ -479,39 +483,39 @@ describe("Lifecycle hooks", () => {
           } catch {
             return cacheKey
           }
-        },
+        }
       })
 
       await cachedFetch("https://api.example.com/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: "gpt-4", messages: [] }),
+        body: JSON.stringify({ model: "gpt-4", messages: [] })
       })
 
       // Find the cache entry directory - should have model prefix
-      const entries = require("node:fs").readdirSync(testCacheDir) as string[]
+      const entries = require("node:fs").readdirSync(testCacheDir) as Array<string>
       expect(entries.length).toBe(1)
       expect(entries[0]).toMatch(/^gpt-4_[0-9A-Za-z]+$/)
     })
 
     it("receives both cacheKey and full request for custom logic", async () => {
-      const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
-      
+      const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
+
       let receivedCacheKey: string | undefined
       let receivedRequest: unknown | undefined
-      
+
       const cachedFetch = createCachedFetch(mock.fetch, {
         transformCacheKey: (cacheKey, request) => {
           receivedCacheKey = cacheKey
           receivedRequest = request
           return cacheKey
-        },
+        }
       })
 
       await cachedFetch("https://api.example.com/test", {
         method: "POST",
         headers: { "x-custom": "value" },
-        body: "test body",
+        body: "test body"
       })
 
       expect(receivedCacheKey).toBeDefined()
@@ -519,18 +523,18 @@ describe("Lifecycle hooks", () => {
       expect(receivedRequest).toMatchObject({
         url: "https://api.example.com/test",
         method: "POST",
-        body: "test body",
+        body: "test body"
       })
     })
 
     it("defaults to identity when not provided", async () => {
-      const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
+      const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
       const cachedFetch = createCachedFetch(mock.fetch)
 
       await cachedFetch("https://api.example.com/simple", { method: "GET" })
 
       // Cache entry should just be the hash (no prefix)
-      const entries = require("node:fs").readdirSync(testCacheDir) as string[]
+      const entries = require("node:fs").readdirSync(testCacheDir) as Array<string>
       expect(entries.length).toBe(1)
       expect(entries[0]).toMatch(/^[0-9A-Za-z]+$/) // Just base62 chars
     })
@@ -542,10 +546,10 @@ describe("Lifecycle hooks", () => {
       const events = [
         { type: "start", secret: "abc123" },
         { type: "data", secret: "def456" },
-        { type: "end", secret: "ghi789" },
+        { type: "end", secret: "ghi789" }
       ]
 
-      const mock = createMockFetch(_url => {
+      const mock = createMockFetch((_url) => {
         let index = 0
         const stream = new ReadableStream({
           async pull(controller) {
@@ -555,26 +559,26 @@ describe("Lifecycle hooks", () => {
             }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(events[index])}\n\n`))
             index++
-          },
+          }
         })
         return new Response(stream, {
           status: 200,
-          headers: { "content-type": "text/event-stream" },
+          headers: { "content-type": "text/event-stream" }
         })
       })
 
-      const transformedSecrets: string[] = []
+      const transformedSecrets: Array<string> = []
       const cachedFetch = createCachedFetch(mock.fetch, {
         // Transform SSE chunks during replay - redact secrets
-        transformSSEChunk: async function* (chunks) {
+        async *transformSSEChunk(chunks) {
           for await (const chunk of chunks) {
             transformedSecrets.push(chunk.data)
             yield {
               ...chunk,
-              data: chunk.data.replace(/"secret":"[^"]*"/g, '"secret":"[REDACTED]"'),
+              data: chunk.data.replace(/"secret":"[^"]*"/g, "\"secret\":\"[REDACTED]\"")
             }
           }
-        },
+        }
       })
 
       // First call - stores to cache
@@ -586,7 +590,7 @@ describe("Lifecycle hooks", () => {
       const events2 = await collectSSEEvents(response2)
 
       // All events should have redacted secrets
-      expect(events2.every(e => e.secret === "[REDACTED]")).toBe(true)
+      expect(events2.every((e) => e.secret === "[REDACTED]")).toBe(true)
       expect(events2).toHaveLength(3)
     })
   })
@@ -606,20 +610,20 @@ describe("Custom CacheStorage", () => {
       },
       async has([key]: CacheKey): Promise<boolean> {
         return data.has(key)
-      },
+      }
     })
 
     const createKVStream = () => ({
       async *get([key]: CacheKey): AsyncIterable<TimedChunk> {
-        const chunks = data.get(`sse:${key}`) as TimedChunk[] | undefined
+        const chunks = data.get(`sse:${key}`) as Array<TimedChunk> | undefined
         if (chunks) {
           for (const chunk of chunks) {
             yield chunk
           }
         }
       },
-      async set([key]: CacheKey, values: TimedChunk[] | AsyncIterable<TimedChunk>): Promise<void> {
-        const chunks: TimedChunk[] = []
+      async set([key]: CacheKey, values: Array<TimedChunk> | AsyncIterable<TimedChunk>): Promise<void> {
+        const chunks: Array<TimedChunk> = []
         if (Array.isArray(values)) {
           chunks.push(...values)
         } else {
@@ -631,7 +635,7 @@ describe("Custom CacheStorage", () => {
       },
       async has([key]: CacheKey): Promise<boolean> {
         return data.has(`sse:${key}`)
-      },
+      }
     })
 
     return {
@@ -640,23 +644,25 @@ describe("Custom CacheStorage", () => {
       responseMeta: createKV<CachedResponseMeta>(),
       responseBody: createKV<string>(),
       binaryBody: createKV<Uint8Array>(),
-      sseChunks: createKVStream(),
+      sseChunks: createKVStream()
     }
   }
 
   it("uses custom storage instead of filesystem", async () => {
     const storage = createInMemoryStorage()
-    const mock = createMockFetch(_url => new Response(
-      JSON.stringify({ message: "hello" }),
-      { status: 200, headers: { "content-type": "application/json" } },
-    ))
+    const mock = createMockFetch((_url) =>
+      new Response(
+        JSON.stringify({ message: "hello" }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    )
 
     const cachedFetch = createCachedFetch(mock.fetch, { storage })
 
     // First call - stores to in-memory storage
     const response1 = await cachedFetch("https://api.example.com/data")
     const text1 = await response1.text()
-    expect(text1).toBe('{"message":"hello"}')
+    expect(text1).toBe("{\"message\":\"hello\"}")
     expect(mock.getCallCount()).toBe(1)
 
     // Verify data is in memory, not on disk
@@ -665,7 +671,7 @@ describe("Custom CacheStorage", () => {
     // Second call - retrieves from in-memory storage
     const response2 = await cachedFetch("https://api.example.com/data")
     const text2 = await response2.text()
-    expect(text2).toBe('{"message":"hello"}')
+    expect(text2).toBe("{\"message\":\"hello\"}")
     expect(mock.getCallCount()).toBe(1) // No additional fetch
   })
 
@@ -682,22 +688,22 @@ describe("Custom CacheStorage", () => {
           const [key, request] = cacheKey
           capturedRequests.push({ key, request })
           return storage.requests.set(cacheKey, value)
-        },
-      },
+        }
+      }
     }
 
-    const mock = createMockFetch(_url => new Response("ok", { status: 200 }))
+    const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
     const cachedFetch = createCachedFetch(mock.fetch, { storage: wrappedStorage })
 
     await cachedFetch("https://api.example.com/test", {
       method: "POST",
-      body: JSON.stringify({ query: "test" }),
+      body: JSON.stringify({ query: "test" })
     })
 
     expect(capturedRequests.length).toBe(1)
     expect(capturedRequests[0]?.request).toMatchObject({
       url: "https://api.example.com/test",
-      method: "POST",
+      method: "POST"
     })
   })
 })

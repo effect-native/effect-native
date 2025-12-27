@@ -33,26 +33,27 @@ describe("timedChunksToJsonl - multiple events per chunk", () => {
     const chunks = [
       {
         // Chunk with 2 events batched together (common in real SSE streams)
-        data: 'data: {"type":"response.created","id":"123"}\n\ndata: {"type":"response.in_progress"}\n\n',
-        delay_ms: 0,
+        data: "data: {\"type\":\"response.created\",\"id\":\"123\"}\n\ndata: {\"type\":\"response.in_progress\"}\n\n",
+        delay_ms: 0
       },
       {
         // Single event chunk
-        data: 'data: {"type":"response.output_text.delta","delta":"hi"}\n\n',
-        delay_ms: 50,
+        data: "data: {\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n",
+        delay_ms: 50
       },
       {
         // Final chunk with 3 events including the critical response.completed
-        data: 'data: {"type":"response.output_text.done","text":"hi"}\n\ndata: {"type":"response.output_item.done"}\n\ndata: {"type":"response.completed","status":"completed"}\n\n',
-        delay_ms: 100,
-      },
+        data:
+          "data: {\"type\":\"response.output_text.done\",\"text\":\"hi\"}\n\ndata: {\"type\":\"response.output_item.done\"}\n\ndata: {\"type\":\"response.completed\",\"status\":\"completed\"}\n\n",
+        delay_ms: 100
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
     const restored = jsonlToTimedChunks(jsonl)
 
     // Extract all event types from restored chunks
-    const eventTypes = restored.map(chunk => {
+    const eventTypes = restored.map((chunk) => {
       const match = chunk.data.match(/"type":"([^"]+)"/)
       return match?.[1]
     })
@@ -64,20 +65,20 @@ describe("timedChunksToJsonl - multiple events per chunk", () => {
       "response.output_text.delta",
       "response.output_text.done",
       "response.output_item.done",
-      "response.completed",
+      "response.completed"
     ])
   })
 
   it("preserves timing information when splitting multi-event chunks", () => {
     const chunks = [
       {
-        data: 'data: {"type":"event1"}\n\ndata: {"type":"event2"}\n\n',
-        delay_ms: 0,
+        data: "data: {\"type\":\"event1\"}\n\ndata: {\"type\":\"event2\"}\n\n",
+        delay_ms: 0
       },
       {
-        data: 'data: {"type":"event3"}\n\n',
-        delay_ms: 100,
-      },
+        data: "data: {\"type\":\"event3\"}\n\n",
+        delay_ms: 100
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
@@ -96,8 +97,8 @@ describe("timedChunksToJsonl/jsonlToTimedChunks - round-trip symmetry", () => {
     const original = [
       {
         data: "data: hello\n\n",
-        delay_ms: 0,
-      },
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(original)
@@ -110,20 +111,20 @@ describe("timedChunksToJsonl/jsonlToTimedChunks - round-trip symmetry", () => {
     const original = [
       {
         data: "data: {}\n\n",
-        delay_ms: 0,
+        delay_ms: 0
       },
       {
-        data: 'data: {"content":"hello"}\n\n',
-        delay_ms: 150,
+        data: "data: {\"content\":\"hello\"}\n\n",
+        delay_ms: 150
       },
       {
-        data: 'data: {"content":"world"}\n\n',
-        delay_ms: 50,
+        data: "data: {\"content\":\"world\"}\n\n",
+        delay_ms: 50
       },
       {
         data: "data: [DONE]\n\n",
-        delay_ms: 200,
-      },
+        delay_ms: 200
+      }
     ]
 
     const jsonl = timedChunksToJsonl(original)
@@ -135,13 +136,13 @@ describe("timedChunksToJsonl/jsonlToTimedChunks - round-trip symmetry", () => {
   it("preserves JSON payloads and timing across round-trip", () => {
     const original = [
       {
-        data: 'data: {"text":"line1\\nline2\\ttab"}\n\n',
-        delay_ms: 0,
+        data: "data: {\"text\":\"line1\\nline2\\ttab\"}\n\n",
+        delay_ms: 0
       },
       {
-        data: 'data: {"emoji":"heart"}\n\n',
-        delay_ms: 20,
-      },
+        data: "data: {\"emoji\":\"heart\"}\n\n",
+        delay_ms: 20
+      }
     ]
 
     const jsonl = timedChunksToJsonl(original)
@@ -154,8 +155,8 @@ describe("timedChunksToJsonl/jsonlToTimedChunks - round-trip symmetry", () => {
     const original = [
       {
         data: "data: test\n\n",
-        delay_ms: 0,
-      },
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(original)
@@ -183,19 +184,19 @@ describe("jsonlToTimedChunks - edge cases", () => {
   })
 
   it("handles single line without trailing newline", () => {
-    const jsonl = '{"text":"only chunk"}'
+    const jsonl = "{\"text\":\"only chunk\"}"
 
     const result = jsonlToTimedChunks(jsonl)
 
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
       data: "data: only chunk\n\n",
-      delay_ms: 0,
+      delay_ms: 0
     })
   })
 
   it("throws on malformed JSON", () => {
-    const malformedJsonl = '{"text":"valid"}\n{invalid json}'
+    const malformedJsonl = "{\"text\":\"valid\"}\n{invalid json}"
 
     expect(() => jsonlToTimedChunks(malformedJsonl)).toThrow()
   })
@@ -209,7 +210,7 @@ describe("jsonlToTimedChunks - edge cases", () => {
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
       data: "data: delayed chunk\n\n",
-      delay_ms: 100,
+      delay_ms: 100
     })
   })
 
@@ -221,9 +222,9 @@ describe("jsonlToTimedChunks - edge cases", () => {
     const result = jsonlToTimedChunks(jsonl)
 
     expect(result).toHaveLength(2)
-    expect(result[0]?.data).toBe('data: {"type":"start","content":{}}\n\n')
+    expect(result[0]?.data).toBe("data: {\"type\":\"start\",\"content\":{}}\n\n")
     expect(result[0]?.delay_ms).toBe(0)
-    expect(result[1]?.data).toBe('data: {"type":"message","content":"hello"}\n\n')
+    expect(result[1]?.data).toBe("data: {\"type\":\"message\",\"content\":\"hello\"}\n\n")
     expect(result[1]?.delay_ms).toBe(50)
   })
 })
@@ -248,16 +249,16 @@ describe("timedChunksToJsonl - SSE comment handling", () => {
       {
         // Comment-only chunk (no data: prefix in original SSE)
         data: ": OPENROUTER PROCESSING\n\n",
-        delay_ms: 0,
+        delay_ms: 0
       },
       {
-        data: 'data: {"type":"response.created"}\n\n',
-        delay_ms: 100,
-      },
+        data: "data: {\"type\":\"response.created\"}\n\n",
+        delay_ms: 100
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
-    const lines = jsonl.split("\n").map(line => JSON.parse(line))
+    const lines = jsonl.split("\n").map((line) => JSON.parse(line))
 
     // Comment should be stored with "comment" field, not "text"
     expect(lines[0]).toEqual({ comment: ": OPENROUTER PROCESSING\n\n" })
@@ -267,20 +268,20 @@ describe("timedChunksToJsonl - SSE comment handling", () => {
     const original = [
       {
         data: ": OPENROUTER PROCESSING\n\n",
-        delay_ms: 0,
+        delay_ms: 0
       },
       {
-        data: 'data: {"type":"response.created"}\n\n',
-        delay_ms: 100,
+        data: "data: {\"type\":\"response.created\"}\n\n",
+        delay_ms: 100
       },
       {
         data: ": keep-alive\n\n",
-        delay_ms: 50,
+        delay_ms: 50
       },
       {
-        data: 'data: {"type":"response.completed"}\n\n',
-        delay_ms: 200,
-      },
+        data: "data: {\"type\":\"response.completed\"}\n\n",
+        delay_ms: 200
+      }
     ]
 
     const jsonl = timedChunksToJsonl(original)
@@ -294,9 +295,9 @@ describe("timedChunksToJsonl - SSE comment handling", () => {
     // Some servers may send comments and data in the same network chunk
     const chunks = [
       {
-        data: ': ping\n\ndata: {"type":"event"}\n\n',
-        delay_ms: 0,
-      },
+        data: ": ping\n\ndata: {\"type\":\"event\"}\n\n",
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
@@ -305,7 +306,7 @@ describe("timedChunksToJsonl - SSE comment handling", () => {
     // Should produce two chunks: one comment, one data
     expect(restored).toHaveLength(2)
     expect(restored[0]?.data).toBe(": ping\n\n")
-    expect(restored[1]?.data).toBe('data: {"type":"event"}\n\n')
+    expect(restored[1]?.data).toBe("data: {\"type\":\"event\"}\n\n")
   })
 })
 
@@ -314,12 +315,12 @@ describe("timedChunksToJsonl - output format", () => {
     const chunks = [
       {
         data: "data: chunk1\n\n",
-        delay_ms: 10,
+        delay_ms: 10
       },
       {
         data: "data: chunk2\n\n",
-        delay_ms: 20,
-      },
+        delay_ms: 20
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
@@ -336,16 +337,16 @@ describe("timedChunksToJsonl - output format", () => {
     const chunks = [
       {
         data: "data: first\n\n",
-        delay_ms: 0,
+        delay_ms: 0
       },
       {
         data: "data: second\n\n",
-        delay_ms: 42,
-      },
+        delay_ms: 42
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
-    const lines = jsonl.split("\n").map(line => JSON.parse(line))
+    const lines = jsonl.split("\n").map((line) => JSON.parse(line))
 
     expect(lines[0]).toEqual({ text: "first" })
     expect(lines[1]).toEqual({ delay_ms: 42 })
@@ -356,8 +357,8 @@ describe("timedChunksToJsonl - output format", () => {
     const chunks = [
       {
         data: "data: only\n\n",
-        delay_ms: 0,
-      },
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
@@ -370,16 +371,16 @@ describe("timedChunksToJsonl - output format", () => {
   it("extracts and stores JSON payloads", () => {
     const chunks = [
       {
-        data: 'data: {"type":"message","content":"hello"}\n\n',
-        delay_ms: 0,
-      },
+        data: "data: {\"type\":\"message\",\"content\":\"hello\"}\n\n",
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
     const parsed = JSON.parse(jsonl)
 
     expect(parsed).toEqual({
-      json: { type: "message", content: "hello" },
+      json: { type: "message", content: "hello" }
     })
   })
 
@@ -387,15 +388,15 @@ describe("timedChunksToJsonl - output format", () => {
     const chunks = [
       {
         data: "data: [DONE]\n\n",
-        delay_ms: 0,
-      },
+        delay_ms: 0
+      }
     ]
 
     const jsonl = timedChunksToJsonl(chunks)
     const parsed = JSON.parse(jsonl)
 
     expect(parsed).toEqual({
-      text: "[DONE]",
+      text: "[DONE]"
     })
   })
 })

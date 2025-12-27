@@ -6,7 +6,7 @@
  *   baseDir/001/response.jsonl
  *   baseDir/002/request.json
  *   ...
- * 
+ *
  * This is similar to filesystem-storage but the key IS the subdirectory name
  * (no hashing), making it suitable for conversation turn folders.
  */
@@ -51,7 +51,7 @@ export function createFlatJsonFileKV<T>(baseDir: string, filename: string): KV<C
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -76,7 +76,7 @@ export function createFlatTextFileKV(baseDir: string, filename: string): KV<Cach
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -102,7 +102,7 @@ export function createFlatBinaryFileKV(baseDir: string, filename: string): KV<Ca
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
@@ -127,7 +127,7 @@ export function createFlatJsonlFileKVStream(baseDir: string, filename: string): 
       ensureDir(dir)
       const filePath = join(dir, filename)
 
-      let chunks: TimedChunk[]
+      let chunks: Array<TimedChunk>
       if (Array.isArray(values)) {
         chunks = values
       } else {
@@ -144,13 +144,13 @@ export function createFlatJsonlFileKVStream(baseDir: string, filename: string): 
     async has([key]): Promise<boolean> {
       const filePath = join(baseDir, key, filename)
       return existsSync(filePath)
-    },
+    }
   }
 }
 
 /**
  * Create a CacheStorage that stores files in subdirectories named by the key.
- * 
+ *
  * @example
  * const storage = createFlatFileStorage("/path/to/conversation")
  * // With transformCacheKey returning "001", files will be:
@@ -165,6 +165,6 @@ export function createFlatFileStorage(baseDir: string): CacheStorage {
     // Use text storage for responseBody to preserve raw JSON without double-escaping
     responseBody: createFlatTextFileKV(baseDir, "response.json"),
     binaryBody: createFlatBinaryFileKV(baseDir, "response.bin"),
-    sseChunks: createFlatJsonlFileKVStream(baseDir, "response.jsonl"),
+    sseChunks: createFlatJsonlFileKVStream(baseDir, "response.jsonl")
   }
 }

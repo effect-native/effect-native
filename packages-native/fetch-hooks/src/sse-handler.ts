@@ -19,8 +19,8 @@ type SSEItem =
  * A single network chunk may contain multiple SSE events batched together.
  * Returns an array of SSE items in the order they appear.
  */
-function extractAllSSEItems(chunk: string): SSEItem[] {
-  const items: SSEItem[] = []
+function extractAllSSEItems(chunk: string): Array<SSEItem> {
+  const items: Array<SSEItem> = []
 
   // Split by SSE event boundaries (double newline)
   // An SSE event can span multiple lines before the double newline
@@ -59,10 +59,10 @@ function tryParseJson(str: string): unknown | null {
   }
 }
 
-export async function recordStreamWithTiming(stream: ReadableStream<Uint8Array>): Promise<TimedChunk[]> {
+export async function recordStreamWithTiming(stream: ReadableStream<Uint8Array>): Promise<Array<TimedChunk>> {
   const reader = stream.getReader()
   const decoder = new TextDecoder()
-  const chunks: TimedChunk[] = []
+  const chunks: Array<TimedChunk> = []
   let lastChunkTime = Date.now()
 
   while (true) {
@@ -75,16 +75,16 @@ export async function recordStreamWithTiming(stream: ReadableStream<Uint8Array>)
     lastChunkTime = now
     chunks.push({
       data: decoder.decode(value, {
-        stream: true,
+        stream: true
       }),
-      delay_ms,
+      delay_ms
     })
   }
 
   return chunks
 }
 
-export function replayStreamWithTiming(timedChunks: TimedChunk[]): ReadableStream<Uint8Array> {
+export function replayStreamWithTiming(timedChunks: Array<TimedChunk>): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
   let chunkIndex = 0
 
@@ -100,18 +100,18 @@ export function replayStreamWithTiming(timedChunks: TimedChunk[]): ReadableStrea
 
       if (chunk.delay_ms > 0 && chunkIndex > 0) {
         const cappedDelay = Math.min(chunk.delay_ms, 30000)
-        await new Promise(resolve => setTimeout(resolve, cappedDelay))
+        await new Promise((resolve) => setTimeout(resolve, cappedDelay))
       }
 
       controller.enqueue(encoder.encode(chunk.data))
       chunkIndex++
-    },
+    }
   })
 }
 
 /** Replay stream from an async iterable of timed chunks (for generator transforms) */
 export function replayStreamFromAsyncIterable(
-  chunks: AsyncIterable<TimedChunk>,
+  chunks: AsyncIterable<TimedChunk>
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder()
   let iterator: AsyncIterator<TimedChunk> | null = null
@@ -131,17 +131,17 @@ export function replayStreamFromAsyncIterable(
 
       if (value.delay_ms > 0 && !isFirst) {
         const cappedDelay = Math.min(value.delay_ms, 30000)
-        await new Promise(resolve => setTimeout(resolve, cappedDelay))
+        await new Promise((resolve) => setTimeout(resolve, cappedDelay))
       }
       isFirst = false
 
       controller.enqueue(encoder.encode(value.data))
-    },
+    }
   })
 }
 
-export function timedChunksToJsonl(chunks: TimedChunk[]): string {
-  const lines: string[] = []
+export function timedChunksToJsonl(chunks: Array<TimedChunk>): string {
+  const lines: Array<string> = []
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i]!
@@ -185,20 +185,20 @@ export function timedChunksToJsonl(chunks: TimedChunk[]): string {
   return lines.join("\n")
 }
 
-export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
-  const lines = jsonl.split("\n").filter(line => line.trim().length > 0)
-  const chunks: TimedChunk[] = []
+export function jsonlToTimedChunks(jsonl: string): Array<TimedChunk> {
+  const lines = jsonl.split("\n").filter((line) => line.trim().length > 0)
+  const chunks: Array<TimedChunk> = []
   let pendingDelay = 0
 
   for (const line of lines) {
     const parsed = JSON.parse(line) as
       | JsonlRecord
       | {
-          data: string
-          __timing: {
-            delay_ms: number
-          }
+        data: string
+        __timing: {
+          delay_ms: number
         }
+      }
 
     // Handle new format: separate timing lines
     if ("delay_ms" in parsed && !("__timing" in parsed)) {
@@ -211,7 +211,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
     if ("json" in parsed && !("__timing" in parsed)) {
       chunks.push({
         data: `data: ${JSON.stringify(parsed.json)}\n\n`,
-        delay_ms: pendingDelay,
+        delay_ms: pendingDelay
       })
       pendingDelay = 0
       continue
@@ -219,7 +219,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
     if ("text" in parsed && !("__timing" in parsed)) {
       chunks.push({
         data: `data: ${parsed.text}\n\n`,
-        delay_ms: pendingDelay,
+        delay_ms: pendingDelay
       })
       pendingDelay = 0
       continue
@@ -228,7 +228,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
     if ("comment" in parsed && !("__timing" in parsed)) {
       chunks.push({
         data: parsed.comment,
-        delay_ms: pendingDelay,
+        delay_ms: pendingDelay
       })
       pendingDelay = 0
       continue
@@ -244,7 +244,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
       }
       chunks.push({
         data: `data: ${JSON.stringify(legacy.json)}\n\n`,
-        delay_ms: legacy.__timing.delay_ms,
+        delay_ms: legacy.__timing.delay_ms
       })
       continue
     }
@@ -257,7 +257,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
       }
       chunks.push({
         data: `data: ${legacy.text}\n\n`,
-        delay_ms: legacy.__timing.delay_ms,
+        delay_ms: legacy.__timing.delay_ms
       })
       continue
     }
@@ -272,7 +272,7 @@ export function jsonlToTimedChunks(jsonl: string): TimedChunk[] {
       }
       chunks.push({
         data: oldest.data,
-        delay_ms: oldest.__timing.delay_ms,
+        delay_ms: oldest.__timing.delay_ms
       })
     }
   }

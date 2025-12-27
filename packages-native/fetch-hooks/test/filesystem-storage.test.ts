@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createBinaryFileKV, createJsonFileKV, createJsonlFileKVStream } from "../src/filesystem-storage"
 import { createFlatJsonFileKV } from "../src/flat-file-storage"
 import type { TimedChunk } from "../src/types"
@@ -87,8 +87,8 @@ describe("createBinaryFileKV", () => {
 })
 
 describe("createJsonlFileKVStream", () => {
-  const collectChunks = async (iterable: AsyncIterable<TimedChunk>): Promise<TimedChunk[]> => {
-    const chunks: TimedChunk[] = []
+  const collectChunks = async (iterable: AsyncIterable<TimedChunk>): Promise<Array<TimedChunk>> => {
+    const chunks: Array<TimedChunk> = []
     for await (const chunk of iterable) {
       chunks.push(chunk)
     }
@@ -103,9 +103,9 @@ describe("createJsonlFileKVStream", () => {
 
   it("set then get yields chunks from array", async () => {
     const kv = createJsonlFileKVStream(TEST_DIR, "chunks.jsonl")
-    const input: TimedChunk[] = [
+    const input: Array<TimedChunk> = [
       { data: "data: {\"message\":\"hello\"}\n\n", delay_ms: 0 },
-      { data: "data: {\"message\":\"world\"}\n\n", delay_ms: 100 },
+      { data: "data: {\"message\":\"world\"}\n\n", delay_ms: 100 }
     ]
     await kv.set(["mykey"], input)
     const result = await collectChunks(kv.get(["mykey"]))
@@ -146,21 +146,21 @@ describe("createFlatFileStorage responseBody", () => {
     // Import here to avoid circular deps at top level
     const { createFlatFileStorage } = await import("../src/flat-file-storage")
     const storage = createFlatFileStorage(TEST_DIR)
-    
+
     // Simulate what the cache does: body is the raw response text (a JSON string)
-    const responseBody = '{"object":"response","id":"gen-123","output_text":"Hello!"}'
-    
+    const responseBody = "{\"object\":\"response\",\"id\":\"gen-123\",\"output_text\":\"Hello!\"}"
+
     await storage.responseBody.set(["001"], responseBody)
-    
+
     // When we read it back, it should be the same string
     const result = await storage.responseBody.get(["001"])
     expect(result).toBe(responseBody)
-    
+
     // CRITICAL: The file on disk should be human-readable JSON, not an escaped string
     // Bad:  "{\"object\":\"response\"...}"  (double-escaped)
     // Good: {"object":"response"...}        (raw JSON)
     const fileContent = readFileSync(join(TEST_DIR, "001", "response.json"), "utf-8")
-    expect(fileContent.startsWith('{')).toBe(true) // Should start with { not "
+    expect(fileContent.startsWith("{")).toBe(true) // Should start with { not "
     expect(fileContent).toBe(responseBody)
   })
 })
