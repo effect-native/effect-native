@@ -120,16 +120,22 @@ The CLI shall exit with code 0 on success, non-zero on failure.
 ### NFR-1: Security
 
 **NFR-1.1**
-Passwords shall never be displayed or logged.
+Passwords shall never be displayed, logged, or included in error messages.
 
 **NFR-1.2**
 Password input shall be hidden (no terminal echo).
 
 **NFR-1.3**
-Tokens shall never be displayed or logged.
+Tokens shall never be displayed, logged, or included in error messages.
 
 **NFR-1.4**
 Credentials shall be stored using OS-native secure storage.
+
+**NFR-1.5**
+Subprocess output that may contain secrets shall be sanitized before logging or displaying.
+
+**NFR-1.6**
+Error stack traces shall not contain secret values.
 
 ### NFR-2: Reliability
 

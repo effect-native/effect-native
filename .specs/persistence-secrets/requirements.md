@@ -74,6 +74,15 @@ Values shall be stored using OS-native secure credential storage (e.g., macOS Ke
 **NFR-1.2**
 The implementation shall rely on OS-provided encryption rather than custom encryption.
 
+**NFR-1.3**
+Secret values shall never be logged, displayed, or included in error messages.
+
+**NFR-1.4**
+Error stack traces shall not contain secret values.
+
+**NFR-1.5**
+Debug or trace output shall redact secret values.
+
 ### NFR-2: Error Handling
 
 **NFR-2.1**
