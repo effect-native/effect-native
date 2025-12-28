@@ -1,18 +1,181 @@
-# @effect-native/opentui-react — Design
+# @effect-native/opentui-components — Design
 
-This document defines the technical architecture and implementation strategy for the OpenTUI React components package.
+This document defines the technical architecture and implementation strategy for the OpenTUI Components **Registry**.
 
 ---
 
-## Package Structure
+## Architecture Overview
 
-Single package under `packages/`:
+This package follows the **Shadcn UI model**: a registry of styled source code components that users install into their projects via CLI. It is NOT a traditional NPM dependency.
 
-| Package | Directory | Description |
-|---------|-----------|-------------|
-| @effect-native/opentui-react | packages/opentui-react | VT-HIG compliant TUI components + testing harness |
+### Layered Architecture
 
-### Package Layout
+| Layer | Package | Role | Analogy |
+|-------|---------|------|---------|
+| Primitives | `@effect-native/opentui-base` | Headless logic (focus, modality, keyboard) | Radix UI / Base UI |
+| Registry | `@effect-native/opentui-components` | Styled source code distribution | Shadcn UI |
+| Consumer | User's project | Final application | Next.js app using Shadcn |
+
+---
+
+## Registry Structure
+
+### Directory Layout
+
+The registry follows Shadcn conventions with a `registry/` directory containing all component source code:
+
+```
+packages/opentui-components/
+  registry/
+    default/                      — Default style variant
+      list/
+        selectable-list.tsx       — SelectableList component
+        list-logic.ts             — Pure state functions
+      columns/
+        generic-column-browser.tsx
+        column-data-provider.ts
+        column-state.ts
+        column-layout.ts
+      dialogs/
+        context-menu.tsx
+        deep-search.tsx
+        search-provider.ts
+        menu-helpers.ts
+      files/
+        file-browser.tsx
+        file-data-provider.ts
+        file-item.ts
+        file-icons.ts
+      lib/
+        key-helpers.ts            — Shared key name normalization
+        atoms/                    — effect-atom state atoms
+          list-atoms.ts
+          column-atoms.ts
+      hooks/
+        use-keyboard.ts           — Keyboard handling hook
+        use-selectable-list.ts    — List state hook
+      testing/
+        tui-harness.ts
+        terminal.ts
+        key-codes.ts
+        frame-capture.ts
+        assertions.ts
+  public/
+    r/                            — Built registry JSON files (generated)
+      registry.json               — Registry index
+      selectable-list.json        — Individual component definitions
+      generic-column-browser.json
+      context-menu.json
+      deep-search.json
+      file-browser.json
+      tui-harness.json
+  registry.json                   — Source registry definition
+  package.json
+  AGENTS.md
+  VT-HIG.md
+```
+
+### Registry JSON Schema
+
+The root `registry.json` defines all available components:
+
+**Registry Index Fields:**
+- `$schema`: Points to Shadcn schema URL
+- `name`: Registry namespace (e.g., "opentui")
+- `homepage`: Documentation URL
+- `items`: Array of registry item definitions
+
+**Registry Item Fields (per component):**
+- `name`: Unique identifier (e.g., "selectable-list")
+- `type`: Item type (registry:component, registry:hook, registry:lib, registry:block)
+- `title`: Human-readable name
+- `description`: LLM-friendly description of purpose and usage
+- `registryDependencies`: Other registry items required (e.g., ["@opentui/button"])
+- `dependencies`: NPM packages required (e.g., ["@effect-native/opentui-base", "effect"])
+- `files`: Array of file definitions with path and type
+- `categories`: Organization tags (e.g., ["navigation", "list"])
+
+### Component Categories
+
+| Category | Components |
+|----------|------------|
+| list | selectable-list |
+| navigation | generic-column-browser, file-browser |
+| dialog | context-menu, deep-search |
+| testing | tui-harness |
+| lib | key-helpers, list-logic, column-state |
+| hooks | use-keyboard, use-selectable-list |
+
+---
+
+## Build Pipeline
+
+### Registry Build Process
+
+The build script transforms source registry into publishable JSON:
+
+1. **Parse** `registry.json` source definition
+2. **Read** each referenced file from `registry/` directory
+3. **Transform** import paths (replace `@/registry` with user's configured paths)
+4. **Generate** individual `[component-name].json` files in `public/r/`
+5. **Generate** `public/r/registry.json` index
+
+### Build Script Integration
+
+The package.json includes a build script using `shadcn build`:
+
+**Build Command:** `pnpm registry:build`
+
+This runs `shadcn build` which:
+- Reads `registry.json`
+- Outputs to `public/r/` by default
+- Validates schema compliance
+
+### Hosting
+
+The `public/r/` directory is deployed to a static host (e.g., `https://opentui.dev/r/`).
+
+Users install via:
+- `npx shadcn add https://opentui.dev/r/selectable-list.json`
+- Or with namespace: `npx shadcn add @opentui/selectable-list`
+
+---
+
+## Package Structure (NPM)
+
+While the registry is source-code-based, we still publish an NPM package for:
+1. The `@effect-native/opentui-base` headless primitives (required dependency)
+2. TypeScript types for IDE support
+3. AGENTS.md and VT-HIG.md documentation
+
+### NPM Package Layout
+
+```
+packages/opentui-components/
+  dist/                           — Compiled types (for IDE support only)
+  AGENTS.md
+  VT-HIG.md
+  package.json
+```
+
+The NPM package is minimal — the real value is in the registry.
+
+---
+
+## Subpath Exports (NPM Package)
+
+For users who prefer NPM over registry installation:
+
+| Subpath | Description | Platform |
+|---------|-------------|----------|
+| `@effect-native/opentui-components` | Re-exports from opentui-base | Any |
+| `@effect-native/opentui-components/bun` | Pre-configured for Bun | Bun |
+| `@effect-native/opentui-components/node` | Pre-configured for Node | Node |
+| `@effect-native/opentui-components/testing` | PTY test harness | Bun |
+
+---
+
+## Package Layout (Original Design — Retained for Reference)
 
 ```
 packages/opentui-react/

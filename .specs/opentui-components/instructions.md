@@ -1,4 +1,4 @@
-# @effect-native/opentui-react — Instructions
+# @effect-native/opentui-components — Instructions
 
 ## Context
 
@@ -6,13 +6,23 @@ The brancher-tui project contains a sophisticated terminal UI implementation bui
 
 Developers building terminal UIs currently must reimplement navigation, keyboard handling, and mouse support from scratch. There's no standard way to build hierarchical browsers or modal overlays that follow consistent interaction patterns.
 
+**Architecture Clarification:**
+
+This package (`opentui-components`) follows the **Shadcn UI model**: it is a **registry of styled, copy-pasteable source code** that users install into their projects. It is NOT a traditional NPM dependency of pre-built components.
+
+The underlying **headless primitives** (focus management, modal state, keyboard handling) live in a separate dependency: `@effect-native/opentui-base`. This mirrors the relationship between:
+- **Radix UI / Base UI** (headless primitives) → `opentui-base`
+- **Shadcn UI** (styled registry) → `opentui-components`
+
 ## User Story
 
-As a developer building terminal UIs with `@opentui/react`, I want pre-built components for common patterns like column browsers, selectable lists, and modal dialogs, so that I can compose them into custom applications without reimplementing navigation, keyboard handling, and mouse support.
+As a developer building terminal UIs with `@opentui/react`, I want a **component registry** (like Shadcn UI) where I can browse and install styled components for common patterns like column browsers, selectable lists, and modal dialogs, so that I own the source code, can customize it freely, and don't have to reimplement navigation, keyboard handling, and mouse support.
 
 ## High-Level Goals
 
-- Extract brancher-tui patterns into a reusable package
+- **Registry-Based Distribution:** Publish a Shadcn-compatible `registry.json` that allows `npx shadcn add` installation
+- Extract brancher-tui patterns into registry items (source code, not compiled artifacts)
+- Build on `@effect-native/opentui-base` primitives for consistent behavior
 - Provide VT-HIG compliant components that work consistently across terminals
 - Support both keyboard and mouse input (mouse is required, not optional)
 - Enable file browsing with platform-specific file system integration
@@ -31,3 +41,4 @@ All components, specs, and tests are written against the **VT-HIG (Virtual Termi
 - Rich text editing (focus is navigation and selection)
 - DAG/task graph visualization
 - Custom action script execution
+- **Headless primitive implementation** (belongs in `opentui-base`)

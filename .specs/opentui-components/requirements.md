@@ -1,8 +1,53 @@
-# @effect-native/opentui-react — Requirements
+# @effect-native/opentui-components — Requirements
 
 This document defines atomic, testable requirements using EARS notation.
 
 All requirements are derived from the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification.
+
+---
+
+## Registry Requirements
+
+### FR-REG-001: Registry JSON Schema Compliance
+The registry shall publish a `registry.json` file conforming to the Shadcn registry schema (`https://ui.shadcn.com/schema/registry.json`).
+
+### FR-REG-002: Registry Item Schema Compliance
+Each component shall publish a `registry-item.json` file conforming to the Shadcn registry-item schema (`https://ui.shadcn.com/schema/registry-item.json`).
+
+### FR-REG-003: Registry Endpoint
+The registry shall be accessible via HTTP at a public URL (e.g., `https://opentui.dev/r/`).
+
+### FR-REG-004: CLI Installation
+**When** a user runs `npx shadcn add <component-url>`  
+**Then** the component source files shall be copied into the user's project.
+
+### FR-REG-005: Registry Dependencies Declaration
+Each registry item shall declare its `registryDependencies` (other registry items it requires).
+
+### FR-REG-006: NPM Dependencies Declaration
+Each registry item shall declare its `dependencies` (npm packages it requires).
+
+### FR-REG-007: Base Primitive Dependency
+All styled components shall declare `@effect-native/opentui-base` as a dependency.
+
+### FR-REG-008: File Type Classification
+Each file in a registry item shall be classified by type:
+- `registry:component` for React components
+- `registry:hook` for custom hooks
+- `registry:lib` for utility functions
+- `registry:ui` for primitive UI components
+
+### FR-REG-009: Flat Registry Structure
+The registry shall use a flat structure with all items at the root level (no nested directories in the JSON payload).
+
+### FR-REG-010: Registry Metadata
+The registry shall include `name`, `homepage`, and `items` fields in the root `registry.json`.
+
+### FR-REG-011: Component Categories
+Each registry item shall specify `categories` for organization (e.g., `["navigation", "list"]`).
+
+### FR-REG-012: Component Documentation
+Each registry item shall include a `description` field suitable for LLM consumption.
 
 ---
 
