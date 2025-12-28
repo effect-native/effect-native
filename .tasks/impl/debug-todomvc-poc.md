@@ -3,9 +3,9 @@ title: Debug TodoMVC POC Script
 status: blocked
 done_when: node packages-native/debug/poc/debug-todomvc.ts
 basis: |
-  Blocked by GOAL-todomvc-effect-atom - need the target application first.
+  Blocked by todomvc GOAL in peer repo - need the target application first.
 blocked_by:
-  - .tasks/GOAL-todomvc-effect-atom.md
+  - ../todomvc/.tasks/GOAL-effect-atom.md
 artifacts:
   - path: packages-native/debug/poc/debug-todomvc.ts
     description: POC demonstrating connect, breakpoint, state read

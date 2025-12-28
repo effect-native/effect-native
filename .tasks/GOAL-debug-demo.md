@@ -3,13 +3,13 @@ title: Debug POC Demo - Connect, Breakpoint, Read State
 status: blocked
 done_when: |
   all subtasks complete:
-  - bun test todomvc/tests/
+  - ../todomvc pnpm test passes
   - node packages-native/debug/poc/debug-todomvc.ts runs successfully
   - demonstrates: connect to todomvc app, set breakpoint, read runtime state
 basis: |
-  Blocked by GOAL-todomvc-effect-atom which must provide a debuggable demo application.
+  Blocked by todomvc GOAL which must provide a debuggable demo application.
 blocked_by:
-  - .tasks/GOAL-todomvc-effect-atom.md
+  - ../todomvc/.tasks/GOAL-effect-atom.md
 artifacts:
   - path: packages-native/debug/poc/debug-todomvc.ts
     description: POC script that connects to todomvc, sets breakpoint, reads state
@@ -37,6 +37,18 @@ The existing debug demos (`test-fixtures/debug-step-through.ts`) prove that step
 
 This POC bridges the gap between "the debug service works" and "here's how you'd actually use it."
 
+## Cross-Repository Dependency
+
+This GOAL depends on the TodoMVC implementation in the peer repo:
+
+```
+work/effect-native/
+  effect-native/     # This repo
+  todomvc/           # Peer repo with TodoMVC app
+```
+
+The TodoMVC app must be complete before this POC can demonstrate debugging it.
+
 ## Success Criteria
 
 1. TodoMVC app runs with `--inspect-brk` or `--inspect`
@@ -50,10 +62,10 @@ This POC bridges the gap between "the debug service works" and "here's how you'd
 
 ## Subtasks
 
-See blocking GOAL:
-- `.tasks/GOAL-todomvc-effect-atom.md` - Must be complete first
+Blocking dependency (in peer repo):
+- `../todomvc/.tasks/GOAL-effect-atom.md` - Must be complete first
 
-Then implementation:
+Implementation (in this repo):
 - `.tasks/impl/debug-todomvc-poc.md` - POC script implementation
 
 ## Non-Goals
