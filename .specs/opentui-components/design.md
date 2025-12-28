@@ -45,12 +45,36 @@ packages/opentui-react/
       FrameCapture.ts
       Assertions.ts
     keyHelpers.ts         — Shared key name normalization
+  AGENTS.md               — Agent instructions (included in npm package)
+  VT-HIG.md               — VT-HIG specification (included in npm package)
   package.json
 ```
 
+### Agent Documentation Files
+
+The package includes documentation files specifically for AI agents working with the codebase:
+
+**AGENTS.md** — Instructions for AI agents on:
+- How to use each component (SelectableList, GenericColumnBrowser, etc.)
+- How to implement custom data providers via Effect-TS services
+- How to write tests using the testing harness
+- Common patterns and idioms
+- What NOT to do (anti-patterns)
+
+**VT-HIG.md** — The VT-HIG specification containing:
+- Keyboard contracts (universal keys, list keys, navigation)
+- TUI patterns (navigation, input, feedback, safety)
+- Accessibility guidelines
+- Signal handling expectations
+- Redraw strategies
+- Portability requirements
+- Anti-patterns to avoid
+
+These files are included in the npm package (via package.json "files" array) so agents working in downstream projects that depend on this package can access the context directly from node_modules.
+
 ### Normative Reference: VT-HIG
 
-All component behavior, specs, and tests are written against the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification. The VT-HIG is not exported as code but serves as the authoritative reference for:
+All component behavior, specs, and tests are written against the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification. The VT-HIG serves as the authoritative reference for:
 
 - **Keyboard contracts**: Universal keys (Esc, Ctrl+C, ?, /), list keys (j/k, arrows, Enter, type-to-filter)
 - **Navigation patterns**: Drill-in (Enter), back (Esc/q), focus indication, pane cycling (Tab)

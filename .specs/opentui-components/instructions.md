@@ -36,6 +36,7 @@ Each package should:
 - `@effect/platform` integration for file system operations
 - Mouse/touch support (required, not optional)
 - Idiomatic Effect-TS dependency injection for data providers
+- AGENTS.md and VT-HIG.md included in npm package for agent context
 
 ## Normative Reference
 
@@ -49,6 +50,15 @@ Each package should:
 - Anti-patterns to avoid
 
 See: `work/vt-hig/vt_hig_cheat_sheet_html_react/index.tsx` and `work/vt-hig/VT-HIG v0.3.pdf`
+
+## Agent Documentation
+
+The npm package includes documentation files to help AI agents understand and use the package:
+
+- **AGENTS.md** — Agent-specific instructions for using and extending the components
+- **VT-HIG.md** — The VT-HIG specification that all components conform to
+
+These files are included in the published package (not just the repo) so agents working in downstream projects can access the context they need.
 
 ## Out of Scope
 

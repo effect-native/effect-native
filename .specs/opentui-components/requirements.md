@@ -230,6 +230,17 @@ The file browser shall expose its data provider as an Effect Layer, allowing use
 
 ---
 
+### Agent Documentation Requirements
+
+### FR-DOC-001: AGENTS.md in Package
+The npm package shall include an AGENTS.md file with instructions for AI agents on how to use and extend the components.
+
+### FR-DOC-002: VT-HIG.md in Package
+The npm package shall include a VT-HIG.md file containing the VT-HIG specification that all components conform to.
+
+### FR-DOC-003: Package Files Configuration
+The package.json "files" array shall include AGENTS.md and VT-HIG.md to ensure they are published to npm.
+
 ### Testing Harness Requirements (subpath: /testing)
 
 ### FR-TEST-001: PTY Spawn
