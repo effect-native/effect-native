@@ -17,17 +17,16 @@ As a developer building terminal UIs with `@opentui/react`, I want pre-built com
 
 ## High-Level Goals
 
-Extract the brancher-tui patterns into multiple focused packages:
+Extract the brancher-tui patterns into a single package:
 
-1. **@effect-native/opentui-react-list** — VT-HIG compliant selectable list with type-to-filter
-2. **@effect-native/opentui-react-columns** — Generic Miller columns browser component with Effect-TS dependency injection for hierarchical data sources
-3. **@effect-native/opentui-react-dialogs** — Modal overlay components (menus, search, forms)
-4. **@effect-native/opentui-react-files** — File browser built on opentui-react-columns with `@effect/platform` FileSystem integration
-5. **@effect-native/tui-test** — PTY-based testing harness for TUI applications (Bun-specific)
+**@effect-native/opentui-react** — VT-HIG compliant TUI components and testing utilities:
+- SelectableList with type-to-filter
+- GenericColumnBrowser (Miller columns) with Effect-TS dependency injection
+- Modal dialogs (context menus, deep search)
+- FileBrowser with `@effect/platform` FileSystem integration
+- PTY-based testing harness for TUI applications (Bun-specific subpath export)
 
 Each package should:
-- Be independently installable
-- Have clear peer dependencies on `@opentui/react` and `react`
 - Follow the `@effect-native/*` package conventions
 - Provide TypeScript types for all public APIs
 - Support both keyboard and mouse/touch input (mouse is not optional)
@@ -35,9 +34,21 @@ Each package should:
 ## In Scope
 
 - `@effect/platform` integration for file system operations
-- File browser specifics in dedicated `opentui-react-files` package
 - Mouse/touch support (required, not optional)
 - Idiomatic Effect-TS dependency injection for data providers
+
+## Normative Reference
+
+**VT-HIG (Virtual Terminal Human Interface Guidelines)** — All components, specs, and tests are written against the VT-HIG specification. The VT-HIG defines:
+- Keyboard contracts (universal keys, list navigation, vim-style alternatives)
+- TUI patterns (navigation, input, feedback, safety)
+- Accessibility guidelines (screen reader, low-vision, motor/fatigue)
+- Signal handling expectations (SIGWINCH, SIGINT, SIGTERM)
+- Redraw strategies (full vs surgical)
+- Portability requirements (minimum vs enhanced substrate)
+- Anti-patterns to avoid
+
+See: `work/vt-hig/vt_hig_cheat_sheet_html_react/index.tsx` and `work/vt-hig/VT-HIG v0.3.pdf`
 
 ## Out of Scope
 
@@ -59,20 +70,12 @@ Each package should:
 ## Dependencies Analysis
 
 ```
-@effect-native/opentui-react-list (no internal deps, peer: @opentui/react, effect)
-       |
-       v
-@effect-native/opentui-react-columns (uses opentui-react-list, peer: @opentui/react, effect)
-       |                              (Effect-TS dependency injection for data providers)
-       v
-@effect-native/opentui-react-dialogs (uses opentui-react-list logic, peer: @opentui/react)
-       |
-       v
-@effect-native/opentui-react-files (uses opentui-react-columns, peer: @opentui/react, @effect/platform)
-                                   (provides FileSystem-based data provider)
-
-@effect-native/tui-test (standalone, Bun-only, peer: effect)
-                        (uses Bun.Terminal PTY for end-to-end TUI testing)
+@effect-native/opentui-react (peer: @opentui/react, react, effect, @effect/platform)
+    - SelectableList
+    - GenericColumnBrowser (uses SelectableList)
+    - ContextMenu, DeepSearch (use list logic)
+    - FileBrowser (uses GenericColumnBrowser + @effect/platform FileSystem)
+    - testing/ (PTY-based test harness, Bun-only, subpath: @effect-native/opentui-react/testing)
 ```
 
 ## Data Provider Pattern (opentui-react-columns)

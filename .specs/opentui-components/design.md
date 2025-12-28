@@ -1,30 +1,78 @@
-# @effect-native/opentui-react-* — Design
+# @effect-native/opentui-react — Design
 
-This document defines the technical architecture and implementation strategy for the OpenTUI React component packages.
+This document defines the technical architecture and implementation strategy for the OpenTUI React components package.
 
 ---
 
 ## Package Structure
 
-The monorepo contains five packages under `packages/`:
+Single package under `packages/`:
 
 | Package | Directory | Description |
 |---------|-----------|-------------|
-| @effect-native/opentui-react-list | packages/opentui-react-list | Selectable list with type-to-filter |
-| @effect-native/opentui-react-columns | packages/opentui-react-columns | Miller columns browser |
-| @effect-native/opentui-react-dialogs | packages/opentui-react-dialogs | Modal overlays (menus, search) |
-| @effect-native/opentui-react-files | packages/opentui-react-files | File browser with @effect/platform |
-| @effect-native/tui-test | packages/tui-test | PTY-based TUI testing harness (Bun) |
+| @effect-native/opentui-react | packages/opentui-react | VT-HIG compliant TUI components + testing harness |
 
-Each package follows standard structure:
-- src/index.ts — Public API exports
-- src/internal/ — Private implementation details
-- src/\*.ts — Public modules
-- package.json — Package manifest with peer dependencies
+### Package Layout
+
+```
+packages/opentui-react/
+  src/
+    index.ts              — Public API exports
+    internal/             — Private implementation details
+    list/
+      SelectableList.tsx  — Main list component
+      listLogic.ts        — Pure state functions
+    columns/
+      GenericColumnBrowser.tsx
+      ColumnDataProvider.ts
+      columnState.ts
+      columnLayout.ts
+    dialogs/
+      ContextMenu.tsx
+      DeepSearch.tsx
+      SearchProvider.ts
+      menuHelpers.ts
+    files/
+      FileBrowser.tsx
+      FileDataProvider.ts
+      FileItem.ts
+      fileIcons.ts
+    testing/              — Subpath export: @effect-native/opentui-react/testing
+      index.ts
+      Terminal.ts
+      TuiHarness.ts
+      KeyCodes.ts
+      FrameCapture.ts
+      Assertions.ts
+    keyHelpers.ts         — Shared key name normalization
+  package.json
+```
+
+### Normative Reference: VT-HIG
+
+All component behavior, specs, and tests are written against the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification. The VT-HIG is not exported as code but serves as the authoritative reference for:
+
+- **Keyboard contracts**: Universal keys (Esc, Ctrl+C, ?, /), list keys (j/k, arrows, Enter, type-to-filter)
+- **Navigation patterns**: Drill-in (Enter), back (Esc/q), focus indication, pane cycling (Tab)
+- **Input modes**: Normal vs Insert, cancel (Esc) vs interrupt (Ctrl+C)
+- **Feedback**: Status line for non-modal confirmations, persistent errors, progress indicators
+- **Safety**: Dry-run previews, destructive action confirmation, undo when feasible
+- **Accessibility**: Screen reader compatibility, low-vision support, motor/fatigue considerations
+- **Signal handling**: SIGWINCH (reflow), SIGINT (cancel), SIGTERM (cleanup), SIGHUP (disconnect)
+- **Redraw strategy**: Full redraw for uncertainty, surgical updates for known changes
+- **Portability**: Minimum substrate (ASCII, no mouse, no color dependency) vs enhanced features
+
+Tests verify VT-HIG compliance by asserting expected keyboard behavior and UI patterns.
+
+### Subpath Exports
+
+The package.json exports field provides:
+- Main export: `@effect-native/opentui-react` — all components
+- Testing subpath: `@effect-native/opentui-react/testing` — PTY test harness (Bun-only)
 
 ---
 
-## Package: @effect-native/opentui-react-list
+## Module: list/SelectableList
 
 ### Module Organization
 

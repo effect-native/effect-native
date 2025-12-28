@@ -1,10 +1,14 @@
-# @effect-native/opentui-react-* — Requirements
+# @effect-native/opentui-react — Requirements
 
-This document defines atomic, testable requirements using EARS notation for the OpenTUI React component packages.
+This document defines atomic, testable requirements using EARS notation for the OpenTUI React components package.
+
+All requirements are derived from the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification, which defines keyboard contracts, TUI patterns, accessibility guidelines, and portability requirements.
 
 ---
 
-## Package: @effect-native/opentui-react-list
+## Package: @effect-native/opentui-react
+
+### SelectableList Requirements
 
 ### FR-LIST-001: Item Rendering
 The SelectableList component shall render each item using a caller-provided render function.
@@ -61,9 +65,7 @@ The SelectableList component shall render each item using a caller-provided rend
 **While** the `active` prop is true  
 **Then** the SelectableList shall display a distinct border color to indicate focus.
 
----
-
-## Package: @effect-native/opentui-react-columns
+### GenericColumnBrowser Requirements
 
 ### FR-COL-001: Column Rendering
 The GenericColumnBrowser shall render one column per level of the navigation path.
@@ -124,10 +126,6 @@ The GenericColumnBrowser shall accept hierarchical data through an Effect-TS ser
 ### FR-COL-015: Active State Control
 **While** the `active` prop is false  
 **Then** the GenericColumnBrowser shall ignore keyboard input.
-
----
-
-## Package: @effect-native/opentui-react-dialogs
 
 ### Context Menu Requirements
 
@@ -195,9 +193,7 @@ The ContextMenu shall calculate its width based on the maximum label and shortcu
 ### FR-DLG-017: Search Provider Injection
 The DeepSearch shall accept a search function through an Effect-TS service interface rather than hardcoding `fd` or `find` commands.
 
----
-
-## Package: @effect-native/opentui-react-files
+### FileBrowser Requirements
 
 ### FR-FILE-001: FileSystem Integration
 The file browser shall use `@effect/platform` FileSystem service for all file system operations.
@@ -234,7 +230,7 @@ The file browser shall expose its data provider as an Effect Layer, allowing use
 
 ---
 
-## Package: @effect-native/tui-test
+### Testing Harness Requirements (subpath: /testing)
 
 ### FR-TEST-001: PTY Spawn
 The TuiHarness shall spawn a subprocess with a pseudo-terminal (PTY) attached using Bun's terminal API.
@@ -308,7 +304,14 @@ All components shall be fully operable via keyboard alone, with mouse support as
 All interactive components shall respond to mouse click events for selection and activation.
 
 ### NFR-003: VT-HIG Compliance
-All components shall follow VT-HIG patterns for navigation keys (j/k, h/l, arrows), type-to-filter, and escape behavior.
+All components shall follow VT-HIG patterns including:
+- Navigation keys (j/k, h/l, arrows)
+- Type-to-filter for lists
+- Escape behavior (cancel/back/exit overlay)
+- Enter behavior (open/confirm/drill-in)
+- Status line for non-modal feedback
+- Mode indicators when applicable
+- Accessibility considerations (no color-only meaning, stable focus indicators)
 
 ### NFR-004: Effect-TS Integration
 All data providers and side-effectful operations shall be expressed as Effect services with proper dependency injection.
