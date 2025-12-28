@@ -23,6 +23,7 @@ Extract the brancher-tui patterns into multiple focused packages:
 2. **@effect-native/opentui-react-columns** — Generic Miller columns browser component with Effect-TS dependency injection for hierarchical data sources
 3. **@effect-native/opentui-react-dialogs** — Modal overlay components (menus, search, forms)
 4. **@effect-native/opentui-react-files** — File browser built on opentui-react-columns with `@effect/platform` FileSystem integration
+5. **@effect-native/tui-test** — PTY-based testing harness for TUI applications (Bun-specific)
 
 Each package should:
 - Be independently installable
@@ -40,9 +41,8 @@ Each package should:
 
 ## Out of Scope
 
-- Bun-specific APIs in core packages (keep portable)
+- Bun-specific APIs in core UI packages (keep portable; tui-test is Bun-only by design)
 - Dark/light theme support (OpenTUI concern)
-- Testing utilities (separate package later)
 
 ## Source References
 
@@ -53,6 +53,8 @@ Each package should:
 - Context menu: `work/b-rancher/brancher-tui/brancher/src/components/ContextMenu.tsx`
 - Deep search: `work/b-rancher/brancher-tui/brancher/src/components/DeepSearch.tsx`
 - VT-HIG cheat sheet: `work/vt-hig/vt_hig_cheat_sheet_html_react/index.tsx`
+- OpenTUI test utils: `refs/opentui/packages/react/src/test-utils.ts`
+- OpenTUI core testing: `refs/opentui/packages/core/src/testing/`
 
 ## Dependencies Analysis
 
@@ -68,6 +70,9 @@ Each package should:
        v
 @effect-native/opentui-react-files (uses opentui-react-columns, peer: @opentui/react, @effect/platform)
                                    (provides FileSystem-based data provider)
+
+@effect-native/tui-test (standalone, Bun-only, peer: effect)
+                        (uses Bun.Terminal PTY for end-to-end TUI testing)
 ```
 
 ## Data Provider Pattern (opentui-react-columns)

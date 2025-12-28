@@ -6,7 +6,7 @@ This document defines the technical architecture and implementation strategy for
 
 ## Package Structure
 
-The monorepo contains four packages under `packages/`:
+The monorepo contains five packages under `packages/`:
 
 | Package | Directory | Description |
 |---------|-----------|-------------|
@@ -14,6 +14,7 @@ The monorepo contains four packages under `packages/`:
 | @effect-native/opentui-react-columns | packages/opentui-react-columns | Miller columns browser |
 | @effect-native/opentui-react-dialogs | packages/opentui-react-dialogs | Modal overlays (menus, search) |
 | @effect-native/opentui-react-files | packages/opentui-react-files | File browser with @effect/platform |
+| @effect-native/tui-test | packages/tui-test | PTY-based TUI testing harness (Bun) |
 
 Each package follows standard structure:
 - src/index.ts — Public API exports
@@ -365,6 +366,188 @@ The component manages rootPath state internally, updating when user navigates to
 
 ---
 
+## Package: @effect-native/tui-test
+
+### Overview
+
+A PTY-based testing harness for TUI applications. Unlike OpenTUI's built-in test utilities (which mock the renderer internals), this package spawns real processes with a pseudo-terminal attached, enabling true end-to-end testing of any TUI application.
+
+This package is Bun-specific, using Bun's native PTY support via `Bun.spawn({ terminal: ... })` and `new Bun.Terminal()`.
+
+### Module Organization
+
+| Module | Purpose |
+|--------|---------|
+| Terminal | Wrapper around Bun.Terminal with Effect integration |
+| TuiHarness | High-level test harness for spawning and interacting with TUI apps |
+| KeyCodes | ANSI escape sequences for keyboard input |
+| FrameCapture | Utilities for capturing and comparing terminal frames |
+| Assertions | Test assertion helpers for terminal content |
+
+### Data Models
+
+**TerminalConfig** — Configuration for terminal dimensions and behavior
+- cols: Number of columns (default 80)
+- rows: Number of rows (default 24)
+- name: Terminal type for TERM env var (default "xterm-256color")
+
+**TuiHarnessConfig** — Configuration for test harness
+- command: Command array to spawn (e.g., ["bun", "run", "my-tui.ts"])
+- cwd: Working directory for the process
+- env: Additional environment variables
+- terminal: TerminalConfig options
+
+**CapturedFrame** — A snapshot of terminal state
+- content: Raw terminal buffer as string (with ANSI codes stripped)
+- rawContent: Raw terminal buffer with ANSI codes preserved
+- timestamp: Time of capture
+- rows: Array of row strings for line-by-line comparison
+
+**KeyInput** — Represents a key press
+- Can be a simple string character
+- Can be a named key from KeyCodes (ARROW_UP, ESCAPE, etc.)
+- Can include modifiers (ctrl, meta, shift)
+
+### Terminal Module
+
+Wraps Bun.Terminal with Effect-based lifecycle management:
+
+**Terminal.make** — Creates a new Terminal as an Effect resource
+- Accepts TerminalConfig
+- Returns Scope-managed terminal that auto-closes on scope finalization
+- Captures output via data callback into internal buffer
+
+**Terminal.write** — Write data to terminal input
+- Accepts string or Buffer
+- Returns Effect that completes when write is acknowledged
+
+**Terminal.resize** — Resize terminal dimensions
+- Updates cols/rows
+- Sends SIGWINCH equivalent to child process
+
+**Terminal.captureFrame** — Capture current terminal state
+- Returns CapturedFrame with parsed content
+- Strips ANSI escape codes for content comparison
+- Preserves raw content for debugging
+
+**Terminal.waitForContent** — Wait for specific content to appear
+- Accepts predicate function or regex
+- Returns Effect that completes when content matches or times out
+- Useful for waiting for TUI to render expected state
+
+### TuiHarness Module
+
+High-level harness for test scenarios:
+
+**TuiHarness.spawn** — Spawn a TUI application
+- Accepts TuiHarnessConfig
+- Creates Terminal, spawns process attached to it
+- Returns harness object with interaction methods
+
+**TuiHarness.pressKey** — Send a key press
+- Accepts KeyInput (character, named key, or with modifiers)
+- Encodes to appropriate ANSI sequence
+- Handles Kitty keyboard protocol for enhanced key reporting
+
+**TuiHarness.typeText** — Type a string of characters
+- Sends each character sequentially
+- Optional delay between characters for realistic typing
+
+**TuiHarness.pressArrow** — Send arrow key
+- Direction: up, down, left, right
+- Optional modifiers
+
+**TuiHarness.pressEnter** — Send Enter/Return key
+
+**TuiHarness.pressEscape** — Send Escape key
+
+**TuiHarness.waitForFrame** — Wait for terminal to stabilize
+- Waits for no new output for specified duration
+- Returns captured frame
+
+**TuiHarness.expectContent** — Assert terminal contains text
+- Searches captured frame for expected content
+- Throws test assertion error if not found
+
+**TuiHarness.close** — Terminate process and close terminal
+
+### KeyCodes Module
+
+ANSI escape sequences for special keys:
+
+- Control keys: RETURN, TAB, BACKSPACE, DELETE, ESCAPE
+- Arrow keys: ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT
+- Navigation: HOME, END, PAGE_UP, PAGE_DOWN
+- Function keys: F1 through F12
+
+Modifier encoding functions:
+- encodeWithModifiers: Add shift/ctrl/meta to key sequence
+- encodeKittySequence: Kitty keyboard protocol format
+
+### FrameCapture Module
+
+Utilities for terminal frame analysis:
+
+**stripAnsi** — Remove ANSI escape codes from string
+
+**parseRows** — Split frame content into array of row strings
+
+**diffFrames** — Compare two frames, return differences
+- Useful for debugging test failures
+- Shows which rows changed
+
+**findText** — Search for text in frame
+- Returns position (row, col) if found
+- Returns null if not found
+
+### Assertions Module
+
+Test assertion helpers designed for use with vitest or similar:
+
+**assertContains** — Assert frame contains text
+- Throws with helpful message showing frame content on failure
+
+**assertRowEquals** — Assert specific row matches expected
+- Zero-indexed row number
+- Exact match comparison
+
+**assertRowContains** — Assert row contains substring
+
+**assertCursorAt** — Assert cursor position (if detectable)
+
+**assertNotContains** — Assert frame does not contain text
+
+### Effect Integration
+
+All operations return Effect types for composability:
+
+- Terminal lifecycle managed via Effect.acquireRelease
+- Timeouts via Effect.timeout
+- Errors modeled as tagged errors (SpawnError, TimeoutError, etc.)
+- Test harness operations are Effects that can be composed
+
+### Example Usage Pattern (Prose)
+
+A typical test scenario:
+1. Create harness with spawn, specifying command and terminal size
+2. Wait for initial render using waitForFrame or waitForContent
+3. Assert initial state using expectContent
+4. Send input using pressKey, typeText, pressArrow
+5. Wait for UI update using waitForFrame
+6. Assert updated state
+7. Close harness (automatic via Effect scope or explicit)
+
+### Platform Constraints
+
+This package requires Bun runtime for:
+- Bun.Terminal class
+- Bun.spawn with terminal option
+- Native PTY support
+
+It cannot run on Node.js. For Node.js environments, users should use OpenTUI's built-in test utilities which mock at the renderer level.
+
+---
+
 ## Error Handling Strategy
 
 ### List and Columns Packages
@@ -406,13 +589,30 @@ Each package has unit tests for pure logic functions:
 - columnLayout: Width calculation, scroll offset computation
 - keyHelpers: Key name normalization
 
-### Component Tests
+### Component Tests (OpenTUI Test Utils)
 
-React component tests using @effect/vitest:
-- Render tests with mock data providers
-- Keyboard event simulation
+React component tests using @opentui/react test utilities and @effect/vitest:
+- testRender with mockInput for keyboard simulation
+- mockMouse for click simulation
+- captureCharFrame for frame assertions
 - Selection state verification
 - Callback invocation verification
+
+OpenTUI's test utilities operate at the renderer level, mocking stdin/stdout without spawning a real PTY. This is fast and suitable for unit-level component testing.
+
+### End-to-End Tests (tui-test)
+
+Full application tests using @effect-native/tui-test:
+- Spawn real TUI application with PTY attached
+- Send actual key sequences through terminal
+- Capture and assert on real terminal output
+- Test full application behavior including startup, navigation, exit
+
+This level of testing catches issues that component-level mocks might miss:
+- Terminal escape sequence handling
+- Process lifecycle (startup time, graceful exit)
+- Real keyboard input processing
+- Cross-component integration
 
 ### Integration Tests
 
@@ -465,3 +665,16 @@ Exports:
 - FileItem type
 - FileDataProvider layer
 - File icon utilities
+
+### @effect-native/tui-test
+
+Exports:
+- Terminal service and make function
+- TuiHarness service with spawn, pressKey, typeText, etc.
+- TuiHarnessConfig and TerminalConfig types
+- CapturedFrame type
+- KeyCodes constants (ARROW_UP, ESCAPE, etc.)
+- KeyInput type
+- Frame utilities (stripAnsi, parseRows, diffFrames, findText)
+- Assertion helpers (assertContains, assertRowEquals, etc.)
+- Error types (SpawnError, TimeoutError)

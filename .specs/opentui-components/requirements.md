@@ -234,6 +234,71 @@ The file browser shall expose its data provider as an Effect Layer, allowing use
 
 ---
 
+## Package: @effect-native/tui-test
+
+### FR-TEST-001: PTY Spawn
+The TuiHarness shall spawn a subprocess with a pseudo-terminal (PTY) attached using Bun's terminal API.
+
+### FR-TEST-002: Terminal Dimensions
+**When** creating a terminal  
+**Then** the TuiHarness shall allow configuration of terminal columns and rows.
+
+### FR-TEST-003: Key Press Simulation
+**When** pressKey is called with a key input  
+**Then** the TuiHarness shall write the appropriate ANSI escape sequence to the terminal.
+
+### FR-TEST-004: Arrow Key Support
+The TuiHarness shall support sending arrow keys (up, down, left, right) with optional modifiers.
+
+### FR-TEST-005: Special Key Support
+The TuiHarness shall support sending special keys: Enter, Escape, Tab, Backspace, Delete, Home, End, and function keys F1-F12.
+
+### FR-TEST-006: Modifier Key Support
+The TuiHarness shall support ctrl, meta/alt, and shift modifiers for key presses.
+
+### FR-TEST-007: Text Typing
+**When** typeText is called with a string  
+**Then** the TuiHarness shall send each character sequentially to the terminal.
+
+### FR-TEST-008: Frame Capture
+The TuiHarness shall capture the current terminal buffer as a string with ANSI codes stripped.
+
+### FR-TEST-009: Raw Frame Capture
+The TuiHarness shall optionally capture terminal frames with ANSI codes preserved for debugging.
+
+### FR-TEST-010: Content Waiting
+**When** waitForContent is called with a predicate  
+**Then** the TuiHarness shall poll the terminal buffer until the predicate matches or timeout occurs.
+
+### FR-TEST-011: Frame Stabilization
+**When** waitForFrame is called  
+**Then** the TuiHarness shall wait until no new output is received for a specified duration.
+
+### FR-TEST-012: Content Assertion
+The TuiHarness shall provide assertion helpers that throw test failures when expected content is not found.
+
+### FR-TEST-013: Row-Level Assertions
+The TuiHarness shall support assertions on specific terminal rows by index.
+
+### FR-TEST-014: Process Exit Handling
+**When** the spawned process exits  
+**Then** the TuiHarness shall capture the exit code and make it available.
+
+### FR-TEST-015: Terminal Resize
+**When** resize is called  
+**Then** the TuiHarness shall update terminal dimensions and signal the child process.
+
+### FR-TEST-016: Effect Lifecycle
+The Terminal and TuiHarness shall be managed as Effect resources with proper cleanup on scope finalization.
+
+### FR-TEST-017: Timeout Support
+All waiting operations shall support configurable timeouts via Effect.timeout.
+
+### FR-TEST-018: Frame Diffing
+The FrameCapture module shall provide a function to diff two captured frames and show changed rows.
+
+---
+
 ## Non-Functional Requirements
 
 ### NFR-001: Keyboard-First Accessibility
@@ -248,8 +313,8 @@ All components shall follow VT-HIG patterns for navigation keys (j/k, h/l, arrow
 ### NFR-004: Effect-TS Integration
 All data providers and side-effectful operations shall be expressed as Effect services with proper dependency injection.
 
-### NFR-005: No Bun-Specific APIs
-Core packages shall not depend on Bun-specific APIs; runtime-specific functionality shall be isolated to optional layers.
+### NFR-005: No Bun-Specific APIs in UI Packages
+Core UI packages (list, columns, dialogs, files) shall not depend on Bun-specific APIs. The tui-test package is explicitly Bun-only.
 
 ### NFR-006: TypeScript Types
 All packages shall export TypeScript types for all public APIs.
@@ -275,3 +340,6 @@ All packages require Effect 3.x as a peer dependency.
 
 ### CON-004: No forwardRef
 Components shall use React 19's ref-as-prop pattern rather than `React.forwardRef`.
+
+### CON-005: Bun Runtime for tui-test
+The @effect-native/tui-test package requires Bun runtime for PTY support via Bun.Terminal.
