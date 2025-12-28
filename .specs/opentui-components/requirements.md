@@ -1,17 +1,15 @@
 # @effect-native/opentui-react — Requirements
 
-This document defines atomic, testable requirements using EARS notation for the OpenTUI React components package.
+This document defines atomic, testable requirements using EARS notation.
 
-All requirements are derived from the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification, which defines keyboard contracts, TUI patterns, accessibility guidelines, and portability requirements.
+All requirements are derived from the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification.
 
 ---
 
-## Package: @effect-native/opentui-react
-
-### SelectableList Requirements
+## SelectableList Requirements
 
 ### FR-LIST-001: Item Rendering
-The SelectableList component shall render each item using a caller-provided render function.
+The SelectableList shall render each item using a caller-provided render function.
 
 ### FR-LIST-002: Keyboard Navigation (Up)
 **When** the user presses Arrow Up or `k`  
@@ -26,12 +24,12 @@ The SelectableList component shall render each item using a caller-provided rend
 **Then** the SelectableList shall clamp the selection to the last available item.
 
 ### FR-LIST-005: Type-to-Filter Input
-**When** the user types an alphanumeric character (a-z, 0-9, `.`, `-`, `_`)  
-**Then** the SelectableList shall append the character to the filter query and filter items to those containing the query (case-insensitive).
+**When** the user types an alphanumeric character  
+**Then** the SelectableList shall append the character to the filter query and filter items (case-insensitive).
 
 ### FR-LIST-006: Backspace Filter Editing
 **When** the user presses Backspace and a filter query exists  
-**Then** the SelectableList shall remove the last character from the filter query and re-filter items.
+**Then** the SelectableList shall remove the last character from the filter query.
 
 ### FR-LIST-007: Escape Clears Filter
 **When** the user presses Escape and a filter query exists  
@@ -39,7 +37,7 @@ The SelectableList component shall render each item using a caller-provided rend
 
 ### FR-LIST-008: Filter Query Display
 **While** a filter query is active  
-**Then** the SelectableList shall display the current filter query in the component title.
+**Then** the SelectableList shall display the current filter query visibly.
 
 ### FR-LIST-009: Empty State
 **While** no items match the current filter  
@@ -47,25 +45,27 @@ The SelectableList component shall render each item using a caller-provided rend
 
 ### FR-LIST-010: Enter Key Selection
 **When** the user presses Enter on an item  
-**Then** the SelectableList shall invoke the onSelect callback with the selected item.
+**Then** the SelectableList shall invoke the selection callback.
 
 ### FR-LIST-011: Mouse Click Selection
 **When** the user clicks on an item  
-**Then** the SelectableList shall invoke the onItemClick callback with the item's index and the item.
+**Then** the SelectableList shall invoke the click callback.
 
 ### FR-LIST-012: Scroll to Selection
 **When** the selection changes  
-**Then** the SelectableList shall scroll to keep the selected item visible within the viewport.
+**Then** the SelectableList shall scroll to keep the selected item visible.
 
 ### FR-LIST-013: Active State Control
-**While** the `active` prop is false  
+**While** the component is inactive  
 **Then** the SelectableList shall ignore keyboard input.
 
 ### FR-LIST-014: Visual Focus Indicator
-**While** the `active` prop is true  
-**Then** the SelectableList shall display a distinct border color to indicate focus.
+**While** the component is active  
+**Then** the SelectableList shall display a distinct visual indicator.
 
-### GenericColumnBrowser Requirements
+---
+
+## GenericColumnBrowser Requirements
 
 ### FR-COL-001: Column Rendering
 The GenericColumnBrowser shall render one column per level of the navigation path.
@@ -76,284 +76,287 @@ The GenericColumnBrowser shall render one column per level of the navigation pat
 
 ### FR-COL-003: Left Arrow Navigation
 **When** the user presses Arrow Left or `h` and more than one column is displayed  
-**Then** the GenericColumnBrowser shall pop the rightmost column and move focus to the previous column.
+**Then** the GenericColumnBrowser shall pop the rightmost column.
 
 ### FR-COL-004: Dot Navigation Item Skipping
 **When** navigating via Arrow Right  
-**Then** the GenericColumnBrowser shall skip items identified as dot-navigation items (e.g., `.` and `..`).
+**Then** the GenericColumnBrowser shall skip dot-navigation items.
 
 ### FR-COL-005: Preview Pane for Items with Children
 **While** the highlighted item has children  
-**Then** the GenericColumnBrowser shall display a preview pane showing those children.
+**Then** the GenericColumnBrowser shall display a preview of those children.
 
 ### FR-COL-006: Preview Pane for Leaf Items
 **While** the highlighted item has no children and content preview is available  
-**Then** the GenericColumnBrowser shall display a preview pane showing the content.
+**Then** the GenericColumnBrowser shall display the content preview.
 
 ### FR-COL-007: Selection History Persistence
 **When** the user navigates back to a previously visited column  
-**Then** the GenericColumnBrowser shall restore the previously selected index for that column.
+**Then** the GenericColumnBrowser shall restore the previously selected index.
 
 ### FR-COL-008: Multi-Select Toggle
 **When** the user presses Space on an item  
 **Then** the GenericColumnBrowser shall toggle that item's multi-selection state.
 
 ### FR-COL-009: Enter Key Context Menu
-**When** the user presses Enter on an item and an onContextMenu callback is provided  
-**Then** the GenericColumnBrowser shall invoke the callback with the focused item and all multi-selected items.
+**When** the user presses Enter on an item  
+**Then** the GenericColumnBrowser shall invoke the context callback with focused and selected items.
 
 ### FR-COL-010: Mouse Click on Folder
 **When** the user clicks on an item with children  
-**Then** the GenericColumnBrowser shall drill into that item (push a new column).
+**Then** the GenericColumnBrowser shall drill into that item.
 
 ### FR-COL-011: Mouse Click on Leaf
 **When** the user clicks on an item without children  
-**Then** the GenericColumnBrowser shall select that item without pushing a new column.
+**Then** the GenericColumnBrowser shall select that item.
 
 ### FR-COL-012: Adaptive Column Width
-The GenericColumnBrowser shall calculate each column's width based on the maximum display width of its items, constrained by minimum and maximum width parameters.
+The GenericColumnBrowser shall calculate each column's width based on content, within configured limits.
 
 ### FR-COL-013: Horizontal Scroll for Many Columns
-**While** the number of columns exceeds the maximum visible columns  
-**Then** the GenericColumnBrowser shall offset column rendering to keep the active column visible.
+**While** the number of columns exceeds the visible maximum  
+**Then** the GenericColumnBrowser shall scroll to keep the active column visible.
 
 ### FR-COL-014: Data Provider Injection
-The GenericColumnBrowser shall accept hierarchical data through an Effect-TS service interface that provides:
-- Fetching children for a parent ID
-- Checking if an item has children
-- Extracting item ID and search text
+The GenericColumnBrowser shall accept hierarchical data through a service interface.
 
 ### FR-COL-015: Active State Control
-**While** the `active` prop is false  
+**While** the component is inactive  
 **Then** the GenericColumnBrowser shall ignore keyboard input.
 
-### Context Menu Requirements
+---
+
+## Context Menu Requirements
 
 ### FR-DLG-001: Menu Rendering
-**While** the ContextMenu `isOpen` prop is true  
-**Then** the ContextMenu shall render as a modal overlay with the provided menu items.
+**While** the menu is open  
+**Then** the ContextMenu shall render as a modal overlay.
 
 ### FR-DLG-002: Menu Keyboard Navigation
-**When** the user presses Arrow Up/Down or `j`/`k` in an open ContextMenu  
+**When** the user presses Arrow Up/Down or `j`/`k`  
 **Then** the ContextMenu shall move selection to the next/previous non-disabled item.
 
 ### FR-DLG-003: Menu Item Selection
-**When** the user presses Enter on a non-disabled menu item  
-**Then** the ContextMenu shall invoke the onSelect callback and close the menu.
+**When** the user presses Enter on a non-disabled item  
+**Then** the ContextMenu shall invoke the selection callback and close.
 
 ### FR-DLG-004: Menu Shortcut Keys
 **When** the user presses a key matching a menu item's shortcut  
-**Then** the ContextMenu shall select that item (if not disabled) and close the menu.
+**Then** the ContextMenu shall select that item and close.
 
 ### FR-DLG-005: Menu Escape Close
-**When** the user presses Escape in an open ContextMenu  
-**Then** the ContextMenu shall close without invoking onSelect.
+**When** the user presses Escape  
+**Then** the ContextMenu shall close without selection.
 
 ### FR-DLG-006: Disabled Item Skipping
 **While** navigating menu items  
-**Then** the ContextMenu shall skip items marked as disabled.
+**Then** the ContextMenu shall skip disabled items.
 
-### FR-DLG-007: Menu Sizing
-The ContextMenu shall calculate its width based on the maximum label and shortcut lengths.
+### FR-DLG-007: Mouse Click on Menu Item
+**When** the user clicks on a non-disabled item  
+**Then** the ContextMenu shall select that item and close.
 
-### FR-DLG-008: Mouse Click on Menu Item
-**When** the user clicks on a non-disabled menu item  
-**Then** the ContextMenu shall select that item and close the menu.
+---
 
-### Deep Search Requirements
+## Deep Search Requirements
 
 ### FR-DLG-010: Search Overlay Rendering
-**While** the DeepSearch `isOpen` prop is true  
-**Then** the DeepSearch shall render as a modal overlay with a search input and results list.
+**While** the search overlay is open  
+**Then** the DeepSearch shall display a search input and results list.
 
 ### FR-DLG-011: Search Input
-**When** the user types in the DeepSearch overlay  
-**Then** the DeepSearch shall update the query and trigger a search after a debounce period.
+**When** the user types in the search overlay  
+**Then** the DeepSearch shall update the query and trigger a search after debounce.
 
 ### FR-DLG-012: Search Results Navigation
-**When** the user presses Arrow Up/Down in the DeepSearch overlay  
-**Then** the DeepSearch shall move selection through the search results.
+**When** the user presses Arrow Up/Down  
+**Then** the DeepSearch shall move selection through results.
 
 ### FR-DLG-013: Search Result Selection
-**When** the user presses Enter on a search result  
-**Then** the DeepSearch shall invoke the onSelectResult callback with the selected path and close the overlay.
+**When** the user presses Enter on a result  
+**Then** the DeepSearch shall invoke the selection callback and close.
 
 ### FR-DLG-014: Search Escape Close
-**When** the user presses Escape in the DeepSearch overlay  
-**Then** the DeepSearch shall close without invoking onSelectResult.
+**When** the user presses Escape  
+**Then** the DeepSearch shall close without selection.
 
 ### FR-DLG-015: Search Loading Indicator
 **While** a search is in progress  
 **Then** the DeepSearch shall display a loading indicator.
 
 ### FR-DLG-016: Search Empty State
-**While** no search results match the query  
-**Then** the DeepSearch shall display an appropriate empty state message.
+**While** no results match the query  
+**Then** the DeepSearch shall display an empty state message.
 
 ### FR-DLG-017: Search Provider Injection
-The DeepSearch shall accept a search function through an Effect-TS service interface rather than hardcoding `fd` or `find` commands.
-
-### FileBrowser Requirements
-
-### FR-FILE-001: FileSystem Integration
-The file browser shall use `@effect/platform` FileSystem service for all file system operations.
-
-### FR-FILE-002: Directory Listing
-**When** a directory is expanded  
-**Then** the file browser shall fetch and display its contents using the FileSystem service.
-
-### FR-FILE-003: File Type Icons
-The file browser shall render distinct visual indicators for files versus directories.
-
-### FR-FILE-004: Hidden File Filtering
-The file browser shall support showing or hiding hidden files (those starting with `.`).
-
-### FR-FILE-005: File Content Preview
-**While** a file is highlighted  
-**Then** the file browser shall display a preview of the file's content (if readable text).
-
-### FR-FILE-006: Root Path Configuration
-The file browser shall accept an initial root path and allow changing the root via navigation.
-
-### FR-FILE-007: Path Display
-The file browser shall display the current path in a status area.
-
-### FR-FILE-008: Dot Navigation Items
-The file browser shall include `.` (current directory) and `..` (parent directory) entries in directory listings.
-
-### FR-FILE-009: Error Handling
-**If** a file system operation fails (permission denied, not found, etc.)  
-**Then** the file browser shall display an appropriate error message without crashing.
-
-### FR-FILE-010: FileSystem Effect Provider
-The file browser shall expose its data provider as an Effect Layer, allowing users to provide custom FileSystem implementations.
+The DeepSearch shall accept a search function through a service interface.
 
 ---
 
-### Agent Documentation Requirements
+## FileBrowser Requirements
 
-### FR-DOC-001: AGENTS.md in Package
-The npm package shall include an AGENTS.md file with instructions for AI agents on how to use and extend the components.
+### FR-FILE-001: FileSystem Integration
+The FileBrowser shall use a file system service for all operations.
 
-### FR-DOC-002: VT-HIG.md in Package
-The npm package shall include a VT-HIG.md file containing the VT-HIG specification that all components conform to.
+### FR-FILE-002: Directory Listing
+**When** a directory is expanded  
+**Then** the FileBrowser shall fetch and display its contents.
 
-### FR-DOC-003: Package Files Configuration
-The package.json "files" array shall include AGENTS.md and VT-HIG.md to ensure they are published to npm.
+### FR-FILE-003: File Type Icons
+The FileBrowser shall render distinct visual indicators for files versus directories.
 
-### Testing Harness Requirements (subpath: /testing)
+### FR-FILE-004: Hidden File Filtering
+The FileBrowser shall support showing or hiding hidden files.
+
+### FR-FILE-005: File Content Preview
+**While** a file is highlighted  
+**Then** the FileBrowser shall display a content preview if available.
+
+### FR-FILE-006: Root Path Configuration
+The FileBrowser shall accept an initial root path and support changing it via navigation.
+
+### FR-FILE-007: Path Display
+The FileBrowser shall display the current path.
+
+### FR-FILE-008: Dot Navigation Items
+The FileBrowser shall include `.` and `..` entries in directory listings.
+
+### FR-FILE-009: Error Handling
+**If** a file system operation fails  
+**Then** the FileBrowser shall display an error message without crashing.
+
+---
+
+## Testing Harness Requirements
 
 ### FR-TEST-001: PTY Spawn
-The TuiHarness shall spawn a subprocess with a pseudo-terminal (PTY) attached using Bun's terminal API.
+The TuiHarness shall spawn a subprocess with a pseudo-terminal attached.
 
 ### FR-TEST-002: Terminal Dimensions
 **When** creating a terminal  
-**Then** the TuiHarness shall allow configuration of terminal columns and rows.
+**Then** the TuiHarness shall allow configuration of columns and rows.
 
 ### FR-TEST-003: Key Press Simulation
-**When** pressKey is called with a key input  
-**Then** the TuiHarness shall write the appropriate ANSI escape sequence to the terminal.
+**When** pressKey is called  
+**Then** the TuiHarness shall write the appropriate escape sequence to the terminal.
 
 ### FR-TEST-004: Arrow Key Support
-The TuiHarness shall support sending arrow keys (up, down, left, right) with optional modifiers.
+The TuiHarness shall support sending arrow keys with optional modifiers.
 
 ### FR-TEST-005: Special Key Support
-The TuiHarness shall support sending special keys: Enter, Escape, Tab, Backspace, Delete, Home, End, and function keys F1-F12.
+The TuiHarness shall support sending Enter, Escape, Tab, Backspace, Delete, Home, End, and function keys.
 
 ### FR-TEST-006: Modifier Key Support
-The TuiHarness shall support ctrl, meta/alt, and shift modifiers for key presses.
+The TuiHarness shall support ctrl, meta/alt, and shift modifiers.
 
 ### FR-TEST-007: Text Typing
-**When** typeText is called with a string  
-**Then** the TuiHarness shall send each character sequentially to the terminal.
+**When** typeText is called  
+**Then** the TuiHarness shall send each character sequentially.
 
 ### FR-TEST-008: Frame Capture
-The TuiHarness shall capture the current terminal buffer as a string with ANSI codes stripped.
+The TuiHarness shall capture the terminal buffer with escape codes stripped.
 
 ### FR-TEST-009: Raw Frame Capture
-The TuiHarness shall optionally capture terminal frames with ANSI codes preserved for debugging.
+The TuiHarness shall optionally capture frames with escape codes preserved.
 
 ### FR-TEST-010: Content Waiting
 **When** waitForContent is called with a predicate  
-**Then** the TuiHarness shall poll the terminal buffer until the predicate matches or timeout occurs.
+**Then** the TuiHarness shall poll until the predicate matches or timeout.
 
 ### FR-TEST-011: Frame Stabilization
 **When** waitForFrame is called  
-**Then** the TuiHarness shall wait until no new output is received for a specified duration.
+**Then** the TuiHarness shall wait until no new output for a specified duration.
 
 ### FR-TEST-012: Content Assertion
-The TuiHarness shall provide assertion helpers that throw test failures when expected content is not found.
+The TuiHarness shall provide assertion helpers for terminal content.
 
 ### FR-TEST-013: Row-Level Assertions
-The TuiHarness shall support assertions on specific terminal rows by index.
+The TuiHarness shall support assertions on specific terminal rows.
 
 ### FR-TEST-014: Process Exit Handling
 **When** the spawned process exits  
-**Then** the TuiHarness shall capture the exit code and make it available.
+**Then** the TuiHarness shall capture the exit code.
 
 ### FR-TEST-015: Terminal Resize
 **When** resize is called  
-**Then** the TuiHarness shall update terminal dimensions and signal the child process.
+**Then** the TuiHarness shall update dimensions and signal the child process.
 
-### FR-TEST-016: Effect Lifecycle
-The Terminal and TuiHarness shall be managed as Effect resources with proper cleanup on scope finalization.
+### FR-TEST-016: Frame Diffing
+The TuiHarness shall provide a function to diff two captured frames.
 
-### FR-TEST-017: Timeout Support
-All waiting operations shall support configurable timeouts via Effect.timeout.
+---
 
-### FR-TEST-018: Frame Diffing
-The FrameCapture module shall provide a function to diff two captured frames and show changed rows.
+## Platform Export Requirements
+
+### FR-PLAT-001: Main Export Platform-Agnostic
+The main export shall not include platform-specific code.
+
+### FR-PLAT-002: Bun Subpath Export
+The Bun subpath shall provide pre-configured components and testing harness.
+
+### FR-PLAT-003: Node Subpath Export
+The Node subpath shall provide pre-configured components.
+
+### FR-PLAT-004: Zero-Config Usage
+**When** importing from platform subpaths  
+**Then** components shall work without manual configuration.
+
+---
+
+## Agent Documentation Requirements
+
+### FR-DOC-001: AGENTS.md in Package
+The package shall include AGENTS.md with instructions for AI agents.
+
+### FR-DOC-002: VT-HIG.md in Package
+The package shall include VT-HIG.md with the specification.
+
+### FR-DOC-003: Package Files Configuration
+The documentation files shall be included in the published npm package.
 
 ---
 
 ## Non-Functional Requirements
 
 ### NFR-001: Keyboard-First Accessibility
-All components shall be fully operable via keyboard alone, with mouse support as an enhancement.
+All components shall be fully operable via keyboard alone.
 
 ### NFR-002: Mouse Support Required
-All interactive components shall respond to mouse click events for selection and activation.
+All interactive components shall respond to mouse events.
 
 ### NFR-003: VT-HIG Compliance
-All components shall follow VT-HIG patterns including:
-- Navigation keys (j/k, h/l, arrows)
-- Type-to-filter for lists
-- Escape behavior (cancel/back/exit overlay)
-- Enter behavior (open/confirm/drill-in)
-- Status line for non-modal feedback
-- Mode indicators when applicable
-- Accessibility considerations (no color-only meaning, stable focus indicators)
+All components shall follow VT-HIG patterns.
 
-### NFR-004: Effect-TS Integration
-All data providers and side-effectful operations shall be expressed as Effect services with proper dependency injection.
+### NFR-004: Platform-Specific Code Isolation
+Platform-specific code shall be isolated to subpath exports.
 
-### NFR-005: No Bun-Specific APIs in UI Packages
-Core UI packages (list, columns, dialogs, files) shall not depend on Bun-specific APIs. The tui-test package is explicitly Bun-only.
+### NFR-005: TypeScript Types
+All exports shall include TypeScript types.
 
-### NFR-006: TypeScript Types
-All packages shall export TypeScript types for all public APIs.
+### NFR-006: Portable Rendering
+Components shall not assume specific terminal capabilities; enhanced features shall degrade gracefully.
 
-### NFR-007: Peer Dependencies
-All packages shall declare `@opentui/react`, `react`, and `effect` as peer dependencies (not bundled).
+### NFR-007: Zero-Friction Default Usage
+Platform subpath imports shall work without touching Effect-TS or service configuration.
 
-### NFR-008: Portable Rendering
-Components shall not assume specific terminal capabilities (truecolor, mouse reporting) in their core functionality; enhanced features shall degrade gracefully.
+### NFR-008: Effect-Atom Interoperability
+Components shall expose atoms for advanced integration.
 
 ---
 
 ## Constraints
 
 ### CON-001: React Dependency
-All UI components require React 18+ as a peer dependency.
+UI components require React 18+.
 
 ### CON-002: OpenTUI Dependency
-All UI components require `@opentui/react` as a peer dependency for terminal rendering.
+UI components require @opentui/react.
 
 ### CON-003: Effect Version
-All packages require Effect 3.x as a peer dependency.
+All packages require Effect 3.x.
 
 ### CON-004: No forwardRef
-Components shall use React 19's ref-as-prop pattern rather than `React.forwardRef`.
+Components shall use React 19's ref-as-prop pattern.
 
-### CON-005: Bun Runtime for tui-test
-The @effect-native/tui-test package requires Bun runtime for PTY support via Bun.Terminal.
+### CON-005: Bun Runtime for Testing
+The testing harness requires Bun runtime.

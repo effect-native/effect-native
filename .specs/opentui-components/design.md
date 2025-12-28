@@ -17,8 +17,15 @@ Single package under `packages/`:
 ```
 packages/opentui-react/
   src/
-    index.ts              — Public API exports
+    index.ts              — Main export (platform-agnostic)
+    bun.ts                — Bun platform export
+    node.ts               — Node platform export
+    testing.ts            — Testing harness export (Bun-only)
     internal/             — Private implementation details
+    atoms/                — effect-atom state atoms
+      listAtoms.ts        — Selection, filter state
+      columnAtoms.ts      — Browser state, history
+      registrySetup.ts    — Default registry configuration
     list/
       SelectableList.tsx  — Main list component
       listLogic.ts        — Pure state functions
@@ -37,7 +44,14 @@ packages/opentui-react/
       FileDataProvider.ts
       FileItem.ts
       fileIcons.ts
-    testing/              — Subpath export: @effect-native/opentui-react/testing
+    platform/
+      bun/
+        BunFileBrowser.tsx   — Pre-configured with BunFileSystem
+        layers.ts            — Bun-specific layers
+      node/
+        NodeFileBrowser.tsx  — Pre-configured with NodeFileSystem
+        layers.ts            — Node-specific layers
+    testing/
       index.ts
       Terminal.ts
       TuiHarness.ts
@@ -50,49 +64,67 @@ packages/opentui-react/
   package.json
 ```
 
-### Agent Documentation Files
-
-The package includes documentation files specifically for AI agents working with the codebase:
-
-**AGENTS.md** — Instructions for AI agents on:
-- How to use each component (SelectableList, GenericColumnBrowser, etc.)
-- How to implement custom data providers via Effect-TS services
-- How to write tests using the testing harness
-- Common patterns and idioms
-- What NOT to do (anti-patterns)
-
-**VT-HIG.md** — The VT-HIG specification containing:
-- Keyboard contracts (universal keys, list keys, navigation)
-- TUI patterns (navigation, input, feedback, safety)
-- Accessibility guidelines
-- Signal handling expectations
-- Redraw strategies
-- Portability requirements
-- Anti-patterns to avoid
-
-These files are included in the npm package (via package.json "files" array) so agents working in downstream projects that depend on this package can access the context directly from node_modules.
-
-### Normative Reference: VT-HIG
-
-All component behavior, specs, and tests are written against the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification. The VT-HIG serves as the authoritative reference for:
-
-- **Keyboard contracts**: Universal keys (Esc, Ctrl+C, ?, /), list keys (j/k, arrows, Enter, type-to-filter)
-- **Navigation patterns**: Drill-in (Enter), back (Esc/q), focus indication, pane cycling (Tab)
-- **Input modes**: Normal vs Insert, cancel (Esc) vs interrupt (Ctrl+C)
-- **Feedback**: Status line for non-modal confirmations, persistent errors, progress indicators
-- **Safety**: Dry-run previews, destructive action confirmation, undo when feasible
-- **Accessibility**: Screen reader compatibility, low-vision support, motor/fatigue considerations
-- **Signal handling**: SIGWINCH (reflow), SIGINT (cancel), SIGTERM (cleanup), SIGHUP (disconnect)
-- **Redraw strategy**: Full redraw for uncertainty, surgical updates for known changes
-- **Portability**: Minimum substrate (ASCII, no mouse, no color dependency) vs enhanced features
-
-Tests verify VT-HIG compliance by asserting expected keyboard behavior and UI patterns.
-
 ### Subpath Exports
 
 The package.json exports field provides:
-- Main export: `@effect-native/opentui-react` — all components
-- Testing subpath: `@effect-native/opentui-react/testing` — PTY test harness (Bun-only)
+
+| Subpath | Description | Platform |
+|---------|-------------|----------|
+| `@effect-native/opentui-react` | Core components, requires manual layer config | Any |
+| `@effect-native/opentui-react/bun` | Pre-configured for Bun, includes testing | Bun |
+| `@effect-native/opentui-react/node` | Pre-configured for Node | Node |
+| `@effect-native/opentui-react/testing` | PTY test harness | Bun |
+
+### Zero-Config Platform Usage
+
+Users importing from `/bun` or `/node` get components that "just work" without any Effect-TS knowledge:
+
+- **Bun users**: Import from `@effect-native/opentui-react/bun` — FileBrowser, SelectableList, and all components are pre-configured with BunFileSystem layer
+- **Node users**: Import from `@effect-native/opentui-react/node` — FileBrowser, SelectableList, and all components are pre-configured with NodeFileSystem layer
+- **Advanced users**: Import from `@effect-native/opentui-react` (main export) — Must provide FileSystem layer manually via Effect context
+
+---
+
+## Reactive State with effect-atom
+
+### Overview
+
+All components use effect-atom internally for reactive state management. This provides:
+- Fine-grained reactivity without prop drilling
+- Effect-TS integration for advanced users
+- Zero-config operation for basic users (atoms are pre-configured)
+
+### Architecture
+
+The atoms/ directory contains state atoms for each component domain:
+- **listAtoms**: Selection index, filter query, filtered items cache
+- **columnAtoms**: Browser state, column history, drilled-down IDs, multi-selection set
+- **registrySetup**: Default registry configuration for standalone usage
+
+### Consumer Experience
+
+**Basic users** (importing from /bun or /node):
+- Components work immediately with internal atom state
+- No need to understand Effect-TS or effect-atom
+- State is managed internally, exposed only via callbacks (onSelect, onSelectionChange, etc.)
+
+**Intermediate users** (controlled components):
+- Pass controlled props (selectedIndex, etc.) to override internal state
+- Components become "controlled" in React parlance
+- Still no Effect-TS knowledge required
+
+**Advanced users** (effect-atom integration):
+- Import atoms directly to build custom state flows
+- Compose with application-level atom registry
+- Use Effect-TS to orchestrate complex state transitions
+- Access internal reactive state for debugging or extension
+
+### Atom Design Principles
+
+1. **Internal by default**: Atoms are implementation details, not public API
+2. **Escapable**: Advanced users can access atoms when needed
+3. **Composable**: Atoms can be combined into larger state graphs
+4. **Testable**: Atom state can be inspected in tests without rendering
 
 ---
 
@@ -171,7 +203,7 @@ Mouse handling:
 
 ---
 
-## Package: @effect-native/opentui-react-columns
+## Module: columns/GenericColumnBrowser
 
 ### Module Organization
 
@@ -265,24 +297,22 @@ Mouse handling delegated to SelectableList's onItemClick:
 
 ### Effect Service Integration
 
-The ColumnDataProvider is defined as an Effect Context.Tag. Users provide the service via Layer:
+The ColumnDataProvider is defined as an Effect Context.Tag. Users provide the service via Layer.
 
-```
-ColumnDataProvider service shape:
-- fetchItems: (parentId: string | null) => T[]
-- getItemId: (item: T) => string
-- getSearchText: (item: T) => string
-- hasChildren: (item: T) => boolean
-- isDotNavItem?: (item: T) => boolean
-- getDisplayWidth?: (item: T) => number
-- getContentPreview?: (item: T) => string | null
-```
+ColumnDataProvider service shape (all methods operating on generic item type T):
+- fetchItems: Given parentId (string or null), returns array of T
+- getItemId: Given item, returns unique string ID
+- getSearchText: Given item, returns filterable text string
+- hasChildren: Given item, returns boolean indicating if drillable
+- isDotNavItem (optional): Given item, returns boolean for dot-navigation items
+- getDisplayWidth (optional): Given item, returns number for custom width calculation
+- getContentPreview (optional): Given item, returns string content or null
 
 The component accepts a `runSync` prop or uses React context to run Effect programs synchronously for data fetching during render.
 
 ---
 
-## Package: @effect-native/opentui-react-dialogs
+## Module: dialogs/ContextMenu and DeepSearch
 
 ### Module Organization
 
@@ -368,7 +398,7 @@ Utility functions for building common menu configurations:
 
 ---
 
-## Package: @effect-native/opentui-react-files
+## Module: files/FileBrowser
 
 ### Module Organization
 
@@ -438,7 +468,7 @@ The component manages rootPath state internally, updating when user navigates to
 
 ---
 
-## Package: @effect-native/tui-test
+## Module: testing/ (PTY Test Harness)
 
 ### Overview
 
@@ -672,9 +702,9 @@ React component tests using @opentui/react test utilities and @effect/vitest:
 
 OpenTUI's test utilities operate at the renderer level, mocking stdin/stdout without spawning a real PTY. This is fast and suitable for unit-level component testing.
 
-### End-to-End Tests (tui-test)
+### End-to-End Tests (testing/)
 
-Full application tests using @effect-native/tui-test:
+Full application tests using the /testing subpath:
 - Spawn real TUI application with PTY attached
 - Send actual key sequences through terminal
 - Capture and assert on real terminal output
@@ -697,50 +727,40 @@ FileBrowser integration tests:
 
 ## API Summary
 
-### @effect-native/opentui-react-list
+### @effect-native/opentui-react (main export)
 
-Exports:
-- SelectableList component
-- SelectableListProps type
-- ListState type
+Platform-agnostic components requiring manual layer configuration:
+- SelectableList component and SelectableListProps type
+- GenericColumnBrowser component and GenericColumnBrowserProps type
+- ContextMenu component, ContextMenuProps type, MenuItem type
+- DeepSearch component, DeepSearchProps type
+- FileBrowser component (requires FileSystem layer), FileBrowserProps type
+- FileItem type, FileDataProvider layer
+- ColumnDataProvider service tag and service interface type
+- SearchProvider service tag and service interface type
 - List logic functions (createListState, applyFilter, etc.)
+- Column state and layout functions
 - Key helper functions (isUpKey, isDownKey, etc.)
-
-### @effect-native/opentui-react-columns
-
-Exports:
-- GenericColumnBrowser component
-- GenericColumnBrowserProps type
-- ColumnDataProvider service tag
-- ColumnDataProvider.Service type (service interface)
-- BrowserState type
-- Column state functions
-- Column layout functions
-
-### @effect-native/opentui-react-dialogs
-
-Exports:
-- ContextMenu component
-- ContextMenuProps type
-- MenuItem type
-- DeepSearch component
-- DeepSearchProps type
-- SearchProvider service tag
-- SearchProvider.Service type
+- File icon utilities
 - Menu helper functions
 
-### @effect-native/opentui-react-files
+### @effect-native/opentui-react/bun
 
-Exports:
-- FileBrowser component
-- FileBrowserProps type
-- FileItem type
-- FileDataProvider layer
-- File icon utilities
+Everything from main export, pre-configured for Bun runtime:
+- All components work without manual layer setup
+- FileBrowser uses BunFileSystem automatically
+- Includes Bun-specific layers and configuration
 
-### @effect-native/tui-test
+### @effect-native/opentui-react/node
 
-Exports:
+Everything from main export, pre-configured for Node runtime:
+- All components work without manual layer setup
+- FileBrowser uses NodeFileSystem automatically
+- Includes Node-specific layers and configuration
+
+### @effect-native/opentui-react/testing
+
+PTY-based testing harness (Bun-only):
 - Terminal service and make function
 - TuiHarness service with spawn, pressKey, typeText, etc.
 - TuiHarnessConfig and TerminalConfig types
