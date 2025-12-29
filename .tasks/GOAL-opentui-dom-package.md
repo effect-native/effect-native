@@ -1,6 +1,6 @@
 ---
 title: "Package: @effect-native/opentui-dom"
-status: pending
+status: complete
 blocked_by:
   - .tasks/impl/dom-adapter.md
   - .tasks/impl/style-bridge.md
@@ -14,6 +14,14 @@ done_when: |
   package builds successfully
   all unit tests pass
   exports DOMAdapter, StyleBridge, EventRelay, DOMToTUIBridge
+basis: |
+  All impl tasks complete:
+  - dom-adapter.md: 25 tests passing
+  - style-bridge.md: 57 tests passing
+  - theme-map.md: 37 tests passing
+  - event-relay.md: 44 tests passing
+  - core-bridge.md: 19 tests passing
+  Package exports DOMAdapter, StyleBridge, ThemeMap, EventRelay, DOMToTUIBridge
 ---
 
 # Goal: Extract `@effect-native/opentui-dom`

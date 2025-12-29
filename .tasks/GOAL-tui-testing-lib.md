@@ -1,6 +1,6 @@
 ---
 title: "Package: @effect-native/tui-testing-library"
-status: pending
+status: complete
 blocked_by:
   - .tasks/impl/ghostty-harness.md
   - .tasks/impl/pty-spawn.md
@@ -12,6 +12,12 @@ done_when: |
   package builds successfully
   can spawn a simple CLI app in PTY
   can capture and assert on screen output using Ghostty emulator
+basis: |
+  All impl tasks complete:
+  - ghostty-harness.md: 18 tests passing, WASM loads in Bun
+  - pty-spawn.md: 16 tests passing
+  - screen-assertions.md: 21 tests passing
+  Package provides GhosttyHarness, spawnTui, Screen assertions, waitFor
 ---
 
 # Goal: Create `@effect-native/tui-testing-library`

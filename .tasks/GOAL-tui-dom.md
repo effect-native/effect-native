@@ -1,6 +1,6 @@
 ---
 title: TUI DOM
-status: in_progress
+status: ready_for_review
 done_when: |
   Tom has created a new custom standalone miniapp.html
   Tom has run it with `pnpm run tui-dom miniapp.html`
@@ -14,6 +14,19 @@ blocked_by:
   - .tasks/GOAL-tui-testing-lib.md
   - .tasks/GOAL-opentui-dom-testing-lib.md
   - .tasks/GOAL-tui-miniapp.md
+basis: |
+  All sub-goals complete:
+  - GOAL-opentui-dom-package.md: 182 tests (25+57+37+44+19)
+  - GOAL-tui-testing-lib.md: 55 tests (18+16+21)
+  - GOAL-opentui-dom-testing-lib.md: 76 tests (50+26)
+  - GOAL-tui-miniapp.md: 12 integration tests
+  
+  Packages created:
+  - packages-native/opentui-dom
+  - packages-native/tui-testing-library  
+  - packages-native/opentui-dom-testing-library
+  
+  Ready for Tom's manual validation with custom miniapp
 artifacts:
   - path: .specs/tui-dom/instructions.md
   - path: .specs/tui-dom/requirements.md

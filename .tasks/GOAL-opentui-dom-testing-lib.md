@@ -1,6 +1,6 @@
 ---
 title: "Package: @effect-native/opentui-dom-testing-library"
-status: pending
+status: complete
 blocked_by:
   - .tasks/GOAL-opentui-dom-package.md
   - .tasks/GOAL-tui-testing-lib.md
@@ -14,6 +14,13 @@ done_when: |
   can render a React component to happy-dom
   can query elements via screen
   can fire events that simulate TUI input
+basis: |
+  All impl tasks and dependencies complete:
+  - GOAL-opentui-dom-package.md: complete
+  - GOAL-tui-testing-lib.md: complete
+  - render-helper.md: 50 tests passing
+  - fire-event.md: 26 tests passing
+  Package provides render(), screen, fireEvent utilities
 ---
 
 # Goal: Create `@effect-native/opentui-dom-testing-library`

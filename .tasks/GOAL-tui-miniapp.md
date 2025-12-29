@@ -1,15 +1,21 @@
 ---
 title: "Validation: TUI Miniapp"
-status: pending
+status: complete
 blocked_by:
   - .tasks/GOAL-opentui-dom-package.md
   - .tasks/impl/miniapp-implementation.md
 artifacts:
-  - path: miniapp.html
-  - path: miniapp.tsx
+  - path: packages-native/opentui-dom/poc/miniapp.html
+  - path: packages-native/opentui-dom/poc/miniapp.tsx
 done_when: |
   pnpm run tui-dom miniapp.html launches the app
   App is interactive and styled correctly
+basis: |
+  All dependencies complete:
+  - GOAL-opentui-dom-package.md: complete
+  - miniapp-implementation.md: complete with 12 integration tests
+  Miniapp at packages-native/opentui-dom/poc/miniapp.tsx
+  Run with: cd packages-native/opentui-dom && pnpm tui-dom
 ---
 
 # Goal: TUI Miniapp Validation
