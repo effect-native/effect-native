@@ -34,7 +34,8 @@
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
-    "coverage": "vitest --coverage"
+    "coverage": "vitest --coverage",
+    "tui-dom": "bun run poc/miniapp.tsx"
   },
   "peerDependencies": {
     "effect": "^3.19.0"
@@ -42,6 +43,11 @@
   "devDependencies": {
     "effect": "latest",
     "@effect/vitest": "latest",
-    "happy-dom": "^17.4.4"
+    "happy-dom": "^17.4.4",
+    "@opentui/core": "^0.1.63",
+    "react": "^19",
+    "react-dom": "^19",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   }
 }

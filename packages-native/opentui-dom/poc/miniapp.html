@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TUI Miniapp - @effect-native/opentui-dom Validation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      background: #1a1a1a;
+      color: #ffffff;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #3B82F6;
+      border: 2px solid #3B82F6;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .instructions {
+      color: #888888;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    
+    .form-section {
+      border: 1px solid #666666;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-section h2 {
+      color: #888888;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      color: #888888;
+      margin-bottom: 5px;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    textarea,
+    select {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      border: 1px solid #666666;
+      background: #2a2a2a;
+      color: #ffffff;
+      font-family: inherit;
+    }
+    
+    input:focus,
+    textarea:focus,
+    select:focus,
+    button:focus {
+      outline: none;
+      border-color: #00ff00;
+      background: #333333;
+    }
+    
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    
+    .checkbox-group,
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .checkbox-item,
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid #666666;
+      max-width: 400px;
+    }
+    
+    .checkbox-item:focus-within,
+    .radio-item:focus-within {
+      border-color: #00ff00;
+      background: #333333;
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: 1px solid #666666;
+      background: #2a2a2a;
+      color: #ffffff;
+      cursor: pointer;
+      font-family: inherit;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      border-color: #00ff00;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .status-bar {
+      border: 2px solid #EAB308;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .status-bar h3 {
+      color: #EAB308;
+      margin-bottom: 10px;
+    }
+    
+    #status-focus,
+    #status-state,
+    #status-action {
+      margin-bottom: 5px;
+    }
+    
+    #status-action {
+      color: #00ff00;
+    }
+    
+    .dialog-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .dialog-overlay.visible {
+      display: flex;
+    }
+    
+    .dialog {
+      border: 2px solid #3B82F6;
+      background: #1a1a1a;
+      padding: 30px;
+      min-width: 300px;
+    }
+    
+    .dialog h2 {
+      color: #ffffff;
+      margin-bottom: 15px;
+    }
+    
+    .dialog p {
+      color: #cccccc;
+      margin-bottom: 20px;
+    }
+    
+    .note {
+      background: #333;
+      border-left: 4px solid #3B82F6;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TUI Miniapp - @effect-native/opentui-dom Validation</h1>
+    
+    <div class="note">
+      <strong>Note:</strong> This HTML file is the reference design for the TUI miniapp.
+      Run <code>bun run poc/miniapp.tsx</code> to see the actual TUI rendering in your terminal.
+    </div>
+    
+    <div class="instructions">
+      <strong>Keyboard Controls:</strong><br>
+      Tab/Shift+Tab: navigate | Space: toggle/check | Enter: button | Arrows: radio/select<br>
+      Alt+[N]ame | Alt+[E]mail | Alt+[D]ialog | Alt+[S]ubmit | Alt+[R]eset | Ctrl+C: exit
+    </div>
+    
+    <form id="demo-form">
+      <div class="form-section">
+        <h2>Form Fields</h2>
+        
+        <div class="form-group">
+          <label for="input-name">[N]ame:</label>
+          <input type="text" id="input-name" placeholder="Name" accesskey="n">
+        </div>
+        
+        <div class="form-group">
+          <label for="input-email">[E]mail:</label>
+          <input type="email" id="input-email" placeholder="Email" accesskey="e">
+        </div>
+        
+        <div class="form-group">
+          <label for="textarea-comments">Comments:</label>
+          <textarea id="textarea-comments" placeholder="Comments"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Checkboxes:</label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="cb-newsletter" name="newsletter">
+              <label for="cb-newsletter">Subscribe to newsletter</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="cb-terms" name="terms">
+              <label for="cb-terms">Accept terms and conditions</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Priority (arrows navigate):</label>
+          <div class="radio-group" role="radiogroup" aria-label="Priority">
+            <div class="radio-item">
+              <input type="radio" id="radio-low" name="priority" value="low">
+              <label for="radio-low">Low</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="radio-medium" name="priority" value="medium">
+              <label for="radio-medium">Medium</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="radio-high" name="priority" value="high">
+              <label for="radio-high">High</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="country-select">Country:</label>
+          <select id="country-select">
+            <option value="usa">United States</option>
+            <option value="canada">Canada</option>
+            <option value="mexico">Mexico</option>
+            <option value="uk">United Kingdom</option>
+            <option value="germany">Germany</option>
+          </select>
+        </div>
+        
+        <div class="button-group">
+          <button type="button" id="dialog-btn" accesskey="d">[ [D]ialog ]</button>
+          <button type="button" id="submit-btn" accesskey="s">[ [S]ubmit ]</button>
+          <button type="button" id="reset-btn" accesskey="r">[ [R]eset ]</button>
+        </div>
+      </div>
+    </form>
+    
+    <div class="status-bar">
+      <h3>Status</h3>
+      <div id="status-focus">Focused: (none)</div>
+      <div id="status-state"></div>
+      <div id="status-action">Ready</div>
+    </div>
+  </div>
+  
+  <div class="dialog-overlay" id="dialog-overlay">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <h2 id="dialog-title">Confirm Action</h2>
+      <p>Are you sure you want to proceed?</p>
+      <div class="button-group">
+        <button type="button" id="dialog-confirm">[ Confirm ]</button>
+        <button type="button" id="dialog-cancel">[ Cancel ]</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Simple JS for HTML preview interactivity
+    const form = document.getElementById('demo-form');
+    const statusFocus = document.getElementById('status-focus');
+    const statusState = document.getElementById('status-state');
+    const statusAction = document.getElementById('status-action');
+    const dialogOverlay = document.getElementById('dialog-overlay');
+    const dialogBtn = document.getElementById('dialog-btn');
+    const dialogConfirm = document.getElementById('dialog-confirm');
+    const dialogCancel = document.getElementById('dialog-cancel');
+    const submitBtn = document.getElementById('submit-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    
+    // Focus tracking
+    document.addEventListener('focusin', (e) => {
+      const target = e.target;
+      let name = target.id || target.tagName;
+      if (target.id === 'input-name') name = 'Name input';
+      else if (target.id === 'input-email') name = 'Email input';
+      else if (target.id === 'textarea-comments') name = 'Comments textarea';
+      else if (target.id === 'cb-newsletter') name = 'Newsletter checkbox';
+      else if (target.id === 'cb-terms') name = 'Terms checkbox';
+      else if (target.id?.startsWith('radio-')) name = 'Priority: ' + target.id.replace('radio-', '').charAt(0).toUpperCase() + target.id.replace('radio-', '').slice(1);
+      else if (target.id === 'country-select') name = 'Country select';
+      else if (target.id?.includes('btn')) name = target.textContent.trim();
+      
+      statusFocus.textContent = 'Focused: ' + name;
+    });
+    
+    // Dialog
+    dialogBtn.addEventListener('click', () => {
+      dialogOverlay.classList.add('visible');
+      dialogConfirm.focus();
+      statusAction.textContent = 'Dialog opened - Escape to close';
+    });
+    
+    const closeDialog = () => {
+      dialogOverlay.classList.remove('visible');
+      statusAction.textContent = 'Dialog closed';
+    };
+    
+    dialogConfirm.addEventListener('click', () => {
+      closeDialog();
+      statusAction.textContent = 'Action confirmed!';
+    });
+    
+    dialogCancel.addEventListener('click', closeDialog);
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && dialogOverlay.classList.contains('visible')) {
+        closeDialog();
+      }
+    });
+    
+    // Submit
+    submitBtn.addEventListener('click', () => {
+      const name = document.getElementById('input-name').value || '(empty)';
+      const email = document.getElementById('input-email').value || '(empty)';
+      statusAction.textContent = `SUBMITTED: Name="${name}" Email="${email}"`;
+    });
+    
+    // Reset
+    resetBtn.addEventListener('click', () => {
+      form.reset();
+      statusAction.textContent = 'Form reset to initial state';
+    });
+    
+    // Update state display
+    const updateState = () => {
+      const name = document.getElementById('input-name').value || '(empty)';
+      const email = document.getElementById('input-email').value || '(empty)';
+      const priority = document.querySelector('input[name="priority"]:checked')?.value || '(none)';
+      const country = document.getElementById('country-select').selectedOptions[0]?.textContent || '(none)';
+      statusState.textContent = `Name: ${name} | Email: ${email} | Priority: ${priority} | Country: ${country}`;
+    };
+    
+    form.addEventListener('input', updateState);
+    form.addEventListener('change', updateState);
+    updateState();
+  </script>
+</body>
+</html>
