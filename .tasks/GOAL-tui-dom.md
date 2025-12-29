@@ -98,3 +98,59 @@ The `src/` directory contains the original code that is being extracted. It hold
 ### 5. Testing Infrastructure
 *   **`work/work/tui-browser/tui-dom-poc0/src/testing/pty-screenshot.ts`**
     *   **Value:** `opentui-dom` relies on visual verification. This utility allows the package to be tested against real PTY output, ensuring the DOM-to-TUI mapping produces the correct visual result.
+
+The actual implementation, specifications, and design patterns for the testing library currently reside in the root `src/testing/` directory and various documentation folders. Ignoring these would result in rewriting the entire testing library from scratch rather than migrating the existing, working code.
+
+Here are the relevant files outside of `packages/opentui-dom` and their specific value:
+
+### 1. Core Implementation (Critical)
+These files contain the actual source code for the testing library that needs to be moved into the new package.
+
+*   **`src/testing/index.ts`**
+    *   **Value:** The main entry point exporting `render`, `screen`, `fireEvent`, and queries. It defines the public API surface of the library.
+*   **`src/testing/render.ts`**
+    *   **Value:** Contains the `render()` implementation that binds React, Happy-DOM, and the OpenTUI renderer together for testing.
+*   **`src/testing/events.ts`**
+    *   **Value:** Contains the `fireEvent` implementation which translates high-level user actions (like `click` or `type`) into the specific DOM events that the TUI bridge expects.
+*   **`src/testing/queries.ts`** (and `src/testing/queries/*.ts`)
+    *   **Value:** Implements the `@testing-library` query variants (`getBy`, `queryBy`, `findBy`) and types (`Text`, `Role`, `TestId`).
+*   **`src/testing/async.ts`**
+    *   **Value:** Implements `waitFor`, `waitForElementToBeRemoved`, and `act` which are essential for testing async TUI updates.
+*   **`src/testing/screen.ts`**
+    *   **Value:** Implements the global `screen` convenience object.
+
+### 2. Specifications & TDD Context
+These files define the expected behavior and API contract.
+
+*   **`.tasks/GOAL-310-opentui-testing-library.md`**
+    *   **Value:** The master definition for the library. It outlines the architecture, API surface, and success criteria.
+*   **`.tasks/spec/testing-lib-render.md`**
+    *   **Value:** Defines the contract for the `render()` function and cleanup.
+*   **`.tasks/spec/testing-lib-queries.md`**
+    *   **Value:** Defines the hierarchy and behavior of query functions.
+*   **`.tasks/spec/testing-lib-events.md`**
+    *   **Value:** Defines how `fireEvent` should simulate user interaction in a TUI context.
+*   **`.tasks/spec/testing-lib-async.md`**
+    *   **Value:** Defines the timing and polling behavior for async utilities.
+
+### 3. Research & Design Patterns
+These files explain *why* the code is written the way it is.
+
+*   **`.research/testing-library/patterns.md`**
+    *   **Value:** Analysis of `@testing-library/dom` patterns that were adapted for this project. Crucial for maintaining API compatibility/familiarity.
+*   **`.research/opentui/testing-api-notes.md`**
+    *   **Value:** Documentation on OpenTUI's internal testing capabilities (`createTestRenderer`, `mockInput`), which the new library wraps or interacts with.
+
+### 4. Usage Examples (Integration Tests)
+These files demonstrate how the library is currently used in practice.
+
+*   **`poc/todomvc/todomvc.test.tsx`**
+    *   **Value:** A comprehensive "real world" test suite using the library. It validates that `render`, `screen.getByRole`, and `fireEvent` work together to test a complex React component.
+*   **`src/bridge/text-input.test.ts`**
+    *   **Value:** Demonstrates testing interactive input components, validating the `fireEvent` logic for keystrokes.
+
+### 5. PTY/Visual Verification (Advanced Testing)
+*   **`src/testing/pty-screenshot.ts`**
+    *   **Value:** Implements real PTY capture. While the DOM testing library focuses on logical assertions, this file contains the logic for "Visual Verification" (GOAL-270), which is often a companion to the logical testing library.
+*   **`src/testing/ansi-parser.ts`**
+    *   **Value:** Logic to parse ANSI output from the terminal, required if the testing library supports assertions on the rendered visual output (e.g., `expect(screen).toMatchVisualSnapshot()`).
