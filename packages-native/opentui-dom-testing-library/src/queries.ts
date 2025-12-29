@@ -26,7 +26,7 @@ export interface ByRoleOptions extends QueryOptions {
 
 /** Default text normalizer: trims and collapses whitespace */
 function getDefaultNormalizer(): (text: string) => string {
-  return (text: string) => text.replace(/\s+/g, " ").trim()
+  return (text: string) => text.replace(/\s+/g, " ").trim();
 }
 
 /** Tags to ignore when searching for text content */
