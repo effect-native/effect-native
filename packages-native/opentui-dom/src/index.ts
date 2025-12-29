@@ -41,3 +41,17 @@ export * from "./bridge/event-relay.js"
  * @since 0.1.0
  */
 export * from "./bridge/node-map.js"
+
+/**
+ * Re-export of the `TailwindMapper` module.
+ *
+ * @since 0.1.0
+ */
+export * from "./bridge/tailwind-mapper.js"
+
+/**
+ * Re-export of the `StyleBridge` module.
+ *
+ * @since 0.1.0
+ */
+export * from "./bridge/style-bridge.js"
