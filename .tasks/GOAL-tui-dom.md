@@ -12,6 +12,14 @@ done_when: |
   
 blocked_by:
 artifacts:
+  - path: .specs/tui-dom/instructions.md
+  - path: .specs/tui-dom/requirements.md
+  - path: .specs/tui-dom/design.md
+  - path: .specs/tui-dom/plan.md
+  - path: .specs/tui-dom-testing/instructions.md
+  - path: .specs/tui-dom-testing/requirements.md
+  - path: .specs/tui-dom-testing/design.md
+  - path: .specs/tui-dom-testing/plan.md
   - description: tui-dom script
     path: package.json
   - description: "@effect-native/opentui-dom package"
@@ -42,3 +50,6 @@ opentui by sst is a higher level framework for building TUI apps by composing ui
 The R&D phase is complete. See the work/tui-browser/tui-dom-poc0 project for all the details.
 
 Now it's time to bring that stuff from the tui-dom-poc0 project into the effect-native repo and organize it all properly.
+
+read @work/effect-native/effect-native/.specs/AGENTS.md
+then create and wire up the necessary blockers and subtasks and such necessary to complete GOAL-tui-dom and update GOAL-tui-dom.md
