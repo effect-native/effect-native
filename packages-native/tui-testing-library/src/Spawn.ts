@@ -9,8 +9,7 @@
  */
 
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
-import * as Scope from "effect/Scope"
+import type * as Scope from "effect/Scope"
 
 /**
  * Options for spawning a TUI process.
