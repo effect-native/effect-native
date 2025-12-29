@@ -47,3 +47,10 @@ excellent foundation.
 
 For more information about the relationship between this fork and the original
 Effect project, see FORK-WORKFLOW.md
+
+## Additional Acknowledgments
+
+Some packages in packages-native/ were inspired by or include code derived from:
+
+- opentui (https://github.com/sst/opentui) - MIT License, Copyright (c) 2025 opentui
+- opencode (https://github.com/sst/opencode) - MIT License, Copyright (c) 2025 opencode
