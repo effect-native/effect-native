@@ -48,7 +48,9 @@ export interface TuiHandle {
   /** Resize the terminal */
   readonly resize: (cols: number, rows: number) => void
   /** Wait for the process to exit and return exit code */
-  readonly exited: Promise<number>
+  readonly exited: Effect.Effect<number>
+  /** Wait for the process to exit and return exit code */
+  readonly exitedAsync: Promise<number>
   /** Whether the terminal is closed */
   readonly isClosed: () => boolean
   /** Close the terminal (sends SIGTERM) */
@@ -87,8 +89,8 @@ export const spawnTui = (
       let closed = false
 
       const proc = Bun.spawn(command as Array<string>, {
-        cwd: options?.cwd,
-        env: options?.env ? { ...process.env, ...options.env } : undefined,
+        ...(options?.cwd !== undefined && { cwd: options.cwd }),
+        ...(options?.env !== undefined && { env: { ...process.env, ...options.env } }),
         terminal: {
           cols: options?.cols ?? 80,
           rows: options?.rows ?? 24,
@@ -146,7 +148,8 @@ export const spawnTui = (
           terminal.resize(cols, rows)
         },
 
-        exited: proc.exited,
+        exited: Effect.promise(() => proc.exited),
+        exitedAsync: proc.exited,
 
         isClosed: () => closed || terminal.closed,
 
@@ -162,9 +165,8 @@ export const spawnTui = (
     }),
     (handle) =>
       Effect.sync(() => {
-        if (!handle.isClosed()) {
-          handle.close()
-        }
+        if (handle.isClosed()) return
+        handle.close()
       })
   )
 

@@ -13,8 +13,9 @@ import {
   beforeAll,
   describe,
   expect,
+  it,
   test
-} from "bun:test"
+} from "@effect-native/bun-test"
 import { execSync } from "child_process"
 import * as Effect from "effect/Effect"
 import { GhosttyHarness } from "../src/GhosttyHarness.js"
@@ -130,8 +131,8 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
     harness.cleanup()
   })
 
-  test("renders initial lazygit UI without garbage", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("renders initial lazygit UI without garbage", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -157,24 +158,17 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Close lazygit
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return { screenshot, rawOutput }
-    }).pipe(Effect.scoped, Effect.runPromise)
+      // Snapshot the full screenshot
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    })
+  )
 
-    // Snapshot the full screenshot
-    expect(normalizeSnapshot(result.screenshot)).toMatchSnapshot()
-  })
+  it.scoped("handles navigation and panel switching", () =>
+    Effect.gen(function* () {
+      const screenshots: string[] = []
 
-  test("handles navigation and panel switching", async () => {
-    const screenshots: string[] = []
-
-    await Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 120,
         rows: 40,
@@ -211,35 +205,30 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Quit
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
-    }).pipe(Effect.scoped, Effect.runPromise)
+      yield* handle.exited
 
-    // Each screenshot should have some content
-    for (const screenshot of screenshots) {
-      expect(screenshot.length).toBeGreaterThan(10)
-    }
+      // Each screenshot should have some content
+      for (const screenshot of screenshots) {
+        expect(screenshot.length).toBeGreaterThan(10)
+      }
 
-    expect(
-      normalizeSnapshot(screenshots[0]!),
-      "the initial state"
-    ).toMatchSnapshot("the initial state")
-    expect(
-      normalizeSnapshot(screenshots[1]!),
-      "after navigation"
-    ).toMatchSnapshot("after navigation")
-    expect(
-      normalizeSnapshot(screenshots[2]!),
-      "after panel switch"
-    ).toMatchSnapshot("after panel switch")
-  })
+      expect(
+        normalizeSnapshot(screenshots[0]!),
+        "the initial state"
+      ).toMatchSnapshot("the initial state")
+      expect(
+        normalizeSnapshot(screenshots[1]!),
+        "after navigation"
+      ).toMatchSnapshot("after navigation")
+      expect(
+        normalizeSnapshot(screenshots[2]!),
+        "after panel switch"
+      ).toMatchSnapshot("after panel switch")
+    })
+  )
 
-  test("handles rapid UI updates (scrolling)", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("handles rapid UI updates (scrolling)", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
@@ -269,22 +258,15 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       const screenshot = harness.screenshot(term)
 
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return screenshot
-    }).pipe(Effect.scoped, Effect.runPromise)
+      // Snapshot the scrolling result
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    })
+  )
 
-    // Snapshot the scrolling result
-    expect(normalizeSnapshot(result)).toMatchSnapshot()
-  })
-
-  test("captures colors and attributes from lazygit", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("captures colors and attributes from lazygit", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -322,28 +304,21 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       const screenshot = harness.screenshot(term)
 
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return { screenshot, hasColors, hasBold, hasInverse }
-    }).pipe(Effect.scoped, Effect.runPromise)
+      // lazygit uses colors extensively for:
+      // - Status indicators (modified, staged, etc.)
+      // - Selection highlighting (inverse)
+      // - Panel headers (often bold)
+      expect(hasColors || hasBold || hasInverse).toBe(true)
 
-    // lazygit uses colors extensively for:
-    // - Status indicators (modified, staged, etc.)
-    // - Selection highlighting (inverse)
-    // - Panel headers (often bold)
-    expect(result.hasColors || result.hasBold || result.hasInverse).toBe(true)
+      // Snapshot the color-rich output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    })
+  )
 
-    // Snapshot the color-rich output
-    expect(normalizeSnapshot(result.screenshot)).toMatchSnapshot()
-  })
-
-  test("handles box drawing characters from lazygit panels", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("handles box drawing characters from lazygit panels", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -361,31 +336,24 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       const screenshot = harness.screenshot(term)
 
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return screenshot
-    }).pipe(Effect.scoped, Effect.runPromise)
+      // lazygit uses box drawing for panel borders
+      // Check that box drawing characters appear (U+2500-U+257F range)
+      // OR ASCII box drawing (+, -, |)
+      const hasBoxDrawing =
+        /[\u2500-\u257F]/.test(screenshot) || // Unicode box drawing
+        /[+\-|]/.test(screenshot) // ASCII box drawing
 
-    // lazygit uses box drawing for panel borders
-    // Check that box drawing characters appear (U+2500-U+257F range)
-    // OR ASCII box drawing (+, -, |)
-    const hasBoxDrawing =
-      /[\u2500-\u257F]/.test(result) || // Unicode box drawing
-      /[+\-|]/.test(result) // ASCII box drawing
+      expect(hasBoxDrawing).toBe(true)
 
-    expect(hasBoxDrawing).toBe(true)
+      // Snapshot the box drawing output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    })
+  )
 
-    // Snapshot the box drawing output
-    expect(normalizeSnapshot(result)).toMatchSnapshot()
-  })
-
-  test("renders help menu without garbage", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("renders help menu without garbage", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 40,
@@ -411,26 +379,19 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       yield* sendKey(handle, "\x1b") // Escape
       yield* waitForStable(handle, 50, 500)
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return screenshot
-    }).pipe(Effect.scoped, Effect.runPromise)
+      // Help menu should mention keybindings or have descriptive text
+      // (content varies by version)
+      expect(screenshot.length).toBeGreaterThan(50)
 
-    // Help menu should mention keybindings or have descriptive text
-    // (content varies by version)
-    expect(result.length).toBeGreaterThan(50)
+      // Snapshot the help menu output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    })
+  )
 
-    // Snapshot the help menu output
-    expect(normalizeSnapshot(result)).toMatchSnapshot()
-  })
-
-  test("terminal resize preserves content integrity", async () => {
-    const result = await Effect.gen(function* () {
+  it.scoped("terminal resize preserves content integrity", () =>
+    Effect.gen(function* () {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
@@ -459,21 +420,14 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       const after = harness.screenshot(term2)
 
       yield* sendKey(handle, "q")
-      yield* Effect.promise(() =>
-        Promise.race([
-          handle.exited,
-          new Promise((resolve) => setTimeout(resolve, 500))
-        ])
-      )
+      yield* handle.exited
 
-      return { before, after }
-    }).pipe(Effect.scoped, Effect.runPromise)
-
-    // After resize should have content
-    expect(result.after.length).toBeGreaterThan(10)
-    expect(normalizeSnapshot(result.before)).toMatchSnapshot()
-    expect(normalizeSnapshot(result.after)).toMatchSnapshot()
-  })
+      // After resize should have content
+      expect(after.length).toBeGreaterThan(10)
+      expect(normalizeSnapshot(before)).toMatchSnapshot()
+      expect(normalizeSnapshot(after)).toMatchSnapshot()
+    })
+  )
 })
 
 // Info test that always runs

@@ -15,7 +15,7 @@ describe("spawnTui", () => {
   BunTest.it.scoped("spawns a process and captures output", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "hello world"])
-      const exitCode = yield* Effect.promise(() => handle.exited)
+      const exitCode = yield* handle.exited
       expect(exitCode).toBe(0)
 
       // Wait for output to be captured
@@ -39,7 +39,7 @@ describe("spawnTui", () => {
       // Send Ctrl+D to close stdin
       yield* sendKey(handle, "\x04")
 
-      const exitCode = yield* Effect.promise(() => handle.exited)
+      const exitCode = yield* handle.exited
       expect(exitCode).toBe(0)
     }))
 
@@ -47,7 +47,7 @@ describe("spawnTui", () => {
     Effect.gen(function*() {
       // tput cols outputs number of columns
       const handle = yield* spawnTui(["bash", "-c", "tput cols"], { cols: 120 })
-      const exitCode = yield* Effect.promise(() => handle.exited)
+      const exitCode = yield* handle.exited
       expect(exitCode).toBe(0)
 
       yield* waitForStable(handle, 50, 1000)
@@ -74,14 +74,14 @@ describe("spawnTui", () => {
 
       // Exit bash
       yield* sendLine(handle, "exit")
-      const exitCode = yield* Effect.promise(() => handle.exited)
+      const exitCode = yield* handle.exited
       expect(exitCode).toBe(0)
     }))
 
   BunTest.it.scoped("clears output buffer", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "first"])
-      yield* Effect.promise(() => handle.exited)
+      yield* handle.exited
       yield* waitForStable(handle, 50, 1000)
 
       expect(handle.getOutput()).toContain("first")
@@ -93,7 +93,7 @@ describe("spawnTui", () => {
   BunTest.it.scoped("returns raw output bytes", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "test"])
-      yield* Effect.promise(() => handle.exited)
+      yield* handle.exited
       yield* waitForStable(handle, 50, 1000)
 
       const raw = handle.getRawOutput()
@@ -109,7 +109,7 @@ describe("spawnTui", () => {
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "done"])
 
-      yield* Effect.promise(() => handle.exited)
+      yield* handle.exited
       yield* waitForStable(handle, 50, 1000)
 
       // After process exits, PTY may still be technically open briefly
@@ -134,7 +134,7 @@ describe("waitForText", () => {
   BunTest.it.scoped("times out when text does not appear", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "something else"])
-      yield* Effect.promise(() => handle.exited)
+      yield* handle.exited
 
       const result = yield* Effect.either(waitForText(handle, "not-here", 100))
       expect(result._tag).toBe("Left")
@@ -189,8 +189,8 @@ describe("sendKey", () => {
       yield* sendKey(handle, "\x03")
 
       // cat may exit with non-zero due to interrupt
-      yield* Effect.promise(() => handle.exited)
-      expect(handle.isClosed() || true).toBe(true) // Process ended
+      yield* handle.exited
+      expect(handle.isClosed()).toBe(true) // Process ended
     }))
 })
 
@@ -203,6 +203,6 @@ describe("sendLine", () => {
       yield* waitForText(handle, "line one", 2000)
 
       yield* sendKey(handle, "\x04") // Ctrl+D to end
-      yield* Effect.promise(() => handle.exited)
+      yield* handle.exited
     }))
 })
