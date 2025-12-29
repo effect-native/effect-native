@@ -2,37 +2,32 @@
 
 ## 1. Functional Requirements (FR)
 
-### Layer 1: Visual Verification (PTY)
-**Goal:** Verify the actual terminal output seen by the user.
+### Package: `@effect-native/tui-testing-library`
+**Goal:** Framework-agnostic "Black Box" testing of CLI/TUI applications via PTY.
 
-*   **FR-1.1 (Spawn):** The System shall spawn TUI processes in a real pseudo-terminal (PTY) environment using Bun's native PTY support.
-*   **FR-1.2 (Capture):** The System shall capture the raw byte stream (stdout) from the PTY.
-*   **FR-1.3 (Parsing):** The System shall parse ANSI escape sequences to reconstruct a virtual screen buffer (2D grid of cells with character, color, and style attributes).
-*   **FR-1.4 (Input):** The System shall provide methods to send keystrokes and text input to the PTY's standard input (stdin).
-*   **FR-1.5 (Assertions):** The System shall provide assertions to verify screen content, including text presence, cursor position, and style attributes (e.g., `expect(screen).toHaveColor('red')`).
+*   **FR-1.1 (Process Spawning):** The System shall spawn a target application process attached to a pseudo-terminal (PTY) with configurable dimensions (rows/cols).
+*   **FR-1.2 (Screen Capture):** The System shall capture the raw standard output (stdout) stream from the PTY.
+*   **FR-1.3 (ANSI Parsing):** The System shall parse ANSI escape sequences (cursor movement, colors, styles, clear screen) to maintain an in-memory 2D grid representing the terminal screen state.
+*   **FR-1.4 (Input Simulation):** The System shall provide methods to send keystrokes, text strings, and control sequences (e.g., Ctrl+C) to the PTY's standard input (stdin).
+*   **FR-1.5 (Visual Assertions):** The System shall provide assertions to verify that specific text exists on the screen, optionally validating its style (color, bold) and position.
+*   **FR-1.6 (Stability):** The System shall provide `waitFor` utilities to await screen stability (no output for N ms) or specific text appearance before asserting.
 
-### Layer 2: Logical Verification (DOM)
-**Goal:** Verify application state and logic using standard web testing patterns.
+### Package: `@effect-native/opentui-dom-testing-library`
+**Goal:** "White Box" testing of React/DOM TUI applications using standard web testing patterns.
 
-*   **FR-2.1 (API Compatibility):** The System shall implement the core `@testing-library` API surface (`render`, `screen`, `fireEvent`, `waitFor`) to ensure familiarity for React developers.
-*   **FR-2.2 (Queries):** The System shall provide queries to locate elements within the virtual DOM based on text content, ARIA roles, and test IDs (e.g., `getByRole('button')`, `getByText('Submit')`).
-*   **FR-2.3 (Event Simulation):** When `fireEvent` is used (e.g., `fireEvent.click`), the System shall translate this into the appropriate TUI input sequence (e.g., sending 'Enter' key) rather than dispatching a direct DOM event, ensuring the full input pipeline is tested.
-*   **FR-2.4 (Async Handling):** The System shall provide utilities (`waitFor`, `findBy*`) to handle asynchronous UI updates driven by the TUI render loop.
-
-### Layer 3: Adapter Injection
-**Goal:** Run the same tests against different DOM implementations.
-
-*   **FR-3.1 (Dependency Injection):** The System shall accept a DOM Adapter implementation (e.g., `HappyDOMAdapter`, `PuppeteerAdapter`) configuration.
-*   **FR-3.2 (Abstraction):** The System shall abstract the differences between synchronous (Happy-DOM) and asynchronous (Puppeteer) DOM access behind a unified interface.
-*   **FR-3.3 (Environment Switching):** The System shall allow switching the underlying DOM engine via environment variable or configuration without modifying the test code.
+*   **FR-2.1 (Environment):** The System shall use `happy-dom` as the exclusive DOM implementation for rendering and interaction.
+*   **FR-2.2 (Render Helper):** The `render` function shall mount a React component into a `happy-dom` document and initialize the `opentui-dom` bridge (NodeMap, EventRelay) in-memory.
+*   **FR-2.3 (Queries):** The System shall export standard `@testing-library` queries (`getByText`, `getByRole`, `findBy*`) bound to the rendered `happy-dom` container.
+*   **FR-2.4 (Event Simulation):** The `fireEvent` utility shall dispatch DOM events (e.g., `keydown`, `click`, `focus`) that accurately mimic how the `opentui-dom` EventRelay translates terminal input.
+*   **FR-2.5 (Async Handling):** The `waitFor` utility shall handle the asynchronous nature of `happy-dom`'s MutationObserver batching to ensure assertions run after DOM updates are processed.
+*   **FR-2.6 (Cleanup):** The `cleanup` function shall unmount the React tree and dispose of the `happy-dom` window and `opentui` renderer to prevent memory leaks.
 
 ## 2. Non-Functional Requirements (NFR)
 
-*   **NFR-1 (Performance):** PTY-based tests shall execute with minimal overhead to allow for rapid TDD cycles.
-*   **NFR-2 (Stability):** The PTY capture system shall handle terminal resize events and rapid output streams without race conditions or data loss.
-*   **NFR-3 (Isolation):** Each test run shall operate in an isolated environment to prevent state leakage between tests.
+*   **NFR-1 (Performance):** The `opentui-dom-testing-library` tests shall run in-process without spawning external binaries (unlike the PTY library), ensuring fast execution for unit tests.
+*   **NFR-2 (API Compatibility):** The API surface shall match `@testing-library/react` as closely as possible to reduce the learning curve for React developers.
 
 ## 3. Constraints
 
-*   **C-1 (Runtime):** The System shall be built for the Bun runtime to leverage its native `Bun.spawn({ terminal: ... })` capabilities.
-*   **C-2 (No Browser Requirement):** The core testing library must function without a browser installed (when using the Happy-DOM adapter).
+*   **C-1 (Virtual DOM Only):** The System shall **only** support `happy-dom` (or similar synchronous virtual DOMs). Support for asynchronous remote DOMs (like Puppeteer/CDP) is an **explicit non-goal**.
+*   **C-2 (Platform):** The PTY functionality relies on Bun's native `Bun.spawn({ terminal: ... })` API and is constrained to platforms supported by Bun.

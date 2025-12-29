@@ -47,4 +47,4 @@
 
 *   **C-1 (Not a Browser):** The System shall **not** attempt to implement a full web browser engine (no complex CSS grid, floats, or legacy quirks mode). It targets "App" layouts (Flexbox/Yoga).
 *   **C-2 (Idiomatic UX):** The System shall prioritize VT-HIG (Virtual Terminal Human Interface Guidelines) over browser behaviors where they conflict (e.g., using arrow keys for list navigation instead of requiring a mouse).
-*   **C-3 (Tech Stack):** The System shall use `happy-dom` and/or `puppeteer-core` for the DOM implementation and `opentui` for the rendering engine.
+*   **C-3 (Tech Stack):** The System shall use `happy-dom` for the DOM implementation and `opentui` for the rendering engine.
