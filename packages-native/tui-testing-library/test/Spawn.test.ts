@@ -1,15 +1,7 @@
+import * as BunTest from "@effect-native/bun-test"
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import * as BunTest from "@effect-native/bun-test"
-import {
-  getPlainOutput,
-  sendKey,
-  sendLine,
-  spawnTui,
-  stripAnsi,
-  waitForStable,
-  waitForText
-} from "../src/Spawn.js"
+import { getPlainOutput, sendKey, sendLine, spawnTui, stripAnsi, waitForStable, waitForText } from "../src/Spawn.js"
 
 describe("spawnTui", () => {
   BunTest.it.scoped("spawns a process and captures output", () =>

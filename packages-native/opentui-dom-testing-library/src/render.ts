@@ -2,10 +2,10 @@
  * render() function for testing React components.
  * Similar to @testing-library/react's render.
  */
-import { createRoot, type Root } from "react-dom/client"
+import React, { type ComponentType, type ReactElement } from "react"
 import { flushSync } from "react-dom"
-import React, { type ReactElement, type ComponentType } from "react"
-import { getQueriesForElement, type BoundQueries } from "./queries.js"
+import { createRoot, type Root } from "react-dom/client"
+import { type BoundQueries, getQueriesForElement } from "./queries.js"
 import { ensureHappyDom } from "./setup.js"
 
 // ----- Types -----
@@ -40,8 +40,8 @@ export function render(ui: ReactElement, options: RenderOptions = {}): RenderRes
   ensureHappyDom()
 
   const {
-    container = document.body.appendChild(document.createElement("div")),
     baseElement = document.body,
+    container = document.body.appendChild(document.createElement("div")),
     wrapper: Wrapper
   } = options
 
@@ -102,7 +102,7 @@ export function render(ui: ReactElement, options: RenderOptions = {}): RenderRes
 // ----- cleanup() -----
 
 export function cleanup(): void {
-  for (const { root, container } of mountedRoots) {
+  for (const { container, root } of mountedRoots) {
     root.unmount()
     container.remove()
   }

@@ -25,74 +25,67 @@ afterEach(() => {
 describe("ElementRef", () => {
   describe("ref()", () => {
     it.effect("creates ref with selector", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const elementRef = ref("button")
         expect(elementRef.selector).toBe("button")
         expect(elementRef.parent).toBeUndefined()
         expect(elementRef.index).toBeUndefined()
-      })
-    )
+      }))
 
     it.effect("creates ref with parent", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const parent = ref(".container")
         const child = ref("button", parent)
         expect(child.selector).toBe("button")
         expect(child.parent).toBe(parent)
-      })
-    )
+      }))
   })
 
   describe("refNth()", () => {
     it.effect("creates indexed ref", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const elementRef = refNth("li", 2)
         expect(elementRef.selector).toBe("li")
         expect(elementRef.index).toBe(2)
-      })
-    )
+      }))
 
     it.effect("creates indexed ref with parent", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const parent = ref("ul")
         const elementRef = refNth("li", 1, parent)
         expect(elementRef.selector).toBe("li")
         expect(elementRef.index).toBe(1)
         expect(elementRef.parent).toBe(parent)
-      })
-    )
+      }))
   })
 })
 
 describe("Error Types", () => {
   it.effect("ElementNotFoundError has correct tag and selector", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const error = new ElementNotFoundError({ selector: "button.missing" })
       expect(error._tag).toBe("ElementNotFoundError")
       expect(error.selector).toBe("button.missing")
       expect(error.message).toContain("button.missing")
-    })
-  )
+    }))
 
   it.effect("MultipleElementsError has correct tag, selector, and count", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const error = new MultipleElementsError({ selector: "div", count: 5 })
       expect(error._tag).toBe("MultipleElementsError")
       expect(error.selector).toBe("div")
       expect(error.count).toBe(5)
       expect(error.message).toContain("div")
       expect(error.message).toContain("5")
-    })
-  )
+    }))
 
   it.effect("AdapterError has correct tag and message", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const error = new AdapterError({ reason: "Something went wrong" })
       expect(error._tag).toBe("AdapterError")
       expect(error.reason).toBe("Something went wrong")
       expect(error.message).toBe("Something went wrong")
-    })
-  )
+    }))
 })
 
 describe("DOMAdapter", () => {
@@ -100,7 +93,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns Effect with Document",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div>test</div>"))
           const adapter = yield* DOMAdapterService
           const doc = yield* adapter.document
@@ -115,7 +108,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns true for existing element",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<button>Click</button>"))
           const adapter = yield* DOMAdapterService
           const exists = yield* adapter.exists(ref("button"))
@@ -127,7 +120,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns false for non-existing element",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div></div>"))
           const adapter = yield* DOMAdapterService
           const exists = yield* adapter.exists(ref("button.missing"))
@@ -141,10 +134,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns number of matching elements",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML("<ul><li>1</li><li>2</li><li>3</li></ul>")
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<ul><li>1</li><li>2</li><li>3</li></ul>"))
           const adapter = yield* DOMAdapterService
           const count = yield* adapter.count(ref("li"))
           expect(count).toBe(3)
@@ -155,7 +146,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns 0 for no matches",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div></div>"))
           const adapter = yield* DOMAdapterService
           const count = yield* adapter.count(ref("span"))
@@ -169,7 +160,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns text content of element",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<p>Hello World</p>"))
           const adapter = yield* DOMAdapterService
           const text = yield* adapter.textContent(ref("p"))
@@ -181,7 +172,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns null for non-existing element",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div></div>"))
           const adapter = yield* DOMAdapterService
           const text = yield* adapter.textContent(ref("span"))
@@ -195,10 +186,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns attribute value",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML('<input type="text" data-testid="my-input" />')
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<input type=\"text\" data-testid=\"my-input\" />"))
           const adapter = yield* DOMAdapterService
           const value = yield* adapter.getAttribute(ref("input"), "data-testid")
           expect(value).toBe("my-input")
@@ -209,8 +198,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns null for missing attribute",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() => setTestHTML('<input type="text" />'))
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<input type=\"text\" />"))
           const adapter = yield* DOMAdapterService
           const value = yield* adapter.getAttribute(ref("input"), "data-missing")
           expect(value).toBeNull()
@@ -223,10 +212,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns input value",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML('<input type="text" value="initial" />')
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<input type=\"text\" value=\"initial\" />"))
           const adapter = yield* DOMAdapterService
           const value = yield* adapter.getValue(ref("input"))
           expect(value).toBe("initial")
@@ -239,8 +226,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "sets input value",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() => setTestHTML('<input type="text" />'))
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<input type=\"text\" />"))
           const adapter = yield* DOMAdapterService
           yield* adapter.fill(ref("input"), "new value")
           const value = yield* adapter.getValue(ref("input"))
@@ -254,10 +241,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "focus sets element as active",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML('<input type="text" id="my-input" />')
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<input type=\"text\" id=\"my-input\" />"))
           const adapter = yield* DOMAdapterService
           yield* adapter.focus(ref("#my-input"))
           const active = yield* adapter.activeElement()
@@ -272,10 +257,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "triggers click on element",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML('<button onclick="this.textContent=\'clicked\'">Click me</button>')
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<button onclick=\"this.textContent='clicked'\">Click me</button>"))
           const adapter = yield* DOMAdapterService
           yield* adapter.click(ref("button"))
           const text = yield* adapter.textContent(ref("button"))
@@ -289,7 +272,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "dispatches custom event",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div></div>"))
           const adapter = yield* DOMAdapterService
           // Just verify it doesn't throw
@@ -303,7 +286,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "returns MutationStream with subscribe and disconnect",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div id='root'></div>"))
           const adapter = yield* DOMAdapterService
           const stream = yield* adapter.observeMutations(ref("#root"), {
@@ -323,7 +306,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "subscribe callback receives MutationRecord[]",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() => setTestHTML("<div id='root'></div>"))
           const adapter = yield* DOMAdapterService
           const stream = yield* adapter.observeMutations(ref("#root"), {
@@ -360,7 +343,7 @@ describe("DOMAdapter", () => {
     it.effect(
       "finds element within parent scope",
       () =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.promise(() =>
             setTestHTML(`
             <div class="a"><span>A</span></div>
@@ -380,10 +363,8 @@ describe("DOMAdapter", () => {
     it.effect(
       "selects nth matching element",
       () =>
-        Effect.gen(function* () {
-          yield* Effect.promise(() =>
-            setTestHTML("<ul><li>First</li><li>Second</li><li>Third</li></ul>")
-          )
+        Effect.gen(function*() {
+          yield* Effect.promise(() => setTestHTML("<ul><li>First</li><li>Second</li><li>Third</li></ul>"))
           const adapter = yield* DOMAdapterService
           const second = refNth("li", 1)
           const text = yield* adapter.textContent(second)

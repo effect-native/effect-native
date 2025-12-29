@@ -13,8 +13,8 @@
  * @module bridge/style-bridge
  */
 
-import { tailwindToTui, type TuiStyleProps } from "./tailwind-mapper.js"
 import type { MappedRenderable } from "./node-map.js"
+import { tailwindToTui, type TuiStyleProps } from "./tailwind-mapper.js"
 
 /**
  * Common CSS custom properties used by shadcn/ui components.
@@ -55,7 +55,7 @@ const CSS_VAR_DEFAULTS: Record<string, string> = {
   // Border and input
   "--border": "#27272A",
   "--input": "#27272A",
-  "--ring": "#D4D4D8", // zinc-300
+  "--ring": "#D4D4D8" // zinc-300
 }
 
 /**
@@ -247,10 +247,16 @@ function getDataAttributes(element: Element): Partial<TuiStyleProps> {
               "flex-end",
               "space-between",
               "space-around",
-              "space-evenly",
+              "space-evenly"
             ].includes(value)
           ) {
-            props.justifyContent = value as "flex-start" | "center" | "flex-end" | "space-between" | "space-around" | "space-evenly"
+            props.justifyContent = value as
+              | "flex-start"
+              | "center"
+              | "flex-end"
+              | "space-between"
+              | "space-around"
+              | "space-evenly"
           }
           break
         case "alignItems":
@@ -356,12 +362,12 @@ function mapThemeClass(
  * ```
  */
 export function createStyleBridge(options: StyleBridgeOptions = {}): StyleBridge {
-  const { debug = false, cssVarOverrides = {} } = options
+  const { cssVarOverrides = {}, debug = false } = options
 
   // Merge default CSS vars with overrides
   const cssVarMap: Record<string, string> = {
     ...CSS_VAR_DEFAULTS,
-    ...cssVarOverrides,
+    ...cssVarOverrides
   }
 
   const log = debug ? console.log.bind(console, "[StyleBridge]") : () => {}
@@ -431,7 +437,7 @@ export function createStyleBridge(options: StyleBridgeOptions = {}): StyleBridge
           }
         }
       }
-    },
+    }
   }
 }
 

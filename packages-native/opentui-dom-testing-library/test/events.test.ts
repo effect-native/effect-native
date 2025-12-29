@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest"
-import { fireEvent, createEvent } from "../src/events.js"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { createEvent, fireEvent } from "../src/events.js"
 
 describe("fireEvent", () => {
   let container: HTMLDivElement
@@ -138,7 +138,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const events: string[] = []
+      const events: Array<string> = []
       button.addEventListener("keydown", () => events.push("keydown"))
       button.addEventListener("keyup", () => events.push("keyup"))
       button.addEventListener("click", () => events.push("click"))

@@ -15,7 +15,7 @@
  * @module bridge/dom-to-tui-bridge
  */
 
-import type { NodeMap, MappedRenderable } from "./node-map.js"
+import type { MappedRenderable, NodeMap } from "./node-map.js"
 import { createNodeMap } from "./node-map.js"
 import type { StyleBridge } from "./style-bridge.js"
 import { createStyleBridge } from "./style-bridge.js"
@@ -27,7 +27,7 @@ export interface TUIContainer {
 }
 
 /** Minimal interface for TUI Text-like renderables */
-export interface TUIText extends MappedRenderable {
+export interface TUIText {
   content: string
 }
 
@@ -97,8 +97,7 @@ export function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBr
   const styleBridge = options.styleBridge ?? createStyleBridge({ debug })
 
   // Get MutationObserver constructor from provided window or globalThis
-  const MutationObserverCtor =
-    windowLike?.MutationObserver ?? (globalThis as unknown as WindowLike).MutationObserver
+  const MutationObserverCtor = windowLike?.MutationObserver ?? (globalThis as unknown as WindowLike).MutationObserver
 
   let observer: MutationObserver | null = null
 
@@ -269,7 +268,7 @@ export function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBr
   /**
    * Handle incoming mutations batch.
    */
-  function handleMutations(mutations: MutationRecord[]): void {
+  function handleMutations(mutations: Array<MutationRecord>): void {
     log(`Received ${mutations.length} mutation(s)`)
 
     for (const mutation of mutations) {
@@ -300,7 +299,7 @@ export function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBr
         characterDataOldValue: true,
         subtree: true,
         attributes: true,
-        attributeOldValue: true,
+        attributeOldValue: true
       })
 
       log(`Observing container: <${container.tagName.toLowerCase()}>`)
@@ -323,7 +322,7 @@ export function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBr
       for (const child of Array.from(container.childNodes)) {
         addNode(child, container)
       }
-    },
+    }
   }
 }
 

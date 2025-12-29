@@ -112,7 +112,7 @@ const TUI_TO_DOM_KEY: Record<string, string> = {
   home: "Home",
   end: "End",
   pageup: "PageUp",
-  pagedown: "PageDown",
+  pagedown: "PageDown"
 }
 
 /**
@@ -134,7 +134,7 @@ const TUI_TO_DOM_KEYCODE: Record<string, number> = {
   home: 36,
   end: 35,
   pageup: 33,
-  pagedown: 34,
+  pagedown: 34
 }
 
 /**
@@ -162,7 +162,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
   let preTrapFocus: Element | null = null
 
   // Scroll container state
-  let scrollDomContainer: Element | null = null
+  let _scrollDomContainer: Element | null = null
   let scrollTuiContainer: ScrollContainer | null = null
 
   const log = debug ? console.log.bind(console, "[EventRelay]") : () => {}
@@ -198,7 +198,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
    * - Only include ONE radio per group (checked one, or tabindex=0, or first)
    * - Arrow keys navigate within group (handled separately)
    */
-  function getFocusableElements(): Element[] {
+  function getFocusableElements(): Array<Element> {
     if (!currentDocument) return []
 
     const selector = [
@@ -207,7 +207,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       "select:not([disabled])",
       "textarea:not([disabled])",
       "a[href]",
-      "[tabindex]:not([tabindex='-1'])",
+      "[tabindex]:not([tabindex='-1'])"
     ].join(", ")
 
     // When focus trap is active, only search within the trap container
@@ -217,8 +217,8 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
     ) // Filter out hidden elements
 
     // Filter radios: only include one per group (roving tabindex pattern)
-    const radioGroups = new Map<string, HTMLInputElement[]>()
-    const result: Element[] = []
+    const radioGroups = new Map<string, Array<HTMLInputElement>>()
+    const result: Array<Element> = []
 
     for (const el of allFocusable) {
       if (isRadioInput(el)) {
@@ -267,7 +267,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
    * Priority: checked radio > tabindex=0 radio > first radio
    */
   function getRadioGroupTabTarget(
-    radios: HTMLInputElement[]
+    radios: Array<HTMLInputElement>
   ): HTMLInputElement | null {
     if (radios.length === 0) return null
 
@@ -286,14 +286,14 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
   /**
    * Get all radios in the same group as the given radio.
    */
-  function getRadioGroup(radio: HTMLInputElement): HTMLInputElement[] {
+  function getRadioGroup(radio: HTMLInputElement): Array<HTMLInputElement> {
     if (!currentDocument || !radio.name) return [radio]
 
     return Array.from(
       currentDocument.querySelectorAll(
         `input[type="radio"][name="${radio.name}"]`
       )
-    ) as HTMLInputElement[]
+    ) as Array<HTMLInputElement>
   }
 
   /**
@@ -553,7 +553,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       metaKey: tuiEvent.meta,
       repeat: tuiEvent.repeated ?? false,
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
 
     log(`Dispatch ${type}: key="${key}" target=${target.tagName}`)
@@ -571,7 +571,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
     const event = new win.MouseEvent("click", {
       bubbles: true,
       cancelable: true,
-      button: 0,
+      button: 0
     })
 
     log(`Dispatch click: target=${target.tagName}`)
@@ -589,7 +589,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       data,
       inputType: "insertText",
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
 
     log(`Dispatch input: data="${data}" target=${target.tagName}`)
@@ -913,8 +913,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
         // Ctrl+D: delete character forward
         if (name === "d") {
           if (selStart < currentValue.length) {
-            inputElement.value =
-              currentValue.slice(0, selStart) + currentValue.slice(selStart + 1)
+            inputElement.value = currentValue.slice(0, selStart) + currentValue.slice(selStart + 1)
             setSelectionPosition(inputElement, selStart, selStart)
             dispatchInputEvent(target, "")
           }
@@ -926,8 +925,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
           const beforeCursor = currentValue.slice(0, selStart)
           // Find start of previous word (skip trailing spaces, then find word start)
           const wordStart = findWordBoundaryBackward(beforeCursor)
-          inputElement.value =
-            currentValue.slice(0, wordStart) + currentValue.slice(selStart)
+          inputElement.value = currentValue.slice(0, wordStart) + currentValue.slice(selStart)
           setSelectionPosition(inputElement, wordStart, wordStart)
           dispatchInputEvent(target, "")
           return
@@ -974,8 +972,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
         if (name === "d") {
           const afterCursor = currentValue.slice(selStart)
           const wordEnd = findWordBoundaryForward(afterCursor)
-          inputElement.value =
-            currentValue.slice(0, selStart) +
+          inputElement.value = currentValue.slice(0, selStart) +
             currentValue.slice(selStart + wordEnd)
           setSelectionPosition(inputElement, selStart, selStart)
           dispatchInputEvent(target, "")
@@ -1005,8 +1002,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       const [selStart, selEnd] = getSelectionPosition(inputElement)
 
       // Insert character at cursor position (replaces selection if any)
-      inputElement.value =
-        currentValue.slice(0, selStart) +
+      inputElement.value = currentValue.slice(0, selStart) +
         charToInsert +
         currentValue.slice(selEnd)
 
@@ -1032,7 +1028,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
           const event = new win.InputEvent("input", {
             inputType: "deleteContentBackward",
             bubbles: true,
-            cancelable: true,
+            cancelable: true
           })
           target.dispatchEvent(event)
         }
@@ -1073,7 +1069,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       attached = false
       trapContainer = null
       preTrapFocus = null
-      scrollDomContainer = null
+      _scrollDomContainer = null
       scrollTuiContainer = null
 
       log("Detached from renderer")
@@ -1091,10 +1087,11 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
       domContainer: Element,
       tuiScrollBox: ScrollContainer
     ): void {
-      scrollDomContainer = domContainer
+      _scrollDomContainer = domContainer
       scrollTuiContainer = tuiScrollBox
       log(`Scroll container set: ${domContainer.id || domContainer.tagName}`)
-    },
+      void _scrollDomContainer // Reserved for future scroll-to-element DOM operations
+    }
   }
 }
 

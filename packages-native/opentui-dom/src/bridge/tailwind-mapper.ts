@@ -67,7 +67,7 @@ export interface TuiStyleProps {
   borderColor?: ColorInput
 
   // Border
-  border?: boolean | ("top" | "right" | "bottom" | "left")[]
+  border?: boolean | Array<"top" | "right" | "bottom" | "left">
   borderStyle?: "single" | "double" | "rounded" | "heavy"
 
   // Typography
@@ -125,7 +125,7 @@ const spacingScale: Record<string, number> = {
   "72": 18,
   "80": 20,
   "96": 24,
-  px: 0,
+  px: 0
 }
 
 /** Color palette - Tailwind colors to hex */
@@ -141,7 +141,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#334155",
     800: "#1E293B",
     900: "#0F172A",
-    950: "#020617",
+    950: "#020617"
   },
   gray: {
     50: "#F9FAFB",
@@ -154,7 +154,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#374151",
     800: "#1F2937",
     900: "#111827",
-    950: "#030712",
+    950: "#030712"
   },
   zinc: {
     50: "#FAFAFA",
@@ -167,7 +167,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#3F3F46",
     800: "#27272A",
     900: "#18181B",
-    950: "#09090B",
+    950: "#09090B"
   },
   red: {
     50: "#FEF2F2",
@@ -180,7 +180,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#B91C1C",
     800: "#991B1B",
     900: "#7F1D1D",
-    950: "#450A0A",
+    950: "#450A0A"
   },
   orange: {
     50: "#FFF7ED",
@@ -193,7 +193,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#C2410C",
     800: "#9A3412",
     900: "#7C2D12",
-    950: "#431407",
+    950: "#431407"
   },
   yellow: {
     50: "#FEFCE8",
@@ -206,7 +206,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#A16207",
     800: "#854D0E",
     900: "#713F12",
-    950: "#422006",
+    950: "#422006"
   },
   green: {
     50: "#F0FDF4",
@@ -219,7 +219,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#15803D",
     800: "#166534",
     900: "#14532D",
-    950: "#052E16",
+    950: "#052E16"
   },
   blue: {
     50: "#EFF6FF",
@@ -232,7 +232,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#1D4ED8",
     800: "#1E40AF",
     900: "#1E3A8A",
-    950: "#172554",
+    950: "#172554"
   },
   purple: {
     50: "#FAF5FF",
@@ -245,7 +245,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#7E22CE",
     800: "#6B21A8",
     900: "#581C87",
-    950: "#3B0764",
+    950: "#3B0764"
   },
   pink: {
     50: "#FDF2F8",
@@ -258,7 +258,7 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#BE185D",
     800: "#9D174D",
     900: "#831843",
-    950: "#500724",
+    950: "#500724"
   },
   cyan: {
     50: "#ECFEFF",
@@ -271,8 +271,8 @@ const colorPalette: Record<string, Record<string, string>> = {
     700: "#0E7490",
     800: "#155E75",
     900: "#164E63",
-    950: "#083344",
-  },
+    950: "#083344"
+  }
 }
 
 /** Simple color names */
@@ -281,7 +281,7 @@ const simpleColors: Record<string, string> = {
   black: "#000000",
   transparent: "transparent",
   inherit: "inherit",
-  current: "currentColor",
+  current: "currentColor"
 }
 
 /** Fraction to percent mapping */
@@ -316,7 +316,7 @@ const fractionToPercent: Record<string, string> = {
   screen: "100%",
   min: "auto",
   max: "auto",
-  fit: "auto",
+  fit: "auto"
 }
 
 function parseSpacing(value: string): number | undefined {
@@ -446,7 +446,7 @@ const classMappers: Record<string, ClassMapper | Partial<TuiStyleProps>> = {
   static: { position: "static" },
   relative: { position: "relative" },
   absolute: { position: "absolute" },
-  "inset-0": { top: 0, right: 0, bottom: 0, left: 0 },
+  "inset-0": { top: 0, right: 0, bottom: 0, left: 0 }
 }
 
 /** Pattern-based mappers for classes with values */
@@ -460,49 +460,49 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { padding: v } : undefined
-    },
+    }
   },
   {
     pattern: /^px-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingLeft: v, paddingRight: v } : undefined
-    },
+    }
   },
   {
     pattern: /^py-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingTop: v, paddingBottom: v } : undefined
-    },
+    }
   },
   {
     pattern: /^pt-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingTop: v } : undefined
-    },
+    }
   },
   {
     pattern: /^pr-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingRight: v } : undefined
-    },
+    }
   },
   {
     pattern: /^pb-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingBottom: v } : undefined
-    },
+    }
   },
   {
     pattern: /^pl-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { paddingLeft: v } : undefined
-    },
+    }
   },
 
   // Margin
@@ -514,49 +514,49 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { margin: v } : undefined
-    },
+    }
   },
   {
     pattern: /^mx-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginLeft: v, marginRight: v } : undefined
-    },
+    }
   },
   {
     pattern: /^my-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginTop: v, marginBottom: v } : undefined
-    },
+    }
   },
   {
     pattern: /^mt-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginTop: v } : undefined
-    },
+    }
   },
   {
     pattern: /^mr-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginRight: v } : undefined
-    },
+    }
   },
   {
     pattern: /^mb-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginBottom: v } : undefined
-    },
+    }
   },
   {
     pattern: /^ml-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { marginLeft: v } : undefined
-    },
+    }
   },
 
   // Gap - more specific patterns first
@@ -565,21 +565,21 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { columnGap: v } : undefined
-    },
+    }
   },
   {
     pattern: /^gap-y-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { rowGap: v } : undefined
-    },
+    }
   },
   {
     pattern: /^gap-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!)
       return v !== undefined ? { gap: v } : undefined
-    },
+    }
   },
 
   // Width
@@ -588,21 +588,21 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { width: v } : undefined
-    },
+    }
   },
   {
     pattern: /^min-w-(.+)$/,
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { minWidth: v } : undefined
-    },
+    }
   },
   {
     pattern: /^max-w-(.+)$/,
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { maxWidth: v } : undefined
-    },
+    }
   },
 
   // Height
@@ -611,21 +611,21 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { height: v } : undefined
-    },
+    }
   },
   {
     pattern: /^min-h-(.+)$/,
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { minHeight: v } : undefined
-    },
+    }
   },
   {
     pattern: /^max-h-(.+)$/,
     mapper: (m) => {
       const v = parseSizeValue(m[1]!)
       return v !== undefined ? { maxHeight: v } : undefined
-    },
+    }
   },
 
   // Background color
@@ -634,7 +634,7 @@ const patternMappers: Array<{
     mapper: (m) => {
       const color = parseColor(m[1]!)
       return color ? { backgroundColor: color, bg: color } : undefined
-    },
+    }
   },
 
   // Text/foreground color
@@ -643,7 +643,7 @@ const patternMappers: Array<{
     mapper: (m) => {
       const color = parseColor(m[1]!)
       return color ? { fg: color } : undefined
-    },
+    }
   },
 
   // Border color
@@ -652,7 +652,7 @@ const patternMappers: Array<{
     mapper: (m) => {
       const color = parseColor(m[1]!)
       return color ? { borderColor: color } : undefined
-    },
+    }
   },
 
   // Opacity
@@ -661,7 +661,7 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseInt(m[1]!, 10) / 100
       return { opacity: v }
-    },
+    }
   },
 
   // Z-index
@@ -669,7 +669,7 @@ const patternMappers: Array<{
     pattern: /^z-(\d+)$/,
     mapper: (m) => {
       return { zIndex: parseInt(m[1]!, 10) }
-    },
+    }
   },
 
   // Position values
@@ -678,29 +678,29 @@ const patternMappers: Array<{
     mapper: (m) => {
       const v = parseSpacing(m[1]!) ?? (m[1] === "auto" ? "auto" : undefined)
       return v !== undefined ? { top: v } : undefined
-    },
+    }
   },
   {
     pattern: /^right-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!) ?? (m[1] === "auto" ? "auto" : undefined)
       return v !== undefined ? { right: v } : undefined
-    },
+    }
   },
   {
     pattern: /^bottom-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!) ?? (m[1] === "auto" ? "auto" : undefined)
       return v !== undefined ? { bottom: v } : undefined
-    },
+    }
   },
   {
     pattern: /^left-(.+)$/,
     mapper: (m) => {
       const v = parseSpacing(m[1]!) ?? (m[1] === "auto" ? "auto" : undefined)
       return v !== undefined ? { left: v } : undefined
-    },
-  },
+    }
+  }
 ]
 
 function mapSingleClass(className: string): Partial<TuiStyleProps> | undefined {
@@ -711,7 +711,7 @@ function mapSingleClass(className: string): Partial<TuiStyleProps> | undefined {
   }
 
   // Check pattern mappers
-  for (const { pattern, mapper } of patternMappers) {
+  for (const { mapper, pattern } of patternMappers) {
     const match = className.match(pattern)
     if (match) {
       return mapper(match)
@@ -723,7 +723,7 @@ function mapSingleClass(className: string): Partial<TuiStyleProps> | undefined {
 
 export interface MapResult {
   styles: TuiStyleProps
-  unmapped: string[]
+  unmapped: Array<string>
 }
 
 /**
@@ -731,7 +731,7 @@ export interface MapResult {
  */
 export function tailwindToTui(classes: string): MapResult {
   const styles: TuiStyleProps = {}
-  const unmapped: string[] = []
+  const unmapped: Array<string> = []
 
   const classList = classes.split(/\s+/).filter(Boolean)
 

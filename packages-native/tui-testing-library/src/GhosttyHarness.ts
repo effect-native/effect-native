@@ -33,7 +33,6 @@
 import { Data, Effect } from "effect"
 import type { Ghostty, Terminal } from "ghostty-web"
 
-
 /**
  * Error type for Ghostty terminal operations.
  *
@@ -103,7 +102,7 @@ export interface TerminalOptions {
  */
 export class GhosttyHarness {
   private readonly ghostty: Ghostty
-  private readonly terminals: Terminal[] = []
+  private readonly terminals: Array<Terminal> = []
 
   private constructor(ghostty: Ghostty) {
     this.ghostty = ghostty
@@ -145,6 +144,7 @@ export class GhosttyHarness {
    * @since 0.1.0
    */
   createTerminal(cols = 80, rows = 24): Terminal {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Dynamic import needed for browser environment
     const { Terminal } = require("ghostty-web")
 
     const container = document.createElement("div")
@@ -182,8 +182,8 @@ export class GhosttyHarness {
     return Effect.async<void, GhosttyError>((resume) => {
       try {
         term.write(data, () => resume(Effect.void))
-      } catch (cause){
-        resume(Effect.fail(new GhosttyError({message:"Failed writing data to terminal", cause, data})))
+      } catch (cause) {
+        resume(Effect.fail(new GhosttyError({ message: "Failed writing data to terminal", cause, data })))
       }
     })
   }
@@ -192,8 +192,8 @@ export class GhosttyHarness {
     return Effect.async<void, GhosttyError>((resume) => {
       try {
         term.writeln(data, () => resume(Effect.void))
-      } catch (cause){
-        resume(Effect.fail(new GhosttyError({message:"Failed writing line to terminal", cause, data})))
+      } catch (cause) {
+        resume(Effect.fail(new GhosttyError({ message: "Failed writing line to terminal", cause, data })))
       }
     })
   }
@@ -209,9 +209,9 @@ export class GhosttyHarness {
    * @since 0.1.0
    */
   screenshot(term: Terminal): string {
-    const lines: string[] = []
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = (term).buffer.active
+    const lines: Array<string> = []
+
+    const buffer = term.buffer.active
 
     // Get cursor position to know the boundary of actual content
     const cursorY = buffer.cursorY as number
@@ -297,8 +297,7 @@ export class GhosttyHarness {
    * @since 0.1.0
    */
   getCell(term: Terminal, row: number, col: number): CellInfo | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = (term).buffer.active
+    const buffer = term.buffer.active
     const line = buffer.getLine(row)
     const cell = line?.getCell(col)
 
@@ -337,7 +336,6 @@ export class GhosttyHarness {
    * @since 0.1.0
    */
   getRawCell(term: Terminal, row: number, col: number): unknown {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = term.buffer.active
     const line = buffer.getLine(row)
     return line?.getCell(col)

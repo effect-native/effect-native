@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, test } from "bun:test"
-import { GhosttyHarness } from "../src/GhosttyHarness.js"
 import { Screen, waitFor, WaitForTimeoutError } from "../src/assertions.js"
+import { GhosttyHarness } from "../src/GhosttyHarness.js"
 
 let harness: GhosttyHarness
 
@@ -90,7 +90,8 @@ describe("Screen", () => {
       const ansi = screen.ansi()
 
       expect(ansi).toContain("Bold")
-      // Bold code (1)
+      // Bold code (1) - ESC[1m or ESC[...1...m
+      // eslint-disable-next-line no-control-regex -- Testing ANSI escape sequences
       expect(ansi).toMatch(/\x1b\[\d*1/)
     })
 

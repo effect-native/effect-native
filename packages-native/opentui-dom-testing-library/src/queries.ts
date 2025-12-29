@@ -101,7 +101,7 @@ function collectTextMatches(
   text: TextMatch,
   normalizer: (text: string) => string,
   exact: boolean,
-  results: HTMLElement[]
+  results: Array<HTMLElement>
 ): void {
   if (IGNORED_TAGS.has(element.tagName)) {
     return
@@ -123,21 +123,27 @@ function queryAllByTextImpl(
   container: HTMLElement,
   text: TextMatch,
   options: QueryOptions = {}
-): HTMLElement[] {
+): Array<HTMLElement> {
   const { exact = true, normalizer = getDefaultNormalizer() } = options
-  const results: HTMLElement[] = []
+  const results: Array<HTMLElement> = []
   collectTextMatches(container, text, normalizer, exact, results)
   return results
 }
 
 // ----- Role Queries -----
 
-const IMPLICIT_ROLES: Record<string, string[]> = {
-  button: ["button", 'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]'],
+const IMPLICIT_ROLES: Record<string, Array<string>> = {
+  button: ["button", "input[type=\"button\"]", "input[type=\"submit\"]", "input[type=\"reset\"]"],
   link: ["a[href]"],
-  checkbox: ['input[type="checkbox"]'],
-  radio: ['input[type="radio"]'],
-  textbox: ['input:not([type])', 'input[type="text"]', 'input[type="email"]', 'input[type="password"]', "textarea"],
+  checkbox: ["input[type=\"checkbox\"]"],
+  radio: ["input[type=\"radio\"]"],
+  textbox: [
+    "input:not([type])",
+    "input[type=\"text\"]",
+    "input[type=\"email\"]",
+    "input[type=\"password\"]",
+    "textarea"
+  ],
   heading: ["h1", "h2", "h3", "h4", "h5", "h6"],
   listitem: ["li"],
   list: ["ul", "ol"],
@@ -236,9 +242,9 @@ function queryAllByRoleImpl(
   container: HTMLElement,
   role: string,
   options: ByRoleOptions = {}
-): HTMLElement[] {
-  const { name, normalizer = getDefaultNormalizer(), exact = true } = options
-  const results: HTMLElement[] = []
+): Array<HTMLElement> {
+  const { exact = true, name, normalizer = getDefaultNormalizer() } = options
+  const results: Array<HTMLElement> = []
 
   const allElements = container.querySelectorAll("*")
 
@@ -265,15 +271,15 @@ function queryAllByTestIdImpl(
   container: HTMLElement,
   testId: TextMatch,
   options: QueryOptions = {}
-): HTMLElement[] {
-  const { normalizer = getDefaultNormalizer(), exact = true } = options
+): Array<HTMLElement> {
+  const { exact = true, normalizer = getDefaultNormalizer() } = options
 
   if (typeof testId === "string" && exact) {
-    return [...container.querySelectorAll(`[data-testid="${testId}"]`)] as HTMLElement[]
+    return [...container.querySelectorAll(`[data-testid="${testId}"]`)] as Array<HTMLElement>
   }
 
   const elements = container.querySelectorAll("[data-testid]")
-  const results: HTMLElement[] = []
+  const results: Array<HTMLElement> = []
 
   for (const element of elements) {
     const value = element.getAttribute("data-testid") || ""
@@ -291,9 +297,9 @@ function queryAllByLabelTextImpl(
   container: HTMLElement,
   text: TextMatch,
   options: QueryOptions = {}
-): HTMLElement[] {
+): Array<HTMLElement> {
   const { exact = true, normalizer = getDefaultNormalizer() } = options
-  const results: HTMLElement[] = []
+  const results: Array<HTMLElement> = []
 
   const labels = container.querySelectorAll("label")
   for (const label of labels) {
@@ -334,7 +340,7 @@ async function waitFor<T>(
   callback: () => T,
   options: WaitForOptions = {}
 ): Promise<T> {
-  const { timeout = 1000, interval = 50 } = options
+  const { interval = 50, timeout = 1000 } = options
 
   const startTime = Date.now()
   let lastError: Error | undefined
@@ -354,8 +360,8 @@ async function waitFor<T>(
 
 // ----- Query Builders -----
 
-function buildQueries<TArgs extends unknown[]>(
-  queryAllBy: (container: HTMLElement, ...args: TArgs) => HTMLElement[],
+function buildQueries<TArgs extends Array<unknown>>(
+  queryAllBy: (container: HTMLElement, ...args: TArgs) => Array<HTMLElement>,
   getName: (...args: TArgs) => string
 ) {
   const queryBy = (container: HTMLElement, ...args: TArgs): HTMLElement | null => {
@@ -377,7 +383,7 @@ function buildQueries<TArgs extends unknown[]>(
     return results[0]
   }
 
-  const getAllBy = (container: HTMLElement, ...args: TArgs): HTMLElement[] => {
+  const getAllBy = (container: HTMLElement, ...args: TArgs): Array<HTMLElement> => {
     const results = queryAllBy(container, ...args)
     if (results.length === 0) {
       throw new Error(`Unable to find any elements with ${getName(...args)}`)
@@ -385,7 +391,7 @@ function buildQueries<TArgs extends unknown[]>(
     return results
   }
 
-  const queryAllByFn = (container: HTMLElement, ...args: TArgs): HTMLElement[] => {
+  const queryAllByFn = (container: HTMLElement, ...args: TArgs): Array<HTMLElement> => {
     return queryAllBy(container, ...args)
   }
 
@@ -395,7 +401,7 @@ function buildQueries<TArgs extends unknown[]>(
     return waitFor(() => getBy(container, ...args), { timeout })
   }
 
-  const findAllBy = async (container: HTMLElement, ...args: TArgs): Promise<HTMLElement[]> => {
+  const findAllBy = async (container: HTMLElement, ...args: TArgs): Promise<Array<HTMLElement>> => {
     const lastArg = args[args.length - 1] as QueryOptions | undefined
     const timeout = lastArg?.timeout ?? 1000
     return waitFor(() => getAllBy(container, ...args), { timeout })
@@ -418,12 +424,14 @@ const roleQueries = buildQueries(
 )
 
 const testIdQueries = buildQueries(
-  (container: HTMLElement, testId: TextMatch, options?: QueryOptions) => queryAllByTestIdImpl(container, testId, options),
+  (container: HTMLElement, testId: TextMatch, options?: QueryOptions) =>
+    queryAllByTestIdImpl(container, testId, options),
   (testId: TextMatch, _options?: QueryOptions) => `data-testid: ${testId}`
 )
 
 const labelTextQueries = buildQueries(
-  (container: HTMLElement, text: TextMatch, options?: QueryOptions) => queryAllByLabelTextImpl(container, text, options),
+  (container: HTMLElement, text: TextMatch, options?: QueryOptions) =>
+    queryAllByLabelTextImpl(container, text, options),
   (text: TextMatch, _options?: QueryOptions) => `label text: ${text}`
 )
 
@@ -461,32 +469,32 @@ export const findAllByLabelText = labelTextQueries.findAllBy
 
 export interface BoundQueries {
   getByText: (text: TextMatch, options?: QueryOptions) => HTMLElement
-  getAllByText: (text: TextMatch, options?: QueryOptions) => HTMLElement[]
+  getAllByText: (text: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   queryByText: (text: TextMatch, options?: QueryOptions) => HTMLElement | null
-  queryAllByText: (text: TextMatch, options?: QueryOptions) => HTMLElement[]
+  queryAllByText: (text: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   findByText: (text: TextMatch, options?: QueryOptions) => Promise<HTMLElement>
-  findAllByText: (text: TextMatch, options?: QueryOptions) => Promise<HTMLElement[]>
+  findAllByText: (text: TextMatch, options?: QueryOptions) => Promise<Array<HTMLElement>>
 
   getByRole: (role: string, options?: ByRoleOptions) => HTMLElement
-  getAllByRole: (role: string, options?: ByRoleOptions) => HTMLElement[]
+  getAllByRole: (role: string, options?: ByRoleOptions) => Array<HTMLElement>
   queryByRole: (role: string, options?: ByRoleOptions) => HTMLElement | null
-  queryAllByRole: (role: string, options?: ByRoleOptions) => HTMLElement[]
+  queryAllByRole: (role: string, options?: ByRoleOptions) => Array<HTMLElement>
   findByRole: (role: string, options?: ByRoleOptions) => Promise<HTMLElement>
-  findAllByRole: (role: string, options?: ByRoleOptions) => Promise<HTMLElement[]>
+  findAllByRole: (role: string, options?: ByRoleOptions) => Promise<Array<HTMLElement>>
 
   getByTestId: (testId: TextMatch, options?: QueryOptions) => HTMLElement
-  getAllByTestId: (testId: TextMatch, options?: QueryOptions) => HTMLElement[]
+  getAllByTestId: (testId: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   queryByTestId: (testId: TextMatch, options?: QueryOptions) => HTMLElement | null
-  queryAllByTestId: (testId: TextMatch, options?: QueryOptions) => HTMLElement[]
+  queryAllByTestId: (testId: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   findByTestId: (testId: TextMatch, options?: QueryOptions) => Promise<HTMLElement>
-  findAllByTestId: (testId: TextMatch, options?: QueryOptions) => Promise<HTMLElement[]>
+  findAllByTestId: (testId: TextMatch, options?: QueryOptions) => Promise<Array<HTMLElement>>
 
   getByLabelText: (text: TextMatch, options?: QueryOptions) => HTMLElement
-  getAllByLabelText: (text: TextMatch, options?: QueryOptions) => HTMLElement[]
+  getAllByLabelText: (text: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   queryByLabelText: (text: TextMatch, options?: QueryOptions) => HTMLElement | null
-  queryAllByLabelText: (text: TextMatch, options?: QueryOptions) => HTMLElement[]
+  queryAllByLabelText: (text: TextMatch, options?: QueryOptions) => Array<HTMLElement>
   findByLabelText: (text: TextMatch, options?: QueryOptions) => Promise<HTMLElement>
-  findAllByLabelText: (text: TextMatch, options?: QueryOptions) => Promise<HTMLElement[]>
+  findAllByLabelText: (text: TextMatch, options?: QueryOptions) => Promise<Array<HTMLElement>>
 }
 
 export function getQueriesForElement(element: HTMLElement): BoundQueries {

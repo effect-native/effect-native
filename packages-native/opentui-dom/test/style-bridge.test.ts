@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import type { Window } from "happy-dom"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createStyleBridge } from "../src/bridge/style-bridge.js"
 
 describe("style-bridge", () => {
   let document: Document
-  let window: import("happy-dom").Window
+  let window: Window
 
   beforeEach(async () => {
     const { Window } = await import("happy-dom")
@@ -27,7 +28,7 @@ describe("style-bridge", () => {
   describe("getStyleProps", () => {
     it("extracts tailwind classes from className", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="flex flex-col gap-2 p-4"></div>'
+      document.body.innerHTML = "<div class=\"flex flex-col gap-2 p-4\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -39,7 +40,7 @@ describe("style-bridge", () => {
 
     it("extracts colors from tailwind classes", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-blue-500 text-white"></div>'
+      document.body.innerHTML = "<div class=\"bg-blue-500 text-white\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -51,7 +52,7 @@ describe("style-bridge", () => {
 
     it("extracts border styles", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="border border-gray-300 rounded"></div>'
+      document.body.innerHTML = "<div class=\"border border-gray-300 rounded\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -63,7 +64,7 @@ describe("style-bridge", () => {
 
     it("extracts typography styles", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="font-bold italic underline"></div>'
+      document.body.innerHTML = "<div class=\"font-bold italic underline\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -77,7 +78,7 @@ describe("style-bridge", () => {
   describe("data-tui-* attributes", () => {
     it("extracts data-tui-bg attribute", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-bg="#ff0000"></div>'
+      document.body.innerHTML = "<div data-tui-bg=\"#ff0000\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -88,7 +89,7 @@ describe("style-bridge", () => {
 
     it("extracts data-tui-fg attribute", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-fg="white"></div>'
+      document.body.innerHTML = "<div data-tui-fg=\"white\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -98,7 +99,7 @@ describe("style-bridge", () => {
 
     it("extracts data-tui-border attribute", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-border="true"></div>'
+      document.body.innerHTML = "<div data-tui-border=\"true\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -108,7 +109,7 @@ describe("style-bridge", () => {
 
     it("extracts data-tui-border-style attribute (lowercased by HTML)", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-border-style="rounded"></div>'
+      document.body.innerHTML = "<div data-tui-border-style=\"rounded\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -118,7 +119,7 @@ describe("style-bridge", () => {
 
     it("extracts numeric attributes", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-padding="3" data-tui-margin="2"></div>'
+      document.body.innerHTML = "<div data-tui-padding=\"3\" data-tui-margin=\"2\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -129,7 +130,7 @@ describe("style-bridge", () => {
 
     it("extracts z-index attribute", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-z-index="100"></div>'
+      document.body.innerHTML = "<div data-tui-z-index=\"100\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -139,7 +140,7 @@ describe("style-bridge", () => {
 
     it("extracts flex direction from data attribute", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div data-tui-flex-direction="column"></div>'
+      document.body.innerHTML = "<div data-tui-flex-direction=\"column\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -149,7 +150,7 @@ describe("style-bridge", () => {
 
     it("data attributes override tailwind classes", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-blue-500" data-tui-bg="#ff0000"></div>'
+      document.body.innerHTML = "<div class=\"bg-blue-500\" data-tui-bg=\"#ff0000\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -162,7 +163,7 @@ describe("style-bridge", () => {
   describe("theme classes", () => {
     it("maps bg-background to CSS variable default", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-background"></div>'
+      document.body.innerHTML = "<div class=\"bg-background\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -172,7 +173,7 @@ describe("style-bridge", () => {
 
     it("maps text-foreground to CSS variable default", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="text-foreground"></div>'
+      document.body.innerHTML = "<div class=\"text-foreground\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -182,7 +183,7 @@ describe("style-bridge", () => {
 
     it("maps bg-primary to CSS variable default", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-primary"></div>'
+      document.body.innerHTML = "<div class=\"bg-primary\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -192,7 +193,7 @@ describe("style-bridge", () => {
 
     it("maps bg-destructive to CSS variable default", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-destructive"></div>'
+      document.body.innerHTML = "<div class=\"bg-destructive\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -202,7 +203,7 @@ describe("style-bridge", () => {
 
     it("maps border-border to CSS variable default", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="border-border"></div>'
+      document.body.innerHTML = "<div class=\"border-border\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -216,10 +217,10 @@ describe("style-bridge", () => {
       const bridge = createStyleBridge({
         cssVarOverrides: {
           "--background": "#ffffff",
-          "--foreground": "#000000",
-        },
+          "--foreground": "#000000"
+        }
       })
-      document.body.innerHTML = '<div class="bg-background text-foreground"></div>'
+      document.body.innerHTML = "<div class=\"bg-background text-foreground\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -232,7 +233,7 @@ describe("style-bridge", () => {
   describe("applyStyles", () => {
     it("applies style props to a renderable object", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="bg-blue-500 flex-col p-4"></div>'
+      document.body.innerHTML = "<div class=\"bg-blue-500 flex-col p-4\"></div>"
       const element = document.querySelector("div")!
 
       const renderable: Record<string, unknown> = {}
@@ -268,7 +269,7 @@ describe("style-bridge", () => {
 
     it("handles whitespace-only className", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="   "></div>'
+      document.body.innerHTML = "<div class=\"   \"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)
@@ -278,7 +279,7 @@ describe("style-bridge", () => {
 
     it("handles mixed valid and invalid classes", () => {
       const bridge = createStyleBridge()
-      document.body.innerHTML = '<div class="flex shadow-lg unknown-class p-4"></div>'
+      document.body.innerHTML = "<div class=\"flex shadow-lg unknown-class p-4\"></div>"
       const element = document.querySelector("div")!
 
       const props = bridge.getStyleProps(element)

@@ -25,53 +25,53 @@
  */
 
 // Setup
-export { setupHappyDom, teardownHappyDom, isHappyDomSetup, ensureHappyDom } from "./setup.js"
+export { ensureHappyDom, isHappyDomSetup, setupHappyDom, teardownHappyDom } from "./setup.js"
 
 // Render
-export { render, cleanup, type RenderOptions, type RenderResult } from "./render.js"
+export { cleanup, render, type RenderOptions, type RenderResult } from "./render.js"
 
 // Screen
 export { screen } from "./screen.js"
 
 // Events
-export { fireEvent, createEvent, type Modifiers } from "./events.js"
+export { createEvent, fireEvent, type Modifiers } from "./events.js"
 
 // Queries
 export {
-  // Types
-  type TextMatch,
-  type QueryOptions,
-  type ByRoleOptions,
   type BoundQueries,
-  // Text queries
-  getByText,
-  getAllByText,
-  queryByText,
-  queryAllByText,
-  findByText,
-  findAllByText,
-  // Role queries
-  getByRole,
-  getAllByRole,
-  queryByRole,
-  queryAllByRole,
-  findByRole,
+  type ByRoleOptions,
+  findAllByLabelText,
   findAllByRole,
-  // TestId queries
-  getByTestId,
-  getAllByTestId,
-  queryByTestId,
-  queryAllByTestId,
-  findByTestId,
   findAllByTestId,
+  findAllByText,
+  findByLabelText,
+  findByRole,
+  findByTestId,
+  findByText,
+  getAllByLabelText,
+  getAllByRole,
+  getAllByTestId,
+  getAllByText,
   // LabelText queries
   getByLabelText,
-  getAllByLabelText,
-  queryByLabelText,
-  queryAllByLabelText,
-  findByLabelText,
-  findAllByLabelText,
+  // Role queries
+  getByRole,
+  // TestId queries
+  getByTestId,
+  // Text queries
+  getByText,
   // Utils
   getQueriesForElement,
+  queryAllByLabelText,
+  queryAllByRole,
+  queryAllByTestId,
+  queryAllByText,
+  queryByLabelText,
+  queryByRole,
+  queryByTestId,
+  queryByText,
+  type QueryOptions,
+  // Types
+  type TextMatch,
   waitFor
 } from "./queries.js"

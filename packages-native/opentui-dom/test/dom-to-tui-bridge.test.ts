@@ -1,20 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { Window } from "happy-dom"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import {
   createDOMToTUIBridge,
+  type DOMToTUIBridge,
+  type RenderableFactory,
   type TUIContainer,
   type TUIText,
-  type RenderableFactory,
-  type DOMToTUIBridge,
-  type WindowLike,
+  type WindowLike
 } from "../src/bridge/dom-to-tui-bridge.js"
 import type { MappedRenderable } from "../src/bridge/node-map.js"
 
 // Mock TUI Renderables for testing
 
 /** MockBox that captures style props via Proxy */
-function createMockBox(props: Record<string, unknown> = {}): MappedRenderable & TUIContainer & { props: Record<string, unknown>, children: MappedRenderable[] } {
-  const children: MappedRenderable[] = []
+function createMockBox(
+  props: Record<string, unknown> = {}
+): MappedRenderable & TUIContainer & { props: Record<string, unknown>; children: Array<MappedRenderable> } {
+  const children: Array<MappedRenderable> = []
   const storedProps: Record<string, unknown> = { ...props }
 
   const box = {
@@ -37,7 +39,7 @@ function createMockBox(props: Record<string, unknown> = {}): MappedRenderable & 
         children.splice(index, 1)
         ;(child as { parent: MappedRenderable | null }).parent = null
       }
-    },
+    }
   }
 
   // Return a Proxy that captures any property set (for applyStyles)
@@ -51,7 +53,7 @@ function createMockBox(props: Record<string, unknown> = {}): MappedRenderable & 
     },
     get(target, prop) {
       return (target as Record<string | symbol, unknown>)[prop]
-    },
+    }
   }) as typeof box
 }
 
@@ -62,7 +64,7 @@ class MockBox implements MappedRenderable, TUIContainer {
   width = 0
   height = 0
   parent: MappedRenderable | null = null
-  children: MappedRenderable[] = []
+  children: Array<MappedRenderable> = []
   props: Record<string, unknown> = {}
 
   constructor(props: Record<string, unknown> = {}) {
@@ -101,7 +103,7 @@ class MockText implements TUIText {
 function createTestFactory(): RenderableFactory {
   return {
     createBox: (options = {}) => createMockBox(options),
-    createText: (content) => new MockText(content),
+    createText: (content) => new MockText(content)
   }
 }
 
@@ -131,7 +133,7 @@ describe("DOMToTUIBridge", () => {
       factory,
       root,
       debug: false,
-      window: window as unknown as WindowLike,
+      window: window as unknown as WindowLike
     })
   })
 

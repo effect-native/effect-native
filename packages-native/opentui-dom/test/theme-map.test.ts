@@ -1,17 +1,17 @@
 import { describe, expect, it } from "@effect/vitest"
 import {
-  hslToHex,
-  oklchToHex,
-  cssColorToHex,
-  lightTheme,
-  darkTheme,
-  getThemeColor,
-  setThemeMode,
-  getThemeMode,
-  getTheme,
-  createTheme,
   applyTheme,
+  createTheme,
+  cssColorToHex,
+  darkTheme,
   detectSystemPreference,
+  getTheme,
+  getThemeColor,
+  getThemeMode,
+  hslToHex,
+  lightTheme,
+  oklchToHex,
+  setThemeMode
 } from "../src/bridge/theme-map.js"
 
 describe("hslToHex", () => {

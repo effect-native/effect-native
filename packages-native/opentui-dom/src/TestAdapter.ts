@@ -11,14 +11,14 @@ import { Effect, Layer } from "effect"
 import type { Window as HappyWindow } from "happy-dom"
 import {
   AdapterError,
-  DOMAdapterService,
-  generateSelector,
-  resolveRef,
   type DOMAdapter,
+  DOMAdapterService,
   type ElementRef,
+  generateSelector,
   type MutationObserverInit,
   type MutationRecord,
-  type MutationStream
+  type MutationStream,
+  resolveRef
 } from "./DOMAdapter.js"
 
 // --- Test Environment State ---
@@ -168,7 +168,7 @@ export function createTestAdapter(): Layer.Layer<DOMAdapterService> {
     getComputedStyle(elementRef: ElementRef, property: string) {
       return Effect.tryPromise({
         try: async () => {
-          const { window, document } = await ensureTestEnv()
+          const { document, window } = await ensureTestEnv()
           const el = resolveRef(document, elementRef)
           if (!el) return ""
           // Cast through unknown for Happy-DOM compatibility
@@ -193,7 +193,7 @@ export function createTestAdapter(): Layer.Layer<DOMAdapterService> {
     fill(elementRef: ElementRef, value: string) {
       return Effect.tryPromise({
         try: async () => {
-          const { window, document } = await ensureTestEnv()
+          const { document, window } = await ensureTestEnv()
           const el = resolveRef(document, elementRef) as HTMLInputElement | null
           if (el) {
             el.value = value
@@ -260,7 +260,7 @@ export function createTestAdapter(): Layer.Layer<DOMAdapterService> {
     dispatchEvent(elementRef: ElementRef, type: string, options?: EventInit) {
       return Effect.tryPromise({
         try: async () => {
-          const { window, document } = await ensureTestEnv()
+          const { document, window } = await ensureTestEnv()
           const el = resolveRef(document, elementRef)
           if (el) {
             const event = new (window as unknown as typeof globalThis).Event(type, options)
@@ -274,19 +274,19 @@ export function createTestAdapter(): Layer.Layer<DOMAdapterService> {
     observeMutations(elementRef: ElementRef, options: MutationObserverInit) {
       return Effect.tryPromise({
         try: async () => {
-          const { window, document } = await ensureTestEnv()
+          const { document, window } = await ensureTestEnv()
           const el = resolveRef(document, elementRef)
 
           let observer: MutationObserver | null = null
-          const subscribers: Array<(records: MutationRecord[]) => void> = []
+          const subscribers: Array<(records: Array<MutationRecord>) => void> = []
 
           const stream: MutationStream = {
-            subscribe(callback: (records: MutationRecord[]) => void): void {
+            subscribe(callback: (records: Array<MutationRecord>) => void): void {
               subscribers.push(callback)
 
               if (!observer && el) {
                 observer = new (window as unknown as typeof globalThis).MutationObserver(
-                  (records: globalThis.MutationRecord[]) => {
+                  (records: Array<globalThis.MutationRecord>) => {
                     const mapped = records.map((r) => ({
                       type: r.type as MutationRecord["type"],
                       target: r.target,

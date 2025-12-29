@@ -5,8 +5,8 @@
  * for form handling, event relay, and focus management.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import { Window } from "happy-dom"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createEventRelay, createNodeMap, type NodeMap } from "../src/index.js"
 
 // Mock TUI types for testing
@@ -36,13 +36,13 @@ function createMockKeyEvent(
     preventDefault() {
       this._prevented = true
     },
-    ...options,
+    ...options
   }
 }
 
 interface MockTUIRenderer {
   keyInput: {
-    handlers: Map<string, ((event: MockTUIKeyEvent) => void)[]>
+    handlers: Map<string, Array<(event: MockTUIKeyEvent) => void>>
     on(event: string, handler: (event: MockTUIKeyEvent) => void): void
     off(event: string, handler: (event: MockTUIKeyEvent) => void): void
     emit(event: string, tuiEvent: MockTUIKeyEvent): void
@@ -50,7 +50,7 @@ interface MockTUIRenderer {
 }
 
 function createMockRenderer(): MockTUIRenderer {
-  const handlers = new Map<string, ((event: MockTUIKeyEvent) => void)[]>()
+  const handlers = new Map<string, Array<(event: MockTUIKeyEvent) => void>>()
   return {
     keyInput: {
       handlers,
@@ -70,8 +70,8 @@ function createMockRenderer(): MockTUIRenderer {
         if (list) {
           for (const h of list) h(tuiEvent)
         }
-      },
-    },
+      }
+    }
   }
 }
 
@@ -85,7 +85,7 @@ describe("Miniapp Integration", () => {
     window = new Window({
       url: "https://localhost:8080",
       width: 1024,
-      height: 768,
+      height: 768
     })
     document = window.document as unknown as Document
     nodeMap = createNodeMap()
@@ -98,7 +98,7 @@ describe("Miniapp Integration", () => {
 
   describe("NodeMap", () => {
     it("maps DOM nodes to renderables bidirectionally", () => {
-      document.body.innerHTML = '<button id="btn">Click me</button>'
+      document.body.innerHTML = "<button id=\"btn\">Click me</button>"
       const button = document.getElementById("btn")!
       const mockRenderable = { type: "button-renderable" }
 
@@ -190,7 +190,7 @@ describe("Miniapp Integration", () => {
     })
 
     it("handles text input in form fields", () => {
-      document.body.innerHTML = '<input id="name" type="text" />'
+      document.body.innerHTML = "<input id=\"name\" type=\"text\" />"
       const input = document.getElementById("name") as HTMLInputElement
       input.focus()
 
@@ -288,7 +288,7 @@ describe("Miniapp Integration", () => {
 
   describe("Form Controls", () => {
     it("handles checkbox toggle with Space", () => {
-      document.body.innerHTML = '<input id="cb" type="checkbox" />'
+      document.body.innerHTML = "<input id=\"cb\" type=\"checkbox\" />"
       const checkbox = document.getElementById("cb") as HTMLInputElement
       checkbox.focus()
 

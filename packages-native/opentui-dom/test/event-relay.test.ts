@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { Window } from "happy-dom"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   createEventRelay,
   type EventRelay,
-  type TUIKeyEvent,
-  type TUIRenderer,
   type ScrollContainer,
+  type TUIKeyEvent,
+  type TUIRenderer
 } from "../src/bridge/event-relay.js"
 import { createNodeMap, type NodeMap } from "../src/bridge/node-map.js"
 
@@ -23,7 +23,7 @@ function createKeyEvent(
     option: false,
     meta: false,
     preventDefault: vi.fn(),
-    ...opts,
+    ...opts
   }
 }
 
@@ -33,7 +33,7 @@ function createKeyEvent(
 function createMockRenderer(): TUIRenderer & {
   emit: (event: TUIKeyEvent) => void
 } {
-  const handlers: ((event: TUIKeyEvent) => void)[] = []
+  const handlers: Array<(event: TUIKeyEvent) => void> = []
   return {
     keyInput: {
       on: (event: "keypress", handler: (event: TUIKeyEvent) => void) => {
@@ -42,11 +42,11 @@ function createMockRenderer(): TUIRenderer & {
       off: (event: "keypress", handler: (event: TUIKeyEvent) => void) => {
         const idx = handlers.indexOf(handler)
         if (idx >= 0) handlers.splice(idx, 1)
-      },
+      }
     },
     emit: (event: TUIKeyEvent) => {
       handlers.forEach((h) => h(event))
-    },
+    }
   }
 }
 
@@ -72,7 +72,7 @@ describe("EventRelay", () => {
 
   describe("attach/detach", () => {
     it("attaches to renderer and receives keypress events", () => {
-      document.body.innerHTML = '<button id="btn">Click me</button>'
+      document.body.innerHTML = "<button id=\"btn\">Click me</button>"
       const button = document.getElementById("btn")!
       button.focus()
 
@@ -87,7 +87,7 @@ describe("EventRelay", () => {
     })
 
     it("stops receiving events after detach", () => {
-      document.body.innerHTML = '<button id="btn">Click me</button>'
+      document.body.innerHTML = "<button id=\"btn\">Click me</button>"
       const button = document.getElementById("btn")!
       button.focus()
 
@@ -108,7 +108,7 @@ describe("EventRelay", () => {
     })
 
     it("translates TUI enter to DOM click on button", () => {
-      document.body.innerHTML = '<button id="btn">Click</button>'
+      document.body.innerHTML = "<button id=\"btn\">Click</button>"
       const button = document.getElementById("btn")!
       button.focus()
 
@@ -120,7 +120,7 @@ describe("EventRelay", () => {
     })
 
     it("translates TUI space to DOM click on button", () => {
-      document.body.innerHTML = '<button id="btn">Click</button>'
+      document.body.innerHTML = "<button id=\"btn\">Click</button>"
       const button = document.getElementById("btn")!
       button.focus()
 
@@ -132,7 +132,7 @@ describe("EventRelay", () => {
     })
 
     it("translates TUI space to DOM click on checkbox", () => {
-      document.body.innerHTML = '<input type="checkbox" id="check" />'
+      document.body.innerHTML = "<input type=\"checkbox\" id=\"check\" />"
       const checkbox = document.getElementById("check")! as HTMLInputElement
       checkbox.focus()
 
@@ -143,7 +143,7 @@ describe("EventRelay", () => {
     })
 
     it("dispatches keydown events for all keys", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")!
       input.focus()
 
@@ -158,7 +158,7 @@ describe("EventRelay", () => {
     })
 
     it("maps TUI key names to DOM key values", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")!
       input.focus()
 
@@ -172,7 +172,7 @@ describe("EventRelay", () => {
     })
 
     it("passes modifier keys to DOM events", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")!
       input.focus()
 
@@ -262,7 +262,7 @@ describe("EventRelay", () => {
     })
 
     it("calls preventDefault on TUI event for Tab", () => {
-      document.body.innerHTML = '<button id="btn">Button</button>'
+      document.body.innerHTML = "<button id=\"btn\">Button</button>"
       document.getElementById("btn")!.focus()
 
       const event = createKeyEvent("tab")
@@ -324,7 +324,7 @@ describe("EventRelay", () => {
         <button id="btn2">Second</button>
       `
       const btn1 = document.getElementById("btn1")!
-      const btn2 = document.getElementById("btn2")!
+      void document.getElementById("btn2")!
       const dialog = document.getElementById("dialog")!
 
       btn1.focus()
@@ -492,7 +492,7 @@ describe("EventRelay", () => {
     })
 
     it("character keys insert text into input", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
@@ -504,7 +504,7 @@ describe("EventRelay", () => {
     })
 
     it("shift+character inserts uppercase", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
@@ -513,7 +513,7 @@ describe("EventRelay", () => {
     })
 
     it("space inserts space character", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
@@ -525,7 +525,7 @@ describe("EventRelay", () => {
     })
 
     it("backspace deletes last character", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="abc" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"abc\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
@@ -534,7 +534,7 @@ describe("EventRelay", () => {
     })
 
     it("dispatches input events for text changes", () => {
-      document.body.innerHTML = '<input type="text" id="input" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
@@ -552,7 +552,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+A moves cursor to start", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 5
@@ -563,7 +563,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+E moves cursor to end", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 0
@@ -574,7 +574,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+F moves cursor forward one character", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 2
@@ -584,7 +584,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+B moves cursor backward one character", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 2
@@ -594,7 +594,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+D deletes character forward", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 2
@@ -604,8 +604,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+W deletes word backward", () => {
-      document.body.innerHTML =
-        '<input type="text" id="input" value="hello world" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello world\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 11
@@ -615,7 +614,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+U kills to start of line", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 3
@@ -625,7 +624,7 @@ describe("EventRelay", () => {
     })
 
     it("Ctrl+K kills to end of line", () => {
-      document.body.innerHTML = '<input type="text" id="input" value="hello" />'
+      document.body.innerHTML = "<input type=\"text\" id=\"input\" value=\"hello\" />"
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
       input.selectionStart = input.selectionEnd = 3
@@ -652,7 +651,7 @@ describe("EventRelay", () => {
       const scrollContainer: ScrollContainer = {
         scrollTop: 0,
         scrollTo: vi.fn(),
-        viewport: { height: 10, width: 80 },
+        viewport: { height: 10, width: 80 }
       }
 
       // Create mock renderables
@@ -682,7 +681,7 @@ describe("EventRelay", () => {
       const scrollContainer: ScrollContainer = {
         scrollTop: 15,
         scrollTo: vi.fn(),
-        viewport: { height: 10, width: 80 },
+        viewport: { height: 10, width: 80 }
       }
 
       const renderable1 = { x: 0, y: 5, width: 10, height: 1, parent: null }

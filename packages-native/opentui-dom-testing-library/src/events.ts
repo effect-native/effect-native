@@ -1,7 +1,7 @@
 /**
  * Event simulation utilities for TUI testing.
  * Provides fireEvent functions that work with happy-dom.
- * 
+ *
  * Key codes are compatible with EventRelay expectations:
  * - TUI uses lowercase names (enter, backspace, up, down)
  * - DOM uses PascalCase (Enter, Backspace, ArrowUp, ArrowDown)
@@ -47,7 +47,7 @@ const KEY_CODES: Record<string, string> = {
   // Numbers
   ...Object.fromEntries(
     "0123456789".split("").map((c) => [c, `Digit${c}`])
-  ),
+  )
 }
 
 function keyToCode(key: string): string {
@@ -63,15 +63,15 @@ const FOCUSABLE_SELECTOR = [
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
-  "[tabindex]",
+  "[tabindex]"
 ].join(", ")
 
 function getFocusableElements(
   container: Element | Document = document.body
-): HTMLElement[] {
+): Array<HTMLElement> {
   const elements = Array.from(
     container.querySelectorAll(FOCUSABLE_SELECTOR)
-  ) as HTMLElement[]
+  ) as Array<HTMLElement>
 
   // Filter out tabindex="-1" and sort by tabindex
   return elements
@@ -106,7 +106,7 @@ const SPECIAL_KEYS: Record<string, string> = {
   arrowright: "ArrowRight",
   delete: "Delete",
   home: "Home",
-  end: "End",
+  end: "End"
 }
 
 /**
@@ -160,7 +160,7 @@ export const createEvent = {
     return new KeyboardEvent("keydown", {
       bubbles: true,
       cancelable: true,
-      ...init,
+      ...init
     })
   },
 
@@ -168,7 +168,7 @@ export const createEvent = {
     return new KeyboardEvent("keyup", {
       bubbles: true,
       cancelable: true,
-      ...init,
+      ...init
     })
   },
 
@@ -177,28 +177,28 @@ export const createEvent = {
       bubbles: true,
       cancelable: true,
       button: 0,
-      ...init,
+      ...init
     })
   },
 
   focus(_element: Element, init?: FocusEventInit): Event {
     return createFocusEvent("focus", {
       bubbles: false,
-      ...init,
+      ...init
     })
   },
 
   blur(_element: Element, init?: FocusEventInit): Event {
     return createFocusEvent("blur", {
       bubbles: false,
-      ...init,
+      ...init
     })
-  },
+  }
 }
 
 /**
  * Event dispatch utilities for testing TUI components.
- * 
+ *
  * Compatible with EventRelay key expectations:
  * - Enter key triggers click on focused element
  * - Arrow keys (ArrowUp, ArrowDown, etc.) for navigation
@@ -227,7 +227,7 @@ export const fireEvent = {
         ctrlKey: modifiers?.ctrl ?? false,
         altKey: modifiers?.alt ?? false,
         shiftKey: modifiers?.shift ?? false,
-        metaKey: modifiers?.meta ?? false,
+        metaKey: modifiers?.meta ?? false
       }
     } else {
       key = keyOrInit.key ?? ""
@@ -235,7 +235,7 @@ export const fireEvent = {
         bubbles: true,
         cancelable: true,
         ...keyOrInit,
-        code: keyOrInit.code ?? keyToCode(key),
+        code: keyOrInit.code ?? keyToCode(key)
       }
     }
 
@@ -265,7 +265,7 @@ export const fireEvent = {
         ctrlKey: modifiers?.ctrl ?? false,
         altKey: modifiers?.alt ?? false,
         shiftKey: modifiers?.shift ?? false,
-        metaKey: modifiers?.meta ?? false,
+        metaKey: modifiers?.meta ?? false
       }
     } else {
       key = keyOrInit.key ?? ""
@@ -273,7 +273,7 @@ export const fireEvent = {
         bubbles: true,
         cancelable: true,
         ...keyOrInit,
-        code: keyOrInit.code ?? keyToCode(key),
+        code: keyOrInit.code ?? keyToCode(key)
       }
     }
 
@@ -301,7 +301,7 @@ export const fireEvent = {
     // Also dispatch actual click event for compatibility
     const clickEvent = new MouseEvent("click", {
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
     return element.dispatchEvent(clickEvent)
   },
@@ -330,7 +330,7 @@ export const fireEvent = {
                 element.dispatchEvent(
                   createInputEvent("input", {
                     bubbles: true,
-                    inputType: "deleteContentBackward",
+                    inputType: "deleteContentBackward"
                   })
                 )
               }
@@ -354,7 +354,7 @@ export const fireEvent = {
           createInputEvent("input", {
             bubbles: true,
             inputType: "insertText",
-            data: char,
+            data: char
           })
         )
       }
@@ -371,10 +371,9 @@ export const fireEvent = {
    * Tab to next/previous focusable element.
    */
   tab(options?: { shift?: boolean }): void {
-    const doc =
-      typeof document !== "undefined"
-        ? document
-        : (globalThis as any).document
+    const doc = typeof document !== "undefined"
+      ? document
+      : (globalThis as any).document
     const activeElement = doc.activeElement ?? doc.body
     const shift = options?.shift ?? false
 
@@ -392,11 +391,9 @@ export const fireEvent = {
       // Not currently on a focusable element
       nextIndex = shift ? focusables.length - 1 : 0
     } else if (shift) {
-      nextIndex =
-        currentIndex === 0 ? focusables.length - 1 : currentIndex - 1
+      nextIndex = currentIndex === 0 ? focusables.length - 1 : currentIndex - 1
     } else {
-      nextIndex =
-        currentIndex === focusables.length - 1 ? 0 : currentIndex + 1
+      nextIndex = currentIndex === focusables.length - 1 ? 0 : currentIndex + 1
     }
 
     const nextElement = focusables[nextIndex]
@@ -449,7 +446,7 @@ export const fireEvent = {
         createInputEvent("input", {
           bubbles: true,
           inputType: "insertText",
-          data: newValue,
+          data: newValue
         })
       )
 
@@ -466,7 +463,7 @@ export const fireEvent = {
   dblClick(element: Element): boolean {
     const dblClickEvent = new MouseEvent("dblclick", {
       bubbles: true,
-      cancelable: true,
+      cancelable: true
     })
     return element.dispatchEvent(dblClickEvent)
   },
@@ -487,5 +484,5 @@ export const fireEvent = {
       }
     }
     element.dispatchEvent(new Event("scroll", { bubbles: false }))
-  },
+  }
 }

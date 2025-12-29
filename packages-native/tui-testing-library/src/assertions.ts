@@ -175,7 +175,6 @@ export class Screen {
    * Gets the terminal buffer.
    */
   private get buffer(): IBuffer {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (this.terminal as any).buffer.active
   }
 
@@ -188,7 +187,7 @@ export class Screen {
    * @since 0.1.0
    */
   text(): string {
-    const lines: string[] = []
+    const lines: Array<string> = []
 
     for (let y = 0; y < this.terminal.rows; y++) {
       const line = this.buffer.getLine(y)
@@ -217,7 +216,7 @@ export class Screen {
     const buffer = this.buffer
     const nullCell = buffer.getNullCell()
     let currentStyle = nullCell
-    const rows: string[] = []
+    const rows: Array<string> = []
 
     for (let y = 0; y < this.terminal.rows; y++) {
       const line = buffer.getLine(y)
@@ -339,8 +338,8 @@ export class Screen {
   /**
    * Calculates SGR sequence to transition from oldCell style to newCell style.
    */
-  private diffStyle(cell: IBufferCell, oldCell: IBufferCell): number[] {
-    const sgrSeq: number[] = []
+  private diffStyle(cell: IBufferCell, oldCell: IBufferCell): Array<number> {
+    const sgrSeq: Array<number> = []
     const fgChanged = !equalFg(cell, oldCell)
     const bgChanged = !equalBg(cell, oldCell)
     const flagsChanged = !equalFlags(cell, oldCell)

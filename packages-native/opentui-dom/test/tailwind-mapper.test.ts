@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 import { tailwindToTui, tw } from "../src/bridge/tailwind-mapper.js"
 
 describe("tailwind-mapper", () => {
@@ -218,7 +218,7 @@ describe("tailwind-mapper", () => {
           padding: 1,
           bg: "#3B82F6",
           backgroundColor: "#3B82F6",
-          fg: "#FFFFFF",
+          fg: "#FFFFFF"
         })
       })
 
@@ -259,7 +259,7 @@ describe("tailwind-mapper", () => {
       const styles = tw("flex flex-col gap-2")
       expect(styles).toEqual({
         flexDirection: "column",
-        gap: 1,
+        gap: 1
       })
     })
   })

@@ -34,8 +34,7 @@ function getScreen() {
     // queryAllBy
     queryAllByText: (text: queries.TextMatch, opts?: queries.QueryOptions) => queries.queryAllByText(body, text, opts),
     queryAllByRole: (role: string, opts?: queries.ByRoleOptions) => queries.queryAllByRole(body, role, opts),
-    queryAllByTestId: (id: queries.TextMatch, opts?: queries.QueryOptions) =>
-      queries.queryAllByTestId(body, id, opts),
+    queryAllByTestId: (id: queries.TextMatch, opts?: queries.QueryOptions) => queries.queryAllByTestId(body, id, opts),
     queryAllByLabelText: (text: queries.TextMatch, opts?: queries.QueryOptions) =>
       queries.queryAllByLabelText(body, text, opts),
     // findBy
@@ -47,8 +46,7 @@ function getScreen() {
     // findAllBy
     findAllByText: (text: queries.TextMatch, opts?: queries.QueryOptions) => queries.findAllByText(body, text, opts),
     findAllByRole: (role: string, opts?: queries.ByRoleOptions) => queries.findAllByRole(body, role, opts),
-    findAllByTestId: (id: queries.TextMatch, opts?: queries.QueryOptions) =>
-      queries.findAllByTestId(body, id, opts),
+    findAllByTestId: (id: queries.TextMatch, opts?: queries.QueryOptions) => queries.findAllByTestId(body, id, opts),
     findAllByLabelText: (text: queries.TextMatch, opts?: queries.QueryOptions) =>
       queries.findAllByLabelText(body, text, opts),
     // Utilities

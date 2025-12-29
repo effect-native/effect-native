@@ -10,7 +10,8 @@
  * @module
  */
 
-import { Context, Data, Effect } from "effect"
+import type { Effect } from "effect"
+import { Context, Data } from "effect"
 
 // --- Element Reference (Locator Pattern) ---
 
@@ -129,8 +130,8 @@ export type DOMError = ElementNotFoundError | MultipleElementsError | AdapterErr
 export interface MutationRecord {
   type: "childList" | "attributes" | "characterData"
   target: unknown
-  addedNodes?: unknown[]
-  removedNodes?: unknown[]
+  addedNodes?: Array<unknown>
+  removedNodes?: Array<unknown>
   attributeName?: string | null
 }
 
@@ -147,7 +148,7 @@ export interface MutationObserverInit {
   subtree?: boolean
   attributeOldValue?: boolean
   characterDataOldValue?: boolean
-  attributeFilter?: string[]
+  attributeFilter?: Array<string>
 }
 
 /**
@@ -157,7 +158,7 @@ export interface MutationObserverInit {
  * @category models
  */
 export interface MutationStream {
-  subscribe(callback: (records: MutationRecord[]) => void): void
+  subscribe(callback: (records: Array<MutationRecord>) => void): void
   disconnect(): void
 }
 

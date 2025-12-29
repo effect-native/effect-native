@@ -233,7 +233,7 @@ export const lightTheme: ThemeMap = {
   destructive: "#dc2626", // oklch(0.577 0.245 27.325)
   border: "#e5e5e5", // oklch(0.922 0 0)
   input: "#e5e5e5", // oklch(0.922 0 0)
-  ring: "#a3a3a3", // oklch(0.708 0 0)
+  ring: "#a3a3a3" // oklch(0.708 0 0)
 }
 
 /**
@@ -258,7 +258,7 @@ export const darkTheme: ThemeMap = {
   destructive: "#ef4444", // oklch(0.704 0.191 22.216)
   border: "#262626", // oklch(1 0 0 / 10%) approximated
   input: "#2e2e2e", // oklch(1 0 0 / 15%) approximated
-  ring: "#737373", // oklch(0.556 0 0)
+  ring: "#737373" // oklch(0.556 0 0)
 }
 
 /** Current active theme (mutable state for runtime) */

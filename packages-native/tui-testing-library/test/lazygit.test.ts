@@ -7,15 +7,7 @@
  *
  * Tests are skipped if lazygit is not installed.
  */
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  test
-} from "@effect-native/bun-test"
+import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
 import { execSync } from "child_process"
 import * as Effect from "effect/Effect"
 import { GhosttyHarness } from "../src/GhosttyHarness.js"
@@ -132,7 +124,7 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
   })
 
   it.scoped("renders initial lazygit UI without garbage", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -162,12 +154,11 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Snapshot the full screenshot
       expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
-    })
-  )
+    }))
 
   it.scoped("handles navigation and panel switching", () =>
-    Effect.gen(function* () {
-      const screenshots: string[] = []
+    Effect.gen(function*() {
+      const screenshots: Array<string> = []
 
       const handle = yield* spawnTui(["lazygit"], {
         cols: 120,
@@ -224,11 +215,10 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
         normalizeSnapshot(screenshots[2]!),
         "after panel switch"
       ).toMatchSnapshot("after panel switch")
-    })
-  )
+    }))
 
   it.scoped("handles rapid UI updates (scrolling)", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
@@ -262,11 +252,10 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Snapshot the scrolling result
       expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
-    })
-  )
+    }))
 
   it.scoped("captures colors and attributes from lazygit", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -314,11 +303,10 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Snapshot the color-rich output
       expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
-    })
-  )
+    }))
 
   it.scoped("handles box drawing characters from lazygit panels", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
@@ -341,19 +329,17 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       // lazygit uses box drawing for panel borders
       // Check that box drawing characters appear (U+2500-U+257F range)
       // OR ASCII box drawing (+, -, |)
-      const hasBoxDrawing =
-        /[\u2500-\u257F]/.test(screenshot) || // Unicode box drawing
+      const hasBoxDrawing = /[\u2500-\u257F]/.test(screenshot) || // Unicode box drawing
         /[+\-|]/.test(screenshot) // ASCII box drawing
 
       expect(hasBoxDrawing).toBe(true)
 
       // Snapshot the box drawing output
       expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
-    })
-  )
+    }))
 
   it.scoped("renders help menu without garbage", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 100,
         rows: 40,
@@ -387,11 +373,10 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
 
       // Snapshot the help menu output
       expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
-    })
-  )
+    }))
 
   it.scoped("terminal resize preserves content integrity", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const handle = yield* spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
@@ -426,8 +411,7 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
       expect(after.length).toBeGreaterThan(10)
       expect(normalizeSnapshot(before)).toMatchSnapshot()
       expect(normalizeSnapshot(after)).toMatchSnapshot()
-    })
-  )
+    }))
 })
 
 // Info test that always runs
