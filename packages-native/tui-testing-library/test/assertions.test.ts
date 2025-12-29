@@ -15,8 +15,8 @@ afterEach(() => {
 /** Write with screen clear to ensure fresh terminal state */
 async function freshWrite(term: ReturnType<typeof harness.createTerminal>, data: string) {
   // Clear screen and home cursor first
-  await harness.write(term, "\x1b[2J\x1b[H")
-  await harness.write(term, data)
+  await harness.writeAsync(term, "\x1b[2J\x1b[H")
+  await harness.writeAsync(term, data)
 }
 
 describe("Screen", () => {
@@ -250,12 +250,12 @@ describe("waitFor", () => {
   test("works with terminal content polling", async () => {
     const term = harness.createTerminal(40, 5)
     // Clear the terminal first
-    await harness.write(term, "\x1b[2J\x1b[H")
+    await harness.writeAsync(term, "\x1b[2J\x1b[H")
     const screen = Screen.fromTerminal(term)
 
     // Start writing after a delay
     setTimeout(async () => {
-      await harness.write(term, "Ready!")
+      await harness.writeAsync(term, "Ready!")
     }, 50)
 
     await waitFor(() => screen.text().includes("Ready"), { timeout: 500 })

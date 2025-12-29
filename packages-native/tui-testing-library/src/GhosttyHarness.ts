@@ -30,7 +30,15 @@
  *
  * @since 0.1.0
  */
+import { Data, Effect } from "effect"
 import type { Ghostty, Terminal } from "ghostty-web"
+
+
+class GhosttyError extends Data.TaggedError("GhosttyError")<{
+  message : string
+  cause?: unknown
+  data?: string | Uint8Array
+}> {}
 
 /**
  * Cell information from the terminal buffer.
@@ -119,7 +127,6 @@ export class GhosttyHarness {
    * @since 0.1.0
    */
   createTerminal(cols = 80, rows = 24): Terminal {
-    // @ts-expect-error - dynamic import type
     const { Terminal } = require("ghostty-web")
 
     const container = document.createElement("div")
@@ -130,6 +137,7 @@ export class GhosttyHarness {
 
     // Clear the terminal buffer to prevent garbage from shared WASM memory
     // ESC[2J clears screen, ESC[H moves cursor home, ESC[3J clears scrollback
+    // TODO: extract this magic string as a constant
     term.write("\x1b[3J\x1b[2J\x1b[H")
 
     this.terminals.push(term)
@@ -146,9 +154,29 @@ export class GhosttyHarness {
    *
    * @since 0.1.0
    */
-  write(term: Terminal, data: string | Uint8Array): Promise<void> {
+  writeAsync(term: Terminal, data: string | Uint8Array): Promise<void> {
     return new Promise((resolve) => {
       term.write(data, resolve)
+    })
+  }
+
+  write(term: Terminal, data: string | Uint8Array) {
+    return Effect.async<void, GhosttyError>((resume) => {
+      try {
+        term.write(data, () => resume(Effect.void))
+      } catch (cause){
+        resume(Effect.fail(new GhosttyError({message:"Failed writing data to terminal", cause, data})))
+      }
+    })
+  }
+
+  writeLine(term: Terminal, data: string | Uint8Array) {
+    return Effect.async<void, GhosttyError>((resume) => {
+      try {
+        term.writeln(data, () => resume(Effect.void))
+      } catch (cause){
+        resume(Effect.fail(new GhosttyError({message:"Failed writing line to terminal", cause, data})))
+      }
     })
   }
 
@@ -165,7 +193,7 @@ export class GhosttyHarness {
   screenshot(term: Terminal): string {
     const lines: string[] = []
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = (term as any).buffer.active
+    const buffer = (term).buffer.active
 
     // Get cursor position to know the boundary of actual content
     const cursorY = buffer.cursorY as number
@@ -252,7 +280,7 @@ export class GhosttyHarness {
    */
   getCell(term: Terminal, row: number, col: number): CellInfo | undefined {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = (term as any).buffer.active
+    const buffer = (term).buffer.active
     const line = buffer.getLine(row)
     const cell = line?.getCell(col)
 
@@ -292,7 +320,7 @@ export class GhosttyHarness {
    */
   getRawCell(term: Terminal, row: number, col: number): unknown {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = (term as any).buffer.active
+    const buffer = term.buffer.active
     const line = buffer.getLine(row)
     return line?.getCell(col)
   }
@@ -308,6 +336,7 @@ export class GhosttyHarness {
       term.dispose()
     }
     this.terminals.length = 0
+    // FIXME: don't use global document.body, require passing some kind of getElement function to GhosttyHarness so that it'll access its target element just-in-time
     document.body.innerHTML = ""
   }
 
@@ -319,5 +348,9 @@ export class GhosttyHarness {
    */
   dispose(): void {
     this.cleanup()
+  }
+
+  [Symbol.dispose]() {
+    this.dispose()
   }
 }
