@@ -10,12 +10,20 @@ done_when: |
   Tom verified that the tailwind classes he used are respected
   Tom verified that the positioning and layout work as expected
 blocked_by:
+  # Implementation (complete)
   - .tasks/GOAL-opentui-dom-package.md
   - .tasks/GOAL-tui-testing-lib.md
   - .tasks/GOAL-opentui-dom-testing-lib.md
   - .tasks/GOAL-tui-miniapp.md
+  # QA (pending - assigned to Bramwell)
+  - .tasks/qa/opentui-dom-package.md
+  - .tasks/qa/tui-testing-library-package.md
+  - .tasks/qa/opentui-dom-testing-library-package.md
+  - .tasks/qa/miniapp-interactive.md
+  - .tasks/qa/miniapp-visual-layout.md
+  - .tasks/qa/miniapp-accessibility.md
 basis: |
-  All sub-goals complete:
+  Implementation complete:
   - GOAL-opentui-dom-package.md: 182 tests (25+57+37+44+19)
   - GOAL-tui-testing-lib.md: 55 tests (18+16+21)
   - GOAL-opentui-dom-testing-lib.md: 76 tests (50+26)
@@ -26,7 +34,7 @@ basis: |
   - packages-native/tui-testing-library  
   - packages-native/opentui-dom-testing-library
   
-  Ready for Tom's manual validation with custom miniapp
+  Awaiting QA from Bramwell (6 QA tasks in .tasks/qa/)
 artifacts:
   - path: .specs/tui-dom/instructions.md
   - path: .specs/tui-dom/requirements.md

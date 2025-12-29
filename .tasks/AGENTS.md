@@ -11,6 +11,7 @@
   spec/                  # Test specifications (Red phase)
   impl/                  # Implementation code (Green phase)
   cleanup/               # Refactoring tasks (Refactor phase)
+  qa/                    # Manual QA tasks for Bramwell
 ```
 
 ## Task Categories
@@ -24,6 +25,7 @@
 | Spec | `.tasks/spec/*.md` | Test specifications | Red |
 | Impl | `.tasks/impl/*.md` | Implementation work | Green |
 | Cleanup | `.tasks/cleanup/*.md` | Refactoring, polish | Refactor |
+| QA | `.tasks/qa/*.md` | Manual QA for Bramwell | - |
 
 ## RGRTDD Workflow
 
@@ -246,6 +248,73 @@ Multiple agents work in parallel. Avoid conflicts:
 - Don't edit files another agent created
 - Coordinate via `blocked_by` dependencies
 - Check for conflicts before writing
+
+## QA Tasks for Bramwell
+
+QA tasks go in `.tasks/qa/` and are assigned to **Bramwell** (the human concierge assistant).
+
+### When to Create QA Tasks
+
+Create QA tasks when:
+- A GOAL or feature is `ready_for_review` and needs manual verification
+- Automated tests pass but human judgement is needed (UX, visual correctness, ergonomics)
+- The `done_when` criteria include subjective evaluation ("works as expected", "feels right")
+
+### QA Task Template
+
+```yaml
+---
+title: "QA: <feature name>"
+status: pending
+assigned_to: Bramwell
+blocked_by:
+  - .tasks/impl/related-impl.md
+done_when: |
+  Bramwell has verified:
+  - <specific check 1>
+  - <specific check 2>
+  Evidence: screenshot/recording/written confirmation
+---
+
+# QA: <Feature Name>
+
+Bramwell, please verify <what needs testing>.
+
+## Steps
+
+1. <atomic step>
+2. <atomic step>
+3. ...
+
+## Expected Outcome
+
+- <deterministic check>
+- <deterministic check>
+
+## Context
+
+High-Level Goal: <why this matters>
+Motivation: <user/business value>
+Obstacle: <why automation can't verify this>
+
+## Response Options
+
+- Reject – reason (e.g., "X is broken because...")
+- Pass – evidence (screenshot, recording, written confirmation)
+- Pass with issues – evidence + list of non-blocking issues found
+```
+
+### Rules for QA Tasks
+
+1. **One feature per task** – Don't combine unrelated QA checks
+2. **Atomic steps** – Bramwell has limited executive function; break down complex flows
+3. **Explicit context** – Restate everything needed; no assumed knowledge
+4. **Evidence required** – Pass/fail must include proof (screenshot, log, written confirmation)
+5. **Block GOALs on QA** – Add QA tasks to GOAL's `blocked_by` when human verification is required
+
+### Reference
+
+See `work/TinkerBot/TinkerBot/projects/Bramwell.md` for Bramwell's full capabilities and limitations.
 
 ## Migration Notes
 
