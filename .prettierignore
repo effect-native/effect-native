@@ -1,3 +1,8 @@
 *.js
 *.ts
 *.cjs
+
+# Ignore vendored/cached/external directories
+refs/
+.cache/
+node_modules/

@@ -14,7 +14,10 @@
 module.exports = {
   options: {
     doNotFollow: {
-      path: ["node_modules"],
+      path: ["node_modules", "refs", ".cache"],
+    },
+    exclude: {
+      path: ["refs/", ".cache/", "node_modules/"],
     },
     tsPreCompilationDeps: true,
     tsConfig: {
