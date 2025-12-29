@@ -13,12 +13,12 @@ done_when: |
 blocked_by:
 artifacts:
   - path: .specs/tui-dom/instructions.md
-  - path: .specs/tui-dom/requirements.md
-  - path: .specs/tui-dom/design.md
-  - path: .specs/tui-dom/plan.md
   - path: .specs/tui-dom-testing/instructions.md
+  - path: .specs/tui-dom/requirements.md
   - path: .specs/tui-dom-testing/requirements.md
+  - path: .specs/tui-dom/design.md
   - path: .specs/tui-dom-testing/design.md
+  - path: .specs/tui-dom/plan.md
   - path: .specs/tui-dom-testing/plan.md
   - description: tui-dom script
     path: package.json
