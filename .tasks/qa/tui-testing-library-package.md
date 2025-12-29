@@ -1,46 +1,55 @@
 ---
-title: "QA: @effect-native/tui-testing-library package"
+title: "QA: Review tui-testing-library test quality"
 status: pending
 assigned_to: Bramwell
 blocked_by:
   - .tasks/GOAL-tui-testing-lib.md
 done_when: |
-  Bramwell has verified:
-  - Package builds without errors
-  - All 55 unit tests pass
-  - Ghostty WASM loads successfully
-  - PTY spawn works
-  Evidence: terminal output screenshot or copy-paste
+  Bramwell has reviewed the tests and provided qualitative feedback:
+  - Do the tests verify real terminal emulation behavior?
+  - Are PTY edge cases covered (resize, signals, encoding)?
+  - Would these tests catch platform-specific bugs?
+  Evidence: written evaluation with specific examples
 ---
 
-# QA: @effect-native/tui-testing-library Package
+# QA: Review tui-testing-library Test Quality
 
-Bramwell, please verify the TUI testing library package builds and tests correctly.
+Bramwell, please review the test suite for `@effect-native/tui-testing-library` and attempt to invalidate the hypothesis that these tests would catch real bugs in terminal emulation and PTY handling.
+
+## Hypothesis to Invalidate
+
+"The 55 tests in tui-testing-library comprehensively verify Ghostty WASM integration and PTY spawning, and would catch regressions across different terminal scenarios."
 
 ## Steps
 
-1. Open terminal
-2. Navigate to `work/effect-native/effect-native`
-3. Run: `cd packages-native/tui-testing-library`
-4. Run: `bun test`
-5. Verify all tests pass (should be ~55 tests)
-6. Look for any WASM loading errors or PTY-related failures
+1. Open the test files in `packages-native/tui-testing-library/test/`
+2. Read through the test descriptions
+3. For each test, ask:
+   - Does this test real terminal behavior or just mock responses?
+   - Would this test fail if Ghostty rendered something incorrectly?
+   - Are platform-specific PTY quirks (macOS vs Linux) considered?
 
-## Expected Outcome
+## Key Test Files to Review
 
-- All tests pass (green checkmarks, 0 failures)
-- No WASM loading errors
-- No PTY spawn failures
-- Ghostty harness initializes correctly
+- `GhosttyHarness.test.ts` - WASM terminal emulation
+- `Spawn.test.ts` - PTY process spawning
+- `assertions.test.ts` - Screen buffer verification
+
+## Questions to Answer
+
+1. **Terminal fidelity**: Do tests verify actual ANSI rendering (colors, cursor, attributes)?
+2. **PTY edge cases**: What about terminal resize? SIGWINCH? UTF-8 encoding? Control sequences?
+3. **Timing**: Are there race conditions that tests might miss (async PTY output)?
+4. **Platform coverage**: Would these tests pass on Linux? Or are they macOS-specific?
 
 ## Context
 
-High-Level Goal: Validate the low-level TUI testing infrastructure works
-Motivation: This package enables testing TUI apps with real terminal emulation
-Obstacle: WASM and PTY are platform-specific; need human verification on macOS
+High-Level Goal: Ensure terminal testing infrastructure is reliable
+Motivation: If the testing library has bugs, all apps tested with it have false confidence
+Obstacle: Terminal emulation is complex; only human review can assess if tests cover the right scenarios
 
 ## Response Options
 
-- Reject – reason (e.g., "Ghostty WASM fails to load with error X")
-- Pass – paste terminal output showing all tests pass
-- Pass with issues – evidence + list of warnings or platform-specific notes
+- Reject – "Critical gap: X scenario untested" + explanation
+- Pass – "Tests cover the important cases" + brief justification
+- Pass with issues – "Acceptable but missing..." + prioritized gaps

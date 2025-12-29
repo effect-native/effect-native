@@ -1,44 +1,54 @@
 ---
-title: "QA: @effect-native/opentui-dom-testing-library package"
+title: "QA: Review opentui-dom-testing-library API design"
 status: pending
 assigned_to: Bramwell
 blocked_by:
   - .tasks/GOAL-opentui-dom-testing-lib.md
 done_when: |
-  Bramwell has verified:
-  - Package builds without errors
-  - All 76 unit tests pass
-  - render() and fireEvent work correctly
-  Evidence: terminal output screenshot or copy-paste
+  Bramwell has evaluated the API design:
+  - Does it follow @testing-library conventions?
+  - Is it intuitive for developers familiar with React Testing Library?
+  - Are there footguns or confusing patterns?
+  Evidence: written evaluation comparing to @testing-library/react
 ---
 
-# QA: @effect-native/opentui-dom-testing-library Package
+# QA: Review opentui-dom-testing-library API Design
 
-Bramwell, please verify the DOM testing library package builds and tests correctly.
+Bramwell, please evaluate whether the `@effect-native/opentui-dom-testing-library` API is well-designed and follows established conventions.
+
+## Hypothesis to Invalidate
+
+"The testing library API matches @testing-library conventions and will feel familiar to React developers."
 
 ## Steps
 
-1. Open terminal
-2. Navigate to `work/effect-native/effect-native`
-3. Run: `cd packages-native/opentui-dom-testing-library`
-4. Run: `bun test`
-5. Verify all tests pass (should be ~76 tests)
+1. Open `packages-native/opentui-dom-testing-library/src/`
+2. Review the public API exports in `index.ts`
+3. Compare against @testing-library/react patterns:
+   - `render()` - Does it return the same shape? (container, queries, etc.)
+   - `screen` - Are the same queries available? (getByRole, getByText, etc.)
+   - `fireEvent` - Does it have the same methods? (click, keyDown, type, etc.)
+4. Look at the test files to see how the API is used
 
-## Expected Outcome
+## Questions to Answer
 
-- All tests pass (green checkmarks, 0 failures)
-- render() function works
-- screen queries work
-- fireEvent utilities work
+1. **Convention compliance**: Can someone copy-paste a @testing-library/react test and have it mostly work?
+2. **Documentation**: Are the function signatures clear? Would a developer know what to pass?
+3. **Error messages**: When a query fails, is the error helpful?
+4. **Footguns**: Are there easy mistakes to make? (e.g., forgetting cleanup, async issues)
+
+## Reference
+
+Compare against: https://testing-library.com/docs/react-testing-library/api
 
 ## Context
 
-High-Level Goal: Validate the high-level testing library for TUI DOM apps
-Motivation: Developers need @testing-library patterns to write tests
-Obstacle: Integration between happy-dom and React needs human verification
+High-Level Goal: Make TUI testing feel familiar to web developers
+Motivation: Adoption depends on low learning curve
+Obstacle: API design quality requires human judgment—tests can't tell if an API is intuitive
 
 ## Response Options
 
-- Reject – reason (e.g., "render() fails with error X")
-- Pass – paste terminal output showing all tests pass
-- Pass with issues – evidence + list of warnings
+- Reject – "API diverges significantly from conventions" + specific issues
+- Pass – "API follows conventions well" + brief notes
+- Pass with issues – "Mostly good but these patterns are confusing..." + list

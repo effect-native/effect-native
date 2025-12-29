@@ -253,64 +253,87 @@ Multiple agents work in parallel. Avoid conflicts:
 
 QA tasks go in `.tasks/qa/` and are assigned to **Bramwell** (the human concierge assistant).
 
+### What Bramwell is Good At
+
+Bramwell excels at tasks that **cannot be automated**:
+
+1. **Qualitative evaluation** – Is this API intuitive? Do these tests make sense? Is the UX good?
+2. **Hypothesis invalidation** – Attempt to disprove that tests are valid/useful/complete
+3. **Manual interactive testing** – Run demos, click around, try to break things
+4. **Subjective judgment** – Does this look right? Feel right? Match conventions?
+
+### What Bramwell Should NOT Do
+
+**Never** create QA tasks for things that can be automated:
+
+- ❌ "Run `bun test` and verify tests pass" – CI does this
+- ❌ "Run `bun build` and check for errors" – CI does this
+- ❌ "Verify the package exports X" – Write a test for this
+
 ### When to Create QA Tasks
 
 Create QA tasks when:
-- A GOAL or feature is `ready_for_review` and needs manual verification
-- Automated tests pass but human judgement is needed (UX, visual correctness, ergonomics)
-- The `done_when` criteria include subjective evaluation ("works as expected", "feels right")
+- **Test quality review** – Are the tests testing the RIGHT things? Would they catch real bugs?
+- **API design review** – Does the API follow conventions? Is it intuitive?
+- **Manual UX testing** – Interactive demos that require human judgment
+- **Visual verification** – Does it look right at different sizes/themes?
+- **Accessibility testing** – Can a human navigate with keyboard only?
 
 ### QA Task Template
 
 ```yaml
 ---
-title: "QA: <feature name>"
+title: "QA: <what Bramwell is evaluating>"
 status: pending
 assigned_to: Bramwell
 blocked_by:
   - .tasks/impl/related-impl.md
 done_when: |
-  Bramwell has verified:
-  - <specific check 1>
-  - <specific check 2>
-  Evidence: screenshot/recording/written confirmation
+  Bramwell has provided qualitative feedback:
+  - <specific evaluation criterion>
+  - <specific evaluation criterion>
+  Evidence: written evaluation with specific examples
 ---
 
-# QA: <Feature Name>
+# QA: <What to Evaluate>
 
-Bramwell, please verify <what needs testing>.
+Bramwell, please <evaluate/review/test> X and attempt to invalidate the hypothesis that <claim we're testing>.
+
+## Hypothesis to Invalidate
+
+"<The claim we believe to be true that Bramwell should try to disprove>"
 
 ## Steps
 
-1. <atomic step>
-2. <atomic step>
+1. <what to look at>
+2. <what questions to ask>
 3. ...
 
-## Expected Outcome
+## Questions to Answer
 
-- <deterministic check>
-- <deterministic check>
+1. <specific question requiring judgment>
+2. <specific question requiring judgment>
 
 ## Context
 
 High-Level Goal: <why this matters>
 Motivation: <user/business value>
-Obstacle: <why automation can't verify this>
+Obstacle: <why automation can't do this>
 
 ## Response Options
 
-- Reject – reason (e.g., "X is broken because...")
-- Pass – evidence (screenshot, recording, written confirmation)
-- Pass with issues – evidence + list of non-blocking issues found
+- Reject – "<hypothesis disproven because...>" + specific examples
+- Pass – "<hypothesis holds>" + brief justification
+- Pass with issues – "<mostly valid but...>" + prioritized list of concerns
 ```
 
 ### Rules for QA Tasks
 
-1. **One feature per task** – Don't combine unrelated QA checks
-2. **Atomic steps** – Bramwell has limited executive function; break down complex flows
-3. **Explicit context** – Restate everything needed; no assumed knowledge
-4. **Evidence required** – Pass/fail must include proof (screenshot, log, written confirmation)
-5. **Block GOALs on QA** – Add QA tasks to GOAL's `blocked_by` when human verification is required
+1. **No automatable work** – If it can be a test or CI check, don't give it to Bramwell
+2. **Hypothesis-driven** – Frame tasks as "try to disprove X" not "verify X works"
+3. **Qualitative focus** – Ask for judgment, evaluation, comparison, not pass/fail
+4. **Atomic scope** – One evaluation per task; Bramwell has limited executive function
+5. **Evidence required** – Pass/fail must include written reasoning with specific examples
 
 ### Reference
 
