@@ -25,6 +25,7 @@
     ".": "./src/index.ts",
     "./Spawn": "./src/Spawn.ts",
     "./GhosttyHarness": "./src/GhosttyHarness.ts",
+    "./assertions": "./src/assertions.ts",
     "./happydom": "./src/happydom.ts",
     "./internal/*": null
   },

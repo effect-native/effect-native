@@ -6,3 +6,4 @@
  */
 export * from "./Spawn.js"
 export * from "./GhosttyHarness.js"
+export * from "./assertions.js"
