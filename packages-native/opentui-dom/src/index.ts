@@ -55,3 +55,10 @@ export * from "./bridge/tailwind-mapper.js"
  * @since 0.1.0
  */
 export * from "./bridge/style-bridge.js"
+
+/**
+ * Re-export of the `DOMToTUIBridge` module.
+ *
+ * @since 0.1.0
+ */
+export * from "./bridge/dom-to-tui-bridge.js"
