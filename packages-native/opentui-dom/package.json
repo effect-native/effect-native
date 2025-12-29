@@ -1,6 +1,7 @@
 {
   "name": "@effect-native/opentui-dom",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "description": "Effect-based DOM adapter interface for unified DOM access across environments.",
