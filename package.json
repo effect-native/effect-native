@@ -92,7 +92,8 @@
       "node-domexception": "npm:noop-package@*"
     },
     "patchedDependencies": {
-      "@changesets/assemble-release-plan": "patches/@changesets__assemble-release-plan.patch"
+      "@changesets/assemble-release-plan": "patches/@changesets__assemble-release-plan.patch",
+      "ghostty-web@0.3.0": "patches/ghostty-web@0.3.0.patch"
     },
     "ignoredBuiltDependencies": [
       "cpu-features",
