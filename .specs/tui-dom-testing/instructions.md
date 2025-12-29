@@ -1,35 +1,37 @@
-# Instructions: TUI DOM Testing Libraries
+# Instructions: TUI DOM Testing
 
 ## Context
-To support the `tui-dom` ecosystem, we need a robust testing infrastructure that mirrors the standard web development experience. Developers rely on the `@testing-library` family of packages to write maintainable, user-centric tests. We will replicate this architecture for TUI applications, splitting the logic into a core DOM library and a React-specific wrapper.
+Testing Terminal User Interfaces (TUIs) presents unique challenges. Developers need to verify two distinct aspects of their applications:
+1.  **The Visual Output**: What the user actually sees in the terminal (ANSI escape sequences, colors, layout, cursor position).
+2.  **The Application Logic**: The state and behavior of the underlying components (DOM structure, React state, event handling).
 
-This infrastructure allows developers to test TUI applications in a headless environment (using `happy-dom`) while retaining the ability to verify visual output via PTY screenshots.
+To address this, we are creating a layered testing ecosystem. We need a low-level library for verifying raw terminal output via PTY (Pseudo-Terminal) and a high-level library that bridges this with standard web testing patterns for our DOM-based TUI architecture.
 
 ## User Story
-As a TUI application developer, I want to write tests using familiar API patterns (`render`, `screen`, `fireEvent`, `waitFor`) so that I can verify my application's logic and accessibility without learning a completely new testing paradigm.
+As a developer building TUI applications, I want to write tests that can verify my app's behavior at the terminal level (visual regression, interaction) and at the component level (DOM state), using familiar APIs like `@testing-library`.
 
 ## High-Level Goals
 
-### 1. @effect-native/opentui-dom-testing-library
-Create the core, framework-agnostic library (analogous to `@testing-library/dom`). This package interacts directly with the DOM nodes managed by `opentui-dom`.
+### 1. `@effect-native/tui-testing-library`
+Create a framework-agnostic testing library for any CLI/TUI application.
+*   **Core Technology**: Powered by Bun's native PTY support (`Bun.spawn({ terminal: ... })`).
+*   **Capabilities**:
+    *   Spawn processes in a real pseudo-terminal.
+    *   Capture and parse raw ANSI output into a virtual screen buffer (2D grid of cells with style attributes).
+    *   Send keystrokes and input to the running process.
+    *   Provide assertions for visual state (e.g., `expect(screen).toContainText("Hello")`, check colors, verify cursor position).
+*   **Independence**: This package must **not** depend on `opentui` or `react`. It should be usable for testing any TUI app (Rust, Go, Node, etc.).
 
-*   **Queries**: Implement standard queries (`getByText`, `getByRole`, `getByTestId`, etc.) that work against the DOM but respect TUI visibility and semantics.
-*   **Events**: Implement `fireEvent` to simulate TUI-specific interactions.
-    *   *Note*: In TUI, "click" is often "Enter" or "Space". The library must bridge high-level intent to the correct keyboard events handled by `EventRelay`.
-*   **Async Utilities**: Implement `waitFor`, `waitForElementToBeRemoved`, and `act` to handle the asynchronous nature of TUI rendering and `happy-dom` mutation batching.
-*   **Visual Verification**: Include utilities for PTY-based screenshot capture and assertion (e.g., `expect(screen).toMatchVisualSnapshot()`) to verify the actual terminal output.
-
-### 2. @effect-native/opentui-dom-react-testing-library
-Create the React wrapper (analogous to `@testing-library/react`).
-
-*   **Render**: Implement a `render(ui, options)` function that:
-    *   Creates a `happy-dom` environment.
-    *   Initializes the `opentui` renderer and `opentui-dom` bridge.
-    *   Mounts the React component.
-    *   Returns the core library's queries bound to the container.
-*   **Lifecycle**: Handle automatic cleanup (unmounting, destroying renderers) after tests.
-*   **Re-exports**: Re-export all queries and utilities from the core library for convenience.
+### 2. `@effect-native/opentui-dom-testing-library`
+Create a convenience wrapper specifically for testing applications built with `@effect-native/opentui-dom`.
+*   **Dependencies**:
+    *   `@effect-native/tui-testing-library` (for visual verification).
+    *   `@testing-library/dom` and `@testing-library/react` (for component logic).
+*   **Capabilities**:
+    *   Export standard testing helpers: `render`, `screen`, `fireEvent`, `waitFor`.
+    *   Bridge the gap between the "Virtual DOM" (happy-dom) and the "Visual Output" (PTY).
+    *   Allow tests to assert against the DOM state (e.g., `getByRole('button')`) while verifying the resulting TUI output matches expectations.
 
 ## Out of Scope
-*   Testing raw `opentui` renderables directly (tests should assert on the DOM state or the final visual output).
-*   Browser-based visual regression (we focus on Terminal visual regression via PTY).
+*   Browser-based testing (Selenium/Playwright) - we are focused on terminal emulation.
+*   Testing non-interactive CLI tools (stdout only) - while possible, the focus is on interactive TUIs.
