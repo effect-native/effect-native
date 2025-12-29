@@ -3,7 +3,37 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import { getPlainOutput, sendKey, sendLine, spawnTui, stripAnsi, waitForStable, waitForText } from "../src/Spawn.js"
 
-describe("spawnTui", () => {
+/**
+ * PTY spawn tests require:
+ * 1. Bun runtime (Bun.spawn with terminal option)
+ * 2. A real TTY (process.stdout.isTTY)
+ *
+ * When running through pnpm/npm scripts, there's typically no TTY available,
+ * so these tests are skipped. Run directly with `bun test` in a terminal.
+ */
+const isBun = typeof process !== "undefined" && "isBun" in process && process.isBun === true
+const hasTTY = typeof process !== "undefined" && process.stdout?.isTTY === true
+const canRunPtyTests = isBun && hasTTY
+
+if (!canRunPtyTests) {
+  console.warn(`
+╔════════════════════════════════════════════════════════════════════════════╗
+║  WARNING: PTY tests skipped - requires Bun runtime with TTY                ║
+║                                                                            ║
+║  Current environment:                                                      ║
+║    - Bun runtime: ${isBun ? "YES" : "NO"}                                                       ║
+║    - TTY available: ${hasTTY ? "YES" : "NO"}                                                     ║
+║                                                                            ║
+║  The spawnTui function uses Bun.spawn with the 'terminal' option which    ║
+║  requires a real TTY. This is not available when running through          ║
+║  pnpm/npm scripts or in CI environments without TTY allocation.           ║
+║                                                                            ║
+║  To run these tests: bun test (directly in a terminal)                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+`)
+}
+
+describe.skipIf(!canRunPtyTests)("spawnTui", () => {
   BunTest.it.scoped("spawns a process and captures output", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["echo", "hello world"])
@@ -111,7 +141,7 @@ describe("spawnTui", () => {
     }))
 })
 
-describe("waitForText", () => {
+describe.skipIf(!canRunPtyTests)("waitForText", () => {
   BunTest.it.scoped("resolves when text appears", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["bash", "-c", "sleep 0.1 && echo found"])
@@ -133,7 +163,7 @@ describe("waitForText", () => {
     }))
 })
 
-describe("waitForStable", () => {
+describe.skipIf(!canRunPtyTests)("waitForStable", () => {
   BunTest.it.scoped("waits for output to stabilize", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["bash", "-c", "echo one; sleep 0.05; echo two; sleep 0.05; echo three"])
@@ -169,7 +199,7 @@ describe("stripAnsi", () => {
   })
 })
 
-describe("sendKey", () => {
+describe.skipIf(!canRunPtyTests)("sendKey", () => {
   BunTest.it.scoped("sends control characters", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["cat"])
@@ -186,7 +216,7 @@ describe("sendKey", () => {
     }))
 })
 
-describe("sendLine", () => {
+describe.skipIf(!canRunPtyTests)("sendLine", () => {
   BunTest.it.scoped("sends text with carriage return", () =>
     Effect.gen(function*() {
       const handle = yield* spawnTui(["cat"])

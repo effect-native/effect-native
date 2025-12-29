@@ -84,6 +84,21 @@ Some code in tui-testing-library was inspired by or derived from:
 Both projects use MIT license, compatible with this project's MIT license.
 NOTICE file should be updated to acknowledge these sources.
 
+### 4. ~~Extract lazygit test to example package (validates public API)~~ DONE
+
+Extracted lazygit.test.ts to `packages-native/examples-tui-testing-library/` which:
+
+- Imports from `@effect-native/tui-testing-library` (not relative paths)
+- Uses workspace dependency to validate package exports
+- Demonstrates external consumer usage pattern
+- Type checks pass via tsc -b with project references
+
+Additional fixes made during extraction:
+
+- Fixed tsconfig.test.json to use `noEmit: true` (tests shouldn't be compiled to build/)
+- Added PTY/TTY detection with clear warning when tests are skipped
+- Tests properly skip when no TTY available (e.g., running through pnpm)
+
 ## Tasks
 
 - [x] Add LICENSE file to tui-testing-library (copy from root)
@@ -92,5 +107,8 @@ NOTICE file should be updated to acknowledge these sources.
 - [x] Add README.md to opentui-dom
 - [x] Add LICENSE to opentui-dom, opentui-dom-testing-library, fetch-hooks
 - [x] Add README.md to opentui-dom-testing-library
+- [x] Extract lazygit.test.ts to packages-native/examples-tui-testing-library
+- [x] Fix tsconfig.test.json to not emit test files
+- [x] Add PTY/TTY detection and skip tests gracefully
 - [ ] Run `pnpm ok` to verify all checks pass
 - [ ] Verify package builds and exports correctly

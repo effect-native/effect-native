@@ -1,11 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["test"],
-  "references": [{ "path": "tsconfig.src.json" }],
+  "references": [
+    { "path": "../tui-testing-library/tsconfig.src.json" },
+    { "path": "../bun-test/tsconfig.src.json" }
+  ],
   "compilerOptions": {
     "types": ["bun"],
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "test",
+    "outDir": "build/test",
     "noEmit": true
   }
 }

@@ -1,17 +1,41 @@
 /**
- * Stress tests for GhosttyHarness using real lazygit TUI.
+ * Example: Testing lazygit TUI with @effect-native/tui-testing-library
  *
- * These tests spawn the actual lazygit process with PTY support and
- * feed its output through the Ghostty WASM terminal emulator to verify
- * that complex TUI applications render correctly without garbage characters.
+ * This demonstrates how to use the tui-testing-library package as an external
+ * consumer would import it. These tests spawn the actual lazygit process with
+ * PTY support and feed its output through the Ghostty WASM terminal emulator.
  *
- * Tests are skipped if lazygit is not installed.
+ * Tests are skipped if:
+ * - lazygit is not installed
+ * - No TTY is available (required for PTY spawn)
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
+import { GhosttyHarness, sendKey, spawnTui, waitForStable } from "@effect-native/tui-testing-library"
 import { execSync } from "child_process"
 import * as Effect from "effect/Effect"
-import { GhosttyHarness } from "../src/GhosttyHarness.js"
-import { sendKey, spawnTui, waitForStable } from "../src/Spawn.js"
+
+/**
+ * PTY spawn tests require:
+ * 1. Bun runtime (Bun.spawn with terminal option)
+ * 2. A real TTY (process.stdout.isTTY)
+ */
+const isBun = typeof process !== "undefined" && "isBun" in process && process.isBun === true
+const hasTTY = typeof process !== "undefined" && process.stdout?.isTTY === true
+const canRunPtyTests = isBun && hasTTY
+
+if (!canRunPtyTests) {
+  console.warn(`
+╔════════════════════════════════════════════════════════════════════════════╗
+║  WARNING: PTY tests skipped - requires Bun runtime with TTY                ║
+║                                                                            ║
+║  Current environment:                                                      ║
+║    - Bun runtime: ${isBun ? "YES" : "NO"}                                                       ║
+║    - TTY available: ${hasTTY ? "YES" : "NO"}                                                     ║
+║                                                                            ║
+║  To run these tests: bun test (directly in a terminal)                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+`)
+}
 
 // Check if lazygit is installed
 let lazygitPath: string | null = null
@@ -25,6 +49,7 @@ try {
 }
 
 const isLazygitInstalled = lazygitPath !== null
+const canRunTests = canRunPtyTests && isLazygitInstalled
 
 // Create a temporary git repo for testing
 let tempDir: string | null = null
@@ -98,7 +123,7 @@ function normalizeSnapshot(screenshot: string): string {
   )
 }
 
-describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
+describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
   let harness: GhosttyHarness
 
   beforeAll(async () => {

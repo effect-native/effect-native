@@ -1,0 +1,2 @@
+[test]
+preload = ["@effect-native/tui-testing-library/happydom"]
