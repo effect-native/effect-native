@@ -1,124 +1,151 @@
 # Design: TUI DOM Testing
 
-## Architecture Overview
+## 1. Architecture Overview
 
-The testing ecosystem is divided into two distinct layers, each serving a specific verification purpose. This separation of concerns allows for robust testing of both the visual output and the logical application state.
+The testing ecosystem consists of two distinct layers:
+1.  **Visual Verification (`@effect-native/tui-testing-library`)**: A "Black Box" testing tool that spawns TUI processes in a real Pseudo-Terminal (PTY), captures their output, and verifies the visual result (text, colors, layout).
+2.  **Logic Verification (Integration Pattern)**: A "White Box" pattern using existing tools (`@testing-library/react`, `happy-dom`) to test component logic and DOM state in-memory, without spawning processes.
 
-### Layer 1: TUI Testing Library (Visual Verification)
-This layer operates as a "Black Box" tester. It spawns the application process in a real Pseudo-Terminal (PTY) and verifies the actual bytes rendered to the screen. It is framework-agnostic and verifies what the user sees.
+This document focuses on the design of the **Visual Verification** layer, while defining the pattern for how it coexists with Logic Verification.
 
-**Core Components:**
-*   **PTY Manager:** Handles process spawning, resizing, and signal sending via Bun's native PTY capabilities.
-*   **ANSI Parser:** A state machine that consumes the raw byte stream from standard output and interprets ANSI escape sequences (cursor movement, colors, clear screen).
-*   **Virtual Screen Buffer:** An in-memory 2D grid representing the current state of the terminal. It maintains the character and style attributes for every cell.
-*   **Interaction Simulator:** Sends raw keystrokes and control sequences to the process's standard input.
+### System Diagram
 
-### Layer 2: OpenTUI DOM Testing Library (Logical Verification)
-This layer operates as a "White Box" tester. It runs within the test process using a virtual DOM (`happy-dom`). It verifies the component tree, state changes, and event handling logic without the overhead of a full PTY or rendering engine.
+```mermaid
+graph TD
+    subgraph "Visual Verification (Black Box)"
+        Test[Test Runner] -->|Effect| TuiLib[@effect-native/tui-testing-library]
+        TuiLib -->|Spawn PTY| AppProcess[Target App Process]
+        AppProcess -->|Stdout (ANSI)| AnsiParser[ANSI Parser]
+        AnsiParser -->|Update| VirtualScreen[Virtual Screen Buffer]
+        TuiLib -->|Query| VirtualScreen
+        TuiLib -->|Stdin (Input)| AppProcess
+    end
 
-**Core Components:**
-*   **Virtual Environment:** Initializes `happy-dom` with a simulated window and document.
-*   **Render Orchestrator:** Mounts React components into the virtual document and initializes the `opentui-dom` bridge components (NodeMap, EventRelay) in-memory.
-*   **Query Engine:** Exposes standard DOM queries (by text, role, testId) bound to the virtual container.
-*   **Event Simulator:** Dispatches synthetic DOM events that precisely mimic how the `opentui-dom` EventRelay translates terminal input into DOM actions.
+    subgraph "Logic Verification (White Box)"
+        UnitTest[Unit Test] -->|Render| ReactLib[@testing-library/react]
+        ReactLib -->|Mount| HappyDOM[Happy-DOM]
+        HappyDOM -->|Events| Component[React Component]
+    end
+```
 
----
+## 2. Data Models
 
-## Data Models
+### Screen Cell
+Represents a single character cell in the terminal grid.
+*   **Character**: The string content (grapheme).
+*   **Foreground Color**: ANSI color code or RGB value.
+*   **Background Color**: ANSI color code or RGB value.
+*   **Attributes**: Boolean flags for Bold, Dim, Italic, Underline, Strikethrough, Inverse.
 
-### Screen Cell (Visual Layer)
-Represents a single unit on the terminal grid.
-*   **Character:** The grapheme displayed in the cell.
-*   **Foreground Color:** ANSI color code or RGB value.
-*   **Background Color:** ANSI color code or RGB value.
-*   **Attributes:** Boolean flags for styles (Bold, Dim, Italic, Underline, Strikethrough, Inverse, Hidden).
+### Virtual Screen Buffer
+Represents the state of the terminal display.
+*   **Grid**: A 2D matrix of Screen Cells (Rows x Columns).
+*   **Cursor**: Current X and Y coordinates.
+*   **Dimensions**: Width and Height of the viewport.
+*   **History**: (Optional) Scrollback buffer.
 
-### Virtual Screen (Visual Layer)
-Represents the state of the terminal.
-*   **Grid:** A two-dimensional array of Screen Cells (Rows x Columns).
-*   **Cursor:** Current row and column position.
-*   **Dimensions:** Width and height of the viewport.
+### Test Session
+Represents a running test instance.
+*   **Process ID**: The PID of the spawned process.
+*   **IO Channels**: Handles for writing to Stdin and reading from Stdout.
+*   **Screen State**: The current Virtual Screen Buffer.
 
-### Render Result (Logical Layer)
-The object returned after mounting a component.
-*   **Container:** The DOM element containing the mounted component.
-*   **Unmount:** Function to cleanup resources.
-*   **Debug:** Utility to print the current DOM structure.
-*   **Queries:** Bound functions to find elements within the container.
+## 3. API Signatures
 
----
+The library exposes an Effect-based API.
 
-## API Signatures
+### `TuiTest` Service
+The main entry point for the library.
 
-### TUI Testing Library (Visual)
+*   **`spawn`**: Starts a new TUI process.
+    *   **Input**: Command string, Arguments array, Options (Environment variables, Terminal dimensions).
+    *   **Output**: An Effect that yields a `TestSession`.
 
-| Functionality | Description | Inputs | Outputs |
-| :--- | :--- | :--- | :--- |
-| **Spawn** | Starts a process in a PTY. | Command string, Arguments array, Options (env, dimensions) | Test Instance (includes screen, user, process control) |
-| **Screen Capture** | Returns the current state of the terminal. | None | Snapshot object (text content, style grid) |
-| **Wait For** | Awaits a specific condition in the output. | Predicate function or Text string, Timeout | Promise resolving when condition is met |
-| **User Input** | Sends input to the process. | Text string or Key combination | Promise resolving after write |
+### `TestSession` Interface
+Operations available on a running app.
 
-### OpenTUI DOM Testing Library (Logical)
+*   **`sendText`**: Types text into the terminal.
+    *   **Input**: String to type.
+    *   **Output**: Effect<void>.
+*   **`sendKey`**: Sends a specific key code or control sequence (e.g., Enter, UpArrow, Ctrl+C).
+    *   **Input**: Key identifier.
+    *   **Output**: Effect<void>.
+*   **`waitFor`**: Suspends execution until a visual condition is met.
+    *   **Input**: Predicate function (ScreenBuffer -> Boolean) or Search String.
+    *   **Output**: Effect<void> (fails on timeout).
+*   **`capture`**: Returns the current state of the screen.
+    *   **Input**: None.
+    *   **Output**: Effect<ScreenBuffer>.
+*   **`terminate`**: Kills the process.
+    *   **Input**: Signal (optional).
+    *   **Output**: Effect<void>.
 
-| Functionality | Description | Inputs | Outputs |
-| :--- | :--- | :--- | :--- |
-| **Render** | Mounts a component for testing. | React Element, Render Options | Render Result (queries, unmount) |
-| **Fire Event** | Simulates user interaction. | Target Element, Event Type (e.g., keyDown) | Boolean (event handled status) |
-| **Wait For** | Awaits async DOM updates. | Callback function | Promise resolving when callback succeeds |
-| **Cleanup** | Cleans up the virtual environment. | None | Void |
+### `ScreenBuffer` Interface
+Methods to inspect the visual state.
 
----
+*   **`getText`**: Returns the plain text content of the screen (stripping ANSI).
+    *   **Input**: Optional region (start row, end row).
+    *   **Output**: String.
+*   **`getCell`**: Returns style information for a specific coordinate.
+    *   **Input**: Row, Column.
+    *   **Output**: ScreenCell.
+*   **`includes`**: Checks if text exists on screen.
+    *   **Input**: String or RegExp.
+    *   **Output**: Boolean.
 
-## Algorithms
+## 4. Module Architecture
 
-### ANSI Parsing & Screen Reconstruction
-The parser functions as a stream processor. It reads the raw output buffer byte-by-byte.
-1.  **Text Processing:** Printable characters are written to the current cursor position in the Virtual Screen Buffer, overwriting existing content. The cursor advances.
-2.  **Control Sequence Processing:** When an Escape character is detected, the parser enters a state to accumulate the sequence.
-    *   **Cursor Moves:** Updates the internal cursor coordinates (Up, Down, Left, Right, Set Position).
-    *   **Erase:** Clears cells in the buffer (Line, Screen) by resetting them to empty/default style.
-    *   **SGR (Select Graphic Rendition):** Updates the "current style" state (Color, Bold, etc.). Subsequent text writes use this style.
-3.  **Line Wrapping:** If text exceeds the column width, the cursor moves to the start of the next line (scrolling the buffer if necessary).
+### `src/`
+*   **`index.ts`**: Public exports.
+*   **`TestSession.ts`**: Definition of the TestSession interface and implementation.
+*   **`TuiTest.ts`**: Service definition and Layer construction.
 
-### Event Simulation (The "FireEvent" Logic)
-The logical library must simulate interactions exactly as the `opentui-dom` EventRelay handles them.
-1.  **Key Press:** Instead of just firing a generic event, the simulator constructs a specific sequence.
-    *   Example: "Enter" on a Button.
-    *   Step 1: Dispatch `keydown` (Enter).
-    *   Step 2: Check if `preventDefault` was called.
-    *   Step 3: If not prevented, dispatch `click`.
-2.  **Focus Navigation:** Simulating "Tab".
-    *   Step 1: Query all focusable elements in the DOM.
-    *   Step 2: Find the currently focused element index.
-    *   Step 3: Calculate the next index (wrapping around).
-    *   Step 4: Call `.focus()` on the next element.
+### `src/internal/`
+*   **`bun-pty.ts`**: Wrapper around Bun's native `Bun.spawn` with `terminal` options. Handles low-level stream management.
+*   **`ansi-parser.ts`**: State machine that consumes raw byte streams and updates the Screen Buffer. Handles CSI (Control Sequence Introducer) and SGR (Select Graphic Rendition) codes.
+*   **`screen-buffer.ts`**: Implementation of the grid data structure and query logic.
 
-### Async Synchronization
-`happy-dom` uses an asynchronous batching mechanism for MutationObservers. The testing library's `waitFor` and `act` utilities must account for this.
-*   **Mechanism:** When a test action triggers a state change, the resulting DOM updates are not immediate.
-*   **Strategy:** The utilities will flush the microtask queue and use `setImmediate` or short timeouts to allow the MutationObserver batches to process before running assertions.
+## 5. Algorithms
 
----
+### ANSI Parsing Strategy
+The parser acts as a streaming state machine.
+1.  **Ingest**: Read chunks of data from the PTY stdout stream.
+2.  **Scan**: Iterate through bytes looking for Escape characters (`0x1B`).
+3.  **Buffer**: If an incomplete escape sequence is found at the end of a chunk, buffer it until the next chunk arrives.
+4.  **Decode**:
+    *   **Text**: Write printable characters to the current Cursor X,Y in the Grid. Increment Cursor X. Wrap if necessary.
+    *   **CSI Codes**: Parse sequences like `ESC [ <n> ; <m> H` (Move Cursor) or `ESC [ <n> m` (Set Style). Update Cursor position or current Style state accordingly.
+    *   **Control Chars**: Handle `\n` (Line Feed), `\r` (Carriage Return), `\b` (Backspace).
+5.  **Update**: Mutate the Virtual Screen Buffer in place.
 
-## Error Handling Strategy
+### Wait Strategy
+To handle the asynchronous nature of TUI rendering:
+1.  The `waitFor` effect enters a polling loop.
+2.  It checks the Predicate against the current Screen Buffer.
+3.  If false, it yields to the scheduler (Effect.sleep) for a short interval.
+4.  It repeats until the Predicate is true or a global timeout is reached.
+5.  On timeout, it produces a detailed Failure containing the last frame of the Screen Buffer for debugging.
 
-### Visual Layer
-*   **Process Exit:** If the spawned process exits unexpectedly during a test, the test should fail immediately with the exit code and stderr output.
-*   **Timeout:** If `waitFor` exceeds the timeout duration without the condition being met, throw a descriptive error including the last captured frame of the terminal output for debugging.
+## 6. Error Handling
 
-### Logical Layer
-*   **Element Not Found:** Standard `@testing-library` error messages should be preserved, printing the DOM tree to help locate the issue.
-*   **Multiple Elements:** If a query finds multiple matches when one was expected, list the matching elements.
+*   **Spawn Errors**: If the command cannot be found or fails to start, the `spawn` effect fails with a typed `SpawnError`.
+*   **Timeout Errors**: If `waitFor` exceeds its duration, it fails with a `TimeoutError` containing the visual diff.
+*   **Parse Errors**: Malformed ANSI sequences are generally ignored or logged (graceful degradation), mimicking real terminal behavior.
 
----
+## 7. Integration Pattern (DOM/React)
 
-## Test Strategy
+Instead of a monolithic wrapper, we define a usage pattern for testing `opentui-dom` apps:
 
-### Unit Testing the Libraries
-*   **Parser Tests:** Feed raw ANSI strings into the parser and verify the resulting Screen Buffer grid matches the expected state (colors, positions).
-*   **Event Tests:** Verify that `fireEvent` helpers dispatch the correct sequence of DOM events with the correct properties (bubbles, cancelable).
+**Pattern: The Dual-Test Approach**
 
-### Integration Testing (The "Miniapp")
-*   Use the **Logical Library** to test the `miniapp` components individually (e.g., verifying the Form component updates state correctly).
-*   Use the **Visual Library** to test the `miniapp` end-to-end. Spawn the app, navigate via keyboard, and verify the terminal output looks correct (e.g., "Submit" button turns green when focused).
+1.  **Unit/Logic Tests (White Box)**
+    *   **Tooling**: `@testing-library/react`, `happy-dom`.
+    *   **Scope**: Component logic, state changes, event handling.
+    *   **Method**: Render component to in-memory DOM. Fire synthetic events. Assert on DOM structure (ARIA roles, text content).
+    *   **Benefit**: Fast, deterministic, no process overhead.
+
+2.  **Visual/E2E Tests (Black Box)**
+    *   **Tooling**: `@effect-native/tui-testing-library`.
+    *   **Scope**: Final rendering, layout, ANSI colors, CLI arguments.
+    *   **Method**: Build the app. Spawn it via `TuiTest`. Send keystrokes. Assert on screen content.
+    *   **Benefit**: Verifies the actual user experience, catches rendering glitches.
