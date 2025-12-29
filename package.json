@@ -65,7 +65,7 @@
     "dependency-cruiser": "^16.10.4",
     "eslint": "^9.39.2",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-codegen": "^0.30.0",
+    "eslint-plugin-codegen": "^0.34.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-sort-destructure-keys": "^2.0.0",
@@ -85,7 +85,7 @@
     "overrides": {
       "jws": "^4.0.1",
       "glob": "^11.0.3",
-      "eslint-plugin-markdown": "npm:@eslint/markdown@^7.5.1",
+      "eslint-plugin-markdown": "^5.1.0",
       "@types/glob": "npm:@types/web@*",
       "@types/minimatch": "npm:@types/web@*",
       "rimraf": "^6.0.1",
