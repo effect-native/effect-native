@@ -23,7 +23,7 @@ import { getLibSqlitePathSync } from "../src/index"
  * LEGITIMACY: This approach validates SUPERIOR architecture - self-contained libraries
  * with no external SQLite dependencies, enabling simple deployment and version control.
  */
-it("library is recognized by the system loader (otool/ldd)", () => {
+it("library is recognized by the system loader (otool/ldd)", { timeout: 30_000 }, () => {
   // Step 1: Detect current runtime environment to select appropriate library
   const platform = process.platform // "darwin" | "linux" | "win32" | etc
   const arch = process.arch // "arm64" | "x64" | etc

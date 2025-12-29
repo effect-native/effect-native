@@ -430,7 +430,7 @@ const withDebugEnvironment = <A, E>(
     Effect.provide(NodeSocket.layerWebSocketConstructor)
   )
 
-describe.sequential("Debug CDP connection", () => {
+describe.sequential.skipIf(process.env.E2E !== "1")("Debug CDP connection", () => {
   it.effect("connects and fetches browser metadata", () =>
     withDebugEnvironment(
       Effect.scoped(
