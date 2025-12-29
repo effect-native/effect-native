@@ -1,30 +1,28 @@
 # Instructions: TUI DOM Testing Library
 
 ## Context
-We are extracting the testing infrastructure from the `tui-dom-poc0` proof-of-concept into a standalone package: `@effect-native/opentui-dom-testing-library`.
+We are creating a testing infrastructure for TUI applications built with `@effect-native/opentui-dom`. Just as `@testing-library/dom` provides the foundation for testing web applications regardless of framework, we need a core library that allows testing TUI applications whether they are built with React, SolidJS, or vanilla HTML/JS.
 
-Currently, testing TUI applications often involves manually inspecting terminal output or writing fragile integration tests. We have proven in the POC that we can use `happy-dom` to simulate the DOM and `opentui` to render it, allowing us to apply the standard "Testing Library" philosophy to TUI development.
-
-This package will allow developers to write tests that resemble how users interact with the TUI (keyboard navigation, reading text) rather than testing implementation details.
+Currently, our POC mixes React-specific rendering logic with generic DOM queries. We need to extract the framework-agnostic core into `@effect-native/opentui-dom-testing-library`.
 
 ## User Story
-As a TUI application developer, I want to write tests using the familiar `@testing-library` API (`render`, `screen`, `fireEvent`, `waitFor`), so that I can verify my application's behavior and accessibility without learning a proprietary TUI testing framework.
+As a TUI application developer (using any framework), I want to write tests that interact with my app the way a user does—by finding text/content and simulating keyboard input—so that I can have confidence in my application's behavior without relying on implementation details.
 
 ## High-Level Goals
-1.  **Package Extraction**: Extract the testing logic from `tui-dom-poc0/src/testing/` into `@effect-native/opentui-dom-testing-library`.
-2.  **Core API**: Implement the standard Testing Library API surface:
-    *   `render(element)`: Mounts a React component into the TUI/DOM bridge.
-    *   `screen`: Global convenience object for queries.
-    *   `fireEvent`: Simulates user interaction (translating "click" to Enter key, "type" to keystrokes, etc.).
-    *   `waitFor` / `act`: Handles async state updates and rendering cycles.
-3.  **Queries**: Implement standard queries targeting the TUI context:
-    *   `getByText` / `findByText`
-    *   `getByRole` (mapping ARIA roles to TUI elements)
-    *   `getByTestId`
-4.  **Visual Verification**: Include the PTY-based screenshot utility (`pty-screenshot.ts`) to allow "visual" assertions against real terminal output (e.g., verifying layout and ANSI styling).
-5.  **Environment Agnostic**: Ensure the library works primarily with `happy-dom` (fast, headless) but is architected to support `puppeteer` (true E2E) via the `DOMAdapter` pattern if needed.
+1.  **Framework-Agnostic Core**: Create `@effect-native/opentui-dom-testing-library` as the equivalent of `@testing-library/dom`.
+    *   **Queries**: Implement standard queries (`getByText`, `getByRole`, `getByTestId`) that work against the DOM/Renderable tree.
+    *   **Events**: Implement `fireEvent` to simulate TUI-specific user interactions (mapping high-level actions like "click" to TUI keyboard events like "Enter").
+    *   **Async Utilities**: Provide `waitFor`, `findBy*`, and `waitForElementToBeRemoved` to handle async TUI rendering cycles.
+    *   **Visual Verification**: Include utilities for PTY-based screenshot assertions (verifying actual terminal output, colors, and layout).
+
+2.  **Architecture Separation**: Ensure the core library does *not* depend on React or any specific UI framework.
+    *   It should operate on the `document` or `Renderable` tree provided by the runtime.
+    *   It should support different DOM adapters (Happy-DOM, Puppeteer).
+
+3.  **Framework Wrappers (Planning)**:
+    *   Identify the need for `@effect-native/opentui-dom-react-testing-library` (equivalent to `@testing-library/react`) to handle component mounting/unmounting.
+    *   Ensure the core library exposes the necessary hooks for these wrappers to be built.
 
 ## Out of Scope
-*   Testing non-React TUI applications (this library is specifically for the `opentui-dom` React bridge).
-*   Browser-based visual regression testing (we focus on Terminal visual regression).
-*   Re-implementing `happy-dom` or `opentui` internals (we wrap them).
+*   Implementing the React-specific `render(<Component />)` function in the *core* package (this belongs in a React-specific package).
+*   Testing internal state of frameworks (we test the DOM/TUI output, not the component state).
