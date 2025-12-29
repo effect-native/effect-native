@@ -5,7 +5,7 @@ import { Screen, waitFor, WaitForTimeoutError } from "../src/assertions.js"
 let harness: GhosttyHarness
 
 beforeAll(async () => {
-  harness = await GhosttyHarness.create()
+  harness = await GhosttyHarness.createAsync()
 })
 
 afterEach(() => {

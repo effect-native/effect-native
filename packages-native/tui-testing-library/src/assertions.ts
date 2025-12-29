@@ -8,7 +8,7 @@
  * ```typescript
  * import { GhosttyHarness, Screen, waitFor } from "@effect-native/tui-testing-library"
  *
- * const harness = await GhosttyHarness.create()
+ * const harness = await GhosttyHarness.createAsync()
  * const term = harness.createTerminal(80, 24)
  * const screen = Screen.fromTerminal(term)
  *

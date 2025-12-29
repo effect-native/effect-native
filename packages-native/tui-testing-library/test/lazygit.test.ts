@@ -110,7 +110,7 @@ describe.skipIf(!isLazygitInstalled)("lazygit real TUI stress tests", () => {
   let harness: GhosttyHarness
 
   beforeAll(async () => {
-    harness = await GhosttyHarness.create()
+    harness = await GhosttyHarness.createAsync()
     tempDir = setupTempGitRepo()
     lazygitConfigFile = setupLazygitConfig()
     console.log(`lazygit found at: ${lazygitPath}`)

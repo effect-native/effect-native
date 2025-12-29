@@ -12,7 +12,7 @@
  * let harness: GhosttyHarness
  *
  * beforeAll(async () => {
- *   harness = await GhosttyHarness.create()
+ *   harness = await GhosttyHarness.createAsync()
  * })
  *
  * afterEach(() => {
@@ -34,8 +34,13 @@ import { Data, Effect } from "effect"
 import type { Ghostty, Terminal } from "ghostty-web"
 
 
-class GhosttyError extends Data.TaggedError("GhosttyError")<{
-  message : string
+/**
+ * Error type for Ghostty terminal operations.
+ *
+ * @since 0.1.0
+ */
+export class GhosttyError extends Data.TaggedError("GhosttyError")<{
+  message: string
   cause?: unknown
   data?: string | Uint8Array
 }> {}
@@ -110,10 +115,23 @@ export class GhosttyHarness {
    *
    * @since 0.1.0
    */
-  static async create(): Promise<GhosttyHarness> {
+  static async createAsync(): Promise<GhosttyHarness> {
     const { Ghostty } = await import("ghostty-web")
     const ghostty = await Ghostty.load()
     return new GhosttyHarness(ghostty)
+  }
+
+  /**
+   * Creates a new GhosttyHarness by loading the Ghostty WASM module.
+   * Returns an Effect for use in Effect-based test suites.
+   *
+   * @since 0.1.0
+   */
+  static create(): Effect.Effect<GhosttyHarness, GhosttyError> {
+    return Effect.tryPromise({
+      try: () => GhosttyHarness.createAsync(),
+      catch: (cause) => new GhosttyError({ message: "Failed to load Ghostty WASM module", cause })
+    })
   }
 
   /**

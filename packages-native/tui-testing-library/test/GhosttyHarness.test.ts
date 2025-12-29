@@ -4,7 +4,7 @@ import { GhosttyHarness } from "../src/GhosttyHarness.js"
 let harness: GhosttyHarness
 
 beforeAll(async () => {
-  harness = await GhosttyHarness.create()
+  harness = await GhosttyHarness.createAsync()
 })
 
 afterEach(() => {
