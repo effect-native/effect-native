@@ -110,6 +110,7 @@ export class GhosttyHarness {
 
   /**
    * Creates a new virtual terminal instance.
+   * The terminal buffer is cleared to prevent garbage from previous terminals.
    *
    * @param cols - Number of columns (default: 80)
    * @param rows - Number of rows (default: 24)
@@ -126,6 +127,11 @@ export class GhosttyHarness {
 
     const term = new Terminal({ cols, rows, ghostty: this.ghostty })
     term.open(container)
+
+    // Clear the terminal buffer to prevent garbage from shared WASM memory
+    // ESC[2J clears screen, ESC[H moves cursor home, ESC[3J clears scrollback
+    term.write("\x1b[3J\x1b[2J\x1b[H")
+
     this.terminals.push(term)
 
     return term
@@ -149,6 +155,7 @@ export class GhosttyHarness {
   /**
    * Captures the terminal content as a 2D text grid.
    * Trailing empty lines are trimmed.
+   * Garbage characters from uninitialized WASM memory are filtered out.
    *
    * @param term - The terminal instance
    * @returns The terminal content as a multi-line string
@@ -160,9 +167,69 @@ export class GhosttyHarness {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = (term as any).buffer.active
 
+    // Get cursor position to know the boundary of actual content
+    const cursorY = buffer.cursorY as number
+    const cursorX = buffer.cursorX as number
+
     for (let y = 0; y < term.rows; y++) {
       const line = buffer.getLine(y)
-      lines.push(line?.translateToString(true) ?? "")
+      if (!line) {
+        lines.push("")
+        continue
+      }
+
+      // Determine max column to read for this line
+      // Lines before cursor row: read full width (they were fully written)
+      // Cursor row: read up to cursor position
+      // Lines after cursor: skip (not written to yet)
+      let maxCol = line.length
+      if (y > cursorY) {
+        // Lines after cursor haven't been touched, skip them
+        lines.push("")
+        continue
+      } else if (y === cursorY) {
+        // Cursor line: content is up to cursor position
+        maxCol = cursorX
+      }
+
+      // Build string by reading actual cell content
+      let text = ""
+      let lastNonSpaceIdx = -1
+      for (let x = 0; x < maxCol; x++) {
+        const cell = line.getCell(x)
+        if (!cell) break
+
+        const code = cell.getCode()
+        // Stop at garbage: uninitialized memory shows up as high codepoints
+        // Valid terminal content is typically ASCII (0-127) or box drawing (0x2500-0x257F)
+        if (code > 0x3000 && code < 0xF900) {
+          // CJK range - likely garbage
+          break
+        }
+        if (code >= 0xF900 && code <= 0xFFFF) {
+          // CJK compatibility, Arabic presentation forms, etc
+          break
+        }
+        if (code >= 0x10000) {
+          // Supplementary planes
+          break
+        }
+
+        const chars = cell.getChars()
+        text += chars
+        if (chars.trim()) {
+          lastNonSpaceIdx = text.length
+        }
+      }
+
+      // Trim trailing spaces
+      if (lastNonSpaceIdx >= 0) {
+        text = text.substring(0, lastNonSpaceIdx)
+      } else {
+        text = text.trimEnd()
+      }
+
+      lines.push(text)
     }
 
     // Trim trailing empty lines

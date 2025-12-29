@@ -2,6 +2,15 @@ diff --git a/dist/ghostty-web.js b/dist/ghostty-web.js
 index 7c9d64a617bbeb29d757a1acd54686e582868313..2d61098cdb77fa66cbb162897c5590f35cfcf791 100644
 --- a/dist/ghostty-web.js
 +++ b/dist/ghostty-web.js
+@@ -557,7 +557,7 @@ class p {
+     } else
+       C = this.bufferType === "normal" ? A - Q : A, g = B.getLine(C), I = B.isRowWrapped(C);
+     if (g)
+-      return new W(g, I, B.cols);
++      return new W(g, I, g.length);
+   }
+   getNullCell() {
+     return this.nullCell;
 @@ -1285,7 +1285,7 @@ const e = class H {
          continue;
        }

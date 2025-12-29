@@ -30,7 +30,7 @@ patchedDependencies:
     hash: 54e23ad3c1051b22730e4fec75bde0ca8c22beff7174c8af93e35d1188ea381a
     path: patches/@changesets__assemble-release-plan.patch
   ghostty-web@0.3.0:
-    hash: 28dfb5c0efc93c186875e2309742f713ffe35e14061c01de15a8050d6a32140e
+    hash: 71199a17cb84c3e9e09b9829817970fa68516f3379adb6a634b03bfc24d33afd
     path: patches/ghostty-web@0.3.0.patch
 
 importers:
@@ -410,7 +410,7 @@ importers:
         version: 3.19.13
       ghostty-web:
         specifier: ^0.3.0
-        version: 0.3.0(patch_hash=28dfb5c0efc93c186875e2309742f713ffe35e14061c01de15a8050d6a32140e)
+        version: 0.3.0(patch_hash=71199a17cb84c3e9e09b9829817970fa68516f3379adb6a634b03bfc24d33afd)
     devDependencies:
       '@effect-native/bun-test':
         specifier: workspace:*
@@ -10643,7 +10643,7 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  ghostty-web@0.3.0(patch_hash=28dfb5c0efc93c186875e2309742f713ffe35e14061c01de15a8050d6a32140e): {}
+  ghostty-web@0.3.0(patch_hash=71199a17cb84c3e9e09b9829817970fa68516f3379adb6a634b03bfc24d33afd): {}
 
   gifwrap@0.10.1:
     dependencies:

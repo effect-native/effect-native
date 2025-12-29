@@ -80,4 +80,17 @@ When `ghostty-web` allocates a buffer for terminal cell data and calls `ghostty_
 
 **Blocks:** QA cannot validate snapshot testing until screenshots produce deterministic, human-readable output
 
-**Resolution:** Applied `ghostty-web@0.3.0.patch` to `package.json` patchedDependencies (2025-12-29). The patch adds bounds checking for invalid Unicode codepoints (surrogate pairs 55296-57343 and values >1114111) in 4 locations in ghostty-web.js, replacing them with spaces instead of crashing or producing garbage.
+**Resolution:** Fixed in multiple layers (2025-12-29):
+
+1. **ghostty-web@0.3.0.patch** - Added bounds checking for invalid Unicode codepoints (surrogate pairs, values >1114111)
+
+2. **Line length fix in patch** - Changed `new W(g, I, B.cols)` to `new W(g, I, g.length)` so line length reflects actual content, not terminal width
+
+3. **Terminal clear on create** - Added `\x1b[3J\x1b[2J\x1b[H` escape sequence in `createTerminal()` to clear WASM memory before use
+
+4. **Screenshot sanitization** - Modified `screenshot()` to:
+   - Track cursor position to clip content boundaries
+   - Filter high codepoints (CJK, Arabic, supplementary planes) that indicate garbage
+   - Properly trim trailing content
+
+5. **Regression tests** - Added 5 tests in "screenshot sanitization" describe block to catch garbage characters

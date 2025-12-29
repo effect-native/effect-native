@@ -179,6 +179,11 @@ describe("GhosttyHarness", () => {
       )
 
       const screenshot = harness.screenshot(term)
+      expect(screenshot).toMatchInlineSnapshot(`
+        "+---------+
+        | Content |
+        +---------+"
+      `)
       expect(screenshot).toContain("+---------+")
       expect(screenshot).toContain("| Content |")
     })
@@ -193,9 +198,70 @@ describe("GhosttyHarness", () => {
       )
 
       const screenshot = harness.screenshot(term)
+      expect(screenshot).toMatchInlineSnapshot(`
+        "┌───┐
+        │ X │
+        └───┘"
+      `)
       expect(screenshot).toContain("\u250c\u2500\u2500\u2500\u2510")
       expect(screenshot).toContain("\u2502 X \u2502")
       expect(screenshot).toContain("\u2514\u2500\u2500\u2500\u2518")
+    })
+  })
+
+  describe("screenshot sanitization", () => {
+    /**
+     * Garbage characters are codepoints from uninitialized WASM memory that happen
+     * to be valid Unicode (e.g., Chinese 臘, Korean 쥖, Arabic 﫞). The ghostty-web
+     * patch should filter these out, replacing them with spaces.
+     */
+    const GARBAGE_PATTERN = /[\u3000-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF\u{10000}-\u{10FFFF}]/u
+
+    test("simple text has no garbage characters", async () => {
+      const term = harness.createTerminal(40, 5)
+      await harness.write(term, "Hello, World!")
+      const screenshot = harness.screenshot(term)
+      expect(screenshot).not.toMatch(GARBAGE_PATTERN)
+    })
+
+    test("box drawing has no garbage characters", async () => {
+      const term = harness.createTerminal(40, 10)
+      await harness.write(
+        term,
+        "+---------+\r\n" +
+          "| Content |\r\n" +
+          "+---------+"
+      )
+      const screenshot = harness.screenshot(term)
+      expect(screenshot).not.toMatch(GARBAGE_PATTERN)
+    })
+
+    test("Unicode box drawing has no garbage characters", async () => {
+      const term = harness.createTerminal(40, 10)
+      await harness.write(
+        term,
+        "\u250c\u2500\u2500\u2500\u2510\r\n" + // ┌───┐
+          "\u2502 X \u2502\r\n" + // │ X │
+          "\u2514\u2500\u2500\u2500\u2518" // └───┘
+      )
+      const screenshot = harness.screenshot(term)
+      // Box drawing chars (U+2500-U+257F) are allowed, but CJK/Arabic/etc are not
+      const CJK_GARBAGE = /[\u3000-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]/u
+      expect(screenshot).not.toMatch(CJK_GARBAGE)
+    })
+
+    test("colored text has no garbage characters", async () => {
+      const term = harness.createTerminal(40, 5)
+      await harness.write(term, "\x1b[31mRED\x1b[32mGREEN\x1b[34mBLUE\x1b[0m")
+      const screenshot = harness.screenshot(term)
+      expect(screenshot).not.toMatch(GARBAGE_PATTERN)
+    })
+
+    test("large terminal has no garbage characters", async () => {
+      const term = harness.createTerminal(120, 40)
+      await harness.write(term, "Small content in large terminal")
+      const screenshot = harness.screenshot(term)
+      expect(screenshot).not.toMatch(GARBAGE_PATTERN)
     })
   })
 
