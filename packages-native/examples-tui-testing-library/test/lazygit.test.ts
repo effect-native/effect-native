@@ -6,8 +6,8 @@
  * PTY support and feed its output through the Ghostty WASM terminal emulator.
  *
  * Tests are skipped if:
+ * - Not running in Bun runtime
  * - lazygit is not installed
- * - No TTY is available (required for PTY spawn)
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
 import { GhosttyHarness, sendKey, spawnTui, waitForStable } from "@effect-native/tui-testing-library"
@@ -15,9 +15,8 @@ import { execSync } from "child_process"
 import * as Effect from "effect/Effect"
 
 /**
- * PTY spawn tests require:
- * 1. Bun runtime (Bun.spawn with terminal option)
- * 2. A real TTY (process.stdout.isTTY)
+ * PTY spawn tests require Bun runtime with a TTY.
+ * Bun.spawn with terminal option returns null when there's no controlling TTY.
  */
 const isBun = typeof process !== "undefined" && "isBun" in process && process.isBun === true
 const hasTTY = typeof process !== "undefined" && process.stdout?.isTTY === true
@@ -26,13 +25,10 @@ const canRunPtyTests = isBun && hasTTY
 if (!canRunPtyTests) {
   console.warn(`
 ╔════════════════════════════════════════════════════════════════════════════╗
-║  WARNING: PTY tests skipped - requires Bun runtime with TTY                ║
+║  WARNING: PTY tests skipped                                                ║
 ║                                                                            ║
-║  Current environment:                                                      ║
-║    - Bun runtime: ${isBun ? "YES" : "NO"}                                                       ║
-║    - TTY available: ${hasTTY ? "YES" : "NO"}                                                     ║
-║                                                                            ║
-║  To run these tests: bun test (directly in a terminal)                     ║
+║  Bun.spawn with terminal option requires a TTY. Run directly in terminal: ║
+║  cd packages-native/examples-tui-testing-library && bun test               ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 `)
 }
