@@ -1,0 +1,379 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`lazygit real TUI stress tests renders initial lazygit UI without garbage 1`] = `
+"
+╭─[1]─Status─────────────────────╮╭─[0]─Unstaged changes───────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main           ││diff --git a/file1.txt b/file1.txt                              ▐
+╰────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                   ▐
+╭─[2]─Files - Worktrees - Submod─╮│--- a/file1.txt                                                 ▐
+│▼ /                             ││+++ b/file1.txt                                                 ▐
+│   M file1.txt                  ││@@ -1 +1,2 @@                                                   ▐
+│  ?? file2.txt                  ││ hello                                                          ▐
+│                                ││+modified                                                       ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 3─╯│                                                                ▐
+╭─[3]─Local branches - Remotes -─╮│                                                                ▐
+│  * main                        ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 1─╯│                                                                ▐
+╭─[4]─Commits - Reflog───────────╮│                                                                ▐
+│XXXXXXXX TU ◯ Initial commit    ││                                                                ▐
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+╰─────────────────────────1 of 1─╯╰────────────────────────────────────────────────────────────────╯
+╭─[5]─Stash──────────────────────╮╭─Command log────────────────────────────────────────────────────╮
+│                                ││                                                                │
+╰─────────────────────────0 of 0─╯╰────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d | Reset: D | …         Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests handles navigation and panel switching: the initial state 1`] = `
+"
+╭─[1]─Status───────────────────────────╮╭─[0]─Unstaged changes─────────────────────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main                 ││diff --git a/file1.txt b/file1.txt                                            ▐
+╰──────────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                                 ▐
+╭─[2]─Files - Worktrees - Submodules───╮│--- a/file1.txt                                                               ▐
+│▼ /                                   ││+++ b/file1.txt                                                               ▐
+│   M file1.txt                        ││@@ -1 +1,2 @@                                                                 ▐
+│  ?? file2.txt                        ││ hello                                                                        ▐
+│                                      ││+modified                                                                     ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+╰───────────────────────────────1 of 3─╯│                                                                              ▐
+╭─[3]─Local branches - Remotes - Tags──╮│                                                                              ▐
+│  * main                              ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[4]─Commits - Reflog─────────────────╮│                                                                              │
+│XXXXXXXX TU ◯ Initial commit          ││                                                                              │
+│                                      ││                                                                              │
+│                                      │╰──────────────────────────────────────────────────────────────────────────────╯
+│                                      │╭─Command log──────────────────────────────────────────────────────────────────╮
+│                                      ││You can hide/focus this panel by pressing '@'                                 │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[5]─Stash────────────────────────────╮│                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────0 of 0─╯╰──────────────────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d | Reset: D | Keybindings: ?                Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests handles navigation and panel switching: after navigation 1`] = `
+"
+╭─[1]─Status───────────────────────────╮╭─[0]─Unstaged changes─────────────────────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main                 ││diff --git a/file1.txt b/file1.txt                                            ▐
+╰──────────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                                 ▐
+╭─[2]─Files - Worktrees - Submodules───╮│--- a/file1.txt                                                               ▐
+│▼ /                                   ││+++ b/file1.txt                                                               ▐
+│   M file1.txt                        ││@@ -1 +1,2 @@                                                                 ▐
+│  ?? file2.txt                        ││ hello                                                                        ▐
+│                                      ││+modified                                                                     ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+╰───────────────────────────────2 of 3─╯│                                                                              ▐
+╭─[3]─Local branches - Remotes - Tags──╮│                                                                              ▐
+│  * main                              ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[4]─Commits - Reflog─────────────────╮│                                                                              │
+│XXXXXXXX TU ◯ Initial commit          ││                                                                              │
+│                                      ││                                                                              │
+│                                      │╰──────────────────────────────────────────────────────────────────────────────╯
+│                                      │╭─Command log──────────────────────────────────────────────────────────────────╮
+│                                      ││You can hide/focus this panel by pressing '@'                                 │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[5]─Stash────────────────────────────╮│                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────0 of 0─╯╰──────────────────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Edit: e | Stash: s | Discard: d | Reset: D | Keybindings: ?      Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests handles navigation and panel switching: after panel switch 1`] = `
+"
+╭─[1]─Status───────────────────────────╮╭─[0]─Log──────────────────────────────────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main                 ││* commit XXXXXXX (HEAD -> main)                                               ▐
+╰──────────────────────────────────────╯│  Author: Test User <test@test.com>                                           ▐
+╭─[2]─Files - Worktrees - Submodules───╮│  Date:   N seconds ago                                                        ▐
+│▼ /                                   ││                                                                              ▐
+│   M file1.txt                        ││      Initial commit                                                          ▐
+│  ?? file2.txt                        ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+╰───────────────────────────────2 of 3─╯│                                                                              ▐
+╭─[3]─Local branches - Remotes - Tags──╮│                                                                              ▐
+│  * main                              ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+╰───────────────────────────────1 of 1─╯│                                                                              ▐
+╭─[4]─Commits - Reflog─────────────────╮│                                                                              │
+│XXXXXXXX TU ◯ Initial commit          ││                                                                              │
+│                                      ││                                                                              │
+│                                      │╰──────────────────────────────────────────────────────────────────────────────╯
+│                                      │╭─Command log──────────────────────────────────────────────────────────────────╮
+│                                      ││You can hide/focus this panel by pressing '@'                                 │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[5]─Stash────────────────────────────╮│                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────0 of 0─╯╰──────────────────────────────────────────────────────────────────────────────╯
+Checkout: <space> | New branch: n | Delete: d | Rebase: r | Reset: g | Upstream: u | …        Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests handles rapid UI updates (scrolling) 1`] = `
+"
+╭─[1]─Status──────────────╮╭─[0]─Unstaged changes──────────────────────────────╮
+│tmp.XXXXXXXXXX → main    ││diff --git a/file1.txt b/file1.txt                 ▐
+╰─────────────────────────╯│index XXXXXXX..XXXXXXX 100644                      ▐
+╭─[2]─Files - Worktrees -─╮│--- a/file1.txt                                    ▐
+│▼ /                      ││+++ b/file1.txt                                    ▐
+│   M file1.txt           ││@@ -1 +1,2 @@                                      ▐
+│  ?? file2.txt           ││ hello                                             ▐
+│                         ││+modified                                          ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+╰──────────────────1 of 3─╯│                                                   ▐
+╭─[3]─Local branches - Re─╮│                                                   ▐
+│  * main                 ││                                                   │
+╰──────────────────1 of 1─╯│                                                   │
+╭─[4]─Commits - Reflog────╮│                                                   │
+│XXXXXXXX TU ◯ Initial com││                                                   │
+╰──────────────────1 of 1─╯╰───────────────────────────────────────────────────╯
+╭─[5]─Stash───────────────╮╭─Command log───────────────────────────────────────╮
+│                         ││                                                   │
+╰──────────────────0 of 0─╯╰───────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d |  Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests captures colors and attributes from lazygit 1`] = `
+"
+╭─[1]─Status─────────────────────╮╭─[0]─Unstaged changes───────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main           ││diff --git a/file1.txt b/file1.txt                              ▐
+╰────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                   ▐
+╭─[2]─Files - Worktrees - Submod─╮│--- a/file1.txt                                                 ▐
+│▼ /                             ││+++ b/file1.txt                                                 ▐
+│   M file1.txt                  ││@@ -1 +1,2 @@                                                   ▐
+│  ?? file2.txt                  ││ hello                                                          ▐
+│                                ││+modified                                                       ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 3─╯│                                                                ▐
+╭─[3]─Local branches - Remotes -─╮│                                                                ▐
+│  * main                        ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 1─╯│                                                                ▐
+╭─[4]─Commits - Reflog───────────╮│                                                                ▐
+│XXXXXXXX TU ◯ Initial commit    ││                                                                ▐
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+╰─────────────────────────1 of 1─╯╰────────────────────────────────────────────────────────────────╯
+╭─[5]─Stash──────────────────────╮╭─Command log────────────────────────────────────────────────────╮
+│                                ││                                                                │
+╰─────────────────────────0 of 0─╯╰────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d | Reset: D | …         Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests handles box drawing characters from lazygit panels 1`] = `
+"
+╭─[1]─Status─────────────────────╮╭─[0]─Unstaged changes───────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main           ││diff --git a/file1.txt b/file1.txt                              ▐
+╰────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                   ▐
+╭─[2]─Files - Worktrees - Submod─╮│--- a/file1.txt                                                 ▐
+│▼ /                             ││+++ b/file1.txt                                                 ▐
+│   M file1.txt                  ││@@ -1 +1,2 @@                                                   ▐
+│  ?? file2.txt                  ││ hello                                                          ▐
+│                                ││+modified                                                       ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 3─╯│                                                                ▐
+╭─[3]─Local branches - Remotes -─╮│                                                                ▐
+│  * main                        ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+│                                ││                                                                ▐
+╰─────────────────────────1 of 1─╯│                                                                ▐
+╭─[4]─Commits - Reflog───────────╮│                                                                ▐
+│XXXXXXXX TU ◯ Initial commit    ││                                                                ▐
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+│                                ││                                                                │
+╰─────────────────────────1 of 1─╯╰────────────────────────────────────────────────────────────────╯
+╭─[5]─Stash──────────────────────╮╭─Command log────────────────────────────────────────────────────╮
+│                                ││                                                                │
+╰─────────────────────────0 of 0─╯╰────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d | Reset: D | …         Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests renders help menu without garbage 1`] = `
+"
+╭─[1]─Status─────────────────────╮╭─[0]─Unstaged changes───────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main           ││diff --git a/file1.txt b/file1.txt                              ▐
+╰────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                   ▐
+╭─[2]─Files - Worktrees - Submod─╮│--- a/file1.txt                                                 ▐
+│▼ /      ╭─Keybindings───────────────────────────────────────────────────────────────────╮        ▐
+│   M file│         --- Local ---                                                         ▐        ▐
+│  ?? file│   <c-o> Copy path to clipboard                                                ▐        ▐
+│         │ <space> Stage                                                                 ▐        ▐
+│         │   <c-b> Filter files by status                                                ▐        ▐
+│         │       y Copy to clipboard...                                                  ▐        ▐
+│         │       c Commit                                                                ▐        ▐
+│         │       w Commit changes without pre-commit hook                                ▐        ▐
+│         │       A Amend last commit                                                     ▐        ▐
+╰─────────│       C Commit changes using git editor                                       ▐        ▐
+╭─[3]─Loca│   <c-f> Find base commit for fixup                                            ▐        ▐
+│  * main │       e Edit                                                                  ▐        ▐
+│         │       o Open file                                                             │        ▐
+│         │       i Ignore or exclude file...                                             │        ▐
+│         │       r Refresh files                                                         │        ▐
+│         │       s Stash                                                                 │        ▐
+│         │       S View stash options...                                                 │        ▐
+│         │       a Stage all                                                             │        ▐
+│         │ <enter> Stage lines / Collapse directory                                      │        ▐
+│         │       d Discard...                                                            │        │
+╰─────────│       g View upstream reset options...                                        │        │
+╭─[4]─Comm│       D Reset...                                                              │        │
+│XXXXXXXX │       \` Toggle file tree view                                                 │        │
+│         │   <c-t> Open external diff tool (git difftool)                                │        │
+│         │       M View merge conflict options...                                        │────────╯
+│         │       f Fetch                                                                 │────────╮
+│         │       - Collapse all files                                                    │        │
+│         │       = Expand all files                                                      │        │
+│         ╰───────────────────────────────────────────────────────────────────────1 of 63─╯        │
+│                                ││                                                                │
+│                                ││                                                                │
+╰─────────────────────────1 of 1─╯│                                                                │
+╭─[5]─Stash──────────────────────╮│                                                                │
+│                                ││                                                                │
+╰─────────────────────────0 of 0─╯╰────────────────────────────────────────────────────────────────╯
+Execute: <enter> | Close/Cancel: <esc>                                    Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests terminal resize preserves content integrity 1`] = `
+"
+╭─[1]─Status──────────────╮╭─[0]─Unstaged changes──────────────────────────────╮
+│tmp.XXXXXXXXXX → main    ││diff --git a/file1.txt b/file1.txt                 ▐
+╰─────────────────────────╯│index XXXXXXX..XXXXXXX 100644                      ▐
+╭─[2]─Files - Worktrees -─╮│--- a/file1.txt                                    ▐
+│▼ /                      ││+++ b/file1.txt                                    ▐
+│   M file1.txt           ││@@ -1 +1,2 @@                                      ▐
+│  ?? file2.txt           ││ hello                                             ▐
+│                         ││+modified                                          ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+│                         ││                                                   ▐
+╰──────────────────1 of 3─╯│                                                   ▐
+╭─[3]─Local branches - Re─╮│                                                   ▐
+│  * main                 ││                                                   │
+╰──────────────────1 of 1─╯│                                                   │
+╭─[4]─Commits - Reflog────╮│                                                   │
+│XXXXXXXX TU ◯ Initial com││                                                   │
+╰──────────────────1 of 1─╯╰───────────────────────────────────────────────────╯
+╭─[5]─Stash───────────────╮╭─Command log───────────────────────────────────────╮
+│                         ││                                                   │
+╰──────────────────0 of 0─╯╰───────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d |  Donate Ask Question 0.57."
+`;
+
+exports[`lazygit real TUI stress tests terminal resize preserves content integrity 2`] = `
+"
+╭─[1]─Status───────────────────────────╮╭─[0]─Unstaged changes─────────────────────────────────────────────────────────╮
+│tmp.XXXXXXXXXX → main                 ││diff --git a/file1.txt b/file1.txt                                            ▐
+╰──────────────────────────────────────╯│index XXXXXXX..XXXXXXX 100644                                                 ▐
+╭─[2]─Files - Worktrees - Submodules───╮│--- a/file1.txt                                                               ▐
+│▼ /                                   ││+++ b/file1.txt                                                               ▐
+│   M file1.txt                        ││@@ -1 +1,2 @@                                                                 ▐
+│  ?? file2.txt                        ││ hello                                                                        ▐
+│                                      ││+modified                                                                     ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+╰───────────────────────────────1 of 3─╯│                                                                              ▐
+╭─[3]─Local branches - Remotes - Tags──╮│                                                                              ▐
+│  * main                              ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              ▐
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[4]─Commits - Reflog─────────────────╮│                                                                              │
+│XXXXXXXX TU ◯ Initial commit          ││                                                                              │
+│                                      ││                                                                              │
+│                                      │╰──────────────────────────────────────────────────────────────────────────────╯
+│                                      │╭─Command log──────────────────────────────────────────────────────────────────╮
+│                                      ││You can hide/focus this panel by pressing '@'                                 │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────1 of 1─╯│                                                                              │
+╭─[5]─Stash────────────────────────────╮│                                                                              │
+│                                      ││                                                                              │
+╰───────────────────────────────0 of 0─╯╰──────────────────────────────────────────────────────────────────────────────╯
+Stage: <space> | Commit: c | Stash: s | Discard: d | Reset: D | Keybindings: ?                Donate Ask Question 0.57."
+`;

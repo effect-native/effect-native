@@ -1,0 +1,55 @@
+{
+  "name": "@effect-native/tui-testing-library",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "PTY-based testing utilities for TUI applications with Ghostty WASM emulator",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages-native/tui-testing-library"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false,
+    "tag": "latest"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./Spawn": "./src/Spawn.ts",
+    "./GhosttyHarness": "./src/GhosttyHarness.ts",
+    "./assertions": "./src/assertions.ts",
+    "./happydom": "./src/happydom.ts",
+    "./internal/*": null
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/tui-testing-library: no codegen'",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v3",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "bun test",
+    "coverage": "bun test --coverage"
+  },
+  "peerDependencies": {
+    "effect": "^3.19.0"
+  },
+  "dependencies": {
+    "@happy-dom/global-registrator": "^20.0.11",
+    "ghostty-web": "^0.3.0"
+  },
+  "devDependencies": {
+    "@effect-native/bun-test": "workspace:*",
+    "@effect/vitest": "latest",
+    "@types/bun": "latest",
+    "effect": "latest"
+  }
+}

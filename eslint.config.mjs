@@ -20,7 +20,15 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ["**/dist", "**/build", "**/docs", "**/*.md"]
+    ignores: [
+      "**/dist",
+      "**/build",
+      "**/docs",
+      "**/*.md",
+      "refs/**",
+      ".cache/**",
+      "node_modules/**"
+    ]
   },
   ...compat.extends(
     "eslint:recommended",
@@ -65,7 +73,8 @@ export default [
       "no-restricted-syntax": [
         "error",
         {
-          selector: "CallExpression[callee.property.name='push'] > SpreadElement.arguments",
+          selector:
+            "CallExpression[callee.property.name='push'] > SpreadElement.arguments",
           message: "Do not use spread arguments in Array.push"
         }
       ],
@@ -145,11 +154,7 @@ export default [
       "@effect/no-import-from-barrel-package": [
         "error",
         {
-          packageNames: [
-            "effect",
-            "@effect/platform",
-            "@effect/sql"
-          ]
+          packageNames: ["effect", "@effect/platform", "@effect/sql"]
         }
       ]
     }

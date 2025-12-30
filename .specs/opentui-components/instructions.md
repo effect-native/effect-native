@@ -1,71 +1,44 @@
-# @effect-native/opentui-react-* — Instructions
+# @effect-native/opentui-components — Instructions
 
 ## Context
 
-The brancher-tui project at `b-rancher/brancher-tui/brancher/` contains a sophisticated terminal UI implementation built on `@opentui/react`. The key component is a Miller columns browser (`demo-column-browser.tsx`) with:
+The brancher-tui project contains a sophisticated terminal UI implementation built on `@opentui/react`. Key patterns include a Miller columns browser, selectable lists with type-to-filter, and modal dialogs. These components are tightly coupled to the file browser use case and need extraction into a reusable package.
 
-1. **GenericColumnBrowser** — A reusable data-agnostic column browser component
-2. **SelectableList** — VT-HIG compliant list with type-to-filter
-3. **Task management** — YAML frontmatter parsing for `.tasks/` folders
-4. **Action scripts** — Custom action loading from `.brancher/actions/`
-5. **Modal dialogs** — Context menus, deep search, feedback forms
+Developers building terminal UIs currently must reimplement navigation, keyboard handling, and mouse support from scratch. There's no standard way to build hierarchical browsers or modal overlays that follow consistent interaction patterns.
 
-These components have been built incrementally and are tightly coupled to the file browser use case. The patterns are generally reusable but need extraction into focused packages.
+**Architecture Clarification:**
+
+This package (`opentui-components`) follows the **Shadcn UI model**: it is a **registry of styled, copy-pasteable source code** that users install into their projects. It is NOT a traditional NPM dependency of pre-built components.
+
+The underlying **headless primitives** (focus management, modal state, keyboard handling) live in a separate dependency: `@effect-native/opentui-base`. This mirrors the relationship between:
+- **Radix UI / Base UI** (headless primitives) → `opentui-base`
+- **Shadcn UI** (styled registry) → `opentui-components`
 
 ## User Story
 
-As a developer building terminal UIs with `@opentui/react`, I want pre-built components for common patterns like column browsers, selectable lists, and modal dialogs, so that I can compose them into custom applications without reimplementing navigation and keyboard handling.
+As a developer building terminal UIs with `@opentui/react`, I want a **component registry** (like Shadcn UI) where I can browse and install styled components for common patterns like column browsers, selectable lists, and modal dialogs, so that I own the source code, can customize it freely, and don't have to reimplement navigation, keyboard handling, and mouse support.
 
 ## High-Level Goals
 
-Extract the brancher-tui patterns into multiple focused packages:
+- **Registry-Based Distribution:** Publish a Shadcn-compatible `registry.json` that allows `npx shadcn add` installation
+- Extract brancher-tui patterns into registry items (source code, not compiled artifacts)
+- Build on `@effect-native/opentui-base` primitives for consistent behavior
+- Provide VT-HIG compliant components that work consistently across terminals
+- Support both keyboard and mouse input (mouse is required, not optional)
+- Enable file browsing with platform-specific file system integration
+- Provide PTY-based testing utilities for TUI applications
+- Make components work out-of-the-box without requiring Effect-TS knowledge
+- Allow advanced users to integrate with their own effect-atom setup
+- Include AGENTS.md and VT-HIG.md in the npm package for downstream agent context
 
-1. **@effect-native/opentui-react-list** — VT-HIG compliant selectable list with type-to-filter
-2. **@effect-native/opentui-react-columns** — Generic Miller columns browser component
-3. **@effect-native/opentui-react-dialogs** — Modal overlay components (menus, search, forms)
-4. **@effect-native/action-scripts** — Custom action script discovery and execution (no OpenTUI dep)
-5. **@effect-native/opentui-react-task-graph** — DAG-based task viewing (goals, blockers, entrypoints)
+## Normative Reference
 
-Each package should:
-- Be independently installable
-- Have clear peer dependencies on `@opentui/react` and `react` (except action-scripts)
-- Follow the `@effect-native/*` package conventions
-- Provide TypeScript types for all public APIs
+All components, specs, and tests are written against the **VT-HIG (Virtual Terminal Human Interface Guidelines)** specification, which defines keyboard contracts, TUI patterns, accessibility guidelines, and portability requirements.
 
 ## Out of Scope
 
-- File system operations (use `@effect/platform` FileSystem)
-- File browser specifics (demo app concern, not library)
-- Bun-specific APIs in core packages (keep portable)
 - Dark/light theme support (OpenTUI concern)
-- Mouse/touch input (keyboard-first TUI)
-- Testing utilities (separate package later)
-
-## Source References
-
-- Column browser: `work/b-rancher/brancher-tui/brancher/demo-column-browser.tsx`
-- Generic browser: `work/b-rancher/brancher-tui/brancher/src/components/GenericColumnBrowser.tsx`
-- Selectable list: `work/b-rancher/brancher-tui/brancher/src/components/SelectableList.tsx`
-- List logic: `work/b-rancher/brancher-tui/brancher/src/selectableListLogic.ts`
-- Context menu: `work/b-rancher/brancher-tui/brancher/src/components/ContextMenu.tsx`
-- Deep search: `work/b-rancher/brancher-tui/brancher/src/components/DeepSearch.tsx`
-- Action scripts: `work/b-rancher/brancher-tui/brancher/src/components/actionScripts.ts`
-- DAG view: `work/b-rancher/brancher-tui/brancher/src/components/DAGColumnView.tsx`
-
-## Dependencies Analysis
-
-```
-@effect-native/opentui-react-list (no internal deps, peer: @opentui/react)
-       |
-       v
-@effect-native/opentui-react-columns (uses opentui-react-list, peer: @opentui/react)
-       |
-       v
-@effect-native/opentui-react-dialogs (uses opentui-react-list logic, peer: @opentui/react)
-       |
-       v
-@effect-native/action-scripts (standalone, no OpenTUI dep, Bun-optional)
-       |
-       v
-@effect-native/opentui-react-task-graph (uses opentui-react-columns, peer: @opentui/react)
-```
+- Rich text editing (focus is navigation and selection)
+- DAG/task graph visualization
+- Custom action script execution
+- **Headless primitive implementation** (belongs in `opentui-base`)

@@ -1,0 +1,564 @@
+/**
+ * Example: Testing lazygit TUI with @effect-native/tui-testing-library
+ *
+ * This demonstrates how to use the tui-testing-library package as an external
+ * consumer would import it. These tests spawn the actual lazygit process with
+ * PTY support and feed its output through the Ghostty WASM terminal emulator.
+ *
+ * Tests are skipped if:
+ * - Not running in Bun runtime
+ * - lazygit is not installed
+ * - lazygit fails to start (e.g., temp directory issues in CI)
+ *
+ * NOTE: These are example/stress tests that demonstrate the library's capabilities.
+ * They are intentionally non-blocking for CI - if lazygit has environmental issues,
+ * the tests skip gracefully rather than failing the build.
+ */
+import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
+import { GhosttyHarness, sendKey, spawnTui, waitForStable } from "@effect-native/tui-testing-library"
+import { execSync } from "child_process"
+import * as Effect from "effect/Effect"
+
+/**
+ * PTY spawn tests require Bun runtime (Bun.spawn with terminal option).
+ */
+const isBun = typeof process !== "undefined" && "isBun" in process && process.isBun === true
+
+if (!isBun) {
+  console.warn(`
+╔════════════════════════════════════════════════════════════════════════════╗
+║  WARNING: PTY tests require Bun runtime                                    ║
+║                                                                            ║
+║  The spawnTui function uses Bun.spawn with the 'terminal' option.          ║
+║  To run these tests: bun test                                              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+`)
+}
+
+// Check if lazygit is installed
+let lazygitPath: string | null = null
+let lazygitVersion: string | null = null
+
+try {
+  lazygitPath = execSync("which lazygit", { encoding: "utf-8" }).trim()
+  lazygitVersion = execSync("lazygit --version", { encoding: "utf-8" }).trim()
+} catch {
+  // lazygit not installed
+}
+
+const isLazygitInstalled = lazygitPath !== null
+const canRunTests = isBun && isLazygitInstalled
+
+/**
+ * Track if lazygit setup succeeded. If not, skip remaining tests gracefully.
+ * This prevents CI failures due to environmental issues (temp dir, permissions, etc.)
+ */
+let lazygitSetupFailed = false
+let lazygitSetupError: string | null = null
+
+// Create a temporary git repo for testing
+let tempDir: string | null = null
+let lazygitConfigFile: string | null = null
+
+function setupTempGitRepo(): string {
+  const dir = execSync("mktemp -d", { encoding: "utf-8" }).trim()
+  execSync("git init", { cwd: dir })
+  execSync("git config user.email 'test@test.com'", { cwd: dir })
+  execSync("git config user.name 'Test User'", { cwd: dir })
+  // Create some files and commits for lazygit to show
+  execSync("echo 'hello' > file1.txt", { cwd: dir })
+  execSync("git add file1.txt", { cwd: dir })
+  execSync("git commit -m 'Initial commit'", { cwd: dir })
+  execSync("echo 'world' > file2.txt", { cwd: dir })
+  execSync("echo 'modified' >> file1.txt", { cwd: dir })
+  return dir
+}
+
+/**
+ * Check if lazygit output indicates a startup failure.
+ * lazygit writes errors to stdout when it fails to start.
+ */
+function isLazygitStartupError(output: string): boolean {
+  return output.includes("An error occurred!") ||
+    output.includes("chdir") ||
+    output.includes("no such file or directory")
+}
+
+function setupLazygitConfig(): string {
+  const configFile = execSync("mktemp", { encoding: "utf-8" }).trim()
+  // Disable random tips for stable snapshots
+  execSync(
+    `cat > "${configFile}" << 'EOF'
+gui:
+  showRandomTip: false
+EOF`,
+    { encoding: "utf-8" }
+  )
+  return configFile
+}
+
+function cleanupTempDir(dir: string): void {
+  try {
+    execSync(`rm -rf "${dir}"`)
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+/**
+ * Normalize screenshot output for stable snapshots.
+ * Replaces dynamic values that change between test runs:
+ * - Temp directory names (tmp.XXXXXXXXXX)
+ * - Git commit hashes (various formats)
+ * - Git index hashes in diff output
+ * - Random tips in command log
+ * - Timing variations
+ */
+function normalizeSnapshot(screenshot: string): string {
+  return (
+    "\n" +
+    screenshot
+      // Replace tmp.XXXXXXXXXX directory names with stable placeholder
+      .replace(/tmp\.[A-Za-z0-9]{10,}/g, "tmp.XXXXXXXXXX")
+      // Replace 8-char commit hash prefixes in commit list (like "│043b5aeb " or "28cf2f60TU")
+      .replace(/│([0-9a-f]{8}) /g, "│XXXXXXXX ")
+      .replace(/^([0-9a-f]{8})TU/gm, "XXXXXXXXTU")
+      // Replace "commit <hash>" format in log view (like "commit 2d75161")
+      .replace(/commit [0-9a-f]{7,}/g, "commit XXXXXXX")
+      // Replace index lines in git diff with spaces (index ce01362..3edf2d5 100644)
+      .replace(/index [0-9a-f]{7}\.\.[0-9a-f]{7}/g, "index XXXXXXX..XXXXXXX")
+      // Replace index lines without spaces (indexce01362..3edf2d5100644)
+      .replace(/index[0-9a-f]{7}\.\.[0-9a-f]{7}/g, "indexXXXXXXX..XXXXXXX")
+      // Replace timing variations ("0 seconds ago", "1 second ago", etc.)
+      .replace(/\d+ seconds? ago/g, "N seconds ago")
+      // Replace random tip lines (they vary between runs)
+      .replace(/Random tip:.*$/gm, "Random tip: [tip content varies]")
+      // Replace Randomtip lines without space (compressed output)
+      .replace(/Randomtip:.*$/gm, "Randomtip: [tip content varies]")
+  )
+}
+
+describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
+  let harness: GhosttyHarness
+
+  beforeAll(async () => {
+    try {
+      harness = await GhosttyHarness.createAsync()
+      tempDir = setupTempGitRepo()
+      lazygitConfigFile = setupLazygitConfig()
+      console.log(`lazygit found at: ${lazygitPath}`)
+      console.log(`lazygit version: ${lazygitVersion}`)
+      console.log(`Test repo at: ${tempDir}`)
+    } catch (err) {
+      lazygitSetupFailed = true
+      lazygitSetupError = err instanceof Error ? err.message : String(err)
+      console.warn(`⚠ lazygit test setup failed: ${lazygitSetupError}`)
+      console.warn("  Remaining tests in this suite will be skipped")
+    }
+  })
+
+  afterAll(() => {
+    if (tempDir) {
+      cleanupTempDir(tempDir)
+    }
+    if (lazygitConfigFile) {
+      cleanupTempDir(lazygitConfigFile)
+    }
+  })
+
+  afterEach(() => {
+    harness.cleanup()
+  })
+
+  it.scoped("renders initial lazygit UI without garbage", () =>
+    Effect.gen(function*() {
+      // Skip if setup failed
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 100,
+        rows: 30,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          // Disable mouse to simplify output
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      // Wait for lazygit to render its UI
+      yield* waitForStable(handle, 100, 2000)
+
+      // Get raw output and feed it through Ghostty
+      const rawOutput = handle.getOutput()
+
+      // Check for lazygit startup errors (e.g., temp dir issues in CI)
+      if (isLazygitStartupError(rawOutput)) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        console.warn(`  Output: ${rawOutput.slice(0, 200)}...`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      // Create terminal and render
+      const term = harness.createTerminal(100, 30)
+      yield* harness.write(term, rawOutput)
+
+      const screenshot = harness.screenshot(term)
+
+      // Close lazygit
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // Snapshot the full screenshot
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    }))
+
+  it.scoped("handles navigation and panel switching", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const screenshots: Array<string> = []
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 120,
+        rows: 40,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      // Create a single terminal instance to reuse
+      const term = harness.createTerminal(120, 40)
+
+      // Wait for initial render
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      const initialOutput = handle.getOutput()
+      if (isLazygitStartupError(initialOutput)) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      // Capture initial state
+      yield* harness.write(term, initialOutput)
+      screenshots.push(harness.screenshot(term))
+
+      // Navigate down in the files list
+      yield* sendKey(handle, "\x1b[B") // Arrow down
+      yield* waitForStable(handle, 50, 1000)
+
+      yield* harness.write(term, handle.getOutput())
+      screenshots.push(harness.screenshot(term))
+
+      // Switch to branches panel (typically '2' or right arrow)
+      yield* sendKey(handle, "\x1b[C") // Arrow right
+      yield* waitForStable(handle, 50, 1000)
+
+      yield* harness.write(term, handle.getOutput())
+      screenshots.push(harness.screenshot(term))
+
+      // Quit
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // Each screenshot should have some content
+      for (const screenshot of screenshots) {
+        expect(screenshot.length).toBeGreaterThan(10)
+      }
+
+      expect(
+        normalizeSnapshot(screenshots[0]!),
+        "the initial state"
+      ).toMatchSnapshot("the initial state")
+      expect(
+        normalizeSnapshot(screenshots[1]!),
+        "after navigation"
+      ).toMatchSnapshot("after navigation")
+      expect(
+        normalizeSnapshot(screenshots[2]!),
+        "after panel switch"
+      ).toMatchSnapshot("after panel switch")
+    }))
+
+  it.scoped("handles rapid UI updates (scrolling)", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 80,
+        rows: 24,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      // Wait for initial render
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      if (isLazygitStartupError(handle.getOutput())) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      // Rapidly scroll up/down (no delays between keys - test rapid input)
+      for (let i = 0; i < 5; i++) {
+        yield* sendKey(handle, "\x1b[B") // down
+      }
+      for (let i = 0; i < 5; i++) {
+        yield* sendKey(handle, "\x1b[A") // up
+      }
+
+      yield* waitForStable(handle, 50, 1000)
+
+      // Capture final state
+      const term = harness.createTerminal(80, 24)
+      yield* harness.write(term, handle.getOutput())
+      const screenshot = harness.screenshot(term)
+
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // Snapshot the scrolling result
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    }))
+
+  it.scoped("captures colors and attributes from lazygit", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 100,
+        rows: 30,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      if (isLazygitStartupError(handle.getOutput())) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      const term = harness.createTerminal(100, 30)
+      yield* harness.write(term, handle.getOutput())
+
+      // Scan for cells with non-default colors
+      let hasColors = false
+      let hasBold = false
+      let hasInverse = false
+
+      for (let row = 0; row < 30; row++) {
+        for (let col = 0; col < 100; col++) {
+          const cell = harness.getCell(term, row, col)
+          if (cell) {
+            // Check for non-default foreground color (default is usually 0)
+            if (cell.fgColor !== 0 && cell.fgColorMode !== 0) {
+              hasColors = true
+            }
+            if (cell.isBold) hasBold = true
+            if (cell.isInverse) hasInverse = true
+          }
+        }
+      }
+
+      const screenshot = harness.screenshot(term)
+
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // lazygit uses colors extensively for:
+      // - Status indicators (modified, staged, etc.)
+      // - Selection highlighting (inverse)
+      // - Panel headers (often bold)
+      expect(hasColors || hasBold || hasInverse).toBe(true)
+
+      // Snapshot the color-rich output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    }))
+
+  it.scoped("handles box drawing characters from lazygit panels", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 100,
+        rows: 30,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      if (isLazygitStartupError(handle.getOutput())) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      const term = harness.createTerminal(100, 30)
+      yield* harness.write(term, handle.getOutput())
+      const screenshot = harness.screenshot(term)
+
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // lazygit uses box drawing for panel borders
+      // Check that box drawing characters appear (U+2500-U+257F range)
+      // OR ASCII box drawing (+, -, |)
+      const hasBoxDrawing = /[\u2500-\u257F]/.test(screenshot) || // Unicode box drawing
+        /[+\-|]/.test(screenshot) // ASCII box drawing
+
+      expect(hasBoxDrawing).toBe(true)
+
+      // Snapshot the box drawing output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    }))
+
+  it.scoped("renders help menu without garbage", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 100,
+        rows: 40,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      // Wait for initial render
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      if (isLazygitStartupError(handle.getOutput())) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      // Open help menu
+      yield* sendKey(handle, "?")
+      yield* waitForStable(handle, 100, 1000)
+
+      const term = harness.createTerminal(100, 40)
+      yield* harness.write(term, handle.getOutput())
+      const screenshot = harness.screenshot(term)
+
+      // Close help and quit
+      yield* sendKey(handle, "\x1b") // Escape
+      yield* waitForStable(handle, 50, 500)
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // Help menu should mention keybindings or have descriptive text
+      // (content varies by version)
+      expect(screenshot.length).toBeGreaterThan(50)
+
+      // Snapshot the help menu output
+      expect(normalizeSnapshot(screenshot)).toMatchSnapshot()
+    }))
+
+  it.scoped("terminal resize preserves content integrity", () =>
+    Effect.gen(function*() {
+      if (lazygitSetupFailed) {
+        console.log(`⚠ Skipping: ${lazygitSetupError}`)
+        return
+      }
+
+      const handle = yield* spawnTui(["lazygit"], {
+        cols: 80,
+        rows: 24,
+        cwd: tempDir!,
+        env: {
+          TERM: "xterm-256color",
+          LG_CONFIG_FILE: lazygitConfigFile!
+        }
+      })
+
+      yield* waitForStable(handle, 100, 2000)
+
+      // Check for startup errors
+      if (isLazygitStartupError(handle.getOutput())) {
+        console.warn(`⚠ lazygit failed to start properly, skipping test`)
+        yield* sendKey(handle, "q")
+        return
+      }
+
+      // Capture before resize
+      const term1 = harness.createTerminal(80, 24)
+      yield* harness.write(term1, handle.getOutput())
+      const before = harness.screenshot(term1)
+
+      // Resize terminal
+      handle.resize(120, 40)
+      handle.clearOutput()
+      yield* waitForStable(handle, 100, 1000)
+
+      // Capture after resize
+      const term2 = harness.createTerminal(120, 40)
+      yield* harness.write(term2, handle.getOutput())
+      const after = harness.screenshot(term2)
+
+      yield* sendKey(handle, "q")
+      yield* handle.exited
+
+      // After resize should have content
+      expect(after.length).toBeGreaterThan(10)
+      expect(normalizeSnapshot(before)).toMatchSnapshot()
+      expect(normalizeSnapshot(after)).toMatchSnapshot()
+    }))
+})
+
+// Info test that always runs
+describe("lazygit availability", () => {
+  test("reports lazygit installation status", () => {
+    if (isLazygitInstalled) {
+      console.log(`✓ lazygit is installed at: ${lazygitPath}`)
+      console.log(`  Version: ${lazygitVersion}`)
+    } else {
+      console.log("⚠ lazygit is not installed - stress tests will be skipped")
+      console.log("  Install with: brew install lazygit")
+      console.log("  Or: nix-env -iA nixpkgs.lazygit")
+    }
+    expect(true).toBe(true) // Always pass
+  })
+})

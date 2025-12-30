@@ -2,6 +2,38 @@
 
 We practice ultra extreme programming (uXP): tight feedback loops, evidence-first decision making, and collective ownership. Every change must be grounded in tests-first thinking and the scientific method, and nothing in our code is somebody else's problem.
 
+## Two Task Systems: When to Use Which
+
+This repo has two task management systems. Read the right one for your work:
+
+### `.tasks/AGENTS.md` - Goal-Driven Work (Day-to-Day)
+
+**Use this for:** Ongoing development, goals Tom wants accomplished, research, experiments, and implementation work.
+
+Read `.tasks/AGENTS.md` when:
+- Starting a new session and looking for what to work on
+- Tom gives you a GOAL to accomplish
+- You need to track progress on multi-step work
+- Doing research, experiments, or implementation
+- Following the RGRTDD (Red-Green-Refactor TDD) workflow
+
+**Key concepts:** GOAL-*.md files, task categories (research/experiment/spec/impl/cleanup), status tracking with basis.
+
+### `.specs/AGENTS.md` - Formal Spec-Driven Features
+
+**Use this for:** Formal feature development that requires the full 5-phase spec workflow.
+
+Read `.specs/AGENTS.md` when:
+- Building a new feature that needs formal requirements documentation
+- The work requires explicit user approval gates between phases
+- Creating `.specs/[feature-name]/` directories with instructions.md, requirements.md, design.md, plan.md
+
+**Key concepts:** 5-phase workflow (Instructions -> Requirements -> Design -> Plan -> Implementation), authorization gates, EARS notation.
+
+### Which One Right Now?
+
+**Default to `.tasks/`** for most work. The `.specs/` system is for formal feature development where you need the full documentation chain. If in doubt, ask Tom.
+
 ## Pattern Library Contract
 
 The documentation in `.patterns/*.md` is normative. Before writing or reviewing code, identify the relevant pattern files, follow them precisely, and cite them when presenting evidence. If a scenario is not covered, extend the patterns with a documented consensus—never improvise contradictory behavior.

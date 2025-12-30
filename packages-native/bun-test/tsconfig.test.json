@@ -3,8 +3,8 @@
   "include": ["test/**/*.test.ts"],
   "compilerOptions": {
     "types": ["bun"],
-    "outDir": "build/test",
-    "rootDir": "test"
+    "rootDir": "test",
+    "noEmit": true
   },
   "references": [
     {
