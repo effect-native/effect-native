@@ -24,7 +24,22 @@ Prepare `@effect-native/opentui-dom` and `@effect-native/opentui-dom-testing-lib
 
 ## Blockers
 
-### 1. opentui-dom-testing-library build is broken
+### 1. Test files have @ts-nocheck workaround
+
+**Status:** Hacked with `// @ts-nocheck` to unblock CI
+
+**Files affected:**
+
+- `test/dom-to-tui-bridge.test.ts` - `MappedRenderable` is a union type (`PositionedRenderable | object`), can't use `implements` with union types
+- `test/event-relay.test.ts` - happy-dom `Document` type doesn't match global `Document` type
+
+**Fix needed:**
+
+1. Change `MappedRenderable` from union type to interface, or use `PositionedRenderable` directly in test mocks
+2. Add proper type assertions for happy-dom Document compatibility
+3. Remove `@ts-nocheck` once fixed
+
+### 2. opentui-dom-testing-library build is broken
 
 **Status:** Build temporarily disabled (echoes skip message instead of building)
 
