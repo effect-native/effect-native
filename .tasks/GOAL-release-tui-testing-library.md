@@ -1,6 +1,6 @@
 ---
 title: Release tui-testing-library
-status: blocked
+status: done
 done_when: |
   - pnpm ok passes with no errors
   - Package builds successfully with build-utils pack-v3
@@ -110,5 +110,5 @@ Additional fixes made during extraction:
 - [x] Extract lazygit.test.ts to packages-native/examples-tui-testing-library
 - [x] Fix tsconfig.test.json to not emit test files
 - [x] Add PTY/TTY detection and skip tests gracefully
-- [ ] Run `pnpm ok` to verify all checks pass
-- [ ] Verify package builds and exports correctly
+- [x] Run `pnpm ok` to verify all checks pass
+- [x] Verify package builds and exports correctly
