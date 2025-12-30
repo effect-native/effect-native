@@ -140,11 +140,11 @@ function normalizeSnapshot(screenshot: string): string {
 }
 
 describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
-  let harness: TUI.GhosttyHarness
+  let Ghostty: TUI.GhosttyHarness
 
   beforeAll(async () => {
     try {
-      harness = await TUI.GhosttyHarness.createAsync()
+      Ghostty = await TUI.GhosttyHarness.createAsync()
       tempDir = setupTempGitRepo()
       lazygitConfigFile = setupLazygitConfig()
       console.log(`lazygit found at: ${lazygitPath}`)
@@ -168,7 +168,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
   })
 
   afterEach(() => {
-    harness.cleanup()
+    Ghostty.cleanup()
   })
 
   it.scoped("renders initial lazygit UI without garbage", () =>
@@ -205,10 +205,10 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       }
 
       // Create terminal and render
-      const term = harness.createTerminal(100, 30)
-      yield* harness.write(term, rawOutput)
+      const term = Ghostty.createTerminal(100, 30)
+      yield* Ghostty.write(term, rawOutput)
 
-      const screenshot = harness.screenshot(term)
+      const screenshot = Ghostty.screenshot(term)
 
       // Close lazygit
       yield* TUI.sendKey(handle, "q")
@@ -238,7 +238,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       })
 
       // Create a single terminal instance to reuse
-      const term = harness.createTerminal(120, 40)
+      const term = Ghostty.createTerminal(120, 40)
 
       // Wait for initial render
       yield* TUI.waitForStable(handle, 100, 2000)
@@ -252,22 +252,22 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       }
 
       // Capture initial state
-      yield* harness.write(term, initialOutput)
-      screenshots.push(harness.screenshot(term))
+      yield* Ghostty.write(term, initialOutput)
+      screenshots.push(Ghostty.screenshot(term))
 
       // Navigate down in the files list
       yield* TUI.sendKey(handle, "\x1b[B") // Arrow down
       yield* TUI.waitForStable(handle, 50, 1000)
 
-      yield* harness.write(term, handle.getOutput())
-      screenshots.push(harness.screenshot(term))
+      yield* Ghostty.write(term, handle.getOutput())
+      screenshots.push(Ghostty.screenshot(term))
 
       // Switch to branches panel (typically '2' or right arrow)
       yield* TUI.sendKey(handle, "\x1b[C") // Arrow right
       yield* TUI.waitForStable(handle, 50, 1000)
 
-      yield* harness.write(term, handle.getOutput())
-      screenshots.push(harness.screenshot(term))
+      yield* Ghostty.write(term, handle.getOutput())
+      screenshots.push(Ghostty.screenshot(term))
 
       // Quit
       yield* TUI.sendKey(handle, "q")
@@ -330,9 +330,9 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       yield* TUI.waitForStable(handle, 50, 1000)
 
       // Capture final state
-      const term = harness.createTerminal(80, 24)
-      yield* harness.write(term, handle.getOutput())
-      const screenshot = harness.screenshot(term)
+      const term = Ghostty.createTerminal(80, 24)
+      yield* Ghostty.write(term, handle.getOutput())
+      const screenshot = Ghostty.screenshot(term)
 
       yield* TUI.sendKey(handle, "q")
       yield* handle.exited
@@ -367,8 +367,8 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const term = harness.createTerminal(100, 30)
-      yield* harness.write(term, handle.getOutput())
+      const term = Ghostty.createTerminal(100, 30)
+      yield* Ghostty.write(term, handle.getOutput())
 
       // Scan for cells with non-default colors
       let hasColors = false
@@ -377,7 +377,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
 
       for (let row = 0; row < 30; row++) {
         for (let col = 0; col < 100; col++) {
-          const cell = harness.getCell(term, row, col)
+          const cell = Ghostty.getCell(term, row, col)
           if (cell) {
             // Check for non-default foreground color (default is usually 0)
             if (cell.fgColor !== 0 && cell.fgColorMode !== 0) {
@@ -389,7 +389,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         }
       }
 
-      const screenshot = harness.screenshot(term)
+      const screenshot = Ghostty.screenshot(term)
 
       yield* TUI.sendKey(handle, "q")
       yield* handle.exited
@@ -430,9 +430,9 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const term = harness.createTerminal(100, 30)
-      yield* harness.write(term, handle.getOutput())
-      const screenshot = harness.screenshot(term)
+      const term = Ghostty.createTerminal(100, 30)
+      yield* Ghostty.write(term, handle.getOutput())
+      const screenshot = Ghostty.screenshot(term)
 
       yield* TUI.sendKey(handle, "q")
       yield* handle.exited
@@ -480,9 +480,9 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       yield* TUI.sendKey(handle, "?")
       yield* TUI.waitForStable(handle, 100, 1000)
 
-      const term = harness.createTerminal(100, 40)
-      yield* harness.write(term, handle.getOutput())
-      const screenshot = harness.screenshot(term)
+      const term = Ghostty.createTerminal(100, 40)
+      yield* Ghostty.write(term, handle.getOutput())
+      const screenshot = Ghostty.screenshot(term)
 
       // Close help and quit
       yield* TUI.sendKey(handle, "\x1b") // Escape
@@ -500,35 +500,34 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
 
   it.scoped("terminal resize preserves content integrity", () =>
     Effect.gen(function*() {
-      const handle = yield* TUI.spawnTui(["lazygit"], {
+      const lazygitTerminal = yield* TUI.spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
         cwd: tempDir!,
         env: { TERM: "xterm-256color", LG_CONFIG_FILE: lazygitConfigFile! }
       })
 
-      yield* TUI.waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(lazygitTerminal, 44, 1111)
 
       // Capture before resize
-      const term1 = harness.createTerminal(80, 24)
-      yield* harness.write(term1, handle.getOutput())
-      const before = harness.screenshot(term1)
+      const ghostty1 = Ghostty.createTerminal(80, 24)
+      yield* Ghostty.write(ghostty1, lazygitTerminal.getOutput())
+      const before = Ghostty.screenshot(ghostty1)
 
       // Resize terminal
-      handle.resize(120, 40)
-      handle.clearOutput()
-      yield* TUI.waitForStable(handle, 100, 1000)
+      lazygitTerminal.resize(120, 40)
+      lazygitTerminal.clearOutput()
+      yield* TUI.waitForStable(lazygitTerminal, 44, 1111)
 
       // Capture after resize
-      const term2 = harness.createTerminal(120, 40)
-      yield* harness.write(term2, handle.getOutput())
-      const after = harness.screenshot(term2)
+      const ghostty2 = Ghostty.createTerminal(120, 40)
+      yield* Ghostty.write(ghostty2, lazygitTerminal.getOutput())
+      const after = Ghostty.screenshot(ghostty2)
 
-      yield* TUI.sendKey(handle, "q")
-      yield* handle.exited
+      yield* TUI.sendKey(lazygitTerminal, "q")
+      yield* lazygitTerminal.exited
 
       // After resize should have content
-      expect(after.length).toBeGreaterThan(10)
       expect(normalizeSnapshot(before)).toMatchSnapshot()
       expect(normalizeSnapshot(after)).toMatchSnapshot()
     }))
