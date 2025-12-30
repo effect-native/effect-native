@@ -34,7 +34,13 @@ let testDocument: Document | null = null
 async function ensureTestEnv(): Promise<{ window: HappyWindow; document: Document }> {
   if (!testDocument || !testWindow) {
     const { Window } = await import("happy-dom")
-    testWindow = new Window({ url: "https://localhost" })
+    testWindow = new Window({
+      url: "https://localhost",
+      settings: {
+        enableJavaScriptEvaluation: true,
+        suppressInsecureJavaScriptEnvironmentWarning: true
+      }
+    })
     testDocument = testWindow.document as unknown as Document
   }
   return { window: testWindow, document: testDocument }
