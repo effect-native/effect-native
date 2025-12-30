@@ -35,6 +35,7 @@
             nodejs_24
             python3
             yq-go
+            lazygit
           ];
         };
       });
