@@ -14,9 +14,10 @@
  * They are intentionally non-blocking for CI - if lazygit has environmental issues,
  * the tests skip gracefully rather than failing the build.
  */
+/** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
-import { GhosttyHarness, sendKey, spawnTui, waitForStable } from "@effect-native/tui-testing-library"
-import { execSync } from "child_process"
+import * as TUI from "@effect-native/tui-testing-library"
+import * as child_process from "child_process"
 import * as Effect from "effect/Effect"
 
 /**
@@ -40,8 +41,8 @@ let lazygitPath: string | null = null
 let lazygitVersion: string | null = null
 
 try {
-  lazygitPath = execSync("which lazygit", { encoding: "utf-8" }).trim()
-  lazygitVersion = execSync("lazygit --version", { encoding: "utf-8" }).trim()
+  lazygitPath = child_process.execSync("which lazygit", { encoding: "utf-8" }).trim()
+  lazygitVersion = child_process.execSync("lazygit --version", { encoding: "utf-8" }).trim()
 } catch {
   // lazygit not installed
 }
@@ -61,16 +62,16 @@ let tempDir: string | null = null
 let lazygitConfigFile: string | null = null
 
 function setupTempGitRepo(): string {
-  const dir = execSync("mktemp -d", { encoding: "utf-8" }).trim()
-  execSync("git init", { cwd: dir })
-  execSync("git config user.email 'test@test.com'", { cwd: dir })
-  execSync("git config user.name 'Test User'", { cwd: dir })
+  const dir = child_process.execSync("mktemp -d", { encoding: "utf-8" }).trim()
+  child_process.execSync("git init", { cwd: dir })
+  child_process.execSync("git config user.email 'test@test.com'", { cwd: dir })
+  child_process.execSync("git config user.name 'Test User'", { cwd: dir })
   // Create some files and commits for lazygit to show
-  execSync("echo 'hello' > file1.txt", { cwd: dir })
-  execSync("git add file1.txt", { cwd: dir })
-  execSync("git commit -m 'Initial commit'", { cwd: dir })
-  execSync("echo 'world' > file2.txt", { cwd: dir })
-  execSync("echo 'modified' >> file1.txt", { cwd: dir })
+  child_process.execSync("echo 'hello' > file1.txt", { cwd: dir })
+  child_process.execSync("git add file1.txt", { cwd: dir })
+  child_process.execSync("git commit -m 'Initial commit'", { cwd: dir })
+  child_process.execSync("echo 'world' > file2.txt", { cwd: dir })
+  child_process.execSync("echo 'modified' >> file1.txt", { cwd: dir })
   return dir
 }
 
@@ -85,9 +86,9 @@ function isLazygitStartupError(output: string): boolean {
 }
 
 function setupLazygitConfig(): string {
-  const configFile = execSync("mktemp", { encoding: "utf-8" }).trim()
+  const configFile = child_process.execSync("mktemp", { encoding: "utf-8" }).trim()
   // Disable random tips for stable snapshots
-  execSync(
+  child_process.execSync(
     `cat > "${configFile}" << 'EOF'
 gui:
   showRandomTip: false
@@ -99,7 +100,7 @@ EOF`,
 
 function cleanupTempDir(dir: string): void {
   try {
-    execSync(`rm -rf "${dir}"`)
+    child_process.execSync(`rm -rf "${dir}"`)
   } catch {
     // Ignore cleanup errors
   }
@@ -139,11 +140,11 @@ function normalizeSnapshot(screenshot: string): string {
 }
 
 describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
-  let harness: GhosttyHarness
+  let harness: TUI.GhosttyHarness
 
   beforeAll(async () => {
     try {
-      harness = await GhosttyHarness.createAsync()
+      harness = await TUI.GhosttyHarness.createAsync()
       tempDir = setupTempGitRepo()
       lazygitConfigFile = setupLazygitConfig()
       console.log(`lazygit found at: ${lazygitPath}`)
@@ -178,7 +179,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
         cwd: tempDir!,
@@ -190,7 +191,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       })
 
       // Wait for lazygit to render its UI
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Get raw output and feed it through Ghostty
       const rawOutput = handle.getOutput()
@@ -199,7 +200,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       if (isLazygitStartupError(rawOutput)) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
         console.warn(`  Output: ${rawOutput.slice(0, 200)}...`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
@@ -210,7 +211,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       const screenshot = harness.screenshot(term)
 
       // Close lazygit
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // Snapshot the full screenshot
@@ -226,7 +227,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
 
       const screenshots: Array<string> = []
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 120,
         rows: 40,
         cwd: tempDir!,
@@ -240,13 +241,13 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       const term = harness.createTerminal(120, 40)
 
       // Wait for initial render
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Check for startup errors
       const initialOutput = handle.getOutput()
       if (isLazygitStartupError(initialOutput)) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
@@ -255,21 +256,21 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       screenshots.push(harness.screenshot(term))
 
       // Navigate down in the files list
-      yield* sendKey(handle, "\x1b[B") // Arrow down
-      yield* waitForStable(handle, 50, 1000)
+      yield* TUI.sendKey(handle, "\x1b[B") // Arrow down
+      yield* TUI.waitForStable(handle, 50, 1000)
 
       yield* harness.write(term, handle.getOutput())
       screenshots.push(harness.screenshot(term))
 
       // Switch to branches panel (typically '2' or right arrow)
-      yield* sendKey(handle, "\x1b[C") // Arrow right
-      yield* waitForStable(handle, 50, 1000)
+      yield* TUI.sendKey(handle, "\x1b[C") // Arrow right
+      yield* TUI.waitForStable(handle, 50, 1000)
 
       yield* harness.write(term, handle.getOutput())
       screenshots.push(harness.screenshot(term))
 
       // Quit
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // Each screenshot should have some content
@@ -298,7 +299,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
         cwd: tempDir!,
@@ -309,31 +310,31 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       })
 
       // Wait for initial render
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Check for startup errors
       if (isLazygitStartupError(handle.getOutput())) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
       // Rapidly scroll up/down (no delays between keys - test rapid input)
       for (let i = 0; i < 5; i++) {
-        yield* sendKey(handle, "\x1b[B") // down
+        yield* TUI.sendKey(handle, "\x1b[B") // down
       }
       for (let i = 0; i < 5; i++) {
-        yield* sendKey(handle, "\x1b[A") // up
+        yield* TUI.sendKey(handle, "\x1b[A") // up
       }
 
-      yield* waitForStable(handle, 50, 1000)
+      yield* TUI.waitForStable(handle, 50, 1000)
 
       // Capture final state
       const term = harness.createTerminal(80, 24)
       yield* harness.write(term, handle.getOutput())
       const screenshot = harness.screenshot(term)
 
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // Snapshot the scrolling result
@@ -347,7 +348,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
         cwd: tempDir!,
@@ -357,12 +358,12 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         }
       })
 
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Check for startup errors
       if (isLazygitStartupError(handle.getOutput())) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
@@ -390,7 +391,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
 
       const screenshot = harness.screenshot(term)
 
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // lazygit uses colors extensively for:
@@ -410,7 +411,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 100,
         rows: 30,
         cwd: tempDir!,
@@ -420,12 +421,12 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         }
       })
 
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Check for startup errors
       if (isLazygitStartupError(handle.getOutput())) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
@@ -433,7 +434,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       yield* harness.write(term, handle.getOutput())
       const screenshot = harness.screenshot(term)
 
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // lazygit uses box drawing for panel borders
@@ -455,7 +456,7 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
         return
       }
 
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 100,
         rows: 40,
         cwd: tempDir!,
@@ -466,27 +467,27 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       })
 
       // Wait for initial render
-      yield* waitForStable(handle, 100, 2000)
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Check for startup errors
       if (isLazygitStartupError(handle.getOutput())) {
         console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
+        yield* TUI.sendKey(handle, "q")
         return
       }
 
       // Open help menu
-      yield* sendKey(handle, "?")
-      yield* waitForStable(handle, 100, 1000)
+      yield* TUI.sendKey(handle, "?")
+      yield* TUI.waitForStable(handle, 100, 1000)
 
       const term = harness.createTerminal(100, 40)
       yield* harness.write(term, handle.getOutput())
       const screenshot = harness.screenshot(term)
 
       // Close help and quit
-      yield* sendKey(handle, "\x1b") // Escape
-      yield* waitForStable(handle, 50, 500)
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "\x1b") // Escape
+      yield* TUI.waitForStable(handle, 50, 500)
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // Help menu should mention keybindings or have descriptive text
@@ -499,29 +500,14 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
 
   it.scoped("terminal resize preserves content integrity", () =>
     Effect.gen(function*() {
-      if (lazygitSetupFailed) {
-        console.log(`⚠ Skipping: ${lazygitSetupError}`)
-        return
-      }
-
-      const handle = yield* spawnTui(["lazygit"], {
+      const handle = yield* TUI.spawnTui(["lazygit"], {
         cols: 80,
         rows: 24,
         cwd: tempDir!,
-        env: {
-          TERM: "xterm-256color",
-          LG_CONFIG_FILE: lazygitConfigFile!
-        }
+        env: { TERM: "xterm-256color", LG_CONFIG_FILE: lazygitConfigFile! }
       })
 
-      yield* waitForStable(handle, 100, 2000)
-
-      // Check for startup errors
-      if (isLazygitStartupError(handle.getOutput())) {
-        console.warn(`⚠ lazygit failed to start properly, skipping test`)
-        yield* sendKey(handle, "q")
-        return
-      }
+      yield* TUI.waitForStable(handle, 100, 2000)
 
       // Capture before resize
       const term1 = harness.createTerminal(80, 24)
@@ -531,14 +517,14 @@ describe.skipIf(!canRunTests)("lazygit real TUI stress tests", () => {
       // Resize terminal
       handle.resize(120, 40)
       handle.clearOutput()
-      yield* waitForStable(handle, 100, 1000)
+      yield* TUI.waitForStable(handle, 100, 1000)
 
       // Capture after resize
       const term2 = harness.createTerminal(120, 40)
       yield* harness.write(term2, handle.getOutput())
       const after = harness.screenshot(term2)
 
-      yield* sendKey(handle, "q")
+      yield* TUI.sendKey(handle, "q")
       yield* handle.exited
 
       // After resize should have content
