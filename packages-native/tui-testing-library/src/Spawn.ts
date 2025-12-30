@@ -12,6 +12,66 @@ import * as Effect from "effect/Effect"
 import type * as Scope from "effect/Scope"
 
 /**
+ * Diagnostic information for PTY spawn failures.
+ *
+ * @since 0.1.0
+ * @category Models
+ */
+export interface PtyDiagnostics {
+  readonly runtime: {
+    readonly isBun: boolean
+    readonly bunVersion: string | undefined
+    readonly nodeVersion: string | undefined
+    readonly bunGlobalExists: boolean
+  }
+  readonly tty: {
+    readonly stdin: boolean
+    readonly stdout: boolean
+    readonly stderr: boolean
+  }
+}
+
+/**
+ * Collect diagnostic information about the current runtime and TTY state.
+ *
+ * @since 0.1.0
+ * @category Utilities
+ */
+export const getPtyDiagnostics = (): PtyDiagnostics => ({
+  runtime: {
+    isBun: typeof process !== "undefined" && "isBun" in process && process.isBun === true,
+    bunVersion: typeof process !== "undefined" && "versions" in process
+      ? (process.versions as Record<string, string>).bun
+      : undefined,
+    nodeVersion: typeof process !== "undefined" && "versions" in process
+      ? (process.versions as Record<string, string>).node
+      : undefined,
+    bunGlobalExists: typeof Bun !== "undefined"
+  },
+  tty: {
+    stdin: typeof process !== "undefined" && process.stdin?.isTTY === true,
+    stdout: typeof process !== "undefined" && process.stdout?.isTTY === true,
+    stderr: typeof process !== "undefined" && process.stderr?.isTTY === true
+  }
+})
+
+/**
+ * Format diagnostics for error messages.
+ *
+ * @since 0.1.0
+ * @category Utilities
+ */
+export const formatPtyDiagnostics = (diag: PtyDiagnostics): string => {
+  const runtime = diag.runtime.isBun
+    ? `bun ${diag.runtime.bunVersion ?? "unknown"}`
+    : `node ${diag.runtime.nodeVersion ?? "unknown"}`
+  return [
+    `Runtime: ${runtime} | process.isBun: ${diag.runtime.isBun} | Bun global: ${diag.runtime.bunGlobalExists}`,
+    `TTY: stdin=${diag.tty.stdin}, stdout=${diag.tty.stdout}, stderr=${diag.tty.stderr}`
+  ].join("\n")
+}
+
+/**
  * Options for spawning a TUI process.
  *
  * @since 0.1.0
@@ -85,32 +145,61 @@ export const spawnTui = (
 ): Effect.Effect<TuiHandle, Error, Scope.Scope> =>
   Effect.acquireRelease(
     Effect.sync(() => {
+      const diag = getPtyDiagnostics()
+
+      // Check if Bun runtime is available
+      if (!diag.runtime.bunGlobalExists) {
+        throw new Error(
+          `PTY spawn requires Bun runtime, but Bun global is not available.\n${formatPtyDiagnostics(diag)}`
+        )
+      }
+
       const outputChunks: Array<Uint8Array> = []
       let closed = false
 
-      const proc = Bun.spawn(command as Array<string>, {
-        ...(options?.cwd !== undefined && { cwd: options.cwd }),
-        ...(options?.env !== undefined && { env: { ...process.env, ...options.env } }),
-        terminal: {
-          cols: options?.cols ?? 80,
-          rows: options?.rows ?? 24,
-          name: options?.termName ?? "xterm-256color",
-          data(_terminal, data) {
-            outputChunks.push(new Uint8Array(data))
-          },
-          exit(_terminal, _exitCode, _signal) {
-            closed = true
-          },
-          drain(_terminal) {
-            // Ready for more data - nothing to do
+      let proc: ReturnType<typeof Bun.spawn>
+      try {
+        proc = Bun.spawn(command as Array<string>, {
+          ...(options?.cwd !== undefined && { cwd: options.cwd }),
+          ...(options?.env !== undefined && { env: { ...process.env, ...options.env } }),
+          terminal: {
+            cols: options?.cols ?? 80,
+            rows: options?.rows ?? 24,
+            name: options?.termName ?? "xterm-256color",
+            data(_terminal, data) {
+              outputChunks.push(new Uint8Array(data))
+            },
+            exit(_terminal, _exitCode, _signal) {
+              closed = true
+            },
+            drain(_terminal) {
+              // Ready for more data - nothing to do
+            }
           }
-        }
-      })
+        })
+      } catch (spawnError) {
+        const err = spawnError as Error & { code?: string; errno?: number; syscall?: string }
+        throw new Error(
+          [
+            `Failed to spawn PTY process: ${err.message}`,
+            formatPtyDiagnostics(diag),
+            `Error code: ${err.code ?? "none"} | Errno: ${err.errno ?? "none"} | Syscall: ${err.syscall ?? "none"}`,
+            `Stack: ${err.stack ?? "none"}`
+          ].join("\n")
+        )
+      }
 
       const terminal = proc.terminal
 
       if (!terminal) {
-        throw new Error("Failed to create PTY terminal")
+        throw new Error(
+          [
+            "Failed to create PTY terminal (proc.terminal is null/undefined)",
+            formatPtyDiagnostics(diag),
+            "This typically means the OS denied PTY allocation.",
+            "Common causes: running without a controlling terminal, resource limits, or permission issues."
+          ].join("\n")
+        )
       }
 
       const handle: TuiHandle = {

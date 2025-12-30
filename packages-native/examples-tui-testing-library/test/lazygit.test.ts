@@ -15,20 +15,17 @@ import { execSync } from "child_process"
 import * as Effect from "effect/Effect"
 
 /**
- * PTY spawn tests require Bun runtime with a TTY.
- * Bun.spawn with terminal option returns null when there's no controlling TTY.
+ * PTY spawn tests require Bun runtime (Bun.spawn with terminal option).
  */
 const isBun = typeof process !== "undefined" && "isBun" in process && process.isBun === true
-const hasTTY = typeof process !== "undefined" && process.stdout?.isTTY === true
-const canRunPtyTests = isBun && hasTTY
 
-if (!canRunPtyTests) {
+if (!isBun) {
   console.warn(`
 ╔════════════════════════════════════════════════════════════════════════════╗
-║  WARNING: PTY tests skipped                                                ║
+║  WARNING: PTY tests require Bun runtime                                    ║
 ║                                                                            ║
-║  Bun.spawn with terminal option requires a TTY. Run directly in terminal: ║
-║  cd packages-native/examples-tui-testing-library && bun test               ║
+║  The spawnTui function uses Bun.spawn with the 'terminal' option.          ║
+║  To run these tests: bun test                                              ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 `)
 }
@@ -45,7 +42,7 @@ try {
 }
 
 const isLazygitInstalled = lazygitPath !== null
-const canRunTests = canRunPtyTests && isLazygitInstalled
+const canRunTests = isBun && isLazygitInstalled
 
 // Create a temporary git repo for testing
 let tempDir: string | null = null
