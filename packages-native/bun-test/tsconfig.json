@@ -1,9 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["types/**/*.d.ts"],
-  "references": [
-    { "path": "tsconfig.src.json" },
-    { "path": "tsconfig.test.json" }
-  ],
+  "references": [{ "path": "tsconfig.src.json" }],
   "exclude": ["dist/**/*"]
 }
