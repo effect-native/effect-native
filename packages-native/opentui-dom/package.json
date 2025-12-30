@@ -44,7 +44,7 @@
   "devDependencies": {
     "effect": "latest",
     "@effect/vitest": "latest",
-    "happy-dom": "^17.4.4",
+    "happy-dom": "^20.0.0",
     "@opentui/core": "^0.1.63",
     "react": "^19",
     "react-dom": "^19",
