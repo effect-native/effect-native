@@ -408,8 +408,9 @@ task: "B3"  # Which plan.md task triggered this
 
 1. **Verify all phase gaps resolved** - `status: resolved` for all `phase: N` gaps
 2. **Create phase artifact** - Write the `0N-*.md` file
-3. **Commit together** - Artifact creation is atomic with gap completion
-4. **Request approval** - Wait for "Proceed" before next phase
+3. **Delete resolved gaps** - Remove all `phase: N` gap files (artifact is the truth now)
+4. **Commit** - Artifact creation + gap deletion (can be separate commits on feature branches)
+5. **Request approval** - Wait for "Proceed" before next phase
 
 ### Gap Numbering
 
@@ -462,6 +463,29 @@ RIGHT: "The gap no longer exists, delete the file (git has history)"
 WRONG: "We're in phase 5, so no new phase 1 gaps can appear"
 RIGHT: "Implementation revealed our instructions were wrong, new phase 1 gap"
 ```
+
+### Delete Resolved Gaps When Phase Completes
+
+**RULE:** When a phase artifact is created, delete all resolved gaps for that phase.
+
+The phase artifact (`01-instructions.md`, etc.) is the compressed, refined output. The gap files were working memory to get there. Git has the history if you ever need to see how decisions were made.
+
+```
+BEFORE phase completion:
+  gaps/
+    gap-001-foo.md (resolved, phase 1)
+    gap-002-bar.md (resolved, phase 1)
+    gap-009-baz.md (open, phase 2)
+
+AFTER phase 1 completion:
+  01-instructions.md        ← truth lives here now
+  gaps/
+    gap-009-baz.md (open, phase 2)  ← only future phase gaps remain
+```
+
+**On feature branches:** Commits can be separate (resolve gaps, create artifact, delete gaps).
+
+**On main:** Squash/merge naturally combines into atomic history. No special handling needed.
 
 ### The Homeostatic Loop for Gaps
 
