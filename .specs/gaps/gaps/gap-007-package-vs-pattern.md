@@ -1,11 +1,12 @@
 ---
 id: gap-007
 phase: 1
-status: open
+status: resolved
 blocked_by:
   - gap-002
   - gap-003
   - gap-004
+resolved_date: 2026-01-06
 ---
 
 # Gap: Package vs Pattern
@@ -20,4 +21,13 @@ Affects whether we're specifying an API or a conceptual framework. A package has
 
 ## Resolution
 
-(pending)
+**Decision:** Concrete npm package: `@effect-native/gaps`
+
+This is a real package with:
+
+- Versioning
+- Dependencies (Effect-TS)
+- Tests
+- Published API
+
+Not just documentation. Real code that FSDB and other applications depend on.
