@@ -429,6 +429,55 @@ To check phase completion:
 
 ---
 
+## 🌲 Gaps Are Evergreen
+
+**CRITICAL:** Gaps are not historical artifacts. They are living documents that reflect current reality.
+
+### The Evergreen Principle
+
+1. **Gaps can appear at any time** - New uncertainty? Create a gap file.
+2. **Gaps can reopen** - Reality changed? Set `status: open` again.
+3. **Gaps can be deleted** - No longer relevant? Delete the file.
+4. **Specs change → gaps appear** - If requirements/design/plan changes, new gaps emerge.
+5. **Implementation reveals gaps** - Code that doesn't match spec creates gaps.
+
+### Gap Reconciliation
+
+Regularly reconcile the gaps folder:
+
+1. **Scan for stale gaps** - Is this still a real uncertainty? If not, delete it.
+2. **Scan for missing gaps** - Is there uncertainty not captured? Create a gap file.
+3. **Scan for wrong dependencies** - Do `blocked_by` relationships still hold?
+4. **Scan for wrong status** - Is a "resolved" gap actually still open?
+
+### Gaps Reflect Reality, Not History
+
+```
+WRONG: "We resolved this gap on Jan 6, so it stays resolved forever"
+RIGHT: "This gap was resolved, but the design changed, so it's open again"
+
+WRONG: "Keep the gap file for historical record"
+RIGHT: "The gap no longer exists, delete the file (git has history)"
+
+WRONG: "We're in phase 5, so no new phase 1 gaps can appear"
+RIGHT: "Implementation revealed our instructions were wrong, new phase 1 gap"
+```
+
+### The Homeostatic Loop for Gaps
+
+The gaps folder is itself subject to homeostatic reconciliation:
+
+**Invariant:** Every real uncertainty has exactly one gap file. No gap file exists for non-uncertainties.
+
+**Gaps about gaps:**
+
+- Missing gap file for real uncertainty → create it
+- Gap file for resolved/irrelevant uncertainty → delete it
+- Wrong dependencies → update `blocked_by`
+- Wrong phase → update `phase`
+
+---
+
 ## 🛠️ General Repository Rules
 
 1.  **Linting:** Immediately run the project's linter/formatter after editing any file.
