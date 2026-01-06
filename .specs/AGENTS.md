@@ -44,36 +44,39 @@ Each spec directory follows a gap-driven artifact model:
   INBOX.md                    # Raw brain dumps, unprocessed ideas
 
   # Phase 1: Instructions
-  01-instructions-gaps.md     # Gaps in understanding intent/context
-  01-instructions.md          # Only exists when gaps.md is resolved
+  01-instructions.md          # Only exists when all phase-1 gaps resolved
 
   # Phase 2: Requirements
-  02-requirements-gaps.md     # Gaps in requirements clarity
-  02-requirements.md          # Only exists when gaps.md is resolved
+  02-requirements.md          # Only exists when all phase-2 gaps resolved
 
   # Phase 3: Design
-  03-design-gaps.md           # Gaps in technical design
-  03-design.md                # Only exists when gaps.md is resolved
+  03-design.md                # Only exists when all phase-3 gaps resolved
 
   # Phase 4: Plan
-  04-plan-gaps.md             # Gaps in execution plan
-  04-plan.md                  # Only exists when gaps.md is resolved
+  04-plan.md                  # Only exists when all phase-4 gaps resolved
 
   # Phase 5: Implementation
-  05-implementation-gaps.md   # LIVING DOCUMENT - gaps discovered during build
   05-implementation.md        # Progress log, completion evidence
+
+  # Gaps (all phases) - a dependency graph
+  gaps/
+    gap-001-{slug}.md         # Each gap is a unique file
+    gap-002-{slug}.md         # YAML frontmatter tracks dependencies
+    gap-003-{slug}.md         # Work only possible on unblocked gaps
+    ...
 ```
 
 ### The Gap-Driven Rule
 
-**RULE:** A phase artifact (e.g., `01-instructions.md`) may only exist when its corresponding gaps file (e.g., `01-instructions-gaps.md`) is fully resolved (empty or deleted).
+**RULE:** A phase artifact (e.g., `01-instructions.md`) may only exist when all gaps for that phase are resolved.
 
 This applies homeostatic reconciliation to the spec process itself:
 
 1. **Identify gaps** - What questions/uncertainties exist?
-2. **Resolve gaps** - Ask questions, get answers, update understanding
-3. **Create artifact** - Only when zero gaps remain
-4. **Proceed to next phase** - Which introduces new gaps to resolve
+2. **Build dependency graph** - Which gaps block which?
+3. **Work unblocked gaps** - Only gaps with no open blockers can be worked
+4. **Resolve and repeat** - Resolution may unblock other gaps
+5. **Create artifact** - Only when all phase gaps are resolved
 
 ### INBOX.md
 
@@ -83,7 +86,63 @@ The inbox captures raw brain dumps before they're processed into gaps:
 - Ideas that haven't been categorized
 - Questions that haven't been formalized as gaps
 
-Process: INBOX.md → identify gaps → create gaps.md → resolve → create artifact
+Process: INBOX.md → identify gaps → create gap files → resolve → create artifact
+
+### The `gaps/` Directory
+
+Gaps are a **dependency graph**, not a flat list. Each gap is a separate file with YAML frontmatter tracking relationships.
+
+**Gap Distribution (Diamond Shape):**
+
+- **Few high-level gaps** - Big picture questions (e.g., "What problem does this solve?")
+- **More medium-level gaps** - Detailed questions that depend on high-level answers
+- **Few low-level gaps** - Atomic implementation details, very specific
+
+```
+        ┌─────┐
+       /   1   \        ← Few high-level gaps
+      /─────────\
+     /     5     \      ← More medium-level gaps
+    /─────────────\
+   /       3       \    ← Few low-level gaps
+  └─────────────────┘
+```
+
+**Dependency Rules:**
+
+- Each gap **exhaustively lists everything blocking it** in `blocked_by`
+- A gap is **workable** only when all its blockers are resolved
+- Resolving a gap may **unblock many others**
+- Cycles are forbidden (would indicate confused thinking)
+
+**Gap File Format:**
+
+```yaml
+---
+id: gap-001
+phase: 1  # instructions
+status: open | resolved | cancelled
+blocked_by:
+  - gap-002
+  - gap-003
+resolved_by: "Answer or reference to decision"
+resolved_date: 2026-01-06
+---
+
+# Gap: [Short descriptive title]
+
+## Question
+
+[The specific question or uncertainty]
+
+## Context
+
+[Why this matters, what depends on this answer]
+
+## Resolution
+
+[Empty until resolved, then contains the answer/decision]
+```
 
 ---
 
@@ -276,7 +335,7 @@ For every task in `04-plan.md`:
 
 **🚨 IMPLEMENTATION GAPS ARE THE MOST CRITICAL:**
 
-Implementation is where reality clashes with plans. The `05-implementation-gaps.md` file is the most important gaps file because:
+Implementation is where reality clashes with plans. Phase 5 gaps are the most important because:
 
 1. **Design assumptions fail** - What looked good on paper doesn't work in code
 2. **Edge cases emerge** - Tests reveal scenarios nobody considered
@@ -286,72 +345,87 @@ Implementation is where reality clashes with plans. The `05-implementation-gaps.
 When a gap is discovered during implementation:
 
 1. **STOP** - Do not hack around it
-2. **Record the gap** in `05-implementation-gaps.md` with full context
-3. **Trace back** - Does this require updating design? Requirements? Instructions?
+2. **Create a gap file** in `gaps/` with full context and `phase: 5`
+3. **Trace back** - Does this block on earlier phase gaps? Add to `blocked_by`
 4. **Resolve or escalate** - Fix it properly or escalate to Tom/Bramwell
-5. **Continue** only when the gap is closed
+5. **Continue** only when the gap is resolved
 
-The implementation gaps file is a living document throughout Phase 5. Unlike earlier phases where you resolve all gaps then create the artifact, implementation gaps are discovered and resolved continuously as you build.
+**Implementation Gap Additional Fields:**
 
-**Implementation Gap Format:**
+```yaml
+---
+id: gap-042
+phase: 5  # implementation
+status: open
+blocked_by: []
+task: "B3"  # Which plan.md task triggered this
+---
 
-```markdown
-### Gap: [Short description]
+# Gap: [Short description]
 
-**Discovered:** [Date/time]
-**Task:** [Which plan.md task triggered this]
-**Error/Symptom:** [What actually happened]
-**Expected:** [What should have happened per design]
-**Root Cause:** [Analysis of why]
-**Resolution:** [How it was fixed, or "ESCALATED" if pending]
-**Trace Back:** [Did this require updating design/requirements/instructions?]
+## Symptom
+
+[What actually happened - error messages, unexpected behavior]
+
+## Expected
+
+[What should have happened per design]
+
+## Root Cause
+
+[Analysis of why - discovered during investigation]
+
+## Resolution
+
+[How it was fixed, or empty if still open]
+
+## Trace Back
+
+[Did this require updating design/requirements/instructions? List affected artifacts]
 ```
 
 ---
 
 ## 🔄 Gap Resolution Workflow
 
-When working on any phase:
+### Starting a Phase
 
-1. **Read the INBOX.md** (if exists) for raw context
-2. **Create/update the gaps file** (e.g., `01-instructions-gaps.md`)
-3. **For each gap:**
-   - Ask the user for clarification
-   - Record the answer
-   - Mark the gap as resolved (strikethrough or delete)
-4. **When all gaps are resolved:**
-   - Delete or empty the gaps file
-   - Create the phase artifact
-   - Commit both changes together
-5. **Request approval to proceed**
+1. **Read INBOX.md** (if exists) for raw context
+2. **Identify gaps** - Create gap files in `gaps/` for each uncertainty
+3. **Map dependencies** - For each gap, list what blocks it in `blocked_by`
+4. **Find workable gaps** - Gaps with empty `blocked_by` or all blockers resolved
 
-### Gap File Format
+### Working a Gap
 
-```markdown
-# Phase N: [Phase Name] - Gaps
+1. **Verify it's unblocked** - All `blocked_by` gaps must be resolved
+2. **Investigate/ask questions** - Gather information to resolve
+3. **Record resolution** - Update the gap file with answer/decision
+4. **Update status** - Set `status: resolved` and `resolved_date`
+5. **Check what's unblocked** - Other gaps may now be workable
+6. **Commit** - Commit the resolved gap file
 
-## Open Gaps
+### Completing a Phase
 
-### Gap 1: [Short description]
+1. **Verify all phase gaps resolved** - `status: resolved` for all `phase: N` gaps
+2. **Create phase artifact** - Write the `0N-*.md` file
+3. **Commit together** - Artifact creation is atomic with gap completion
+4. **Request approval** - Wait for "Proceed" before next phase
 
-**Question:** [The specific question or uncertainty]
-**Context:** [Why this matters]
-**Status:** Open
+### Gap Numbering
 
-### Gap 2: [Short description]
+Use sequential IDs: `gap-001`, `gap-002`, etc. across all phases.
+Include a slug for human readability: `gap-001-problem-statement.md`
 
-**Question:** [The specific question or uncertainty]
-**Context:** [Why this matters]
-**Status:** Open
+### Checking Gap Status
 
-## Resolved Gaps
+To find workable gaps:
 
-### ~~Gap 3: [Short description]~~
+- Look for gaps where `status: open`
+- And all gaps in `blocked_by` have `status: resolved`
 
-**Question:** [The specific question or uncertainty]
-**Resolution:** [The answer/decision]
-**Resolved:** [Date]
-```
+To check phase completion:
+
+- All gaps with `phase: N` must have `status: resolved`
 
 ---
 
