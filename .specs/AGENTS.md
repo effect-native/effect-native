@@ -59,7 +59,9 @@ Each spec directory follows a gap-driven artifact model:
   04-plan-gaps.md             # Gaps in execution plan
   04-plan.md                  # Only exists when gaps.md is resolved
 
-  # Phase 5: Implementation (no gaps file - just do the work)
+  # Phase 5: Implementation
+  05-implementation-gaps.md   # LIVING DOCUMENT - gaps discovered during build
+  05-implementation.md        # Progress log, completion evidence
 ```
 
 ### The Gap-Driven Rule
@@ -238,11 +240,18 @@ Example task structure:
 
 ---
 
-### Phase 5: Implementation (Coding)
+### Phase 5: Implementation (`05-implementation.md`)
 
 **Objective:** Write code that satisfies the Design and passes the Requirements.
 
-**No gaps file for this phase** - the plan.md checklist drives the work.
+**Invariant:** Every task is complete; every blocker is resolved or escalated.
+
+**Gap Examples:**
+
+- "Design assumed X but runtime shows Y"
+- "Dependency Z doesn't support feature W"
+- "Test reveals edge case not covered in requirements"
+- "Build fails with unexpected error"
 
 **✅ CONTENT:**
 
@@ -264,6 +273,39 @@ For every task in `04-plan.md`:
 - **Deviating from Design:** If the design proves impossible, **STOP**. Update `03-design.md` first, get approval, then continue.
 - **Skipping Verification:** Never tick a box in `04-plan.md` without running the verification step and showing the evidence.
 - **Leaving Broken Builds:** The codebase must compile and pass tests at the end of every step.
+
+**🚨 IMPLEMENTATION GAPS ARE THE MOST CRITICAL:**
+
+Implementation is where reality clashes with plans. The `05-implementation-gaps.md` file is the most important gaps file because:
+
+1. **Design assumptions fail** - What looked good on paper doesn't work in code
+2. **Edge cases emerge** - Tests reveal scenarios nobody considered
+3. **Dependencies surprise** - Libraries don't behave as documented
+4. **Integration breaks** - Components don't compose as expected
+
+When a gap is discovered during implementation:
+
+1. **STOP** - Do not hack around it
+2. **Record the gap** in `05-implementation-gaps.md` with full context
+3. **Trace back** - Does this require updating design? Requirements? Instructions?
+4. **Resolve or escalate** - Fix it properly or escalate to Tom/Bramwell
+5. **Continue** only when the gap is closed
+
+The implementation gaps file is a living document throughout Phase 5. Unlike earlier phases where you resolve all gaps then create the artifact, implementation gaps are discovered and resolved continuously as you build.
+
+**Implementation Gap Format:**
+
+```markdown
+### Gap: [Short description]
+
+**Discovered:** [Date/time]
+**Task:** [Which plan.md task triggered this]
+**Error/Symptom:** [What actually happened]
+**Expected:** [What should have happened per design]
+**Root Cause:** [Analysis of why]
+**Resolution:** [How it was fixed, or "ESCALATED" if pending]
+**Trace Back:** [Did this require updating design/requirements/instructions?]
+```
 
 ---
 
