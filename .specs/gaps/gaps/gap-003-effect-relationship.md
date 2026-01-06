@@ -1,9 +1,10 @@
 ---
 id: gap-003
 phase: 1
-status: open
+status: resolved
 blocked_by:
   - gap-001
+resolved_date: 2026-01-06
 ---
 
 # Gap: Relationship to Effect-TS
@@ -18,4 +19,8 @@ Affects how we describe the system, what conventions we follow, and who the audi
 
 ## Resolution
 
-(pending)
+**Decision:** Use Effect-TS. Follow their patterns and conventions.
+
+**Rationale:** Secret reasons.
+
+This means: services, layers, tagged errors, Effect.gen, all the standard Effect-TS patterns documented in `.patterns/`.
