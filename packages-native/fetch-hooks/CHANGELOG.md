@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0
+
+### Minor Changes
+
+- [#207](https://github.com/effect-native/effect-native/pull/207) [`e6866e9`](https://github.com/effect-native/effect-native/commit/e6866e9ac1c0d031cfa1492ddef13a80e199394e) Thanks [@subtleGradient](https://github.com/subtleGradient)! - Add binary data URL extraction to sidecar files for cache storage
+  - Add `createRequestFileKV()` for request caching that extracts inline base64 data URLs (e.g., `data:image/png;base64,...`) to separate sidecar files like `request.json.assets/0001.png`
+  - Add `createTextFileKV()` for response body caching with the same binary extraction behavior
+  - Update `createFilesystemStorage()` to use these new KV implementations, improving cache readability and reducing JSON file bloat
+  - Add comprehensive JSDoc documentation with examples for new functions
+
 ## 0.0.2
 
 ### Patch Changes
