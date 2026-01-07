@@ -45,7 +45,21 @@ export function createJsonFileKV<T>(baseDir: string, filename: string): KV<Cache
   }
 }
 
-/** Create a KV store for requests that extracts/restores inline base64 data URLs to sidecar files */
+/**
+ * Creates a KV store for HTTP requests that extracts inline base64 data URLs
+ * to sidecar files on disk and restores them when reading from the cache.
+ *
+ * @param baseDir - Base directory where cache entries are stored.
+ * @param filename - File name used to persist the cached request JSON.
+ * @returns A KV implementation keyed by CacheKey storing CachedRequest values.
+ * @since 1.0.0
+ * @example
+ * ```ts
+ * const kv = createRequestFileKV(".cache", "request.json")
+ * await kv.set(["some-cache-key"], cachedRequest)
+ * const value = await kv.get(["some-cache-key"])
+ * ```
+ */
 export function createRequestFileKV(baseDir: string, filename: string): KV<CacheKey, CachedRequest> {
   const assetsExt = ".assets"
 
@@ -55,9 +69,8 @@ export function createRequestFileKV(baseDir: string, filename: string): KV<Cache
       if (!existsSync(filePath)) {
         return null
       }
-      let content = readFileSync(filePath, "utf-8")
       const assetsDir = join(baseDir, key, filename + assetsExt)
-      content = restoreDataUrls(content, assetsDir)
+      const content = restoreDataUrls(readFileSync(filePath, "utf-8"), assetsDir)
       return JSON.parse(content) as CachedRequest
     },
 
@@ -65,9 +78,7 @@ export function createRequestFileKV(baseDir: string, filename: string): KV<Cache
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
       const assetsDir = join(cacheDir, filename + assetsExt)
-      let content = JSON.stringify(value, null, 2)
-      const { content: extractedContent } = extractDataUrls(content, assetsDir)
-      content = extractedContent
+      const { content } = extractDataUrls(JSON.stringify(value, null, 2), assetsDir)
       writeFileSync(filePath, content, "utf-8")
     },
 
@@ -78,7 +89,21 @@ export function createRequestFileKV(baseDir: string, filename: string): KV<Cache
   }
 }
 
-/** Create a KV store for text files that extracts/restores inline base64 data URLs to sidecar files */
+/**
+ * Creates a KV store for text files that extracts inline base64 data URLs into
+ * sidecar asset files on disk and restores them when reading.
+ *
+ * @param baseDir - Base directory where cache entries are stored.
+ * @param filename - File name used for the cached text content within each cache key directory.
+ * @returns A KV store keyed by CacheKey that reads and writes text content from the filesystem.
+ * @since 1.0.0
+ * @example
+ * ```ts
+ * const kv = createTextFileKV("/tmp/fetch-hooks-cache", "response.txt")
+ * await kv.set(["my-cache-key"], "inline data: data:image/png;base64,...")
+ * const value = await kv.get(["my-cache-key"])
+ * ```
+ */
 export function createTextFileKV(baseDir: string, filename: string): KV<CacheKey, string> {
   const assetsExt = ".assets"
 
@@ -88,18 +113,16 @@ export function createTextFileKV(baseDir: string, filename: string): KV<CacheKey
       if (!existsSync(filePath)) {
         return null
       }
-      let content = readFileSync(filePath, "utf-8")
       const assetsDir = join(baseDir, key, filename + assetsExt)
-      content = restoreDataUrls(content, assetsDir)
-      return content
+      return restoreDataUrls(readFileSync(filePath, "utf-8"), assetsDir)
     },
 
     async set([key]: CacheKey, value: string): Promise<void> {
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
       const assetsDir = join(cacheDir, filename + assetsExt)
-      const { content: extractedContent } = extractDataUrls(value, assetsDir)
-      writeFileSync(filePath, extractedContent, "utf-8")
+      const { content } = extractDataUrls(value, assetsDir)
+      writeFileSync(filePath, content, "utf-8")
     },
 
     async has([key]: CacheKey): Promise<boolean> {

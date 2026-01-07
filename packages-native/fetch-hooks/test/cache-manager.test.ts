@@ -864,4 +864,29 @@ describe("Binary extraction in request.json", () => {
     // The restored body.json should have the original data URL
     expect(cached!.body).toEqual({ json: originalBody })
   })
+
+  it("restores data URLs when reading cached response body", async () => {
+    const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    const originalBody = JSON.stringify({ image: `data:image/png;base64,${pngBase64}` })
+    const mock = createMockFetch((_url) =>
+      new Response(originalBody, { status: 200, headers: { "content-type": "application/json" } })
+    )
+    const cachedFetch = createCachedFetch(mock.fetch)
+
+    // Store response with base64 data URL
+    const response = await cachedFetch("https://api.example.com/image-restore")
+    await response.text() // consume to trigger storage
+
+    // Use the storage abstraction to read back - it should restore the data URL
+    const { createFilesystemStorage } = await import("../src/filesystem-storage")
+    const storage = createFilesystemStorage(testCacheDir)
+
+    const entries = readdirSync(testCacheDir)
+    const cacheKey = entries[0]
+    const cachedBody = await storage.responseBody.get([cacheKey])
+
+    expect(cachedBody).not.toBeNull()
+    // The restored response body should have the original data URL
+    expect(cachedBody).toEqual(originalBody)
+  })
 })
