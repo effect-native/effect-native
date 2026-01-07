@@ -2,6 +2,7 @@ import type { CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, KV, KVS
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { extractDataUrls, restoreDataUrls } from "./binary-extractor.js"
 import { jsonlToTimedChunks, timedChunksToJsonl } from "./sse-handler.js"
 
 function ensureCacheDir(baseDir: string, cacheKey: string): string {
@@ -35,6 +36,70 @@ export function createJsonFileKV<T>(baseDir: string, filename: string): KV<Cache
       const cacheDir = ensureCacheDir(baseDir, key)
       const filePath = join(cacheDir, filename)
       writeFileSync(filePath, JSON.stringify(value, null, 2), "utf-8")
+    },
+
+    async has([key]: CacheKey): Promise<boolean> {
+      const filePath = join(baseDir, key, filename)
+      return existsSync(filePath)
+    }
+  }
+}
+
+/** Create a KV store for requests that extracts/restores inline base64 data URLs to sidecar files */
+export function createRequestFileKV(baseDir: string, filename: string): KV<CacheKey, CachedRequest> {
+  const assetsExt = ".assets"
+
+  return {
+    async get([key]: CacheKey): Promise<CachedRequest | null> {
+      const filePath = join(baseDir, key, filename)
+      if (!existsSync(filePath)) {
+        return null
+      }
+      let content = readFileSync(filePath, "utf-8")
+      const assetsDir = join(baseDir, key, filename + assetsExt)
+      content = restoreDataUrls(content, assetsDir)
+      return JSON.parse(content) as CachedRequest
+    },
+
+    async set([key]: CacheKey, value: CachedRequest): Promise<void> {
+      const cacheDir = ensureCacheDir(baseDir, key)
+      const filePath = join(cacheDir, filename)
+      const assetsDir = join(cacheDir, filename + assetsExt)
+      let content = JSON.stringify(value, null, 2)
+      const { content: extractedContent } = extractDataUrls(content, assetsDir)
+      content = extractedContent
+      writeFileSync(filePath, content, "utf-8")
+    },
+
+    async has([key]: CacheKey): Promise<boolean> {
+      const filePath = join(baseDir, key, filename)
+      return existsSync(filePath)
+    }
+  }
+}
+
+/** Create a KV store for text files that extracts/restores inline base64 data URLs to sidecar files */
+export function createTextFileKV(baseDir: string, filename: string): KV<CacheKey, string> {
+  const assetsExt = ".assets"
+
+  return {
+    async get([key]: CacheKey): Promise<string | null> {
+      const filePath = join(baseDir, key, filename)
+      if (!existsSync(filePath)) {
+        return null
+      }
+      let content = readFileSync(filePath, "utf-8")
+      const assetsDir = join(baseDir, key, filename + assetsExt)
+      content = restoreDataUrls(content, assetsDir)
+      return content
+    },
+
+    async set([key]: CacheKey, value: string): Promise<void> {
+      const cacheDir = ensureCacheDir(baseDir, key)
+      const filePath = join(cacheDir, filename)
+      const assetsDir = join(cacheDir, filename + assetsExt)
+      const { content: extractedContent } = extractDataUrls(value, assetsDir)
+      writeFileSync(filePath, extractedContent, "utf-8")
     },
 
     async has([key]: CacheKey): Promise<boolean> {
@@ -116,9 +181,9 @@ export function createJsonlFileKVStream(baseDir: string, filename: string): KVSt
 /** Create a complete CacheStorage backed by the filesystem */
 export function createFilesystemStorage(baseDir: string): CacheStorage {
   return {
-    requests: createJsonFileKV<CachedRequest>(baseDir, "request.json"),
+    requests: createRequestFileKV(baseDir, "request.json"),
     responseMeta: createJsonFileKV<CachedResponseMeta>(baseDir, "response.meta.json"),
-    responseBody: createJsonFileKV<string>(baseDir, "response.json"),
+    responseBody: createTextFileKV(baseDir, "response.json"),
     binaryBody: createBinaryFileKV(baseDir, "response.bin"),
     sseChunks: createJsonlFileKVStream(baseDir, "response.jsonl")
   }

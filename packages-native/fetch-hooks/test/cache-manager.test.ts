@@ -41,15 +41,20 @@ function findCachedResponse(cacheDir: string): { body: string; meta: unknown } |
     const responsePath = join(cacheDir, entry, "response.json")
     const metaPath = join(cacheDir, entry, "response.meta.json")
     if (existsSync(responsePath)) {
-      const bodyContent = JSON.parse(readFileSync(responsePath, "utf-8"))
-      // New format: response.json contains just the body string, meta is separate
-      if (typeof bodyContent === "string" && existsSync(metaPath)) {
+      const rawContent = readFileSync(responsePath, "utf-8")
+      // New format: response.json contains raw text body, meta is separate
+      if (existsSync(metaPath)) {
         const meta = JSON.parse(readFileSync(metaPath, "utf-8"))
-        return { body: bodyContent, meta }
+        return { body: rawContent, meta }
       }
-      // Old format: response.json contains {body, meta}
-      if (bodyContent && typeof bodyContent.body === "string") {
-        return bodyContent
+      // Old format: response.json contains {body, meta} as JSON
+      try {
+        const bodyContent = JSON.parse(rawContent)
+        if (bodyContent && typeof bodyContent.body === "string") {
+          return bodyContent
+        }
+      } catch {
+        // Not valid JSON, skip
       }
     }
   }
@@ -748,3 +753,115 @@ async function collectSSEEvents(response: Response): Promise<Array<{ type: strin
 
   return events
 }
+
+describe("Binary extraction in request.json", () => {
+  const testCacheDir = join(process.cwd(), ".cache", "fetch-test-binary-request")
+
+  beforeEach(() => {
+    if (existsSync(testCacheDir)) {
+      rmSync(testCacheDir, { recursive: true })
+    }
+    mkdirSync(testCacheDir, { recursive: true })
+    process.env.DEV_FETCH_CACHE_DIR = testCacheDir
+  })
+
+  afterEach(() => {
+    delete process.env.DEV_FETCH_CACHE_DIR
+    if (existsSync(testCacheDir)) {
+      rmSync(testCacheDir, { recursive: true })
+    }
+  })
+
+  it("extracts inline base64 data URLs from request body to sidecar files", async () => {
+    const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    const mockFetch = async () => new Response("ok", { status: 200 })
+    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+
+    await cachedFetch("https://api.example.com/upload", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        image: `data:image/png;base64,${pngBase64}`
+      })
+    })
+
+    // Find the cache entry
+    const entries = readdirSync(testCacheDir)
+    expect(entries.length).toBeGreaterThan(0)
+    const cacheEntry = entries[0]
+    const requestPath = join(testCacheDir, cacheEntry, "request.json")
+    const assetsDir = join(testCacheDir, cacheEntry, "request.json.assets")
+
+    // Verify request.json contains sidecar reference, not raw base64
+    const rawRequestJson = readFileSync(requestPath, "utf-8")
+    expect(rawRequestJson).toContain("__sidecar:0001.png__")
+    expect(rawRequestJson).not.toContain(pngBase64)
+
+    // Verify sidecar file was created
+    expect(existsSync(assetsDir)).toBe(true)
+    const sidecarFile = join(assetsDir, "0001.png")
+    expect(existsSync(sidecarFile)).toBe(true)
+
+    // Verify sidecar file contains the decoded binary
+    const sidecarContent = readFileSync(sidecarFile)
+    const expectedContent = Buffer.from(pngBase64, "base64")
+    expect(sidecarContent).toEqual(expectedContent)
+  })
+
+  it("extracts inline base64 data URLs from response body to sidecar files", async () => {
+    const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    const mock = createMockFetch((_url) =>
+      new Response(
+        JSON.stringify({ image: `data:image/png;base64,${pngBase64}` }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    )
+    const cachedFetch = createCachedFetch(mock.fetch)
+
+    const response = await cachedFetch("https://api.example.com/image")
+    await response.text() // consume to trigger storage
+
+    // Find the cache entry
+    const entries = readdirSync(testCacheDir)
+    expect(entries.length).toBeGreaterThan(0)
+    const cacheEntry = entries[0]
+    const responsePath = join(testCacheDir, cacheEntry, "response.json")
+    const assetsDir = join(testCacheDir, cacheEntry, "response.json.assets")
+
+    // Verify response.json contains sidecar reference, not raw base64
+    const rawResponseJson = readFileSync(responsePath, "utf-8")
+    expect(rawResponseJson).toContain("__sidecar:0001.png__")
+    expect(rawResponseJson).not.toContain(pngBase64)
+
+    // Verify sidecar file was created
+    expect(existsSync(assetsDir)).toBe(true)
+    const sidecarFile = join(assetsDir, "0001.png")
+    expect(existsSync(sidecarFile)).toBe(true)
+  })
+
+  it("restores data URLs when reading cached request", async () => {
+    const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    const originalBody = { image: `data:image/png;base64,${pngBase64}` }
+    const mockFetch = async () => new Response("ok", { status: 200 })
+    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+
+    // Store request with base64 data URL
+    await cachedFetch("https://api.example.com/upload", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(originalBody)
+    })
+
+    // Use the storage abstraction to read back - it should restore the data URL
+    const { createFilesystemStorage } = await import("../src/filesystem-storage")
+    const storage = createFilesystemStorage(testCacheDir)
+
+    const entries = readdirSync(testCacheDir)
+    const cacheKey = entries[0]
+    const cached = await storage.requests.get([cacheKey])
+
+    expect(cached).not.toBeNull()
+    // The restored body.json should have the original data URL
+    expect(cached!.body).toEqual({ json: originalBody })
+  })
+})
