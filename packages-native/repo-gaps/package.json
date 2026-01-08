@@ -1,12 +1,9 @@
 {
-  "name": "ssh-keep",
+  "name": "@effect-native/repo-gaps",
   "version": "0.0.1-placeholder",
   "type": "module",
   "license": "MIT",
-  "description": "SSH+tmux resilient entrypoint with session picker",
-  "bin": {
-    "ssh-keep": "./src/cli.ts"
-  },
+  "description": "AI-powered spec/implementation gap analysis via git hooks",
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts"
@@ -15,7 +12,8 @@
     "check": "echo 'nothing to check'"
   },
   "dependencies": {
-    "@effect-native/repo-gaps": "workspace:*",
-    "effect": "latest"
+    "@effect-native/openrouter": "workspace:*",
+    "effect": "latest",
+    "glob": "^11.0.0"
   }
 }
