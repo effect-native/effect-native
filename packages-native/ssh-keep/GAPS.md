@@ -2,7 +2,7 @@
 
 ## Resolved
 
-No previously identified gaps have been resolved - the implementation remains unchanged from the previous analysis.
+No previously identified gaps have been resolved since the implementation remains unchanged from the previous analysis.
 
 ## Spec Requires, Impl Missing
 
