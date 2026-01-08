@@ -8,12 +8,6 @@ No previously identified gaps have been resolved - the implementation remains un
 
 ### Security/Safety Gaps
 
-**GAP-S1: No SSH access validation**
-- **Spec**: Requires valid SSH access for workflow to function
-- **Impl**: No validation of SSH connectivity before attempting connection
-- **Location**: cli.ts - directly spawns SSH without checking if host is reachable
-- **Severity**: Correctness
-
 **GAP-S2: No environment variable logging protection**
 - **Spec**: "Does not log sensitive environment variables by default"
 - **Impl**: No explicit protection against environment variable exposure in error cases
@@ -59,6 +53,12 @@ No previously identified gaps have been resolved - the implementation remains un
 - **Impl**: Helper exits with error code 2 but thin client doesn't interpret or explain this
 - **Location**: cli.ts doesn't handle specific exit codes from helper
 - **Severity**: UX
+
+**GAP-S1: No SSH access validation**
+- **Spec**: Requires valid SSH access for workflow to function
+- **Impl**: No validation of SSH connectivity before attempting connection
+- **Location**: cli.ts - directly spawns SSH without checking if host is reachable
+- **Severity**: Correctness
 
 ## Impl Does, Spec Doesn't Specify
 
@@ -126,9 +126,9 @@ No previously identified gaps have been resolved - the implementation remains un
 | GAP-B2 | No "create new session" affordance in picker | Correctness | Open | Yes |
 | GAP-B3 | No graceful degradation beyond choose-tree | Correctness | Open | Yes |
 | GAP-B4 | Missing explicit list mode in thin client | Correctness | Open | Yes |
-| GAP-S1 | No SSH access validation | Correctness | Open | Yes |
 | GAP-E1 | Incomplete exit code handling | Correctness | Open | Yes |
 | GAP-E2 | No clear tmux absence failure mode | UX | Open | Yes |
+| GAP-S1 | No SSH access validation | Correctness | Open | Yes |
 | ISSUE-S1 | Heredoc injection potential | Security (Low) | Open | No (monitor) |
 | ISSUE-C1 | No session name validation | Correctness | Open | Yes |
 | ISSUE-C2 | Bootstrap race condition | Correctness | Open | Yes |
