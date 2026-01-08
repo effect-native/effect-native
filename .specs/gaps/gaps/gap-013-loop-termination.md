@@ -1,8 +1,9 @@
 ---
 id: gap-013
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Loop Termination
@@ -70,4 +71,21 @@ Instructions say "loop until stable" but requirements need precise termination c
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Terminate on stable OR max-iterations, always report reason**
+
+- **Stable**: No new actionable gaps (escalated gaps are "handled")
+- **Max iterations**: Hard safety limit (default: 10)
+- **Timeout**: External (use Effect's timeout)
+- **Termination reason**: Enum `stable | max_iterations | error`
+- **No v0 features**: resumption, checkpointing, custom termination conditions
+
+**Rationale**:
+- Value: Bounded, predictable execution fits workflows
+- Mental Model: System seeks homeostasis (stability)
+- Constraints: One termination strategy, simple to implement
+- Failure: Must never lie about why it stopped
+- Progressive: Default limits work, adjust as needed
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

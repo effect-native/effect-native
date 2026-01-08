@@ -1,9 +1,10 @@
 ---
 id: gap-014
 phase: 2
-status: open
+status: resolved
 blocked_by:
   - gap-012
+resolved_date: 2026-01-07
 ---
 
 # Gap: Escalation Semantics
@@ -81,4 +82,21 @@ This affects loop termination and the meaning of "stable state."
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Three-state model, escalation = success (not failure)**
+
+- **States**: `unresolved` → `escalated` | `resolved`
+- **Escalation outcome**: Gap marked `escalated`, loop continues
+- **Work order content**: Gap details, attempted resolutions, failure reasons
+- **Escalation target**: Bramwell only
+- **No v0 features**: custom targets, escalation failure handling, learning loops
+
+**Rationale**:
+- Value: Bramwell sees actionable items, loop terminates cleanly
+- Mental Model: Escalation = delegation to senior, not failure
+- Constraints: 3 states only, Bramwell only target
+- Failure: Escalation must be semantically infallible (gaps never lost)
+- Progressive: Just works, customize later
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

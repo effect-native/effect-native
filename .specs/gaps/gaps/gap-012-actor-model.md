@@ -1,8 +1,9 @@
 ---
 id: gap-012
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Actor Model
@@ -79,4 +80,20 @@ Instructions mention "actors with capabilities" and Bramwell as fallback. Need t
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Implicit 2-actor model (Engine + Bramwell), no Actor API in v0**
+
+- **Engine**: Handles all gaps it has resolutions for
+- **Bramwell**: Catches everything else (hardcoded, always present)
+- **No explicit Actor API in v0**: Actors are a mental model, not a data structure
+- **No v0 features**: capability matching, dynamic registration, load balancing
+
+**Rationale**:
+- Value: Work always goes somewhere - never dropped
+- Mental Model: Bramwell as "senior team member" - humanizes the fallback
+- Constraints: Two actors simplifies everything dramatically
+- Failure: Bramwell cannot be offline (always available)
+- Progressive: Actor concept hidden until user needs more hands
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

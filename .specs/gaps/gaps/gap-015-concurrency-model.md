@@ -1,8 +1,9 @@
 ---
 id: gap-015
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Concurrency Model
@@ -100,4 +101,19 @@ Instructions mention "full agentic swarms" which implies concurrency. Need to sp
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Sequential execution only in v0**
+
+- **Rules**: Evaluate sequentially
+- **Resolutions**: Execute sequentially
+- **No v0 features**: parallel execution, isolation, conflict detection, swarm mode
+
+**Rationale**:
+- Value: Correctness before speed - get it right first
+- Mental Model: Easy to follow, easy to debug
+- Constraints: Major complexity removed - no race conditions possible
+- Failure: No coordination failures, no resource exhaustion
+- Progressive: Parallel is clear opt-in for v1+
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

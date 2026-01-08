@@ -1,8 +1,9 @@
 ---
 id: gap-009
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Rule API Shape
@@ -73,4 +74,20 @@ Requirements must be unambiguous. "Rules produce gaps" needs to specify exactly 
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Rules are typed functions returning Effect<Gap[]>**
+
+- **Signature**: `(context: Context) => Effect.Effect<Gap[], RuleError, R>`
+- **Identity**: String-based rule ID for logging/debugging
+- **Context**: Single object containing all dependencies
+- **No v0 features**: combinators, lifecycle hooks, runtime parameterization
+
+**Rationale**:
+- Value: Enables confident rule authoring, testable in isolation
+- Mental Model: Matches lint rules users already understand
+- Constraints: Simplest viable contract, no YAGNI features
+- Failure: Type errors surface at compile time
+- Progressive: Copy-paste to start, enhance later
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

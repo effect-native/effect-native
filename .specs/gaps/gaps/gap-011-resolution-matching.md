@@ -1,9 +1,10 @@
 ---
 id: gap-011
 phase: 2
-status: open
+status: resolved
 blocked_by:
   - gap-010
+resolved_date: 2026-01-07
 ---
 
 # Gap: Resolution Matching
@@ -60,4 +61,20 @@ Need to understand the dispatch mechanism. This affects how users define and com
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Dispatch by `_tag` with mandatory Bramwell fallback**
+
+- **Dispatch**: `Map<GapTag, Resolution>` - one resolution per gap type
+- **Fallback**: Unmatched gaps escalate to Bramwell (always)
+- **Registration**: At startup, not runtime
+- **No v0 features**: conditional matching, priority, multi-type handlers
+
+**Rationale**:
+- Value: Gaps either auto-resolve or reach a human - nothing dropped
+- Mental Model: Pattern matching (like Express routing)
+- Constraints: Trivial dispatch table, no ambiguity
+- Failure: No silent drops - Bramwell catches all
+- Progressive: Tag matching is enough for Day 1
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

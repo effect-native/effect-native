@@ -1,8 +1,9 @@
 ---
 id: gap-010
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Gap Identity
@@ -86,4 +87,20 @@ INBOX mentions "stable deterministic identity" but doesn't specify the mechanism
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Content-addressed identity from `_tag` + explicit key fields**
+
+- **Mechanism**: Deterministic hash computed from `_tag` + user-declared identity fields
+- **Default**: If no identity fields declared, use `_tag` + all fields
+- **Stability**: Identity survives serialization
+- **No v0 features**: custom identity functions, semantic matching, cross-session persistence
+
+**Rationale**:
+- Value: Trustworthy deduplication without noise
+- Mental Model: "Same content = same gap" (like git commits)
+- Constraints: Pure, deterministic, no custom logic
+- Failure: Err toward more identities (duplicates > lost gaps)
+- Progressive: Auto-compute default, override when needed
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`

@@ -1,8 +1,9 @@
 ---
 id: gap-016
 phase: 2
-status: open
+status: resolved
 blocked_by: []
+resolved_date: 2026-01-07
 ---
 
 # Gap: Service Boundaries
@@ -129,4 +130,21 @@ Instructions say "pluggable everything" with Effect service patterns. Need to sp
 
 ## Resolution
 
-(pending)
+**STATUS: RESOLVED** (2026-01-07, via 5-lens analysis)
+
+**Decision: Zero-config with one pluggable service (WorkOrderSink)**
+
+- **Engine.Default layer**: Works out of the box
+- **Caller provides**: Rules, Gap types, Resolutions
+- **Pluggable (v0)**: WorkOrderSink only
+- **Defaults**: Filesystem work orders, Effect logging, in-memory gap store
+- **No v0 features**: multiple pluggable services, OTel, env var config
+
+**Rationale**:
+- Value: Start immediately, grow complexity as needed
+- Mental Model: Engine provides / Caller provides is clear separation
+- Constraints: Minimal pluggable surface reduces complexity
+- Failure: Fail fast on missing required inputs
+- Progressive: Batteries included, swap one thing at a time
+
+See: `.specs/gaps/analysis/RECONCILED-REQUIREMENTS.md`
