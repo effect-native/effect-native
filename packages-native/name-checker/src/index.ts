@@ -16,7 +16,7 @@ export interface NameCheckConfig {
   }
   defaults: {
     suggestion_count: number
-    check_tlds: string[]
+    check_tlds: Array<string>
   }
 }
 
@@ -58,13 +58,13 @@ let _config: NameCheckConfig | null = null
 
 export const loadConfig = (): NameCheckConfig => {
   if (_config) return _config
-  
+
   const configPath = findConfigFile()
   if (!configPath) {
     _config = DEFAULT_CONFIG
     return _config
   }
-  
+
   try {
     const toml = fs.readFileSync(configPath, "utf-8")
     // Bun has built-in TOML support via Bun.TOML or we can use a simple parser
@@ -82,7 +82,7 @@ export const loadConfig = (): NameCheckConfig => {
   } catch {
     _config = DEFAULT_CONFIG
   }
-  
+
   return _config
 }
 
@@ -142,7 +142,7 @@ export const getAiSuggestions = (baseName: string, count?: number) =>
   Effect.gen(function*() {
     const config = loadConfig()
     const suggestionCount = count ?? config.defaults.suggestion_count
-    
+
     const openrouter = yield* OpenRouter
     const response = yield* openrouter.chat({
       model: config.ai.model,
