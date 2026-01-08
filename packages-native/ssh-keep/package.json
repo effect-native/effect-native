@@ -13,5 +13,9 @@
   },
   "scripts": {
     "check": "echo 'nothing to check'"
+  },
+  "dependencies": {
+    "@effect-native/openrouter": "workspace:*",
+    "effect": "latest"
   }
 }
