@@ -45,10 +45,10 @@
   },
   "devDependencies": {
     "@effect/vitest": "latest",
-    "@types/react": "^19.0.0",
+    "@types/react": "^19.2.8",
     "@types/react-dom": "^19.0.0",
     "effect": "latest",
-    "react": "19.0.0",
+    "react": "19.2.3",
     "react-dom": "19.0.0"
   }
 }
