@@ -45,7 +45,7 @@
     "effect": "latest",
     "@effect/vitest": "latest",
     "happy-dom": "^20.0.2",
-    "@opentui/core": "^0.1.63",
+    "@opentui/core": "^0.1.72",
     "react": "^19",
     "react-dom": "^19",
     "@types/react": "^19",
