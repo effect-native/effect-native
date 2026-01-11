@@ -79,19 +79,19 @@ fi
 if [ -n "$SESSION_NAME" ]; then
   # Attach-or-create named session
   if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    exec tmux attach-session -t "$SESSION_NAME"
+    exec tmux -u attach-session -t "$SESSION_NAME"
   else
-    exec tmux new-session -s "$SESSION_NAME"
+    exec tmux -u new-session -s "$SESSION_NAME"
   fi
 else
   # Picker mode: use tmux choose-tree if sessions exist, else create 'main'
   if tmux list-sessions >/dev/null 2>&1; then
     # Has sessions - show picker
     # First attach to any session, then show choose-tree
-    exec tmux attach-session \\; choose-tree -s
+    exec tmux -u attach-session \\; choose-tree -s
   else
     # No sessions - create 'main'
-    exec tmux new-session -s main
+    exec tmux -u new-session -s main
   fi
 fi
 `
@@ -99,6 +99,8 @@ fi
 // The remote command: bootstrap helper if needed, then run it
 const sessionArg = sessionName ? `-s ${sessionName}` : ""
 const remoteCommand = `
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 mkdir -p ~/.local/bin ~/.config/ssh-keep ~/.local/state/ssh-keep
 if [ ! -x ~/.local/bin/ssh-keep ]; then
   cat > ~/.local/bin/ssh-keep << 'HELPER_EOF'
