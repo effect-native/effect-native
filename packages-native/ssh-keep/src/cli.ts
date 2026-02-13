@@ -115,7 +115,7 @@ fi
 const proc = Bun.spawn(["ssh", "-t", host, remoteCommand], {
   stdin: "inherit",
   stdout: "inherit",
-  stderr: "inherit",
+  stderr: "inherit"
 })
 
 const exitCode = await proc.exited

@@ -3,11 +3,11 @@
  * AI-powered spec/implementation gap analysis via git hooks
  */
 import { OpenRouter } from "@effect-native/openrouter"
-import { Effect, Console } from "effect"
+import { $ } from "bun"
+import { Console, Effect } from "effect"
+import { glob } from "glob"
 import * as fs from "node:fs/promises"
 import * as path from "node:path"
-import { $ } from "bun"
-import { glob } from "glob"
 
 export const AUTO_COMMIT_MARKER = "[auto]"
 
@@ -20,16 +20,20 @@ export const readFile = (packageDir: string, filePath: string) =>
 export const writeFile = (packageDir: string, filePath: string, content: string) =>
   Effect.tryPromise({
     try: () => fs.writeFile(path.join(packageDir, filePath), content),
-    catch: (e) => { throw new Error(`Failed to write ${filePath}: ${e}`) }
+    catch: (e) => {
+      throw new Error(`Failed to write ${filePath}: ${e}`)
+    }
   })
 
 export const readImplementationFiles = (packageDir: string, patterns = ["src/**/*.ts"]) =>
   Effect.tryPromise({
     try: async () => {
-      const allFiles: string[] = []
+      const allFiles: Array<string> = []
       for (const pattern of patterns) {
         const files = await glob(pattern, { cwd: packageDir })
-        allFiles.push(...files)
+        for (const file of files) {
+          allFiles.push(file)
+        }
       }
       const contents = await Promise.all(
         allFiles.map(async (file) => {
@@ -51,7 +55,7 @@ export const getLastCommitMessage = (cwd: string) =>
     catch: () => ""
   })
 
-export const autoCommit = (cwd: string, files: string[], message: string) =>
+export const autoCommit = (cwd: string, files: Array<string>, message: string) =>
   Effect.tryPromise({
     try: async () => {
       await $`git add ${files}`.cwd(cwd)
@@ -88,7 +92,8 @@ Preserve GAP IDs from the previous analysis when the gap still exists.
 Be specific - cite exact spec sections and exact implementation line behaviors.
 Do NOT invent issues that don't exist. Be precise and factual.`
 
-export const SPEC_QA_PROMPT = `You are a specification analyst reviewing a behavioral specification for completeness and clarity.
+export const SPEC_QA_PROMPT =
+  `You are a specification analyst reviewing a behavioral specification for completeness and clarity.
 
 Your task:
 1. Review the existing SPEC.QA.md to understand previously identified questions/concerns
@@ -110,44 +115,45 @@ Do NOT invent problems that don't exist. Be precise and factual.`
 export interface AnalyzeOptions {
   packageDir: string
   packageName: string
-  implPatterns?: string[]
+  implPatterns?: Array<string>
 }
 
-export const analyze = (options: AnalyzeOptions) => Effect.gen(function*() {
-  const { packageDir, packageName, implPatterns = ["src/**/*.ts"] } = options
+export const analyze = (options: AnalyzeOptions) =>
+  Effect.gen(function*() {
+    const { implPatterns = ["src/**/*.ts"], packageDir, packageName } = options
 
-  // Check if this is an auto-commit (prevent infinite loop)
-  const lastCommit = yield* getLastCommitMessage(packageDir)
-  if (lastCommit.startsWith(AUTO_COMMIT_MARKER)) {
-    yield* Console.log(`${packageName}: Skipping auto-commit analysis`)
-    return
-  }
+    // Check if this is an auto-commit (prevent infinite loop)
+    const lastCommit = yield* getLastCommitMessage(packageDir)
+    if (lastCommit.startsWith(AUTO_COMMIT_MARKER)) {
+      yield* Console.log(`${packageName}: Skipping auto-commit analysis`)
+      return
+    }
 
-  yield* Console.log(`${packageName}: Analyzing spec, implementation, and QA...`)
-  
-  const [spec, impl, existingGaps, existingQA] = yield* Effect.all([
-    readFile(packageDir, "SPEC.md"),
-    readImplementationFiles(packageDir, implPatterns),
-    readFile(packageDir, "GAPS.md"),
-    readFile(packageDir, "SPEC.QA.md")
-  ])
-  
-  if (!spec) {
-    yield* Console.log(`${packageName}: No SPEC.md found, skipping`)
-    return
-  }
+    yield* Console.log(`${packageName}: Analyzing spec, implementation, and QA...`)
 
-  const openrouter = yield* OpenRouter
-  
-  // Run both analyses in parallel
-  const [gapsResponse, qaResponse] = yield* Effect.all([
-    openrouter.chat({
-      model: "anthropic/claude-sonnet-4",
-      messages: [
-        { role: "system", content: GAPS_PROMPT },
-        { 
-          role: "user", 
-          content: `# Specification
+    const [spec, impl, existingGaps, existingQA] = yield* Effect.all([
+      readFile(packageDir, "SPEC.md"),
+      readImplementationFiles(packageDir, implPatterns),
+      readFile(packageDir, "GAPS.md"),
+      readFile(packageDir, "SPEC.QA.md")
+    ])
+
+    if (!spec) {
+      yield* Console.log(`${packageName}: No SPEC.md found, skipping`)
+      return
+    }
+
+    const openrouter = yield* OpenRouter
+
+    // Run both analyses in parallel
+    const [gapsResponse, qaResponse] = yield* Effect.all([
+      openrouter.chat({
+        model: "anthropic/claude-sonnet-4",
+        messages: [
+          { role: "system", content: GAPS_PROMPT },
+          {
+            role: "user",
+            content: `# Specification
 ${spec}
 
 # Implementation
@@ -157,16 +163,16 @@ ${impl}
 ${existingGaps || "[No existing GAPS.md]"}
 
 Review the existing gap analysis against the current implementation. Generate an updated GAPS.md.`
-        }
-      ]
-    }),
-    openrouter.chat({
-      model: "anthropic/claude-sonnet-4",
-      messages: [
-        { role: "system", content: SPEC_QA_PROMPT },
-        { 
-          role: "user", 
-          content: `# Specification
+          }
+        ]
+      }),
+      openrouter.chat({
+        model: "anthropic/claude-sonnet-4",
+        messages: [
+          { role: "system", content: SPEC_QA_PROMPT },
+          {
+            role: "user",
+            content: `# Specification
 ${spec}
 
 # Existing QA Document
@@ -176,42 +182,42 @@ ${existingQA || "[No existing SPEC.QA.md]"}
 ${impl}
 
 Review the specification and existing QA document. Generate an updated SPEC.QA.md tracking open questions and concerns about the spec itself.`
-        }
-      ]
-    })
-  ], { concurrency: 2 })
-  
-  const gaps = gapsResponse.choices[0]?.message?.content ?? ""
-  const qa = qaResponse.choices[0]?.message?.content ?? ""
-  
-  const filesToCommit: string[] = []
-  
-  if (gaps.length >= 100) {
-    yield* writeFile(packageDir, "GAPS.md", gaps)
-    filesToCommit.push("GAPS.md")
-    yield* Console.log(`${packageName}: Updated GAPS.md`)
-  } else {
-    yield* Console.error(`${packageName}: GAPS.md response too short, skipping`)
-  }
-  
-  if (qa.length >= 100) {
-    yield* writeFile(packageDir, "SPEC.QA.md", qa)
-    filesToCommit.push("SPEC.QA.md")
-    yield* Console.log(`${packageName}: Updated SPEC.QA.md`)
-  } else {
-    yield* Console.error(`${packageName}: SPEC.QA.md response too short, skipping`)
-  }
-  
-  // Auto-commit if we updated anything
-  if (filesToCommit.length > 0) {
-    const committed = yield* autoCommit(packageDir, filesToCommit, `Update ${filesToCommit.join(" and ")}`)
-    if (committed) {
-      yield* Console.log(`${packageName}: Auto-committed ${filesToCommit.join(", ")}`)
+          }
+        ]
+      })
+    ], { concurrency: 2 })
+
+    const gaps = gapsResponse.choices[0]?.message?.content ?? ""
+    const qa = qaResponse.choices[0]?.message?.content ?? ""
+
+    const filesToCommit: Array<string> = []
+
+    if (gaps.length >= 100) {
+      yield* writeFile(packageDir, "GAPS.md", gaps)
+      filesToCommit.push("GAPS.md")
+      yield* Console.log(`${packageName}: Updated GAPS.md`)
     } else {
-      yield* Console.log(`${packageName}: No changes to commit`)
+      yield* Console.error(`${packageName}: GAPS.md response too short, skipping`)
     }
-  }
-})
+
+    if (qa.length >= 100) {
+      yield* writeFile(packageDir, "SPEC.QA.md", qa)
+      filesToCommit.push("SPEC.QA.md")
+      yield* Console.log(`${packageName}: Updated SPEC.QA.md`)
+    } else {
+      yield* Console.error(`${packageName}: SPEC.QA.md response too short, skipping`)
+    }
+
+    // Auto-commit if we updated anything
+    if (filesToCommit.length > 0) {
+      const committed = yield* autoCommit(packageDir, filesToCommit, `Update ${filesToCommit.join(" and ")}`)
+      if (committed) {
+        yield* Console.log(`${packageName}: Auto-committed ${filesToCommit.join(", ")}`)
+      } else {
+        yield* Console.log(`${packageName}: No changes to commit`)
+      }
+    }
+  })
 
 /** Run analysis with OpenRouter.Default provider */
 export const runAnalysis = (options: AnalyzeOptions) =>

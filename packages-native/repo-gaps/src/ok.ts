@@ -50,8 +50,8 @@ function parseFrontmatter<T>(content: string): T | null {
   }
 }
 
-function readItems<T>(dir: string, pattern: string): T[] {
-  const items: T[] = []
+function readItems<T>(dir: string, pattern: string): Array<T> {
+  const items: Array<T> = []
   const files = glob.sync(pattern, { cwd: dir })
   for (const file of files) {
     try {
@@ -67,11 +67,16 @@ function readItems<T>(dir: string, pattern: string): T[] {
 
 function severityColor(severity: string): (s: string) => string {
   switch (severity) {
-    case "critical": return red
-    case "high": return yellow
-    case "medium": return (s) => s
-    case "low": return dim
-    default: return (s) => s
+    case "critical":
+      return red
+    case "high":
+      return yellow
+    case "medium":
+      return (s) => s
+    case "low":
+      return dim
+    default:
+      return (s) => s
   }
 }
 
@@ -83,13 +88,13 @@ export function runOk(packageDir: string = process.cwd()) {
   const gaps = readItems<GapFrontmatter>(packageDir, ".gaps/*.md")
   const qas = readItems<QAFrontmatter>(packageDir, ".qa/*.md")
 
-  const openGaps = gaps.filter(g => g.status === "open")
-  const resolvedGaps = gaps.filter(g => g.status === "resolved")
-  const openQAs = qas.filter(q => q.status === "open")
-  const resolvedQAs = qas.filter(q => q.status === "resolved")
+  const openGaps = gaps.filter((g) => g.status === "open")
+  const resolvedGaps = gaps.filter((g) => g.status === "resolved")
+  const openQAs = qas.filter((q) => q.status === "open")
+  const resolvedQAs = qas.filter((q) => q.status === "resolved")
 
-  const criticalGaps = openGaps.filter(g => g.severity === "critical")
-  const highGaps = openGaps.filter(g => g.severity === "high")
+  const criticalGaps = openGaps.filter((g) => g.severity === "critical")
+  const highGaps = openGaps.filter((g) => g.severity === "high")
 
   // Header
   console.log()
@@ -109,10 +114,10 @@ export function runOk(packageDir: string = process.cwd()) {
   // Gaps summary
   if (gaps.length > 0) {
     console.log(bold("Gaps:") + ` ${openGaps.length} open, ${resolvedGaps.length} resolved`)
-    
+
     // Show open gaps by severity
     for (const severity of ["critical", "high", "medium", "low"] as const) {
-      const items = openGaps.filter(g => g.severity === severity)
+      const items = openGaps.filter((g) => g.severity === severity)
       if (items.length > 0) {
         const color = severityColor(severity)
         for (const gap of items) {
@@ -126,7 +131,7 @@ export function runOk(packageDir: string = process.cwd()) {
   // QA summary
   if (qas.length > 0) {
     console.log(bold("QA:") + ` ${openQAs.length} open, ${resolvedQAs.length} resolved`)
-    
+
     for (const qa of openQAs) {
       console.log(`  ${statusIcon(qa.status)} ${qa.id}: ${qa.title}`)
     }
