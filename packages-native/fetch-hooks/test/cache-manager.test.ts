@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:f
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createCachedFetch, createFilesystemStorage } from "../src/index"
-import type { CacheOptions, CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, TimedChunk } from "../src/types"
+import type { CachedRequest, CachedResponseMeta, CacheKey, CacheOptions, CacheStorage, TimedChunk } from "../src/types"
 
 /** Creates a mock fetch that tracks calls, ignoring internal localhost calls */
 function createMockFetch(handler: (url: string) => Response | Promise<Response>) {
