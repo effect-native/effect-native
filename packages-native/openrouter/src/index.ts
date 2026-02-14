@@ -1,6 +1,24 @@
 import * as OR from "@openrouter/sdk"
 import { Config, Effect, Layer, Schema, Stream } from "effect"
 
+/** Simple chat completion request (workaround for SDK response validation bug) */
+export interface ChatRequest {
+  model: string
+  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>
+  temperature?: number
+  max_tokens?: number
+}
+
+/** Simple chat completion response */
+export interface ChatResponse {
+  id: string
+  choices: Array<{
+    message: { role: string; content: string }
+    finish_reason: string
+  }>
+  usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }
+}
+
 export class OpenRouterError extends Schema.TaggedError<OpenRouterError>()("OpenRouterError", {
   message: Schema.String,
   cause: Schema.Defect.pipe(Schema.optional)
@@ -146,9 +164,42 @@ export class OpenRouter extends Effect.Service<OpenRouter>()("@effect-native/ope
       } as const
     })
 
+    /** Simple chat completion that bypasses SDK response validation (workaround for SDK bug) */
+    const chat = (request: ChatRequest) =>
+      Effect.gen(function*() {
+        const response = yield* Effect.tryPromise({
+          try: () =>
+            fetch(`${config.serverURL}/chat/completions`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${config.apiKey}`
+              },
+              body: JSON.stringify(request)
+            }),
+          catch: (cause) => new OpenRouterError({ cause, message: "Failed to fetch chat completion" })
+        })
+
+        if (!response.ok) {
+          const errorText = yield* Effect.tryPromise({
+            try: () => response.text(),
+            catch: () => "Unknown error"
+          })
+          return yield* new OpenRouterError({ message: `OpenRouter API error (${response.status}): ${errorText}` })
+        }
+
+        const json = yield* Effect.tryPromise({
+          try: () => response.json() as Promise<ChatResponse>,
+          catch: (cause) => new OpenRouterError({ cause, message: "Failed to parse response JSON" })
+        })
+
+        return json
+      })
+
     return {
       client: openrouter,
-      callModel
+      callModel,
+      chat
     } as const
   })
 }) {

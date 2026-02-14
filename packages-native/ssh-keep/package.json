@@ -1,0 +1,21 @@
+{
+  "name": "ssh-keep",
+  "version": "0.0.1-placeholder",
+  "type": "module",
+  "license": "MIT",
+  "description": "SSH+tmux resilient entrypoint with session picker",
+  "bin": {
+    "ssh-keep": "./src/cli.ts"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "echo 'nothing to check'"
+  },
+  "dependencies": {
+    "@effect-native/repo-gaps": "workspace:*",
+    "effect": "latest"
+  }
+}

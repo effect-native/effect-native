@@ -36,10 +36,48 @@ const DEV_FS_LOGS_PORT = 1090
 
 // Internal fetch function, set via setInternalFetchForCache
 let _internalFetch: typeof globalThis.fetch = globalThis.fetch
+const pendingSSEWrites = new Map<string, Promise<void>>()
+const storageIds = new WeakMap<CacheStorage, number>()
+let nextStorageId = 1
 
 /** @internal Set the fetch function used for dev-fs-logs communication. */
 export function setInternalFetchForCache(fetchFn: typeof globalThis.fetch): void {
   _internalFetch = fetchFn
+}
+
+function getStorageId(storage: CacheStorage): number {
+  const existingId = storageIds.get(storage)
+  if (existingId !== undefined) {
+    return existingId
+  }
+  const id = nextStorageId++
+  storageIds.set(storage, id)
+  return id
+}
+
+function getPendingSSEWriteKey(cacheKey: string, storage?: CacheStorage, baseDir?: string): string {
+  if (storage) {
+    return `storage:${getStorageId(storage)}:${cacheKey}`
+  }
+  return `fs:${baseDir ?? getCacheDir()}:${cacheKey}`
+}
+
+function trackPendingSSEWrite(pendingKey: string, writePromise: Promise<void>): void {
+  pendingSSEWrites.set(pendingKey, writePromise)
+  void writePromise.finally(() => {
+    const active = pendingSSEWrites.get(pendingKey)
+    if (active === writePromise) {
+      pendingSSEWrites.delete(pendingKey)
+    }
+  })
+}
+
+async function waitForPendingSSEWrite(pendingKey: string): Promise<void> {
+  const pending = pendingSSEWrites.get(pendingKey)
+  if (!pending) {
+    return
+  }
+  await pending.catch(() => undefined)
 }
 
 async function tryDevFsLogsWrite(cacheId: string, data: unknown): Promise<boolean> {
@@ -68,8 +106,7 @@ async function tryDevFsLogsRead(cacheId: string): Promise<unknown | null> {
     .catch(() => null)
 }
 
-function ensureCacheDir(cacheKey: string): string {
-  const baseDir = getCacheDir()
+function ensureCacheDir(baseDir: string, cacheKey: string): string {
   const cacheDir = join(baseDir, cacheKey)
   if (!existsSync(cacheDir)) {
     try {
@@ -85,6 +122,13 @@ function ensureCacheDir(cacheKey: string): string {
     }
   }
   return cacheDir
+}
+
+function requireFilesystemBaseDir(baseDir: string | undefined): string {
+  if (baseDir === undefined) {
+    throw new Error("Filesystem cache directory is required when no custom storage is provided")
+  }
+  return baseDir
 }
 
 function writeJsonFile(filePath: string, data: unknown): void {
@@ -156,7 +200,8 @@ export async function storeRequest(
     await storage.requests.set(key, request)
   } else {
     // Legacy filesystem path
-    const cacheDir = ensureCacheDir(cacheKey)
+    const baseDir = getCacheDir()
+    const cacheDir = ensureCacheDir(baseDir, cacheKey)
     const requestPath = join(cacheDir, "request.json")
     writeJsonFile(requestPath, request)
   }
@@ -174,6 +219,7 @@ export async function storeResponse(
   hashableRequest?: HashableRequest
 ): Promise<Response> {
   const key: CacheKey = hashableRequest ? [cacheKey, hashableRequest] : [cacheKey]
+  const filesystemBaseDir = storage ? undefined : getCacheDir()
   const startTime = Date.now()
   const headers = headersToRecord(response.headers)
   const contentType = headers["content-type"] ?? ""
@@ -196,7 +242,7 @@ export async function storeResponse(
     if (storage) {
       await storage.responseMeta.set(key, meta)
     } else {
-      const cacheDir = ensureCacheDir(cacheKey)
+      const cacheDir = ensureCacheDir(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
       const metaPath = join(cacheDir, "response.meta.json")
       writeJsonFile(metaPath, meta)
     }
@@ -221,7 +267,7 @@ export async function storeResponse(
       await storage.responseMeta.set(key, binaryMeta)
       await storage.binaryBody.set(key, data)
     } else {
-      const cacheDir = ensureCacheDir(cacheKey)
+      const cacheDir = ensureCacheDir(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
       const binPath = join(cacheDir, "response.bin")
       writeBinaryFile(binPath, data)
       const metaPath = join(cacheDir, "response.meta.json")
@@ -237,26 +283,32 @@ export async function storeResponse(
 
   if (isSSE) {
     const [recordStream, returnStream] = response.body.tee()
-    const chunks = await recordStreamWithTiming(recordStream)
-    meta.total_ms = Date.now() - startTime
+    const persistPromise = (async () => {
+      const chunks = await recordStreamWithTiming(recordStream)
+      const sseMeta: CachedResponseMeta = {
+        ...meta,
+        total_ms: Date.now() - startTime
+      }
 
-    if (storage) {
-      await storage.responseMeta.set(key, meta)
-      await storage.sseChunks.set(key, chunks)
-    } else {
-      const cacheDir = ensureCacheDir(cacheKey)
-      const jsonlPath = join(cacheDir, "response.jsonl")
-      const assetsDir = join(cacheDir, "response.jsonl.assets")
-      let jsonlContent = timedChunksToJsonl(chunks)
-      const { content: extractedContent } = extractDataUrls(jsonlContent, assetsDir)
-      jsonlContent = extractedContent
-      writeTextFile(jsonlPath, jsonlContent)
+      if (storage) {
+        await storage.sseChunks.set(key, chunks)
+        await storage.responseMeta.set(key, sseMeta)
+      } else {
+        const cacheDir = ensureCacheDir(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
+        const jsonlPath = join(cacheDir, "response.jsonl")
+        const assetsDir = join(cacheDir, "response.jsonl.assets")
+        let jsonlContent = timedChunksToJsonl(chunks)
+        const { content: extractedContent } = extractDataUrls(jsonlContent, assetsDir)
+        jsonlContent = extractedContent
+        writeTextFile(jsonlPath, jsonlContent)
 
-      const metaPath = join(cacheDir, "response.meta.json")
-      writeJsonFile(metaPath, meta)
-    }
-    await tryDevFsLogsWrite(`${cacheKey}/meta`, meta)
-    await tryDevFsLogsWrite(`${cacheKey}/sse`, chunks)
+        const metaPath = join(cacheDir, "response.meta.json")
+        writeJsonFile(metaPath, sseMeta)
+      }
+      void tryDevFsLogsWrite(`${cacheKey}/meta`, sseMeta)
+      void tryDevFsLogsWrite(`${cacheKey}/sse`, chunks)
+    })()
+    trackPendingSSEWrite(getPendingSSEWriteKey(cacheKey, storage, filesystemBaseDir), persistPromise)
 
     return new Response(returnStream, {
       status: response.status,
@@ -278,7 +330,7 @@ export async function storeResponse(
     await storage.responseMeta.set(key, transformedResponse.meta)
     await storage.responseBody.set(key, transformedResponse.body ?? "")
   } else {
-    const cacheDir = ensureCacheDir(cacheKey)
+    const cacheDir = ensureCacheDir(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
     const jsonPath = join(cacheDir, "response.json")
     const assetsDir = join(cacheDir, "response.json.assets")
     const { content: extractedContent } = extractDataUrls(transformedResponse.body ?? "", assetsDir)
@@ -307,6 +359,8 @@ export async function getCachedResponse(
   storage?: CacheStorage
 ): Promise<Response | null> {
   const key: CacheKey = [cacheKey]
+  const filesystemBaseDir = storage ? undefined : getCacheDir()
+  const pendingWriteKey = getPendingSSEWriteKey(cacheKey, storage, filesystemBaseDir)
 
   // Try to get response metadata
   let responseMeta: CachedResponseMeta | null = null
@@ -314,7 +368,7 @@ export async function getCachedResponse(
   if (storage) {
     responseMeta = await storage.responseMeta.get(key)
   } else {
-    const cacheDir = join(getCacheDir(), cacheKey)
+    const cacheDir = join(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
     const metaPath = join(cacheDir, "response.meta.json")
     responseMeta = readJsonFile<CachedResponseMeta>(metaPath)
 
@@ -327,6 +381,29 @@ export async function getCachedResponse(
       }>(jsonPath)
       if (cached?.meta) {
         responseMeta = cached.meta
+      }
+    }
+  }
+
+  if (!responseMeta) {
+    await waitForPendingSSEWrite(pendingWriteKey)
+    if (storage) {
+      responseMeta = await storage.responseMeta.get(key)
+    } else {
+      const cacheDir = join(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
+      const metaPath = join(cacheDir, "response.meta.json")
+      responseMeta = readJsonFile<CachedResponseMeta>(metaPath)
+
+      // For non-streaming responses, metadata is stored inside response.json
+      if (!responseMeta) {
+        const jsonPath = join(cacheDir, "response.json")
+        const cached = readJsonFile<{
+          body: string
+          meta: CachedResponseMeta
+        }>(jsonPath)
+        if (cached?.meta) {
+          responseMeta = cached.meta
+        }
       }
     }
   }
@@ -347,7 +424,7 @@ export async function getCachedResponse(
     if (storage) {
       data = await storage.binaryBody.get(key)
     } else {
-      const cacheDir = join(getCacheDir(), cacheKey)
+      const cacheDir = join(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
       const binPath = join(cacheDir, "response.bin")
       data = readBinaryFile(binPath)
     }
@@ -403,7 +480,7 @@ export async function getCachedResponse(
     }
 
     // Legacy filesystem path
-    const cacheDir = join(getCacheDir(), cacheKey)
+    const cacheDir = join(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
     const jsonlPath = join(cacheDir, "response.jsonl")
     const assetsDir = join(cacheDir, "response.jsonl.assets")
     let jsonlContent = readTextFile(jsonlPath)
@@ -443,7 +520,7 @@ export async function getCachedResponse(
   if (storage) {
     body = await storage.responseBody.get(key)
   } else {
-    const cacheDir = join(getCacheDir(), cacheKey)
+    const cacheDir = join(requireFilesystemBaseDir(filesystemBaseDir), cacheKey)
     const jsonPath = join(cacheDir, "response.json")
     const assetsDir = join(cacheDir, "response.json.assets")
     const cached = readJsonFile<{

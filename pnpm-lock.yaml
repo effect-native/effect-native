@@ -292,7 +292,7 @@ importers:
     dependencies:
       '@effect/platform':
         specifier: '*'
-        version: 0.93.5(effect@3.19.13)
+        version: 0.93.5(effect@3.19.14)
       effect:
         specifier: latest
         version: 3.19.14
@@ -304,6 +304,22 @@ importers:
         specifier: latest
         version: 3.19.14
     publishDirectory: dist
+
+  packages-native/name-checker:
+    dependencies:
+      '@effect-native/fetch-hooks':
+        specifier: workspace:*
+        version: link:../fetch-hooks
+      '@effect-native/openrouter':
+        specifier: workspace:*
+        version: link:../openrouter
+    devDependencies:
+      effect:
+        specifier: latest
+        version: 3.19.14
+      tsx:
+        specifier: latest
+        version: 4.21.0
 
   packages-native/note:
     dependencies:
@@ -408,6 +424,18 @@ importers:
         version: 0.27.0(effect@3.19.14)(vitest@3.2.4)
     publishDirectory: dist
 
+  packages-native/repo-gaps:
+    dependencies:
+      '@effect-native/openrouter':
+        specifier: workspace:*
+        version: link:../openrouter
+      effect:
+        specifier: latest
+        version: 3.19.14
+      glob:
+        specifier: ^11.0.3
+        version: 11.1.0
+
   packages-native/schemas:
     dependencies:
       effect:
@@ -418,6 +446,15 @@ importers:
         specifier: latest
         version: 0.27.0(effect@3.19.14)(vitest@3.2.4)
     publishDirectory: dist
+
+  packages-native/ssh-keep:
+    dependencies:
+      '@effect-native/repo-gaps':
+        specifier: workspace:*
+        version: link:../repo-gaps
+      effect:
+        specifier: latest
+        version: 3.19.14
 
   packages-native/tui-testing-library:
     dependencies:
@@ -3613,9 +3650,6 @@ packages:
 
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
-
-  effect@3.19.13:
-    resolution: {integrity: sha512-8MZ783YuHRwHZX2Mmm+bpGxq+7XPd88sWwYAz2Ysry80sEKpftDZXs2Hg9ZyjESi1IBTNHF0oDKe0zJRkUlyew==}
 
   effect@3.19.14:
     resolution: {integrity: sha512-3vwdq0zlvQOxXzXNKRIPKTqZNMyGCdaFUBfMPqpsyzZDre67kgC1EEHDV4EoQTovJ4w5fmJW756f86kkuz7WFA==}
@@ -7437,9 +7471,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform@0.93.5(effect@3.19.13)':
+  '@effect/platform@0.93.5(effect@3.19.14)':
     dependencies:
-      effect: 3.19.13
+      effect: 3.19.14
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
@@ -9847,11 +9881,6 @@ snapshots:
       safe-buffer: 5.2.1
 
   ee-first@1.1.1: {}
-
-  effect@3.19.13:
-    dependencies:
-      '@standard-schema/spec': 1.0.0
-      fast-check: 3.23.2
 
   effect@3.19.14:
     dependencies:

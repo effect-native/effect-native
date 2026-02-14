@@ -1,8 +1,9 @@
+import { randomUUID } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import { createCachedFetch } from "../src/index"
-import type { CachedRequest, CachedResponseMeta, CacheKey, CacheStorage, TimedChunk } from "../src/types"
+import { createCachedFetch, createFilesystemStorage } from "../src/index"
+import type { CachedRequest, CachedResponseMeta, CacheKey, CacheOptions, CacheStorage, TimedChunk } from "../src/types"
 
 /** Creates a mock fetch that tracks calls, ignoring internal localhost calls */
 function createMockFetch(handler: (url: string) => Response | Promise<Response>) {
@@ -61,6 +62,23 @@ function findCachedResponse(cacheDir: string): { body: string; meta: unknown } |
   return null
 }
 
+function createTestCacheDir(prefix: string): string {
+  const cacheDir = join(process.cwd(), ".cache", `${prefix}-${randomUUID()}`)
+  mkdirSync(cacheDir, { recursive: true })
+  return cacheDir
+}
+
+function createCachedFetchWithFilesystemStorage(
+  baseFetch: typeof globalThis.fetch,
+  cacheDir: string,
+  options?: CacheOptions
+) {
+  return createCachedFetch(baseFetch, {
+    ...options,
+    storage: createFilesystemStorage(cacheDir)
+  })
+}
+
 /**
  * Integration test for SSE stream caching.
  *
@@ -69,22 +87,15 @@ function findCachedResponse(cacheDir: string): { body: string; meta: unknown } |
  * from cache. The root cause was that the final events in the SSE stream
  * were not being captured during recording.
  */
-describe("SSE stream caching - full integration", () => {
-  const testCacheDir = join(process.cwd(), ".cache", "fetch-test")
+describe.sequential("SSE stream caching - full integration", () => {
+  let testCacheDir = ""
 
   beforeEach(() => {
-    // Clean up test cache directory
-    if (existsSync(testCacheDir)) {
-      rmSync(testCacheDir, { recursive: true })
-    }
-    mkdirSync(testCacheDir, { recursive: true })
-    // Override cache dir for tests
-    process.env.DEV_FETCH_CACHE_DIR = testCacheDir
+    testCacheDir = createTestCacheDir("fetch-test")
   })
 
   afterEach(() => {
-    delete process.env.DEV_FETCH_CACHE_DIR
-    if (existsSync(testCacheDir)) {
+    if (testCacheDir && existsSync(testCacheDir)) {
       rmSync(testCacheDir, { recursive: true })
     }
   })
@@ -128,6 +139,61 @@ describe("SSE stream caching - full integration", () => {
     })
   }
 
+  it("returns the SSE response immediately without waiting for full recording", async () => {
+    const encoder = new TextEncoder()
+    const chunkDelayMs = 120
+    const minimumHeadStartMs = 60
+    const events = [
+      { type: "start" },
+      { type: "delta", value: "a" },
+      { type: "delta", value: "b" },
+      { type: "end" }
+    ]
+
+    const mock = createMockFetch((): Response => {
+      let index = 0
+      const stream = new ReadableStream({
+        async pull(controller) {
+          if (index >= events.length) {
+            controller.close()
+            return
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, chunkDelayMs))
+          const event = events[index]!
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
+          index++
+        }
+      })
+
+      return new Response(stream, {
+        status: 200,
+        statusText: "OK",
+        headers: {
+          "content-type": "text/event-stream"
+        }
+      })
+    })
+
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir)
+
+    const start = Date.now()
+    const response = await cachedFetch("https://api.example.com/stream-latency", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt: "latency" })
+    })
+    const responseElapsed = Date.now() - start
+
+    const eventsRead = await collectSSEEvents(response)
+    const totalElapsed = Date.now() - start
+
+    // Verify response is returned before full recording completes.
+    // If storeResponse waits for recording, responseElapsed ~= totalElapsed.
+    expect(responseElapsed + minimumHeadStartMs).toBeLessThan(totalElapsed)
+    expect(eventsRead.map((e) => e.type)).toEqual(["start", "delta", "delta", "end"])
+  })
+
   it("preserves ALL SSE events including response.completed when caching and replaying", async () => {
     const mockFetch = async (_input: Request | string | URL): Promise<Response> => {
       const stream = createOpenRouterStyleSSEStream()
@@ -140,7 +206,7 @@ describe("SSE stream caching - full integration", () => {
       })
     }
 
-    const cachedFetch = createCachedFetch(mockFetch as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as typeof fetch, testCacheDir)
 
     // First call - should hit the mock and cache
     const response1 = await cachedFetch("https://api.example.com/stream", {
@@ -224,7 +290,7 @@ describe("SSE stream caching - full integration", () => {
       })
     }
 
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     // First call
     const response1 = await cachedFetch("https://api.example.com/race-test")
@@ -240,20 +306,15 @@ describe("SSE stream caching - full integration", () => {
   })
 })
 
-describe("Request body caching format", () => {
-  const testCacheDir = join(process.cwd(), ".cache", "fetch-test-body")
+describe.sequential("Request body caching format", () => {
+  let testCacheDir = ""
 
   beforeEach(() => {
-    if (existsSync(testCacheDir)) {
-      rmSync(testCacheDir, { recursive: true })
-    }
-    mkdirSync(testCacheDir, { recursive: true })
-    process.env.DEV_FETCH_CACHE_DIR = testCacheDir
+    testCacheDir = createTestCacheDir("fetch-test-body")
   })
 
   afterEach(() => {
-    delete process.env.DEV_FETCH_CACHE_DIR
-    if (existsSync(testCacheDir)) {
+    if (testCacheDir && existsSync(testCacheDir)) {
       rmSync(testCacheDir, { recursive: true })
     }
   })
@@ -273,7 +334,7 @@ describe("Request body caching format", () => {
 
   it("stores JSON body as parsed object with { json: ... } wrapper", async () => {
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     await cachedFetch("https://api.example.com/test", {
       method: "POST",
@@ -288,7 +349,7 @@ describe("Request body caching format", () => {
 
   it("stores non-JSON body as text with { text: ... } wrapper", async () => {
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     await cachedFetch("https://api.example.com/test", {
       method: "POST",
@@ -303,7 +364,7 @@ describe("Request body caching format", () => {
 
   it("stores Request object body as parsed JSON", async () => {
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     const request = new Request("https://api.example.com/test", {
       method: "POST",
@@ -320,7 +381,7 @@ describe("Request body caching format", () => {
 
   it("handles undefined body gracefully", async () => {
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     await cachedFetch("https://api.example.com/test", {
       method: "GET"
@@ -332,20 +393,15 @@ describe("Request body caching format", () => {
   })
 })
 
-describe("Lifecycle hooks", () => {
-  const testCacheDir = join(process.cwd(), ".cache", "fetch-test-hooks")
+describe.sequential("Lifecycle hooks", () => {
+  let testCacheDir = ""
 
   beforeEach(() => {
-    if (existsSync(testCacheDir)) {
-      rmSync(testCacheDir, { recursive: true })
-    }
-    mkdirSync(testCacheDir, { recursive: true })
-    process.env.DEV_FETCH_CACHE_DIR = testCacheDir
+    testCacheDir = createTestCacheDir("fetch-test-hooks")
   })
 
   afterEach(() => {
-    delete process.env.DEV_FETCH_CACHE_DIR
-    if (existsSync(testCacheDir)) {
+    if (testCacheDir && existsSync(testCacheDir)) {
       rmSync(testCacheDir, { recursive: true })
     }
   })
@@ -355,7 +411,7 @@ describe("Lifecycle hooks", () => {
       const mock = createMockFetch((_url) => new Response("response-1", { status: 200 }))
 
       let hookCallCount = 0
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Strip timestamp from URL before hashing - different timestamps hit same cache
         beforeHash: async (req) => {
           hookCallCount++
@@ -375,7 +431,7 @@ describe("Lifecycle hooks", () => {
 
     it("defaults to identity function when not provided", async () => {
       const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
-      const cachedFetch = createCachedFetch(mock.fetch)
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir)
 
       await cachedFetch("https://api.example.com/uniqueA", { method: "GET" })
       await cachedFetch("https://api.example.com/uniqueB", { method: "GET" })
@@ -388,7 +444,7 @@ describe("Lifecycle hooks", () => {
     it("transforms request data before storing to disk", async () => {
       const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
 
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Redact authorization header before storing
         beforeStoreRequest: async (req) => ({
           ...req,
@@ -419,7 +475,7 @@ describe("Lifecycle hooks", () => {
         )
       )
 
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Redact secrets from response body before storing
         beforeStoreResponse: async (res) => ({
           ...res,
@@ -449,7 +505,7 @@ describe("Lifecycle hooks", () => {
       )
 
       let hookCallCount = 0
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Inject current timestamp when replaying from cache
         afterLoadResponse: async (res) => {
           hookCallCount++
@@ -478,7 +534,7 @@ describe("Lifecycle hooks", () => {
     it("transforms the cache key after hashing with access to request", async () => {
       const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
 
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Add model name prefix extracted from request body
         transformCacheKey: (cacheKey, request) => {
           try {
@@ -509,7 +565,7 @@ describe("Lifecycle hooks", () => {
       let receivedCacheKey: string | undefined
       let receivedRequest: unknown | undefined
 
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         transformCacheKey: (cacheKey, request) => {
           receivedCacheKey = cacheKey
           receivedRequest = request
@@ -534,7 +590,7 @@ describe("Lifecycle hooks", () => {
 
     it("defaults to identity when not provided", async () => {
       const mock = createMockFetch((_url) => new Response("ok", { status: 200 }))
-      const cachedFetch = createCachedFetch(mock.fetch)
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir)
 
       await cachedFetch("https://api.example.com/simple", { method: "GET" })
 
@@ -573,7 +629,7 @@ describe("Lifecycle hooks", () => {
       })
 
       const transformedSecrets: Array<string> = []
-      const cachedFetch = createCachedFetch(mock.fetch, {
+      const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir, {
         // Transform SSE chunks during replay - redact secrets
         async *transformSSEChunk(chunks) {
           for await (const chunk of chunks) {
@@ -754,20 +810,15 @@ async function collectSSEEvents(response: Response): Promise<Array<{ type: strin
   return events
 }
 
-describe("Binary extraction in request.json", () => {
-  const testCacheDir = join(process.cwd(), ".cache", "fetch-test-binary-request")
+describe.sequential("Binary extraction in request.json", () => {
+  let testCacheDir = ""
 
   beforeEach(() => {
-    if (existsSync(testCacheDir)) {
-      rmSync(testCacheDir, { recursive: true })
-    }
-    mkdirSync(testCacheDir, { recursive: true })
-    process.env.DEV_FETCH_CACHE_DIR = testCacheDir
+    testCacheDir = createTestCacheDir("fetch-test-binary-request")
   })
 
   afterEach(() => {
-    delete process.env.DEV_FETCH_CACHE_DIR
-    if (existsSync(testCacheDir)) {
+    if (testCacheDir && existsSync(testCacheDir)) {
       rmSync(testCacheDir, { recursive: true })
     }
   })
@@ -775,7 +826,7 @@ describe("Binary extraction in request.json", () => {
   it("extracts inline base64 data URLs from request body to sidecar files", async () => {
     const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     await cachedFetch("https://api.example.com/upload", {
       method: "POST",
@@ -816,7 +867,7 @@ describe("Binary extraction in request.json", () => {
         { status: 200, headers: { "content-type": "application/json" } }
       )
     )
-    const cachedFetch = createCachedFetch(mock.fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir)
 
     const response = await cachedFetch("https://api.example.com/image")
     await response.text() // consume to trigger storage
@@ -843,7 +894,7 @@ describe("Binary extraction in request.json", () => {
     const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     const originalBody = { image: `data:image/png;base64,${pngBase64}` }
     const mockFetch = async () => new Response("ok", { status: 200 })
-    const cachedFetch = createCachedFetch(mockFetch as unknown as typeof fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mockFetch as unknown as typeof fetch, testCacheDir)
 
     // Store request with base64 data URL
     await cachedFetch("https://api.example.com/upload", {
@@ -871,7 +922,7 @@ describe("Binary extraction in request.json", () => {
     const mock = createMockFetch((_url) =>
       new Response(originalBody, { status: 200, headers: { "content-type": "application/json" } })
     )
-    const cachedFetch = createCachedFetch(mock.fetch)
+    const cachedFetch = createCachedFetchWithFilesystemStorage(mock.fetch, testCacheDir)
 
     // Store response with base64 data URL
     const response = await cachedFetch("https://api.example.com/image-restore")
