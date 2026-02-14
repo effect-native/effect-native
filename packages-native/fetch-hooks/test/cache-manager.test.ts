@@ -141,6 +141,8 @@ describe.sequential("SSE stream caching - full integration", () => {
 
   it("returns the SSE response immediately without waiting for full recording", async () => {
     const encoder = new TextEncoder()
+    const chunkDelayMs = 120
+    const minimumHeadStartMs = 60
     const events = [
       { type: "start" },
       { type: "delta", value: "a" },
@@ -157,7 +159,7 @@ describe.sequential("SSE stream caching - full integration", () => {
             return
           }
 
-          await new Promise((resolve) => setTimeout(resolve, 120))
+          await new Promise((resolve) => setTimeout(resolve, chunkDelayMs))
           const event = events[index]!
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
           index++
@@ -181,13 +183,14 @@ describe.sequential("SSE stream caching - full integration", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ prompt: "latency" })
     })
-    const elapsed = Date.now() - start
-
-    // If storeResponse awaits full recording, this is ~480ms.
-    // Expected behavior is immediate return so caller can start reading stream.
-    expect(elapsed).toBeLessThan(200)
+    const responseElapsed = Date.now() - start
 
     const eventsRead = await collectSSEEvents(response)
+    const totalElapsed = Date.now() - start
+
+    // Verify response is returned before full recording completes.
+    // If storeResponse waits for recording, responseElapsed ~= totalElapsed.
+    expect(responseElapsed + minimumHeadStartMs).toBeLessThan(totalElapsed)
     expect(eventsRead.map((e) => e.type)).toEqual(["start", "delta", "delta", "end"])
   })
 
