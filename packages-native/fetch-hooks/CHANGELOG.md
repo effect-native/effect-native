@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- [#215](https://github.com/effect-native/effect-native/pull/215) [`12dfc0f`](https://github.com/effect-native/effect-native/commit/12dfc0f3bb86b29ada7947fab807249fe5aa61ad) Thanks [@subtleGradient](https://github.com/subtleGradient)! - Fix SSE cache persistence so streaming responses return immediately while still being recorded safely to cache.
+
+  Also harden cache tests against concurrent execution by isolating filesystem storage per test and removing shared cache-dir races.
+
 ## 0.1.0
 
 ### Minor Changes
