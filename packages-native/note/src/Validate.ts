@@ -7,6 +7,7 @@
 import { slugify } from "@effect-native/schemas/Slug"
 import * as Array from "effect/Array"
 import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
 
 /**
  * Checks if an argument looks like a filename (has dot, no spaces).
@@ -65,19 +66,18 @@ export const looksLikeFlag = (arg: string): boolean => arg.startsWith("-") || ar
  * @category Schema
  */
 export const TitleWord = Schema.String.pipe(
-  Schema.filter((s) => !looksLikeFlag(s), {
-    message: (s) => ({
-      message: `"${s.actual}" looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>`,
-      override: true
-    })
-  }),
-  Schema.filter((s) => !looksLikeFilename(s), {
-    message: (s) => ({
-      message:
-        `"${s.actual}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`,
-      override: true
-    })
-  })
+  Schema.check(
+    Schema.makeFilter(
+      (s: string) => looksLikeFlag(s) ? false : undefined,
+      { message: "looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>" }
+    )
+  ),
+  Schema.check(
+    Schema.makeFilter(
+      (s: string) => looksLikeFilename(s) ? false : undefined,
+      { message: "looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>" }
+    )
+  )
 )
 
 /**
@@ -96,20 +96,10 @@ export interface TitleInput {
 }
 
 /**
- * Schema for mutable non-empty tuple [string, ...string[]] for @effect/cli compatibility.
- *
- * @since 0.1.0
- * @category Schema
- */
-const MutableNonEmptyTitleWords = Schema.mutable(
-  Schema.Tuple([TitleWord], TitleWord)
-)
-
-/**
  * Schema that transforms a non-empty array of validated title words
  * into a TitleInput containing the derived title and slug.
  *
- * Uses mutable tuple type for compatibility with @effect/cli Args.atLeast(1).
+ * Compatible with Argument.atLeast(1) which produces ReadonlyArray<string>.
  *
  * @example
  * import * as Schema from "effect/Schema"
@@ -121,23 +111,23 @@ const MutableNonEmptyTitleWords = Schema.mutable(
  * @since 0.1.0
  * @category Schema
  */
-export const TitleInput: Schema.Schema<
+export const TitleInput: Schema.Codec<
   TitleInput,
-  [string, ...Array<string>]
-> = Schema.transform(
-  MutableNonEmptyTitleWords,
-  Schema.Struct({
-    words: Schema.NonEmptyArray(Schema.String),
-    title: Schema.String,
-    slug: Schema.String
-  }),
-  {
-    strict: true,
-    decode: (words) => ({
-      words,
-      title: Array.join(words, " "),
-      slug: slugify(Array.join(words, " "))
+  ReadonlyArray<string>
+> = Schema.Array(TitleWord).pipe(
+  Schema.decodeTo(
+    Schema.Struct({
+      words: Schema.NonEmptyArray(Schema.String),
+      title: Schema.String,
+      slug: Schema.String
     }),
-    encode: ({ words }) => words as [string, ...Array<string>]
-  }
+    {
+      decode: SchemaGetter.transform((words: ReadonlyArray<string>) => ({
+        words: words as Array.NonEmptyReadonlyArray<string>,
+        title: Array.join(words, " "),
+        slug: slugify(Array.join(words, " "))
+      })),
+      encode: SchemaGetter.transform(({ words }: TitleInput) => words as ReadonlyArray<string>)
+    }
+  )
 )

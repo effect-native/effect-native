@@ -41,13 +41,11 @@
   },
   "dependencies": {
     "@effect-native/schemas": "workspace:*",
-    "@effect/cli": "latest",
-    "@effect/platform": "latest",
-    "@effect/platform-node": "latest",
-    "effect": "latest"
+    "@effect/platform-node": "beta",
+    "effect": "beta"
   },
   "devDependencies": {
-    "@effect/vitest": "latest"
+    "@effect/vitest": "beta"
   },
   "files": [
     "build",
