@@ -19,9 +19,17 @@ done_when: |
 basis: |
   - Build passes: `pnpm build` succeeds in worktree
   - Draft PR created: https://github.com/effect-native/effect-native/pull/238
-  - Tests blocked: test/CdpConnection.test.ts uses Effect.async (renamed to
-    Effect.callback in v4). This is a spec defect requiring spec author to update.
-  - PR is DRAFT pending test fix by spec author.
+  VERIFIED+FIXED 2026-02-20: Effect v4 API renames applied to test/CdpConnection.test.ts:
+  - Effect.either(e) → Effect.result(e)
+  - ._tag === "Right" / .right → ._tag === "Success" / .success
+  - ._tag === "Left" / .left → ._tag === "Failure" / .failure
+  - Effect.zipRight(...) → Effect.andThen(...)
+  - Effect.catchAll(() => Effect.void) → Effect.ignore
+  - Effect.yieldNow() → Effect.yieldNow (constant, not function)
+  - describe.sequential.skipIf(cond) → describe.runIf(!cond).sequential
+  - Stream.runCollect → Array<A> (removed Chunk.head)
+  - Added DebugTransportType to withDebugEnvironment requirements union
+  PR #238 converted from draft to ready for review.
 artifacts:
   - path: packages-native/debug/package.json
     description: debug package manifest

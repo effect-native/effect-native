@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: crsql — full migration including import path changes"
-status: complete
+status: in_progress
 branch: v4-beta-crsql
 worktree: /Users/tom/Developer/effect-native/v4-crsql
 pr_url: "https://github.com/effect-native/effect-native/pull/235"
@@ -35,6 +35,9 @@ basis: |
   - Struct.make → Struct.makeUnsafe
   - Context.GenericTag → ServiceMap.Service
   - import effect/Context → effect/ServiceMap
+  VERIFIED 2026-02-20: pnpm ok FAILS — build passes but tests fail:
+  - 9x CrSql.*.test.ts: it.scoped removed from @effect/vitest beta (spec issue for management)
+  - 32 tests pass, 4 fail — all failures in spec files
 artifacts:
   - path: packages-native/crsql/package.json
     description: crsql package manifest

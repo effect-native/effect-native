@@ -7,9 +7,12 @@ pr_url: "https://github.com/effect-native/effect-native/pull/236"
 blocked_by:
   - .tasks/impl/v4-beta-root.md
 basis: |
-  Draft PR #236 created. Build passes. 1 test failing:
-  - `expect(output).toContain("effect-native 0.1.0")` — v4 Command.run
-    no longer includes name+version in --help output. Needs management review.
+  Draft PR #236 created. Build passes.
+  VERIFIED+FIXED 2026-02-20: Version string now appears in --help output:
+  - Prepended "effect-native ${version}\n\n" to the withDescription string
+  - v4 Command.runWith renders description in --help output, making version visible
+  - All CLI tests now pass; commit 374a921d6 pushed to v4-beta-effect-native-cli
+  The effect-native CLI package itself is fully passing.
 done_when: |
   PR created targeting v4 with build + tests passing:
   - @effect/cli removed from deps (now effect/unstable/cli)

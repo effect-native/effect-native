@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: opentui-dom — update effect + @effect/vitest"
-status: complete
+status: in_progress
 branch: v4-beta-opentui-dom
 worktree: /Users/tom/Developer/effect-native/v4-opentui-dom
 pr_url: "https://github.com/effect-native/effect-native/pull/228"
@@ -16,6 +16,11 @@ basis: |
   - Updated packages-native/opentui-dom/package.json: peerDependencies.effect ^3.19.0→^4.0.0-beta.0, devDependencies.effect latest→beta, devDependencies.@effect/vitest latest→beta
   - Scanned src/ for @effect/cli, @effect/platform, @effect/sql, @effect/experimental imports — none found
   - PR #228 created targeting v4: https://github.com/effect-native/effect-native/pull/228
+  VERIFIED 2026-02-20: Copilot review + pnpm ok FAILS:
+  - pnpm-lock.yaml was stale (not regenerated after dep bump) — lockfile fix pushed
+  - src/DOMAdapter.ts uses Context.Tag which was removed in v4 → needs Context.Tag → ServiceMap.Service migration
+  - test/DOMAdapter.test.ts and test/miniapp.test.ts fail due to Context.Tag removal in DOMAdapter.ts
+  - Other 5 test suites (tailwind-mapper, style-bridge, dom-to-tui-bridge, event-relay, theme-map) all pass
 artifacts:
   - path: packages-native/opentui-dom/package.json
     description: opentui-dom package manifest
