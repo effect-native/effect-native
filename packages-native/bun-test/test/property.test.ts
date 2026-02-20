@@ -1,6 +1,6 @@
 import { describe, expect } from "bun:test"
 import * as Effect from "effect/Effect"
-import * as fc from "effect/FastCheck"
+import * as fc from "effect/testing/FastCheck"
 import * as Schema from "effect/Schema"
 import * as BunTest from "../src/index.js"
 
@@ -164,8 +164,8 @@ describe("Property-based testing", () => {
   describe("Complex schemas", () => {
     const PersonSchema = Schema.Struct({
       name: Schema.String,
-      age: Schema.Number.pipe(Schema.int(), Schema.positive()),
-      email: Schema.String.pipe(Schema.pattern(/^[^@]+@[^@]+$/))
+      age: Schema.Number.check(Schema.isInt(), Schema.isGreaterThan(0)),
+      email: Schema.String.check(Schema.isPattern(/^[^@]+@[^@]+$/))
     })
 
     BunTest.it.prop(

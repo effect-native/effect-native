@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
-import * as Either from "effect/Either"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 import * as Option from "effect/Option"
+import * as Result from "effect/Result"
 import * as BunTest from "../src/index.js"
 
 describe("Equality Testing", () => {
@@ -65,46 +65,46 @@ describe("Equality Testing", () => {
       }))
   })
 
-  describe("Either equality", () => {
-    test("should compare Eithers correctly", () => {
-      expect(Either.right(42)).toEqual(Either.right(42))
-      expect(Either.right(42)).not.toEqual(Either.right(43))
-      expect(Either.left("error")).toEqual(Either.left("error"))
-      expect(Either.right(42)).not.toEqual(Either.left("error"))
+  describe("Result equality", () => {
+    test("compares Results correctly", () => {
+      expect(Result.succeed(42)).toEqual(Result.succeed(42))
+      expect(Result.succeed(42)).not.toEqual(Result.succeed(43))
+      expect(Result.fail("error")).toEqual(Result.fail("error"))
+      expect(Result.succeed(42)).not.toEqual(Result.fail("error"))
     })
 
-    BunTest.it.effect("should compare Eithers in Effects", () =>
+    BunTest.it.effect("compares Results in Effects", () =>
       Effect.gen(function*() {
-        const either1 = yield* Effect.succeed(Either.right("success"))
-        const either2 = yield* Effect.succeed(Either.right("success"))
-        const either3 = yield* Effect.succeed(Either.left("failure"))
+        const result1 = yield* Effect.succeed(Result.succeed("success"))
+        const result2 = yield* Effect.succeed(Result.succeed("success"))
+        const result3 = yield* Effect.succeed(Result.fail("failure"))
 
-        expect(either1).toEqual(either2)
-        expect(either1).not.toEqual(either3)
+        expect(result1).toEqual(result2)
+        expect(result1).not.toEqual(result3)
       }))
   })
 
   describe("Nested structures", () => {
-    test("should compare nested Equal structures", () => {
-      const nested1 = Option.some(Either.right(42))
-      const nested2 = Option.some(Either.right(42))
-      const nested3 = Option.some(Either.left("error"))
+    test("compares nested Equal structures", () => {
+      const nested1 = Option.some(Result.succeed(42))
+      const nested2 = Option.some(Result.succeed(42))
+      const nested3 = Option.some(Result.fail("error"))
 
       expect(nested1).toEqual(nested2)
       expect(nested1).not.toEqual(nested3)
     })
 
-    BunTest.it.effect("should handle complex nested structures", () =>
+    BunTest.it.effect("handles complex nested structures", () =>
       Effect.gen(function*() {
         const complex1 = {
           option: Option.some(100),
-          either: Either.right("ok"),
+          result: Result.succeed("ok"),
           array: [Option.some(1), Option.none()]
         }
 
         const complex2 = {
           option: Option.some(100),
-          either: Either.right("ok"),
+          result: Result.succeed("ok"),
           array: [Option.some(1), Option.none()]
         }
 
