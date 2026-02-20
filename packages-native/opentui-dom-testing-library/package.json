@@ -33,8 +33,8 @@
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
-    "test": "vitest",
-    "coverage": "vitest --coverage"
+    "test": "bun test",
+    "coverage": "bun test --coverage"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -44,7 +44,6 @@
     "@happy-dom/global-registrator": "^20.0.11"
   },
   "devDependencies": {
-    "@effect/vitest": "beta",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "effect": "beta",

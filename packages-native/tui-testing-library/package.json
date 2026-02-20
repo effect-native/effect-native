@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@effect-native/bun-test": "workspace:*",
-    "@effect/vitest": "beta",
     "@types/bun": "latest",
     "effect": "beta"
   }

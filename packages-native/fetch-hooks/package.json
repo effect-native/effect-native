@@ -14,8 +14,8 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "bun test",
+    "test:run": "bun test"
   },
   "files": [
     "dist",
