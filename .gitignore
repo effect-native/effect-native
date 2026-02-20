@@ -14,12 +14,11 @@ scratchpad-bun/*
 .idea/
 .env*
 result
-bun.lock
-.eslintcache
+
 # Guard against stray URI-named files from SQLite connection strings
 file:*
 packages-native/*/file:*
 .codex/sessions/
 .codex/.codex/
-.pnpm-store/
+
 .cache/
