@@ -40,14 +40,10 @@
     "coverage": "vitest --coverage"
   },
   "peerDependencies": {
-    "effect": "^3.19.0",
-    "@effect/platform": "*"
+    "effect": "^4.0.0-beta.0"
   },
   "peerDependenciesMeta": {
     "effect": {
-      "optional": true
-    },
-    "@effect/platform": {
       "optional": true
     }
   },
