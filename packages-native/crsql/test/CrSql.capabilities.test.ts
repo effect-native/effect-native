@@ -1,4 +1,4 @@
-import { describe, it } from "@effect/vitest"
+import { describe, it } from "@effect-native/bun-test"
 
 /**
  * Capability Tests (Deferred for v0.0.0)

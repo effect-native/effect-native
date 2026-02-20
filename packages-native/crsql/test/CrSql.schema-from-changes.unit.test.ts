@@ -1,6 +1,7 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { assert, it } from "@effect/vitest"
+import assert from "node:assert"
+import { it } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
 import { ensureCrSqlLoaded } from "./_helpers.js"

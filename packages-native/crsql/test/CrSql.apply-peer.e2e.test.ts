@@ -1,6 +1,7 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { assert, layer } from "@effect/vitest"
+import assert from "node:assert"
+import { layer } from "@effect-native/bun-test"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import { Reactivity } from "effect/unstable/reactivity"

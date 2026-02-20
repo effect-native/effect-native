@@ -1,5 +1,6 @@
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { assert, layer } from "@effect/vitest"
+import assert from "node:assert"
+import { layer } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
 
