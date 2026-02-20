@@ -749,7 +749,7 @@ export function tailwindToTui(classes: string): MapResult {
     }
 
     // Skip dark mode prefix
-    if (/^dark:/.test(cls)) {
+    if (cls.startsWith("dark:")) {
       unmapped.push(cls)
       continue
     }

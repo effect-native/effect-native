@@ -31,22 +31,17 @@ if (!console.timeStamp) {
   ;(console as any).timeStamp = () => {}
 }
 
-import { Window } from "happy-dom"
-import React, { useState, useCallback } from "react"
-import { createRoot } from "react-dom/client"
+import { createEventRelay, createNodeMap, type NodeMap, type TUIRenderer } from "@effect-native/opentui-dom"
 import {
-  createCliRenderer,
   BoxRenderable,
-  TextRenderable,
-  ScrollBoxRenderable,
+  createCliRenderer,
   type KeyEvent as TUIKeyEvent,
+  ScrollBoxRenderable,
+  TextRenderable
 } from "@opentui/core"
-import {
-  createEventRelay,
-  createNodeMap,
-  type NodeMap,
-  type TUIRenderer,
-} from "@effect-native/opentui-dom"
+import { Window } from "happy-dom"
+import React, { useCallback, useState } from "react"
+import { createRoot } from "react-dom/client"
 
 // ─────────────────────────────────────────────────────────────────
 // Happy-DOM Setup
@@ -55,7 +50,7 @@ import {
 const happyWindow = new Window({
   url: "https://localhost:8080",
   width: 1024,
-  height: 768,
+  height: 768
 })
 
 const happyDocument = happyWindow.document
@@ -79,7 +74,7 @@ Object.assign(globalThis, {
   DocumentFragment: happyWindow.DocumentFragment,
   Event: happyWindow.Event,
   CustomEvent: happyWindow.CustomEvent,
-  MutationObserver: happyWindow.MutationObserver,
+  MutationObserver: happyWindow.MutationObserver
 })
 
 // Restore Bun's timer functions
@@ -200,7 +195,7 @@ async function main() {
   const dialogBtn = happyDocument.getElementById("dialog-btn") as unknown as HTMLButtonElement
   const submitBtn = happyDocument.getElementById("submit-btn") as unknown as HTMLButtonElement
   const resetBtn = happyDocument.getElementById("reset-btn") as unknown as HTMLButtonElement
-  
+
   // Dialog elements
   const dialogContainer = happyDocument.getElementById("dialog-container") as unknown as HTMLDivElement
   const dialog = happyDocument.getElementById("dialog") as unknown as HTMLDivElement
@@ -217,7 +212,7 @@ async function main() {
   const renderer = await createCliRenderer({
     useAlternateScreen: true,
     exitOnCtrlC: true,
-    useMouse: false,
+    useMouse: false
   })
 
   const { root: tuiRoot } = renderer
@@ -235,33 +230,33 @@ async function main() {
     padding: 1,
     paddingBottom: 8,
     gap: 1,
-    position: "relative",
+    position: "relative"
   })
 
   // Title bar
   const titleBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: PRIMARY_COLOR,
-    padding: 1,
+    padding: 1
   })
   const titleText = new TextRenderable(renderer, {
     content: "TUI MINIAPP - @effect-native/opentui-dom Validation",
-    fg: "#ffffff",
+    fg: "#ffffff"
   })
   titleBox.add(titleText)
 
   // Instructions
   const instructionsBox = new BoxRenderable(renderer, {
     padding: 1,
-    flexDirection: "column",
+    flexDirection: "column"
   })
   const instructionsText1 = new TextRenderable(renderer, {
     content: "Tab/Shift+Tab: navigate | Space: toggle/check | Enter: button | Arrows: radio/select",
-    fg: "#888888",
+    fg: "#888888"
   })
   const instructionsText2 = new TextRenderable(renderer, {
     content: "Alt+[N]ame | Alt+[E]mail | Alt+[D]ialog | Alt+[S]ubmit | Alt+[R]eset | Ctrl+C: exit",
-    fg: "#888888",
+    fg: "#888888"
   })
   instructionsBox.add(instructionsText1)
   instructionsBox.add(instructionsText2)
@@ -279,7 +274,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     title: " Form Fields ",
     maxHeight: 20,
-    flexGrow: 1,
+    flexGrow: 1
   })
 
   // Track value renderables for updates
@@ -291,7 +286,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     padding: 1,
     flexDirection: "row",
-    width: 50,
+    width: 50
   })
   const nameLabel = new TextRenderable(renderer, { content: "[N]ame:    ", fg: "#888888" })
   const nameValue = new TextRenderable(renderer, { content: "_" })
@@ -306,7 +301,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     padding: 1,
     flexDirection: "row",
-    width: 50,
+    width: 50
   })
   const emailLabel = new TextRenderable(renderer, { content: "[E]mail:   ", fg: "#888888" })
   const emailValue = new TextRenderable(renderer, { content: "_" })
@@ -322,7 +317,7 @@ async function main() {
     padding: 1,
     flexDirection: "column",
     width: 50,
-    height: 5,
+    height: 5
   })
   const commentsLabel = new TextRenderable(renderer, { content: "Comments:", fg: "#888888" })
   const commentsValue = new TextRenderable(renderer, { content: "_" })
@@ -337,7 +332,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     padding: 1,
     flexDirection: "row",
-    width: 50,
+    width: 50
   })
   const cbNewsletterIndicator = new TextRenderable(renderer, { content: renderCheckboxVisual(false) })
   const cbNewsletterLabel = new TextRenderable(renderer, { content: " Subscribe to newsletter" })
@@ -351,7 +346,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     padding: 1,
     flexDirection: "row",
-    width: 50,
+    width: 50
   })
   const cbTermsIndicator = new TextRenderable(renderer, { content: renderCheckboxVisual(false) })
   const cbTermsLabel = new TextRenderable(renderer, { content: " Accept terms and conditions" })
@@ -366,18 +361,18 @@ async function main() {
     padding: 1,
     flexDirection: "column",
     width: 50,
-    title: " Priority (arrows navigate) ",
+    title: " Priority (arrows navigate) "
   })
 
-  const radioBoxes: BoxRenderable[] = []
-  const radioIndicators: TextRenderable[] = []
+  const radioBoxes: Array<BoxRenderable> = []
+  const radioIndicators: Array<TextRenderable> = []
 
   for (let i = 0; i < radios.length; i++) {
     const box = new BoxRenderable(renderer, {
       border: true,
       borderColor: NORMAL_BORDER_COLOR,
       padding: 1,
-      flexDirection: "row",
+      flexDirection: "row"
     })
     const indicator = new TextRenderable(renderer, { content: renderRadioVisual(false) })
     const label = new TextRenderable(renderer, { content: ` ${radioLabels[i]}` })
@@ -396,7 +391,7 @@ async function main() {
     borderColor: NORMAL_BORDER_COLOR,
     padding: 1,
     flexDirection: "row",
-    width: 50,
+    width: 50
   })
   const selectLabel = new TextRenderable(renderer, { content: "Country:   ", fg: "#888888" })
   const selectValue = new TextRenderable(renderer, { content: "[ United States    v ]" })
@@ -408,14 +403,14 @@ async function main() {
   const buttonsBox = new BoxRenderable(renderer, {
     flexDirection: "row",
     gap: 2,
-    padding: 1,
+    padding: 1
   })
 
   // Dialog Button
   const dialogBtnBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: NORMAL_BORDER_COLOR,
-    padding: 1,
+    padding: 1
   })
   const dialogBtnText = new TextRenderable(renderer, { content: "[ [D]ialog ]" })
   dialogBtnBox.add(dialogBtnText)
@@ -425,7 +420,7 @@ async function main() {
   const submitBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: NORMAL_BORDER_COLOR,
-    padding: 1,
+    padding: 1
   })
   const submitText = new TextRenderable(renderer, { content: "[ [S]ubmit ]" })
   submitBox.add(submitText)
@@ -435,7 +430,7 @@ async function main() {
   const resetBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: NORMAL_BORDER_COLOR,
-    padding: 1,
+    padding: 1
   })
   const resetText = new TextRenderable(renderer, { content: "[ [R]eset ]" })
   resetBox.add(resetText)
@@ -469,27 +464,27 @@ async function main() {
     position: "absolute",
     top: 5,
     left: 20,
-    display: "none", // Initially hidden
+    display: "none" // Initially hidden
   })
 
-  const dialogTitleText = new TextRenderable(renderer, { 
-    content: "Confirm Action", 
-    fg: "#ffffff" 
+  const dialogTitleText = new TextRenderable(renderer, {
+    content: "Confirm Action",
+    fg: "#ffffff"
   })
-  const dialogMessageText = new TextRenderable(renderer, { 
-    content: "Are you sure you want to proceed?", 
-    fg: "#cccccc" 
+  const dialogMessageText = new TextRenderable(renderer, {
+    content: "Are you sure you want to proceed?",
+    fg: "#cccccc"
   })
-  
+
   const dialogButtonsBox = new BoxRenderable(renderer, {
     flexDirection: "row",
-    gap: 2,
+    gap: 2
   })
 
   const dialogConfirmBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: NORMAL_BORDER_COLOR,
-    padding: 1,
+    padding: 1
   })
   const dialogConfirmText = new TextRenderable(renderer, { content: "[ Confirm ]" })
   dialogConfirmBox.add(dialogConfirmText)
@@ -498,7 +493,7 @@ async function main() {
   const dialogCancelBox = new BoxRenderable(renderer, {
     border: true,
     borderColor: NORMAL_BORDER_COLOR,
-    padding: 1,
+    padding: 1
   })
   const dialogCancelText = new TextRenderable(renderer, { content: "[ Cancel ]" })
   dialogCancelBox.add(dialogCancelText)
@@ -525,7 +520,7 @@ async function main() {
     left: 1,
     right: 1,
     height: 7,
-    flexDirection: "column",
+    flexDirection: "column"
   })
   const focusDisplay = new TextRenderable(renderer, { content: "Focused: (none)" })
   const stateDisplay = new TextRenderable(renderer, { content: "" })
@@ -870,9 +865,9 @@ async function main() {
     get viewport() {
       return {
         height: fieldsBox.viewport.height,
-        width: fieldsBox.viewport.width,
+        width: fieldsBox.viewport.width
       }
-    },
+    }
   })
 
   // Custom key handler for Space, Enter, Arrows

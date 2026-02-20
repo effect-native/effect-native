@@ -15,12 +15,15 @@
     "perf": "error"
   },
   "rules": {
-    "eslint/no-console": "error",
+    "eslint/no-console": "warn",
+    "eslint/no-await-in-loop": "off",
+    "eslint/no-shadow": "off",
     "eslint/no-fallthrough": "off",
     "eslint/no-irregular-whitespace": "off",
     "eslint/require-yield": "off",
     "eslint/no-unused-vars": "off",
     "import/no-duplicates": "error",
+    "import/namespace": "off",
     "typescript/consistent-type-imports": ["error", {
       "fixStyle": "inline-type-imports"
     }],
@@ -39,12 +42,16 @@
     "typescript/no-empty-object-type": "off",
     "typescript/no-unsafe-function-type": "off",
     "typescript/no-wrapper-object-types": "off",
-    "unicorn/no-array-push-spread": "error"
+    "unicorn/no-array-push-spread": "error",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off"
   },
   "overrides": [{
-    "files": ["**/{test,dtslint,examples,benchmark,scripts,scratchpad}/**"],
+    "files": ["**/{test,dtslint,examples,benchmark,scripts,scratchpad,poc,test-fixtures}/**"],
     "rules": {
-      "eslint/no-console": "off"
+      "eslint/no-console": "off",
+      "eslint/no-unused-vars": "off",
+      "typescript/no-unused-vars": "off"
     }
   }]
 }

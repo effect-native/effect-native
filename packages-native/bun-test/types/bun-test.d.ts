@@ -1,13 +1,14 @@
 // Minimal ambient declarations for bun:test to satisfy type-checking
 // in environments where @types/bun is not installed.
 declare module "bun:test" {
-  export const test: any
-  export namespace test {
-    const skip: any
-    const only: any
-    const failing: any
-    const todo: any
+  interface TestFn {
+    (name: string, fn: () => void | Promise<void>, timeout?: number): void
+    skip: any
+    only: any
+    failing: any
+    todo: any
   }
+  export const test: TestFn
   export const describe: any
   export const beforeAll: any
   export const beforeEach: any
@@ -20,4 +21,3 @@ declare module "bun:test" {
   export const setSystemTime: any
   export const spyOn: any
 }
-
