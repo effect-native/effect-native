@@ -21,5 +21,7 @@
     "@effect-native/tui-testing-library": "0.1.0",
     "scratchpad": "0.0.0"
   },
-  "changesets": []
+  "changesets": [
+    "bun-test-beta-release"
+  ]
 }
