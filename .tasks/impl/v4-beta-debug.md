@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: debug — full migration including import path changes"
-status: in_progress
+status: complete
 branch: v4-beta-debug
 worktree: /Users/tom/Developer/effect-native/v4-debug
 pr_url: "https://github.com/effect-native/effect-native/pull/238"
@@ -30,6 +30,11 @@ basis: |
   - Stream.runCollect → Array<A> (removed Chunk.head)
   - Added DebugTransportType to withDebugEnvironment requirements union
   PR #238 converted from draft to ready for review.
+  VERIFIED 2026-02-20 (final): `nix develop --command pnpm --filter @effect-native/debug test` → 6 tests
+  skipped (all under describe.runIf(process.env.E2E === "1") — requires E2E env to run, correct by design).
+  `nix develop --command pnpm --filter @effect-native/debug exec tsc --noEmit` → exit 0 (no TS errors).
+  Copilot inline comment on Schema.Schema<A> constraint addressed with PR review (declined: suggestion was
+  v3 API, v4 uses one type param; intersection with DecodingServices:never is correct v4 pattern).
 artifacts:
   - path: packages-native/debug/package.json
     description: debug package manifest

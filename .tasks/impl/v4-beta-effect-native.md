@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: effect-native CLI — full migration including import path changes"
-status: in_progress
+status: complete
 branch: v4-beta-effect-native-cli
 worktree: /Users/tom/Developer/effect-native/v4-effect-native-cli
 pr_url: "https://github.com/effect-native/effect-native/pull/236"
@@ -13,6 +13,9 @@ basis: |
   - v4 Command.runWith renders description in --help output, making version visible
   - All CLI tests now pass; commit 374a921d6 pushed to v4-beta-effect-native-cli
   The effect-native CLI package itself is fully passing.
+  VERIFIED 2026-02-20 (final): `nix develop --command pnpm --filter effect-native test` → 1 test passed.
+  `nix develop --command pnpm --filter effect-native exec tsc --noEmit` → exit 0 (no TS errors).
+  No open inline PR review comments on PR #236.
 done_when: |
   PR created targeting v4 with build + tests passing:
   - @effect/cli removed from deps (now effect/unstable/cli)
