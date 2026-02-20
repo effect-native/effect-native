@@ -1,5 +1,5 @@
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import type * as Socket from "@effect/platform/Socket"
+import type * as Socket from "effect/unstable/socket"
 import { describe, expect, it } from "@effect/vitest"
 import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
