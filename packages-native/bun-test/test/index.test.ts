@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
-import * as fc from "effect/FastCheck"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
+import * as ServiceMap from "effect/ServiceMap"
+import * as fc from "effect/testing/FastCheck"
 import * as BunTest from "../src/index.js"
 
 describe("@effect-native/bun-test", () => {
@@ -76,8 +76,8 @@ describe("@effect-native/bun-test", () => {
   })
 
   describe("layer", () => {
-    class TestService extends Context.Tag("TestService")<TestService, { value: string }>() {
-      static Live = Layer.succeed(TestService, { value: "test-value" })
+    class TestService extends ServiceMap.Service<TestService, { value: string }>()("TestService") {
+      static Live = Layer.succeed(TestService)({ value: "test-value" })
     }
 
     BunTest.layer(TestService.Live)("with layer", (it) => {
@@ -95,9 +95,8 @@ describe("@effect-native/bun-test", () => {
     })
 
     // Test nested layers
-    class DependentService extends Context.Tag("DependentService")<DependentService, { derived: string }>() {
-      static Live = Layer.effect(
-        DependentService,
+    class DependentService extends ServiceMap.Service<DependentService, { derived: string }>()("DependentService") {
+      static Live = Layer.effect(DependentService)(
         Effect.map(TestService, (service) => ({ derived: `derived-${service.value}` }))
       )
     }
