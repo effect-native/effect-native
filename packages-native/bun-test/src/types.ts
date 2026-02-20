@@ -3,10 +3,10 @@
  */
 import type * as Duration from "effect/Duration"
 import type * as Effect from "effect/Effect"
-import type * as FC from "effect/testing/FastCheck"
 import type * as Layer from "effect/Layer"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
+import type * as FC from "effect/testing/FastCheck"
 import type * as TestClock from "effect/testing/TestClock"
 import type * as TestConsole from "effect/testing/TestConsole"
 
@@ -58,12 +58,21 @@ export namespace BunTest {
         A,
         E,
         R,
-        [{ [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Arbs[K] extends Schema.Schema<infer T> ? T : never }]
+        [
+          {
+            [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Arbs[K] extends Schema.Schema<infer T> ? T
+            : never
+          }
+        ]
       >,
       timeout?: number | {
         timeout?: number
         fastCheck?: FC.Parameters<
-          { [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Arbs[K] extends Schema.Schema<infer T> ? T : never }
+          {
+            [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T
+              : Arbs[K] extends Schema.Schema<infer T> ? T
+              : never
+          }
         >
       }
     ) => void
@@ -74,14 +83,14 @@ export namespace BunTest {
     readonly effect: BunTest.Tester<TestServices | R>
     readonly flakyTest: <A, E, R2>(
       self: Effect.Effect<A, E, R2>,
-      timeout?: Duration.DurationInput
+      timeout?: Duration.Input
     ) => Effect.Effect<A, never, R2>
     readonly scoped: BunTest.Tester<TestServices | Scope.Scope | R>
     readonly live: BunTest.Tester<R>
     readonly scopedLive: BunTest.Tester<Scope.Scope | R>
     readonly layer: <R2, E>(
       layer_: Layer.Layer<R2, E, R>,
-      options?: { readonly memoMap?: Layer.MemoMap; readonly timeout?: Duration.DurationInput }
+      options?: { readonly memoMap?: Layer.MemoMap; readonly timeout?: Duration.Input }
     ) => {
       (f: (it: BunTest.Methods<R | R2>) => void): void
       (name: string, f: (it: BunTest.Methods<R | R2>) => void): void

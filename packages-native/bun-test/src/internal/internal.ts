@@ -231,7 +231,7 @@ export const scopedLive = makeTester((effect: Effect.Effect<any, any, any>) =>
  */
 export const flakyTest = <A, E, R>(
   self: Effect.Effect<A, E, R>,
-  timeout: Duration.DurationInput = Duration.seconds(30)
+  timeout: Duration.Input = Duration.seconds(30)
 ) => {
   return pipe(
     self,
@@ -244,8 +244,8 @@ export const flakyTest = <A, E, R>(
       (Schedule as any).while((_: any) =>
         Effect.succeed(
           Duration.isLessThanOrEqualTo(
-            Duration.fromDurationInputUnsafe(_.elapsed),
-            Duration.fromDurationInputUnsafe(timeout)
+            Duration.fromInputUnsafe(_.elapsed),
+            Duration.fromInputUnsafe(timeout)
           )
         )
       )
@@ -264,7 +264,7 @@ export const layer = <R, E>(
   layer_: Layer.Layer<R, E>,
   options?: {
     readonly memoMap?: Layer.MemoMap
-    readonly timeout?: Duration.DurationInput
+    readonly timeout?: Duration.Input
   }
 ): {
   (f: (it: BunTest.Methods<R>) => void): void
