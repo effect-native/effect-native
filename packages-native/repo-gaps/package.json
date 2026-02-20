@@ -1,0 +1,22 @@
+{
+  "name": "@effect-native/repo-gaps",
+  "version": "0.0.1-placeholder",
+  "type": "module",
+  "license": "MIT",
+  "description": "AI-powered spec/implementation gap analysis via git hooks",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "echo 'nothing to check'"
+  },
+  "dependencies": {
+    "@effect-native/openrouter": "workspace:*",
+    "effect": "beta",
+    "glob": "^11.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
