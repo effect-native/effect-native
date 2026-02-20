@@ -14,7 +14,6 @@ An ecosystem of native platform tools built on [Effect](https://effect.website).
 | ![](https://img.shields.io/npm/v/@effect-native/schemas)                     | @effect-native/schemas                     | Reusable Effect Schema definitions for common data types                                        |
 | ![](https://img.shields.io/npm/v/@effect-native/patterns)                    | @effect-native/patterns                    | Worked examples showing Effect module patterns (TypeId, dual, Equal.symbol, Hash.symbol)        |
 | ![](https://img.shields.io/npm/v/@effect-native/fetch-hooks)                 | @effect-native/fetch-hooks                 | Fetch caching utilities for deterministic API replay                                            |
-| ![](https://img.shields.io/npm/v/@effect-native/openrouter)                  | @effect-native/openrouter                  | Effect-based OpenRouter client                                                                  |
 | ![](https://img.shields.io/npm/v/@effect-native/tui-testing-library)         | @effect-native/tui-testing-library         | PTY-based testing utilities for TUI applications with Ghostty WASM emulator                     |
 | ![](https://img.shields.io/npm/v/@effect-native/opentui-dom)                 | @effect-native/opentui-dom                 | Effect-based DOM adapter interface for unified DOM access across environments                   |
 | ![](https://img.shields.io/npm/v/@effect-native/opentui-dom-testing-library) | @effect-native/opentui-dom-testing-library | Testing utilities for rendering React components in happy-dom                                   |
@@ -32,16 +31,16 @@ This project uses Nix for reproducible builds. All commands should be run within
 nix develop
 
 # Install dependencies
-pnpm install
+bun install
 
 # Run all checks
-pnpm ok
+bun run ok
 
 # Run tests
-pnpm test
+bun run test
 
 # Build all packages
-pnpm build
+bun run build
 ```
 
 ## License
