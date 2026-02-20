@@ -1,22 +1,22 @@
-import { expect, it, jest } from "@effect-native/bun-test"
+import { afterEach, expect, it, jest } from "@effect-native/bun-test"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
+import * as indexModule from "../src/index"
+
+afterEach(() => {
+  jest.restoreAllMocks()
+})
 
 it.effect("maps thrown error to PlatformNotSupportedError with friendly help", () =>
   Effect.gen(function*() {
-    jest.resetModules()
-    jest.doMock("../src/index", () => ({
-      getLibSqlitePathSync: () => {
-        throw new Error("Linux musl detected; v1 supports glibc only.")
-      }
-    }))
+    jest.spyOn(indexModule, "getLibSqlitePathSync").mockImplementation(() => {
+      throw new Error("Linux musl detected; v1 supports glibc only.")
+    })
     const { getLibSqlitePath } = yield* Effect.promise(() => import("../src/effect"))
     const exit = yield* Effect.exit(getLibSqlitePath)
     if (exit._tag !== "Failure") {
       throw new Error("expected failure")
     }
-    // In v4 Effect, Cause is an object with a `reasons` array of Reason values.
-    // Each Reason has _tag "Fail" | "Die" | "Interrupt". The cause itself has no _tag.
     const failReasons = exit.cause.reasons.filter(Cause.isFailReason)
     expect(failReasons.length).toBe(1)
     const failReason = failReasons[0]

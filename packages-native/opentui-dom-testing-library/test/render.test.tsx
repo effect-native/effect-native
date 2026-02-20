@@ -1,11 +1,6 @@
-import { afterEach, beforeAll, describe, expect, it } from "bun:test"
+import { afterEach, describe, expect, it } from "bun:test"
 import React from "react"
-import { cleanup, render, setupHappyDom } from "../src/index.js"
-
-// Setup happy-dom before all tests
-beforeAll(() => {
-  setupHappyDom()
-})
+import { cleanup, render } from "../src/index.js"
 
 // Clean up after each test
 afterEach(() => {

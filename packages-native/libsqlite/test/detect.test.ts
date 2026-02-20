@@ -1,21 +1,7 @@
-import { afterEach, describe, expect, it, jest } from "bun:test"
+import { describe, expect, it } from "bun:test"
 import { getLibSqlitePathSync } from "../src/index"
 
-const originalProcess = process
-
 describe("platform detection", () => {
-  afterEach(() => {
-    jest.resetModules()
-    // restore the real process
-    // @ts-expect-error override
-    globalThis.process = originalProcess
-  })
-
-  // These tests verify that the path-lookup returns the correct library path
-  // for each supported platform. They use getLibSqlitePathSync with an explicit
-  // platform argument, which bypasses process detection and directly returns the
-  // bundled library path. jest.stubGlobal("process") + jest.resetModules() is not
-  // reliable in vitest's ESM module runner for testing module-level constants.
   it("returns darwin-x86_64 path for darwin/x64 platform", () => {
     const p = getLibSqlitePathSync("darwin-x86_64")
     expect(p.endsWith("darwin-x86_64/libsqlite3.dylib")).toBe(true)
@@ -26,12 +12,12 @@ describe("platform detection", () => {
     expect(p.endsWith("linux-x86_64/libsqlite3.so")).toBe(true)
   })
 
-  it("throws on linux musl", async () => {
-    // Stub only the properties needed for musl detection; preserve all other
-    // process properties (including nextTick) to avoid breaking vitest internals.
+  it("throws on linux musl", () => {
     const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform")
     const originalArch = Object.getOwnPropertyDescriptor(process, "arch")
     const originalReport = Object.getOwnPropertyDescriptor(process, "report")
+    // Remove the cached module so require() re-evaluates it with mocked process
+    const cacheKey = Object.keys(require.cache).find((k) => k.includes("libsqlite/src/index"))
     try {
       Object.defineProperty(process, "platform", { value: "linux", configurable: true })
       Object.defineProperty(process, "arch", { value: "x64", configurable: true })
@@ -41,19 +27,17 @@ describe("platform detection", () => {
         },
         configurable: true
       })
-      jest.resetModules()
-      let err: unknown
-      try {
-        await import("../src/index")
-      } catch (e) {
-        err = e
-      }
-      expect(typeof err === "object" && err !== null && "message" in err).toBe(true)
-      expect(String((err as { message: unknown }).message)).toContain("musl")
+      if (cacheKey) delete require.cache[cacheKey]
+      expect(() => require("../src/index")).toThrow("musl")
     } finally {
       if (originalPlatform) Object.defineProperty(process, "platform", originalPlatform)
       if (originalArch) Object.defineProperty(process, "arch", originalArch)
       if (originalReport) Object.defineProperty(process, "report", originalReport)
+      // Re-populate the cache with the real module
+      if (cacheKey) {
+        delete require.cache[cacheKey]
+        require("../src/index")
+      }
     }
   })
 })

@@ -3,7 +3,8 @@ import { describe, it } from "@effect-native/bun-test"
 // Integration test is opt-in: set RUN_INTEGRATION=1 and install better-sqlite3
 const run = process.env.RUN_INTEGRATION === "1"
 
-describe.runIf(run)("integration: load extension with better-sqlite3", () => {
+const _describe = run ? describe : describe.skip
+_describe("integration: load extension with better-sqlite3", () => {
   it("loads extension", async () => {
     let Database: any
     try {

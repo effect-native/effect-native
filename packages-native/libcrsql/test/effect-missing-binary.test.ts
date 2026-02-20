@@ -2,8 +2,8 @@ import { describe, expect, it, jest } from "@effect-native/bun-test"
 import { Effect } from "effect"
 
 // Mock fs before importing the module under test
-jest.mock("node:fs", async () => {
-  const actual = await jest.importActual("node:fs")
+jest.mock("node:fs", () => {
+  const actual = require("node:fs")
   return {
     ...actual,
     accessSync: () => {
