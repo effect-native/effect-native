@@ -1,6 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { layer } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
@@ -112,7 +112,7 @@ layer(DbMem)((it) => {
       const payload = "'); DROP TABLE victim; --"
 
       const result = yield* crsql.automigrate(payload).pipe(Effect.either)
-      assert.isTrue(result._tag === "Left") // invalid migration payload causes a failure
+      assert.ok(result._tag === "Left") // invalid migration payload causes a failure
 
       const [exists] = yield* sql<{ n: number }>`
         SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'victim'

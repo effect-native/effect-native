@@ -1,5 +1,5 @@
 import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { it } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import * as Schema from "effect/Schema"

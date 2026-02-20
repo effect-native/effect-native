@@ -1,5 +1,5 @@
 import * as List from "@effect-native/patterns/List"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
@@ -9,7 +9,7 @@ describe("List", () => {
   it("roundtrips iterable input", () => {
     const list = List.fromIterable(["a", "b", "c"])
 
-    assert.isTrue(List.isList(list))
+    assert.ok(List.isList(list))
     assert.strictEqual(list.size, 3)
     assert.deepStrictEqual(List.toArray(list), ["a", "b", "c"])
   })
@@ -47,7 +47,7 @@ describe("List", () => {
     const left = List.fromIterable([1, 2, 3])
     const right = List.cons(1)(List.cons(2)(List.cons(3)(List.empty<number>())))
 
-    assert.isTrue(Equal.equals(left, right))
+    assert.ok(Equal.equals(left, right))
     assert.strictEqual(Hash.hash(left), Hash.hash(right))
   })
 

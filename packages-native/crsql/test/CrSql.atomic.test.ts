@@ -1,6 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { layer } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
@@ -36,7 +36,7 @@ layer(DbMem)((it) => {
 
       // Before loading the extension, calling crsql_sha() should error.
       const before = yield* sql`SELECT crsql_sha() as sha`.pipe(Effect.exit)
-      assert.isTrue(before._tag === "Failure")
+      assert.ok(before._tag === "Failure")
       if (before._tag === "Failure") {
         assert.match(String(before.cause), /(no such function: crsql_sha|Failed to prepare statement)/i)
       }

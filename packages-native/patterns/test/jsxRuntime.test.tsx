@@ -2,7 +2,7 @@
 
 import { jsx } from "@effect-native/patterns/jsx-runtime"
 import { Fragment, jsxDEV } from "@effect-native/patterns/jsx-dev-runtime"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.element")
@@ -38,14 +38,14 @@ describe("jsx runtime", () => {
       ? reminders.props.children
       : [reminders.props.children]
     const [listElement] = listChildren as Array<ReactElement>
-    assert.isTrue(listElement !== undefined)
+    assert.ok(listElement !== undefined)
     assert.strictEqual(listElement.type, "list")
     assert.strictEqual(listElement.props.name, "Home")
     const reminderChildren = Array.isArray(listElement.props.children)
       ? listElement.props.children
       : [listElement.props.children]
     const [reminderElement] = reminderChildren as Array<ReactElement>
-    assert.isTrue(reminderElement !== undefined)
+    assert.ok(reminderElement !== undefined)
     assert.strictEqual(reminderElement.type, "reminder")
     assert.strictEqual(reminderElement.props.title, "Take out trash")
     assert.strictEqual(reminderElement.props.due, "2025-08-10T20:00")
@@ -74,7 +74,7 @@ describe("jsx runtime", () => {
     assert.strictEqual(element.type, Fragment)
     assert.strictEqual(element.key, "my-key")
     assert.strictEqual(element.ref, null)
-    assert.isTrue(Array.isArray(element.props.children))
+    assert.ok(Array.isArray(element.props.children))
     const [child] = element.props.children as Array<ReactElement>
     assert.strictEqual(child.$$typeof, REACT_ELEMENT_TYPE)
     assert.strictEqual(child.type, "div")

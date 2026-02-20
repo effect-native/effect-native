@@ -1,4 +1,4 @@
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
 import * as OR from "@openrouter/sdk"
 import { Effect, Layer } from "effect"

@@ -1,5 +1,5 @@
 import * as Tree from "@effect-native/patterns/Tree"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
@@ -24,7 +24,7 @@ describe("Tree", () => {
   it("make produces Tree instances tagged with TypeId", () => {
     const tree = Tree.make({ value: new NodeData({ id: 1 }) })
 
-    assert.isTrue(Tree.isTree(tree))
+    assert.ok(Tree.isTree(tree))
     assert.strictEqual(tree.value.id, 1)
     assert.strictEqual(tree.size, 1)
     assert.deepStrictEqual(Tree.children(tree), [])
@@ -66,7 +66,7 @@ describe("Tree", () => {
       ]
     })
 
-    assert.isTrue(Equal.equals(left, right))
+    assert.ok(Equal.equals(left, right))
     assert.strictEqual(Hash.hash(left), Hash.hash(right))
   })
 

@@ -1,5 +1,5 @@
 import * as Thing from "@effect-native/patterns/Thing"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
 import * as Data from "effect/Data"
 import * as Equal from "effect/Equal"
@@ -12,7 +12,7 @@ describe("Thing", () => {
   it("make creates TypeId-tagged instances and isThing recognizes them", () => {
     const original = Thing.make({ id: "alpha", label: "demo", value: 1 })
 
-    assert.isTrue(Thing.isThing(original))
+    assert.ok(Thing.isThing(original))
     assert.strictEqual(original.id, "alpha")
     assert.strictEqual(original.label, "demo")
     assert.strictEqual(original.value, 1)
@@ -23,7 +23,7 @@ describe("Thing", () => {
     const left = Thing.make({ id: "alpha", label: "demo", value: new Counter({ count: 1 }) })
     const right = Thing.make({ id: "alpha", label: "demo", value: new Counter({ count: 1 }) })
 
-    assert.isTrue(Equal.equals(left, right))
+    assert.ok(Equal.equals(left, right))
     assert.strictEqual(Hash.hash(left), Hash.hash(right))
 
     const set = HashSet.empty<typeof left>()

@@ -1,6 +1,6 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import assert from "node:assert"
+import * as assert from "node:assert"
 import { it } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
@@ -103,7 +103,7 @@ it.effect.skip("schemaFromChanges: conflicting types for same column fails", () 
 
     const changes = yield* crsql.pullChanges("0")
     const either = yield* crsql.__experimental__schemaFromChanges(changes).pipe(Effect.either)
-    assert.isTrue(either._tag === "Left")
+    assert.ok(either._tag === "Left")
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
@@ -153,5 +153,5 @@ it.effect.skip("schemaFromChanges: generated schema is idempotent under automigr
     // Apply twice without error
     yield* crsql.automigrate(schema)
     const res = yield* crsql.automigrate(schema).pipe(Effect.either)
-    assert.isTrue(res._tag === "Right")
+    assert.ok(res._tag === "Right")
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
