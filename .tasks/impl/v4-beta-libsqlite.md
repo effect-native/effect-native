@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: libsqlite — update effect peer dep range"
-status: in_progress
+status: complete
 branch: v4-beta-libsqlite
 worktree: /Users/tom/Developer/effect-native/v4-libsqlite
 pr_url: "https://github.com/effect-native/effect-native/pull/223"
@@ -14,11 +14,11 @@ basis: |
   - peerDependencies.effect updated: "^3.19.0" → "^4.0.0-beta.0" in packages-native/libsqlite/package.json
   - No imports from @effect/cli, @effect/platform, @effect/sql, @effect/experimental found in src/
   - PR #223 created targeting v4: https://github.com/effect-native/effect-native/pull/223
-  VERIFIED 2026-02-20: pnpm ok FAILS — impl fix committed+pushed (9312b3234):
-  - Context.GenericTag → ServiceMap.Service migration applied in src/effect.ts
-  Remaining spec issues (management decision needed):
-  - test/error-effect.test.ts: exit.cause._tag === "Fail" — v4 Cause structure changed
-  - test/detect.test.ts: platform detection tests fail on NixOS/Linux
+  - Context.GenericTag → ServiceMap.Service migration applied in src/effect.ts (9312b3234)
+  - test/error-effect.test.ts: fixed for v4 Cause API — Cause is now {reasons: Reason[]} not a tagged union
+  - test/detect.test.ts: fixed platform detection tests — use getLibSqlitePathSync(platform) directly
+    for darwin/linux cases; use Object.defineProperty for musl test to avoid process reassign errors
+  - All 10 tests pass: commit b52c3088330b0f88880a3ce5a317f535fdc8d225
 artifacts:
   - path: packages-native/libsqlite/package.json
     description: libsqlite package manifest
