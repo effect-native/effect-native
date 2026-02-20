@@ -50,7 +50,7 @@ const hashTree = (self: Tree<unknown>): number => {
   for (const child of self.children) {
     hash = Hash.combine(Hash.hash(child))(hash)
   }
-  return Hash.cached(self, hash)
+  return hash
 }
 
 const Proto = {

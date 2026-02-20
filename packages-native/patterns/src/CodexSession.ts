@@ -35,7 +35,7 @@ const SandboxPolicy = Schema.Struct({
 })
 
 const MessageFragmentPayload = Schema.Struct({
-  type: Schema.Literal("input_text", "output_text"),
+  type: Schema.Literals(["input_text", "output_text"]),
   text: Schema.String
 })
 
@@ -199,12 +199,12 @@ const TurnContextSchema = Schema.Struct({
 const MessageFragmentSchema = MessageFragmentPayload
 const SummaryFragmentSchema = SummaryFragmentPayload
 
-const ResponsePayloadSchema = Schema.Union(
+const ResponsePayloadSchema = Schema.Union([
   ResponseMessagePayload,
   ResponseFunctionCallPayload,
   ResponseFunctionCallOutputPayload,
   ResponseReasoningPayload
-)
+])
 
 const ResponseItemSchema = Schema.Struct({
   timestamp: Timestamp,
@@ -212,7 +212,7 @@ const ResponseItemSchema = Schema.Struct({
   payload: ResponsePayloadSchema
 })
 
-const EventPayloadSchema = Schema.Union(
+const EventPayloadSchema = Schema.Union([
   TokenCountPayload,
   TurnAbortedPayload,
   AgentReasoningPayload,
@@ -220,7 +220,7 @@ const EventPayloadSchema = Schema.Union(
   UserMessagePayload,
   EnteredReviewPayload,
   ExitedReviewPayload
-)
+])
 
 const EventMessageSchema = Schema.Struct({
   timestamp: Timestamp,
@@ -234,7 +234,7 @@ const CompactedSchema = Schema.Struct({
   payload: CompactedPayload
 })
 
-const SessionEntrySchema = Schema.Union(
+const SessionEntrySchema = Schema.Union([
   SessionHeaderSchema,
   SessionMetaSchema,
   TurnContextSchema,
@@ -245,7 +245,7 @@ const SessionEntrySchema = Schema.Union(
   LegacyReasoningPayload,
   LegacyFunctionCallPayload,
   LegacyFunctionCallOutputPayload
-)
+])
 
 const SessionSchema = Schema.Array(SessionEntrySchema)
 

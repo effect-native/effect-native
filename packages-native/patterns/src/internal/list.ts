@@ -56,7 +56,7 @@ const hashList = (self: List<unknown>): number => {
     hash = Hash.combine(Hash.hash(current.head))(hash)
     current = current.tail
   }
-  return Hash.cached(self, hash)
+  return hash
 }
 
 const Proto = {
