@@ -15,6 +15,6 @@
     "@effect-native/bun-test": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "latest",
-    "effect": "latest"
+    "effect": "beta"
   }
 }
