@@ -13,6 +13,6 @@ import * as Effect from "effect/Effect"
 import { run } from "./cli.js"
 
 run(process.argv).pipe(
-  Effect.tapErrorCause(Effect.logError),
+  Effect.tapCause(Effect.logError),
   NodeRuntime.runMain
 )
