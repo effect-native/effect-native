@@ -1,5 +1,11 @@
 # @effect-native/bun-test
 
+## 0.1.4-beta.0
+
+### Patch Changes
+
+- [#216](https://github.com/effect-native/effect-native/pull/216) [`009c7ad`](https://github.com/effect-native/effect-native/commit/009c7ad233a13cd2ea7adc5fe568f4632dab7f33) Thanks [@subtleGradient](https://github.com/subtleGradient)! - Publish a beta prerelease of `@effect-native/bun-test` via Changesets.
+
 ## 0.1.3
 
 ### Patch Changes
