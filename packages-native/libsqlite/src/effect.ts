@@ -2,10 +2,10 @@
  * Effect entrypoint: idiomatic Effect API for resolving the libsqlite3 path.
  * @since 0.0.0
  */
-import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as ServiceMap from "effect/ServiceMap"
 import { getLibSqlitePathSync } from "./index.js"
 
 /** @since 0.0.0 */
@@ -20,7 +20,7 @@ export interface LibSqliteService {
 }
 
 /** @since 0.0.0 */
-export const LibSqlite = Context.GenericTag<LibSqliteService>("effect-native/LibSqlite")
+export const LibSqlite = ServiceMap.Service<LibSqliteService>("effect-native/LibSqlite")
 
 /**
  * Live Layer providing the resolved path.
