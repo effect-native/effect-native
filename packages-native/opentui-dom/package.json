@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "@effect-native/bun-test": "workspace:*",
+    "@happy-dom/global-registrator": "^20.0.2",
     "effect": "beta",
     "happy-dom": "^20.0.2",
     "@opentui/core": "^0.1.63",

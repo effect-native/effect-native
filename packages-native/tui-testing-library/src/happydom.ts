@@ -11,6 +11,27 @@
  * @since 0.1.0
  */
 import { GlobalRegistrator } from "@happy-dom/global-registrator"
+import { Window } from "happy-dom"
+
+// happy-dom's Window class doesn't expose native error constructors in bun.
+// GlobalWindow does, but GlobalRegistrator uses Window. Patch Window.prototype
+// BEFORE register() creates the instance, so the instance inherits the fixes.
+// See: https://github.com/capricorn86/happy-dom/issues/1762
+const nativeErrors = [
+  "Error",
+  "EvalError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
+  "AggregateError",
+] as const
+for (const name of nativeErrors) {
+  if (typeof (Window.prototype as any)[name] === "undefined") {
+    ;(Window.prototype as any)[name] = (globalThis as any)[name]
+  }
+}
 
 GlobalRegistrator.register()
 
