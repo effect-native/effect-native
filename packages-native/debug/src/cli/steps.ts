@@ -8,8 +8,8 @@
  *
  * @since 1.0.0
  */
-import { Command, Options } from "@effect/cli"
-import * as NodeContext from "@effect/platform-node/NodeContext"
+import { Command, Flag } from "effect/unstable/cli"
+import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import * as Console from "effect/Console"
@@ -93,12 +93,12 @@ const Pause = Debug.cdpCommand({ command: "Debugger.pause", response: Schema.Str
 const stepsCommand = Command.make(
   "steps",
   {
-    maxSteps: Options.integer("max-steps").pipe(
-      Options.withDescription("Maximum number of steps to execute"),
-      Options.withDefault(200)
+    maxSteps: Flag.integer("max-steps").pipe(
+      Flag.withDescription("Maximum number of steps to execute"),
+      Flag.withDefault(200)
     ),
-    wsUrl: Options.text("ws-url").pipe(
-      Options.withDescription("WebSocket URL or HTTP endpoint (e.g., ws://127.0.0.1:9229/... or http://127.0.0.1:9229)")
+    wsUrl: Flag.string("ws-url").pipe(
+      Flag.withDescription("WebSocket URL or HTTP endpoint (e.g., ws://127.0.0.1:9229/... or http://127.0.0.1:9229)")
     )
   },
   Effect.fn(function*({ maxSteps, wsUrl }) {
@@ -212,7 +212,7 @@ const stepsCommand = Command.make(
                   yield* Console.log("✅ Finished stepping session")
                   return yield* Effect.sync(() => process.exit(0))
                 }
-                yield* Effect.fork(debug.sendCommand(session, yield* StepOver))
+                yield* Effect.forkScoped(debug.sendCommand(session, yield* StepOver))
                 return
               }
 
@@ -224,7 +224,7 @@ const stepsCommand = Command.make(
               return
             }
           },
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Console.error(`❌ Event handler error: ${error instanceof Error ? error.message : String(error)}`)
           )
         )
@@ -250,17 +250,15 @@ const stepsCommand = Command.make(
 
 // Run the CLI
 const cli = Command.run(stepsCommand, {
-  name: "Debug Steps",
   version: "0.0.0"
 })
 
 const layers = Layer.mergeAll(
   Debug.layerCdp.pipe(Layer.provide(NodeSocket.layerWebSocketConstructor)),
-  NodeContext.layer
+  NodeServices.layer
 )
-Effect.suspend(() => cli(process.argv)).pipe(
-  Effect.tapErrorCause(Effect.logError),
+cli.pipe(
+  Effect.tapCause(Effect.logError),
   Effect.provide(layers),
-  (it) => it,
   NodeRuntime.runMain
 )

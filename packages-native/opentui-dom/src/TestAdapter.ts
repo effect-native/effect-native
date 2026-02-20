@@ -323,7 +323,7 @@ export function createTestAdapter(): Layer.Layer<DOMAdapterService> {
     }
   }
 
-  return Layer.succeed(DOMAdapterService, adapter)
+  return Layer.succeed(DOMAdapterService)(adapter)
 }
 
 /**

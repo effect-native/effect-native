@@ -5,6 +5,7 @@
  */
 
 import * as Schema from "effect/Schema"
+import * as SchemaGetter from "effect/SchemaGetter"
 
 /**
  * Converts a title string to a URL-safe slug.
@@ -45,14 +46,11 @@ export const slugify = (title: string): string =>
  * @since 0.1.0
  * @category Schema
  */
-export const Slug: Schema.Schema<string, string> = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
-    strict: true,
-    decode: slugify,
-    encode: (slug) => slug
-  }
+export const Slug = Schema.String.pipe(
+  Schema.decodeTo(Schema.String, {
+    decode: SchemaGetter.transform(slugify),
+    encode: SchemaGetter.transform((slug) => slug)
+  })
 )
 
 /**
@@ -83,12 +81,9 @@ export type SlugBrand = typeof SlugBrandedString.Type
  * @since 0.1.0
  * @category Schema
  */
-export const SlugBranded: Schema.Schema<SlugBrand, string> = Schema.transform(
-  Schema.String,
-  SlugBrandedString,
-  {
-    strict: true,
-    decode: slugify,
-    encode: (slug) => slug
-  }
+export const SlugBranded = Schema.String.pipe(
+  Schema.decodeTo(SlugBrandedString, {
+    decode: SchemaGetter.transform(slugify),
+    encode: SchemaGetter.transform((slug) => slug)
+  })
 )

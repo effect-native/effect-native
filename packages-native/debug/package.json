@@ -43,18 +43,15 @@
     "test:debug-log-steps": "bash bin/test-steps.sh 50"
   },
   "dependencies": {
-    "@effect/cli": "latest",
-    "@effect/platform-node": "latest"
+    "@effect/platform-node": "beta"
   },
   "peerDependencies": {
-    "@effect/platform": "*",
-    "effect": "^3.19.0"
+    "effect": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "@effect/platform": "latest",
-    "@effect/vitest": "latest",
+    "@effect/vitest": "beta",
     "@types/ws": "^8.18.1",
-    "effect": "latest",
+    "effect": "beta",
     "tsx": "^4.19.0",
     "ws": "^8.18.2"
   }

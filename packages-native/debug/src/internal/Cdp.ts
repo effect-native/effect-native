@@ -5,7 +5,7 @@
  * @internal
  * @since 0.0.0
  */
-import * as Socket from "@effect/platform/Socket"
+import { Socket as SocketNS } from "effect/unstable/socket"
 import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -28,13 +28,13 @@ interface RawMessage {
 }
 
 interface PendingRequest {
-  readonly command: Debug.Command<any, any>
-  readonly deferred: Deferred.Deferred<any, Debug.DebugError>
+  readonly command: Debug.Command<unknown, unknown>
+  readonly deferred: Deferred.Deferred<unknown, Debug.DebugError>
 }
 
 interface SessionState {
-  readonly scope: Scope.CloseableScope
-  readonly writer: (chunk: string) => Effect.Effect<void, Socket.SocketError>
+  readonly scope: Scope.Closeable
+  readonly writer: (chunk: Uint8Array | string | SocketNS.CloseEvent) => Effect.Effect<void, SocketNS.SocketError>
   readonly pending: Ref.Ref<Map<number, PendingRequest>>
   readonly nextId: Ref.Ref<number>
   readonly subscribers: Ref.Ref<ReadonlyArray<Queue.Queue<Debug.Event>>>
@@ -71,7 +71,7 @@ const failAllPending = (state: SessionState, error: Debug.DebugError): Effect.Ef
         return [pending, map]
       }
     )
-    yield* Effect.forEach(entries, (entry) => Effect.intoDeferred(Effect.fail(error), entry.deferred))
+    yield* Effect.forEach(entries, (entry) => Effect.fail(error).pipe(Deferred.into(entry.deferred)))
   })
 
 const shutdownSubscribers = (state: SessionState): Effect.Effect<void> =>
@@ -109,20 +109,17 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
         return
       }
       if (message.error !== undefined) {
-        yield* Effect.intoDeferred(
-          Effect.fail(
+        yield* Effect.fail(
             new Debug.DebugCommandError({
               transport: state.transport,
               endpoint: state.endpoint,
               command: pending.command.command,
               detail: message.error
             })
-          ),
-          pending.deferred
-        )
+          ).pipe(Deferred.into(pending.deferred))
         return
       }
-      const decoded = yield* Schema.decodeUnknown(pending.command.response)(message.result).pipe(
+      const decoded = yield* Schema.decodeUnknownEffect(pending.command.response)(message.result).pipe(
         Effect.mapError((cause) =>
           new Debug.DebugDecodeError({
             transport: state.transport,
@@ -132,7 +129,7 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
           })
         )
       )
-      yield* Effect.intoDeferred(Effect.succeed(decoded), pending.deferred)
+      yield* Effect.succeed(decoded).pipe(Deferred.into(pending.deferred))
       return
     }
 
@@ -176,7 +173,7 @@ const releaseSession = (session: Debug.Session): Effect.Effect<void> =>
 
 const createSession = (
   options: Debug.ConnectOptions
-): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | Socket.WebSocketConstructor | Debug.Transport> =>
+): Effect.Effect<Debug.Session, Debug.DebugError, Scope.Scope | SocketNS.WebSocketConstructor | Debug.Transport> =>
   Effect.gen(function*() {
     const transport = options.transport ?? (yield* Debug.CurrentTransport)
     if (transport._tag !== "Cdp") {
@@ -189,9 +186,9 @@ const createSession = (
       )
     }
 
-    const scope: Scope.CloseableScope = yield* Scope.make()
-    const socket = yield* Scope.extend(Socket.makeWebSocket(options.endpoint), scope)
-    const writer = yield* Scope.extend(socket.writer, scope)
+    const scope: Scope.Closeable = yield* Scope.make()
+    const socket = yield* Scope.provide(scope)(SocketNS.makeWebSocket(options.endpoint))
+    const writer = yield* Scope.provide(scope)(socket.writer)
     const nextId = yield* Ref.make(1)
     const pending = yield* Ref.make(new Map<number, PendingRequest>())
     const subscribers = yield* Ref.make<ReadonlyArray<Queue.Queue<Debug.Event>>>([])
@@ -218,7 +215,7 @@ const createSession = (
 
     const pump = socket.runRaw((chunk) => handleIncoming(state, chunk)).pipe(
       Effect.mapError((cause) =>
-        Socket.isSocketError(cause)
+        SocketNS.isSocketError(cause)
           ? new Debug.DebugTransportError({
             transport: state.transport,
             endpoint: state.endpoint,
@@ -226,15 +223,15 @@ const createSession = (
           })
           : cause
       ),
-      Effect.catchAll((error) =>
-        Effect.zipRight(
-          failAllPending(state, error),
-          Effect.zipRight(shutdownSubscribers(state), Effect.fail(error))
+      Effect.catch((error) =>
+        failAllPending(state, error).pipe(
+          Effect.andThen(shutdownSubscribers(state)),
+          Effect.andThen(Effect.fail(error))
         )
       )
     )
 
-    yield* Scope.extend(Effect.forkScoped(pump), scope)
+    yield* Scope.provide(scope)(Effect.forkScoped(pump))
 
     return session
   })
@@ -294,7 +291,7 @@ const sendCommand: Debug.Service["sendCommand"] = (session, cmd) =>
           map.delete(id)
           return map
         }).pipe(
-          Effect.zipRight(Effect.intoDeferred(Effect.fail(error), deferred))
+          Effect.andThen(Effect.fail(error).pipe(Deferred.into(deferred)))
         )
       )
     )
@@ -312,19 +309,19 @@ const subscribe: Debug.Service["subscribe"] = (session) =>
     }),
     ({ queue, state }) =>
       Ref.update(state.subscribers, (subs) => subs.filter((candidate) => candidate !== queue)).pipe(
-        Effect.zipRight(Queue.shutdown(queue))
+        Effect.andThen(Queue.shutdown(queue))
       )
   ).pipe(
-    Effect.map(({ queue }) => Stream.fromQueue(queue, { shutdown: true }))
+    Effect.map(({ queue }) => Stream.fromQueue(queue))
   )
 
-const makeService: Effect.Effect<Debug.Service, never, Socket.WebSocketConstructor> = Effect.gen(function*() {
-  const webSocketConstructor = yield* Socket.WebSocketConstructor
+const makeService: Effect.Effect<Debug.Service, never, SocketNS.WebSocketConstructor> = Effect.gen(function*() {
+  const webSocketConstructor = yield* SocketNS.WebSocketConstructor
 
   const connectWithConstructor: Debug.Service["connect"] = (options) =>
     Effect.provide(
       connect(options),
-      Layer.succeed(Socket.WebSocketConstructor, webSocketConstructor)
+      Layer.succeed(SocketNS.WebSocketConstructor, webSocketConstructor)
     )
 
   return {
@@ -339,7 +336,7 @@ const makeService: Effect.Effect<Debug.Service, never, Socket.WebSocketConstruct
  * @internal
  * @since 0.0.0
  */
-export const layer: Layer.Layer<Debug.Service | Debug.Transport, never, Socket.WebSocketConstructor> = Layer
+export const layer: Layer.Layer<Debug.Service | Debug.Transport, never, SocketNS.WebSocketConstructor> = Layer
   .provideMerge(
     Layer.effect(Debug.Debug, makeService),
     Layer.succeed(Debug.CurrentTransport, Debug.Transport.cdp())

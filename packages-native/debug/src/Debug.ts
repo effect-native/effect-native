@@ -4,7 +4,7 @@
  * @category Debug
  * @since 0.0.0
  */
-import type * as Socket from "@effect/platform/Socket"
+import type { Socket as SocketNS } from "effect/unstable/socket"
 import type * as Layer from "effect/Layer"
 import type { Service, Transport } from "./DebugModel.js"
 import { layer } from "./internal/Cdp.js"
@@ -24,4 +24,4 @@ export * from "./DebugModel.js"
  * @category Layer
  * @since 0.0.0
  */
-export const layerCdp: Layer.Layer<Service | Transport, never, Socket.WebSocketConstructor> = layer
+export const layerCdp: Layer.Layer<Service | Transport, never, SocketNS.WebSocketConstructor> = layer

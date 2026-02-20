@@ -1,4 +1,4 @@
-import { NodeContext } from "@effect/platform-node"
+import { NodeServices } from "@effect/platform-node"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -7,30 +7,32 @@ import { describe, expect, it } from "vitest"
 import { cli, CliLayer } from "../src/cli.js"
 
 // Simple mock console that captures log output
+// In Effect v4, Console is a plain synchronous interface (not Effect-based)
 const makeMockConsole = Effect.gen(function*() {
   const lines = yield* Ref.make<Array<string>>([])
 
   const mockConsole: Console.Console = {
-    [Console.TypeId]: Console.TypeId,
-    log: (...args) => Ref.update(lines, (arr) => [...arr, ...args.map(String)]),
-    unsafe: globalThis.console,
-    assert: () => Effect.void,
-    clear: Effect.void,
-    count: () => Effect.void,
-    countReset: () => Effect.void,
-    debug: () => Effect.void,
-    dir: () => Effect.void,
-    dirxml: () => Effect.void,
-    error: () => Effect.void,
-    group: () => Effect.void,
-    groupEnd: Effect.void,
-    info: () => Effect.void,
-    table: () => Effect.void,
-    time: () => Effect.void,
-    timeEnd: () => Effect.void,
-    timeLog: () => Effect.void,
-    trace: () => Effect.void,
-    warn: () => Effect.void
+    assert: () => {},
+    clear: () => {},
+    count: () => {},
+    countReset: () => {},
+    debug: () => {},
+    dir: () => {},
+    dirxml: () => {},
+    error: () => {},
+    group: () => {},
+    groupCollapsed: () => {},
+    groupEnd: () => {},
+    info: () => {},
+    log: (...args) => {
+      Effect.runFork(Ref.update(lines, (arr) => [...arr, ...args.map(String)]))
+    },
+    table: () => {},
+    time: () => {},
+    timeEnd: () => {},
+    timeLog: () => {},
+    trace: () => {},
+    warn: () => {}
   }
 
   return { mockConsole, getLines: () => Ref.get(lines) }
@@ -48,8 +50,8 @@ const runCliWithMockConsole = (args: ReadonlyArray<string>) =>
     const { getLines, mockConsole } = yield* makeMockConsole
     const TestLayer = Layer.mergeAll(
       CliLayer,
-      Console.setConsole(mockConsole),
-      NodeContext.layer
+      Layer.succeed(Console.Console)(mockConsole),
+      NodeServices.layer
     )
 
     yield* Effect.provide(cli(args), TestLayer)

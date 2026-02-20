@@ -39,11 +39,11 @@
     "tui-dom": "bun run poc/miniapp.tsx"
   },
   "peerDependencies": {
-    "effect": "^3.19.0"
+    "effect": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "effect": "latest",
-    "@effect/vitest": "latest",
+    "effect": "beta",
+    "@effect/vitest": "beta",
     "happy-dom": "^20.0.2",
     "@opentui/core": "^0.1.63",
     "react": "^19",
