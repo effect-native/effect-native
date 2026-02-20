@@ -30,12 +30,13 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             bun
-            pnpm
             deno
             nodejs_24
             python3
             yq-go
             lazygit
+            dprint
+            oxlint
           ];
         };
       });
