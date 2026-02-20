@@ -1,6 +1,6 @@
 ---
 title: "v4 beta: patterns — update effect + @effect/vitest"
-status: in_progress
+status: complete
 branch: v4-beta-patterns
 worktree: /Users/tom/Developer/effect-native/v4-patterns
 pr_url: "https://github.com/effect-native/effect-native/pull/230"
@@ -22,9 +22,12 @@ basis: |
   - src/internal/list.ts, tree.ts, thing.ts: Hash.cached(self, hash) → hash (v4 auto-caches)
   - src/CodexSession.ts: Schema.Union(a,b,c) → Schema.Union([a,b,c]) (3 call sites)
   - src/CodexSession.ts: Schema.Literal("a","b") → Schema.Literals(["a","b"])
-  Remaining spec issues (management decision needed):
-  - test/Thing.test.ts, test/Tree.test.ts: Data.struct({...}) removed in v4
-  - test/CodexSession.test.ts: Schema.decodeUnknown removed in v4
+  VERIFIED 2026-02-20: all test fixes committed (40ab7ba59):
+  - test/Thing.test.ts: Data.struct({count:1}) → new Counter({count:1}) via Data.Class
+  - test/Tree.test.ts: Data.struct({id:1}) → new NodeData({id:1}) via Data.Class
+  - test/CodexSession.test.ts: Schema.decodeUnknown → Schema.decodeUnknownEffect
+  - test/CodexSession.test.ts: Schema.encode (parser) → Schema.encodeEffect
+  All 20 tests pass; tsc --noEmit clean
 artifacts:
   - path: packages-native/patterns/package.json
     description: patterns package manifest
