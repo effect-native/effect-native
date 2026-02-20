@@ -33,23 +33,19 @@
     "coverage": "vitest --coverage"
   },
   "peerDependencies": {
-    "@effect/sql": "*",
-    "effect": "^3.19.0"
+    "effect": "^4.0.0-beta.0"
   },
   "devDependencies": {
     "@effect-native/libcrsql": "workspace:^",
-    "@effect/experimental": "latest",
-    "@effect/platform": "latest",
-    "@effect/platform-node": "latest",
-    "@effect/sql": "latest",
-    "@effect/vitest": "latest",
-    "effect": "latest"
+    "@effect/platform-node": "beta",
+    "@effect/vitest": "beta",
+    "effect": "beta"
   },
   "dependencies": {
     "@vlcn.io/crsqlite": "^0.16.3"
   },
   "optionalDependencies": {
-    "@effect/sql-sqlite-bun": "latest",
-    "@effect/sql-sqlite-node": "latest"
+    "@effect/sql-sqlite-bun": "beta",
+    "@effect/sql-sqlite-node": "beta"
   }
 }

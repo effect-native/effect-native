@@ -12,8 +12,7 @@
  *
  * @since 0.1.0
  */
-import * as SqlClient from "@effect/sql/SqlClient"
-import type { SqlError } from "@effect/sql/SqlError"
+import { SqlClient, SqlError } from "effect/unstable/sql"
 import { Effect } from "effect"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
@@ -30,7 +29,7 @@ export interface SqliteClient extends SqlClient.SqlClient {
    *
    * Required to enable CR-SQLite (crsqlite) for the current connection.
    */
-  readonly loadExtension: (path: string) => Effect.Effect<void, SqlError>
+  readonly loadExtension: (path: string) => Effect.Effect<void, SqlError.SqlError>
 }
 
 /**

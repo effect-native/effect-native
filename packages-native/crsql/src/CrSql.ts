@@ -30,9 +30,7 @@
 // NOTE: avoid static import of libcrsql here to keep docgen example compilation
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
-import * as SqlClient from "@effect/sql/SqlClient"
-import * as SqlError from "@effect/sql/SqlError"
-import * as Statement from "@effect/sql/Statement"
+import { SqlClient, SqlError, Statement } from "effect/unstable/sql"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"

@@ -13,7 +13,7 @@
  *
  * @since 0.1.0
  */
-import * as SqlClient from "@effect/sql/SqlClient"
+import { SqlClient } from "effect/unstable/sql"
 import * as Config from "effect/Config"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
