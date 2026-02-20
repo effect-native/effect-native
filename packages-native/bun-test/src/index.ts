@@ -4,11 +4,11 @@
 import * as B from "bun:test"
 import type * as Duration from "effect/Duration"
 import type * as Effect from "effect/Effect"
-import type * as FC from "effect/FastCheck"
+import type * as FC from "effect/testing/FastCheck"
 import type * as Layer from "effect/Layer"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
-import type * as TestServices from "effect/TestServices"
+import type { TestServices } from "./types.js"
 import * as internal from "./internal/internal.js"
 import type { BunTest } from "./types.js"
 
@@ -34,8 +34,8 @@ export type { BunTest } from "./types.js"
 
 // Public API
 export const addEqualityTesters: () => void = internal.addEqualityTesters
-export const effect: BunTest.Tester<TestServices.TestServices> = internal.effect
-export const scoped: BunTest.Tester<TestServices.TestServices | Scope.Scope> = internal.scoped
+export const effect: BunTest.Tester<TestServices> = internal.effect
+export const scoped: BunTest.Tester<TestServices | Scope.Scope> = internal.scoped
 export const live: BunTest.Tester<never> = internal.live
 export const scopedLive: BunTest.Tester<Scope.Scope> = internal.scopedLive
 export const layer: <R, E>(
@@ -55,12 +55,12 @@ export const prop: <const Arbs extends BunTest.Arbitraries>(
   name: string,
   arbitraries: Arbs,
   self: (
-    props: { [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Schema.Schema.Type<Arbs[K]> }
+    props: { [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Arbs[K] extends Schema.Schema<infer T> ? T : never }
   ) => void,
   options?: number | {
     timeout?: number
     fastCheck?: FC.Parameters<
-      { [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Schema.Schema.Type<Arbs[K]> }
+      { [K in keyof Arbs]: Arbs[K] extends FC.Arbitrary<infer T> ? T : Arbs[K] extends Schema.Schema<infer T> ? T : never }
     >
   }
 ) => void = internal.prop as any

@@ -2,21 +2,19 @@
  * @since 0.1.0
  */
 import * as B from "bun:test"
-import * as Arbitrary from "effect/Arbitrary"
 import * as Cause from "effect/Cause"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
-import * as fc from "effect/FastCheck"
 import { pipe } from "effect/Function"
 import * as Layer from "effect/Layer"
-import * as Logger from "effect/Logger"
 import * as Schedule from "effect/Schedule"
 import * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
-import * as TestEnvironment from "effect/TestContext"
-import * as Utils from "effect/Utils"
+import * as fc from "effect/testing/FastCheck"
+import * as TestClock from "effect/testing/TestClock"
+import * as TestConsole from "effect/testing/TestConsole"
 
 // Use our package's BunTest types from a dedicated types module to avoid cycles
 import type { BunTest } from "../types.js"
@@ -33,7 +31,7 @@ const runPromise = <E, A>(effect: Effect.Effect<A, E>) =>
     if (Exit.isSuccess(exit)) {
       return () => exit.value
     } else {
-      if (Cause.isInterruptedOnly(exit.cause)) {
+      if (Cause.hasInterruptsOnly(exit.cause)) {
         return () => {
           throw new Error("All fibers interrupted without errors.")
         }
@@ -56,13 +54,11 @@ const runPromise = <E, A>(effect: Effect.Effect<A, E>) =>
 const runTest = <E, A>(effect: Effect.Effect<A, E>) => runPromise(effect)
 
 /**
- * Test environment layer that provides TestContext without default logging.
+ * Test environment layer that provides TestClock and TestConsole.
  *
  * @internal
  */
-const TestEnv = TestEnvironment.TestContext.pipe(
-  Layer.provide(Logger.remove(Logger.defaultLogger))
-)
+const TestEnv = Layer.mergeAll(TestConsole.layer, TestClock.layer())
 
 /**
  * Custom equality tester for Effect data types that implement Equal.
@@ -74,25 +70,7 @@ function customTester(a: unknown, b: unknown): boolean | undefined {
   if (!Equal.isEqual(a) || !Equal.isEqual(b)) {
     return undefined
   }
-  return Utils.structuralRegion(
-    () => Equal.equals(a, b),
-    (x, y) => {
-      // Bun's expect doesn't have the same API as vitest, so we use a simpler comparison
-      if (x === y) return true
-      if (x == null || y == null) return false
-      if (typeof x !== "object" || typeof y !== "object") return x === y
-
-      const keysX = Object.keys(x)
-      const keysY = Object.keys(y)
-      if (keysX.length !== keysY.length) return false
-
-      for (const key of keysX) {
-        if (!keysY.includes(key)) return false
-        if (!customTester((x as any)[key], (y as any)[key])) return false
-      }
-      return true
-    }
-  )
+  return Equal.equals(a, b)
 }
 
 /**
@@ -179,7 +157,7 @@ const makeTester = <R>(
 
       for (const [key, arb] of entries) {
         if (Schema.isSchema(arb)) {
-          arbs[key] = Arbitrary.make(arb)
+          arbs[key] = Schema.toArbitrary(arb)
         } else {
           arbs[key] = arb
         }
@@ -255,12 +233,25 @@ export const flakyTest = <A, E, R>(
   self: Effect.Effect<A, E, R>,
   timeout: Duration.DurationInput = Duration.seconds(30)
 ) => {
-  const policy = pipe(
-    Schedule.recurs(100),
-    Schedule.compose(Schedule.elapsed),
-    Schedule.whileOutput(Duration.lessThanOrEqualTo(timeout))
-  )
-  return Effect.retry(self, policy) as Effect.Effect<A, never, R>
+  return pipe(
+    self,
+    Effect.scoped,
+    Effect.sandbox,
+    Effect.retry(pipe(
+      Schedule.recurs(100),
+      // Justification: Schedule.while is a reserved keyword export alias; ts cannot infer imported 'while' directly
+      // Approved-by: @effect-native/bun-test migration (PR #222)
+      (Schedule as any).while((_: any) =>
+        Effect.succeed(
+          Duration.isLessThanOrEqualTo(
+            Duration.fromDurationInputUnsafe(_.elapsed),
+            Duration.fromDurationInputUnsafe(timeout)
+          )
+        )
+      )
+    )),
+    Effect.orDie
+  ) as Effect.Effect<A, never, R>
 }
 
 /**
@@ -282,8 +273,7 @@ export const layer = <R, E>(
   const withTestEnv = Layer.provideMerge(layer_, TestEnv)
   const memoMap = options?.memoMap ?? Effect.runSync(Layer.makeMemoMap)
   const scope = Effect.runSync(Scope.make())
-  const runtimeEffect = Layer.toRuntimeWithMemoMap(withTestEnv, memoMap).pipe(
-    Scope.extend(scope),
+  const contextEffect = Layer.buildWithMemoMap(withTestEnv, memoMap, scope).pipe(
     Effect.orDie,
     Effect.cached,
     Effect.runSync
@@ -295,23 +285,23 @@ export const layer = <R, E>(
 
   const methods: any = {
     effect: makeTester((effect) =>
-      Effect.flatMap(runtimeEffect, (runtime) => effect.pipe(Effect.provide(runtime))) as any
+      Effect.flatMap(contextEffect, (context) => effect.pipe(Effect.provide(context))) as any
     ),
     scoped: makeTester((effect) =>
-      Effect.flatMap(runtimeEffect, (runtime) =>
+      Effect.flatMap(contextEffect, (context) =>
         effect.pipe(
           Effect.scoped,
-          Effect.provide(runtime)
+          Effect.provide(context)
         )) as any
     ),
     live: makeTester((effect) =>
-      Effect.flatMap(runtimeEffect, (runtime) => effect.pipe(Effect.provide(runtime))) as any
+      Effect.flatMap(contextEffect, (context) => effect.pipe(Effect.provide(context))) as any
     ),
     scopedLive: makeTester((effect) =>
-      Effect.flatMap(runtimeEffect, (runtime) =>
+      Effect.flatMap(contextEffect, (context) =>
         effect.pipe(
           Effect.scoped,
-          Effect.provide(runtime)
+          Effect.provide(context)
         )) as any
     ),
     flakyTest,
@@ -324,15 +314,15 @@ export const layer = <R, E>(
       const params = typeof propOptions === "object" ? propOptions.fastCheck : undefined
 
       B.test(name, async () => {
-        await Effect.runPromise(runtimeEffect) // Initialize the layer
+        await Effect.runPromise(contextEffect) // Initialize the layer
         const arbs: Record<string, fc.Arbitrary<any>> = {}
         const entries = Array.isArray(arbitraries)
-          ? arbitraries.map((arb, i) => [i, arb])
+          ? arbitraries.map((arb: any, i: number) => [i, arb])
           : Object.entries(arbitraries)
 
         for (const [key, arb] of entries) {
           if (Schema.isSchema(arb)) {
-            arbs[key] = Arbitrary.make(arb)
+            arbs[key] = Schema.toArbitrary(arb)
           } else {
             arbs[key] = arb
           }
@@ -386,12 +376,12 @@ export const prop: any = (name: string, arbitraries: any, self: any, options?: a
   B.test(name, async () => {
     const arbs: Record<string, fc.Arbitrary<any>> = {}
     const entries = Array.isArray(arbitraries)
-      ? arbitraries.map((arb, i) => [i, arb])
+      ? arbitraries.map((arb: any, i: number) => [i, arb])
       : Object.entries(arbitraries)
 
     for (const [key, arb] of entries) {
       if (Schema.isSchema(arb)) {
-        arbs[key as string] = Arbitrary.make(arb)
+        arbs[key as string] = Schema.toArbitrary(arb)
       } else {
         arbs[key as string] = arb as fc.Arbitrary<any>
       }
