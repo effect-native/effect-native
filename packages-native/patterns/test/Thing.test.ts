@@ -5,6 +5,8 @@ import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 import * as HashSet from "effect/HashSet"
 
+class Counter extends Data.Class<{ readonly count: number }> {}
+
 describe("Thing", () => {
   it("make creates TypeId-tagged instances and isThing recognizes them", () => {
     const original = Thing.make({ id: "alpha", label: "demo", value: 1 })
@@ -17,8 +19,8 @@ describe("Thing", () => {
   })
 
   it("instances obey Equal and Hash protocols", () => {
-    const left = Thing.make({ id: "alpha", label: "demo", value: Data.struct({ count: 1 }) })
-    const right = Thing.make({ id: "alpha", label: "demo", value: Data.struct({ count: 1 }) })
+    const left = Thing.make({ id: "alpha", label: "demo", value: new Counter({ count: 1 }) })
+    const right = Thing.make({ id: "alpha", label: "demo", value: new Counter({ count: 1 }) })
 
     assert.isTrue(Equal.equals(left, right))
     assert.strictEqual(Hash.hash(left), Hash.hash(right))

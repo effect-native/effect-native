@@ -52,7 +52,7 @@ const hashThing = (self: Thing<unknown>): number => {
   hash = Hash.combine(Hash.hash(self.label))(hash)
   hash = Hash.combine(Hash.hash(self.value))(hash)
   hash = Hash.combine(Hash.array(self.tags))(hash)
-  return Hash.cached(self, hash)
+  return hash
 }
 
 const Proto = {

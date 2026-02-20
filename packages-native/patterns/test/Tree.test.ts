@@ -5,6 +5,8 @@ import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 
+class NodeData extends Data.Class<{ readonly id: number }> {}
+
 describe("Tree", () => {
   const makeExample = () =>
     Tree.make({
@@ -19,7 +21,7 @@ describe("Tree", () => {
     })
 
   it("make produces Tree instances tagged with TypeId", () => {
-    const tree = Tree.make({ value: Data.struct({ id: 1 }) })
+    const tree = Tree.make({ value: new NodeData({ id: 1 }) })
 
     assert.isTrue(Tree.isTree(tree))
     assert.strictEqual(tree.value.id, 1)
