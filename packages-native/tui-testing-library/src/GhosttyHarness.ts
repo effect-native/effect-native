@@ -179,7 +179,7 @@ export class GhosttyHarness {
   }
 
   write(term: Terminal, data: string | Uint8Array) {
-    return Effect.async<void, GhosttyError>((resume) => {
+    return Effect.callback<void, GhosttyError>((resume) => {
       try {
         term.write(data, () => resume(Effect.void))
       } catch (cause) {
@@ -189,7 +189,7 @@ export class GhosttyHarness {
   }
 
   writeLine(term: Terminal, data: string | Uint8Array) {
-    return Effect.async<void, GhosttyError>((resume) => {
+    return Effect.callback<void, GhosttyError>((resume) => {
       try {
         term.writeln(data, () => resume(Effect.void))
       } catch (cause) {

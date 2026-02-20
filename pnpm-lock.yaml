@@ -72,7 +72,7 @@ importers:
         version: 0.23.5
       '@effect/vitest':
         specifier: beta
-        version: 4.0.0-beta.6(effect@4.0.0-beta.6)(vitest@3.2.4)
+        version: 4.0.0-beta.6(effect@4.0.0-beta.8)(vitest@3.2.4)
       '@eslint/compat':
         specifier: ^1.3.2
         version: 1.4.1(eslint@9.39.2)
@@ -202,10 +202,10 @@ importers:
     optionalDependencies:
       '@effect/sql-sqlite-bun':
         specifier: beta
-        version: 4.0.0-beta.6(effect@4.0.0-beta.6)
+        version: 4.0.0-beta.8(effect@4.0.0-beta.6)
       '@effect/sql-sqlite-node':
         specifier: beta
-        version: 4.0.0-beta.6(effect@4.0.0-beta.6)
+        version: 4.0.0-beta.8(effect@4.0.0-beta.6)
     publishDirectory: dist
 
   packages-native/debug:
@@ -296,6 +296,22 @@ importers:
         version: 4.0.0-beta.6
     publishDirectory: dist
 
+  packages-native/name-checker:
+    dependencies:
+      '@effect-native/fetch-hooks':
+        specifier: workspace:*
+        version: link:../fetch-hooks
+      '@effect-native/openrouter':
+        specifier: workspace:*
+        version: link:../openrouter
+    devDependencies:
+      effect:
+        specifier: beta
+        version: 4.0.0-beta.8
+      tsx:
+        specifier: latest
+        version: 4.21.0
+
   packages-native/note:
     dependencies:
       '@effect-native/schemas':
@@ -317,6 +333,20 @@ importers:
       '@effect/vitest':
         specifier: latest
         version: 0.27.0(effect@4.0.0-beta.6)(vitest@3.2.4)
+    publishDirectory: dist
+
+  packages-native/openrouter:
+    dependencies:
+      '@openrouter/sdk':
+        specifier: ^0.3.10
+        version: 0.3.16
+      effect:
+        specifier: beta
+        version: 4.0.0-beta.8
+    devDependencies:
+      '@effect/vitest':
+        specifier: beta
+        version: 4.0.0-beta.8(effect@4.0.0-beta.8)(vitest@3.2.4)
     publishDirectory: dist
 
   packages-native/opentui-dom:
@@ -381,8 +411,8 @@ importers:
         version: 4.0.0-beta.6
     devDependencies:
       '@effect/vitest':
-        specifier: latest
-        version: 0.27.0(effect@4.0.0-beta.6)(vitest@3.2.4)
+        specifier: beta
+        version: 4.0.0-beta.8(effect@4.0.0-beta.6)(vitest@3.2.4)
     publishDirectory: dist
 
   packages-native/schemas:
@@ -396,7 +426,11 @@ importers:
         version: 0.27.0(effect@4.0.0-beta.6)(vitest@3.2.4)
     publishDirectory: dist
 
-  packages-native/ssh-keep: {}
+  packages-native/ssh-keep:
+    dependencies:
+      effect:
+        specifier: beta
+        version: 4.0.0-beta.8
 
   packages-native/tui-testing-library:
     dependencies:
@@ -414,8 +448,8 @@ importers:
         specifier: workspace:*
         version: link:../bun-test
       '@effect/vitest':
-        specifier: latest
-        version: 0.27.0(effect@4.0.0-beta.6)(vitest@3.2.4)
+        specifier: beta
+        version: 4.0.0-beta.8(effect@4.0.0-beta.6)(vitest@3.2.4)
       '@types/bun':
         specifier: latest
         version: 1.3.5
@@ -1266,10 +1300,10 @@ packages:
       '@effect/sql': ^0.49.0
       effect: ^3.19.13
 
-  '@effect/sql-sqlite-bun@4.0.0-beta.6':
-    resolution: {integrity: sha512-OYojvXs3X8TRMG8tQwxAbnR2LlOb/iM3bNUudU5bWBi2LJoLqQVmxLxDue5SIZbIMuxMfcBES9bPuKbPDd7Hgg==}
+  '@effect/sql-sqlite-bun@4.0.0-beta.8':
+    resolution: {integrity: sha512-gLhSf1Jix3ks248+zqQhyFeRH55UcUhtzHQBcCytgVmO91a6bcaQPuULvkcweVtgm7vpSwvCOyUUHnHbABsSNw==}
     peerDependencies:
-      effect: ^4.0.0-beta.6
+      effect: ^4.0.0-beta.8
 
   '@effect/sql-sqlite-do@0.27.0':
     resolution: {integrity: sha512-+mkNGmmSWhhoNmiJfTQrVINPgcq19BLrdoq5JdF6GoL8lS2VA+XO7IRXTD3G1Plg5hTncmsX/1Y8W1Dc/DbKNQ==}
@@ -1286,10 +1320,10 @@ packages:
       '@effect/sql': ^0.49.0
       effect: ^3.19.13
 
-  '@effect/sql-sqlite-node@4.0.0-beta.6':
-    resolution: {integrity: sha512-lmV5h1U1VrfNWOlDEQBYidnXlMIWbLapKzwcNPcWuyGZZanHeg939Sve6v6I3AE8r874iIwCdj3e6boxkym89g==}
+  '@effect/sql-sqlite-node@4.0.0-beta.8':
+    resolution: {integrity: sha512-uOEcuiHDFcAUYckAwheBxsE7cKwWYQKQed9VopRbwIBMUYY93gJCSs39aOC2ZL996X3r06bqGC1jU/Hbye/btg==}
     peerDependencies:
-      effect: ^4.0.0-beta.6
+      effect: ^4.0.0-beta.8
 
   '@effect/sql-sqlite-react-native@0.52.0':
     resolution: {integrity: sha512-m4DTr6txmlPXz51hDoMEiRV606toUx+ayHMxOpiJuJ/yA3zOi/dS9Fi6IYOgSGEZ8FwKKulNF3sKHmNf4buRgw==}
@@ -1329,6 +1363,12 @@ packages:
     resolution: {integrity: sha512-G9aEEgkX/kNgJVB/TRKzM+xAlsW6ryJ118XsYK6OW5QeVo9qcswrYobKYD0DrmyBVNOUIbSsx//9DfbswSGI9w==}
     peerDependencies:
       effect: ^4.0.0-beta.6
+      vitest: ^3.0.0
+
+  '@effect/vitest@4.0.0-beta.8':
+    resolution: {integrity: sha512-CnwGyFhEOaGWhEfTLtUSC8Yq1losYk+V6Aepc18um8NkOHnbr5fLClE+XqNFPO1DN6Ehs6Kv/ms3Di2kw9/9Kg==}
+    peerDependencies:
+      effect: ^4.0.0-beta.8
       vitest: ^3.0.0
 
   '@effect/wa-sqlite@0.1.2':
@@ -2041,6 +2081,9 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '>0.73.0'
+
+  '@openrouter/sdk@0.3.16':
+    resolution: {integrity: sha512-WEBlrXdc5R8I7o2temkMV65tIRGkzg9ct4DMNZ/FHS/hiRscLRS5EpcuORnAgjzZAh9X2dSsBpgygM8T7KiNAw==}
 
   '@opentelemetry/semantic-conventions@1.38.0':
     resolution: {integrity: sha512-kocjix+/sSggfJhwXqClZ3i9Y/MI0fp7b+g7kCRm6psy2dsf8uApTRclwG18h8Avm7C9+fnt+O36PspJ/OzoWg==}
@@ -3632,6 +3675,9 @@ packages:
 
   effect@4.0.0-beta.6:
     resolution: {integrity: sha512-2xpzTi1f8eRYByMYso/vBiZGCvK74dVOMHOnXbwgzZQg6t5JaZ6ov7i5AU/vKPtb2y9FJbZwhf8owXBZq+LY0g==}
+
+  effect@4.0.0-beta.8:
+    resolution: {integrity: sha512-8Df3vdVY8ahZcn2oC27lAfMGXHId1I5YDHqGgLe4UCQ9D8Kzmb5oq+qZVXvmY9fZANabnu47AE41040kc52QCg==}
 
   electron-to-chromium@1.5.262:
     resolution: {integrity: sha512-NlAsMteRHek05jRUxUR0a5jpjYq9ykk6+kO0yRaMi5moe7u0fVIOeQ3Y30A8dIiWFBNUoQGi1ljb1i5VtS9WQQ==}
@@ -7639,7 +7685,7 @@ snapshots:
       '@effect/sql': 0.49.0(@effect/experimental@0.58.0(@effect/platform@0.94.1(effect@4.0.0-beta.6))(effect@4.0.0-beta.6)(ioredis@5.9.3))(@effect/platform@0.94.1(effect@4.0.0-beta.6))(effect@4.0.0-beta.6)
       effect: 4.0.0-beta.6
 
-  '@effect/sql-sqlite-bun@4.0.0-beta.6(effect@4.0.0-beta.6)':
+  '@effect/sql-sqlite-bun@4.0.0-beta.8(effect@4.0.0-beta.6)':
     dependencies:
       effect: 4.0.0-beta.6
     optional: true
@@ -7658,7 +7704,7 @@ snapshots:
       better-sqlite3: 11.10.0
       effect: 4.0.0-beta.6
 
-  '@effect/sql-sqlite-node@4.0.0-beta.6(effect@4.0.0-beta.6)':
+  '@effect/sql-sqlite-node@4.0.0-beta.8(effect@4.0.0-beta.6)':
     dependencies:
       better-sqlite3: 12.6.2
       effect: 4.0.0-beta.6
@@ -7697,6 +7743,21 @@ snapshots:
   '@effect/vitest@4.0.0-beta.6(effect@4.0.0-beta.6)(vitest@3.2.4)':
     dependencies:
       effect: 4.0.0-beta.6
+      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@25.0.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  '@effect/vitest@4.0.0-beta.6(effect@4.0.0-beta.8)(vitest@3.2.4)':
+    dependencies:
+      effect: 4.0.0-beta.8
+      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@22.19.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  '@effect/vitest@4.0.0-beta.8(effect@4.0.0-beta.6)(vitest@3.2.4)':
+    dependencies:
+      effect: 4.0.0-beta.6
+      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@25.0.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  '@effect/vitest@4.0.0-beta.8(effect@4.0.0-beta.8)(vitest@3.2.4)':
+    dependencies:
+      effect: 4.0.0-beta.8
       vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@25.0.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   '@effect/wa-sqlite@0.1.2': {}
@@ -8374,6 +8435,10 @@ snapshots:
     dependencies:
       react: 19.2.0
       react-native: 0.82.1(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.2.0)
+
+  '@openrouter/sdk@0.3.16':
+    dependencies:
+      zod: 3.25.76
 
   '@opentelemetry/semantic-conventions@1.38.0': {}
 
@@ -9963,6 +10028,19 @@ snapshots:
   ee-first@1.1.1: {}
 
   effect@4.0.0-beta.6:
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      fast-check: 4.5.3
+      find-my-way-ts: 0.1.6
+      ini: 6.0.0
+      kubernetes-types: 1.30.0
+      msgpackr: 1.11.8
+      multipasta: 0.2.7
+      toml: 3.0.0
+      uuid: 13.0.0
+      yaml: 2.8.2
+
+  effect@4.0.0-beta.8:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.5.3

@@ -282,7 +282,7 @@ export const waitForText = (
   needle: string,
   timeoutMs: number = 5000
 ): Effect.Effect<void, Error> =>
-  Effect.async<void, Error>((resume) => {
+  Effect.callback<void, Error>((resume) => {
     const startTime = Date.now()
     const checkInterval = 50
 
@@ -320,7 +320,7 @@ export const waitForStable = (
   stableMs: number = 100,
   timeoutMs: number = 5000
 ): Effect.Effect<void, Error> =>
-  Effect.async<void, Error>((resume) => {
+  Effect.callback<void, Error>((resume) => {
     const startTime = Date.now()
     const checkInterval = 20
     let lastOutput = handle.getOutput()
