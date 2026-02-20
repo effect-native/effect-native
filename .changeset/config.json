@@ -9,7 +9,12 @@
   "access": "public",
   "baseBranch": "effect-native/main",
   "updateInternalDependencies": "patch",
-  "ignore": ["scratchpad"],
+  "ignore": [
+    "scratchpad",
+    "@effect-native/name-checker",
+    "@effect-native/repo-gaps",
+    "ssh-keep"
+  ],
   "snapshot": {
     "useCalculatedVersion": false,
     "prereleaseTemplate": "{tag}-{commit}"
