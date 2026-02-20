@@ -69,13 +69,19 @@ export const TitleWord = Schema.String.pipe(
   Schema.check(
     Schema.makeFilter(
       (s: string) => looksLikeFlag(s) ? false : undefined,
-      { message: "looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>" }
+      {
+        message: (input: unknown) =>
+          `"${String(input)}" looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>`
+      }
     )
   ),
   Schema.check(
     Schema.makeFilter(
       (s: string) => looksLikeFilename(s) ? false : undefined,
-      { message: "looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>" }
+      {
+        message: (input: unknown) =>
+          `"${String(input)}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`
+      }
     )
   )
 )
