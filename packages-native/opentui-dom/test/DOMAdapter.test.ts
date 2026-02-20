@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "@effect/vitest"
+import { afterEach, beforeEach, describe, expect, it } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import {
   AdapterError,

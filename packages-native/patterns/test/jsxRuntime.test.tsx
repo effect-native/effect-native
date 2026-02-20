@@ -2,7 +2,8 @@
 
 import { jsx } from "@effect-native/patterns/jsx-runtime"
 import { Fragment, jsxDEV } from "@effect-native/patterns/jsx-dev-runtime"
-import { assert, describe, it } from "@effect/vitest"
+import assert from "node:assert"
+import { describe, it } from "@effect-native/bun-test"
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.element")
 

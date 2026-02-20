@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import * as Schema from "effect/Schema"
 import { Slug, SlugBranded, slugify } from "../src/Slug.js"
 

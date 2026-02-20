@@ -1,5 +1,6 @@
 import * as Tree from "@effect-native/patterns/Tree"
-import { assert, describe, it } from "@effect/vitest"
+import assert from "node:assert"
+import { describe, it } from "@effect-native/bun-test"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"

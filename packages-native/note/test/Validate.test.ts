@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import * as Schema from "effect/Schema"
 import { looksLikeFilename, looksLikeFlag, TitleInput, TitleWord } from "../src/Validate.js"
 

@@ -3,7 +3,7 @@ import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 import { cli, CliLayer } from "../src/cli.js"
 
 // Simple mock console that captures log output

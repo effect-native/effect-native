@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import { ExistingArgFile, FileAlreadyExists, WriteError } from "../src/bin.js"
 
 describe("NoteError classes", () => {
