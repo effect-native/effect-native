@@ -1,0 +1,50 @@
+{
+  "ignorePatterns": [
+    "**/dist",
+    "**/build",
+    "**/docs",
+    "**/.tsbuildinfo",
+    "packages-native/**/CHANGELOG.md",
+    "refs/**",
+    ".cache/**"
+  ],
+  "plugins": ["typescript", "import", "oxc", "unicorn"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "rules": {
+    "eslint/no-console": "error",
+    "eslint/no-fallthrough": "off",
+    "eslint/no-irregular-whitespace": "off",
+    "eslint/require-yield": "off",
+    "eslint/no-unused-vars": "off",
+    "import/no-duplicates": "error",
+    "typescript/consistent-type-imports": ["error", {
+      "fixStyle": "inline-type-imports"
+    }],
+    "typescript/array-type": ["error", {
+      "default": "generic",
+      "readonly": "generic"
+    }],
+    "typescript/no-unused-vars": ["error", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+    "typescript/no-explicit-any": "off",
+    "typescript/ban-ts-comment": "off",
+    "typescript/no-namespace": "off",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/no-empty-object-type": "off",
+    "typescript/no-unsafe-function-type": "off",
+    "typescript/no-wrapper-object-types": "off",
+    "unicorn/no-array-push-spread": "error"
+  },
+  "overrides": [{
+    "files": ["**/{test,dtslint,examples,benchmark,scripts,scratchpad}/**"],
+    "rules": {
+      "eslint/no-console": "off"
+    }
+  }]
+}
