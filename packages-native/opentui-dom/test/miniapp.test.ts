@@ -5,8 +5,8 @@
  * for form handling, event relay, and focus management.
  */
 
-import { Window } from "happy-dom"
 import { afterEach, beforeEach, describe, expect, it } from "bun:test"
+import { Window } from "happy-dom"
 import { createEventRelay, createNodeMap, type NodeMap } from "../src/index.js"
 
 // Mock TUI types for testing

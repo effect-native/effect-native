@@ -15,28 +15,33 @@ done_when: |
 Wrapper around `Bun.spawn` with `terminal` options.
 
 ## Context
-*   **Research:** `work/tui-browser/tui-dom-poc0/.research/pty-api/findings.md`
+
+- **Research:** `work/tui-browser/tui-dom-poc0/.research/pty-api/findings.md`
 
 ## Progress Log
 
 ### 2024-12-29: Implementation Complete
 
 **Observe:**
+
 - Research findings show Bun.spawn supports PTY via `terminal` option
 - Terminal object provides `write()` for stdin, `data` callback for stdout
 - Package already existed at `packages-native/tui-testing-library` with GhosttyHarness
 - Spawn.ts was already created with the implementation
 
 **Orient:**
+
 - Most critical: ensure tests run properly with Bun PTY APIs
 - Tests were using @effect/vitest but PTY is Bun-only
 - Need to use bun:test with @effect-native/bun-test helpers
 
 **Decide:**
+
 - Convert tests to use bun:test with BunTest.it.scoped() for Effect tests
 - Verify all done_when criteria are met
 
 **Act:**
+
 - Fixed tests to use bun:test instead of @effect/vitest
 - Added @effect-native/bun-test as dev dependency
 - All 16 tests pass (34 total including GhosttyHarness)
@@ -51,12 +56,12 @@ Wrapper around `Bun.spawn` with `terminal` options.
 
 ```typescript
 // Spawn a TUI process
-const handle = yield* spawnTui(["my-app"], { cols: 80, rows: 24 })
+const handle = yield * spawnTui(["my-app"], { cols: 80, rows: 24 })
 
 // Write to stdin
 handle.write("hello")
-yield* sendLine(handle, "input text")
-yield* sendKey(handle, "\x03") // Ctrl+C
+yield * sendLine(handle, "input text")
+yield * sendKey(handle, "\x03") // Ctrl+C
 
 // Read stdout
 const output = handle.getOutput()
@@ -64,8 +69,8 @@ const plainText = getPlainOutput(handle) // ANSI stripped
 const raw = handle.getRawOutput() // Uint8Array
 
 // Wait helpers
-yield* waitForText(handle, "Welcome")
-yield* waitForStable(handle, 100) // wait for output to settle
+yield * waitForText(handle, "Welcome")
+yield * waitForStable(handle, 100) // wait for output to settle
 
 // Lifecycle
 handle.resize(100, 30)
@@ -75,7 +80,8 @@ await handle.exited
 ```
 
 ## Tasks
-1.  [x] Create package structure (package.json, tsconfig files)
-2.  [x] Implement `spawnTui(command)` function
-3.  [x] Write unit tests (16 tests passing)
-4.  [x] Design for piping output to Ghostty harness (via handle.getOutput())
+
+1. [x] Create package structure (package.json, tsconfig files)
+2. [x] Implement `spawnTui(command)` function
+3. [x] Write unit tests (16 tests passing)
+4. [x] Design for piping output to Ghostty harness (via handle.getOutput())

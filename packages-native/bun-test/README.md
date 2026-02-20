@@ -5,6 +5,7 @@ Effect testing utilities for Bun's test runner, providing deterministic testing 
 ## Problem
 
 Testing Effect applications involves challenges with:
+
 - Async operations that depend on real time
 - Random value generation that's non-deterministic
 - Complex resource management and cleanup
@@ -13,6 +14,7 @@ Testing Effect applications involves challenges with:
 ## Solution
 
 `@effect-native/bun-test` provides **TestServices** - a controlled testing environment with:
+
 - **TestClock** - Manipulate time programmatically instead of waiting
 - **TestAnnotations** - Track test metadata and configuration
 - **TestLive** - Access real services when needed
@@ -23,11 +25,11 @@ Testing Effect applications involves challenges with:
 When you use `it.effect()`, TestServices are injected into your test context:
 
 ```typescript
-import { it, expect } from "@effect-native/bun-test"
-import { Effect, TestClock, Duration } from "effect"
+import { expect, it } from "@effect-native/bun-test"
+import { Duration, Effect, TestClock } from "effect"
 
 it.effect("fast time control", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // Start an operation that sleeps for 5 hours
     const fiber = yield* Effect.sleep(Duration.hours(5)).pipe(Effect.fork)
 
@@ -39,20 +41,18 @@ it.effect("fast time control", () =>
 
     // Real time elapsed: milliseconds
     // Simulated time: 5 hours
-  })
-)
+  }))
 ```
 
 Compare with `it.live()` which uses real time:
 
 ```typescript
 it.live("actual time passes", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     // This actually waits 5 seconds
     yield* Effect.sleep(Duration.seconds(5))
     // Test takes 5 real seconds to complete
-  })
-)
+  }))
 ```
 
 ## Installation
@@ -114,7 +114,7 @@ export const DatabaseLive = Layer.scoped(
 
 ```typescript
 // src/repositories/UserRepository.ts
-import { Effect, Context, Layer } from "effect"
+import { Context, Effect, Layer } from "effect"
 import { Database, DatabaseError } from "./services/Database"
 
 interface User {
@@ -136,20 +136,20 @@ export class UserRepository extends Context.Tag("UserRepository")<UserRepository
 
 export const UserRepositoryLive = Layer.effect(
   UserRepository,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const db = yield* Database
-    
+
     return UserRepository.of({
       findById: (id) =>
         db.query<User>("SELECT * FROM users WHERE id = $1", [id])
-          .pipe(Effect.map(rows => rows[0] ?? null)),
-      
+          .pipe(Effect.map((rows) => rows[0] ?? null)),
+
       create: (data) =>
         db.query<User>(
           "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
           [data.name, data.email]
-        ).pipe(Effect.map(rows => rows[0])),
-      
+        ).pipe(Effect.map((rows) => rows[0])),
+
       updateEmail: (id, email) =>
         db.query("UPDATE users SET email = $1 WHERE id = $2", [email, id])
           .pipe(Effect.asVoid)
@@ -161,9 +161,9 @@ export const UserRepositoryLive = Layer.effect(
 ```typescript
 // test/UserRepository.test.ts
 import { describe, expect, layer } from "@effect-native/bun-test"
-import { Effect, Layer, Context } from "effect"
-import { DatabaseLive } from "../src/services/Database"
+import { Context, Effect, Layer } from "effect"
 import { UserRepository, UserRepositoryLive } from "../src/repositories/UserRepository"
+import { DatabaseLive } from "../src/services/Database"
 
 // Test data context for nested layer example
 class TestData extends Context.Tag("TestData")<TestData, {
@@ -173,48 +173,45 @@ class TestData extends Context.Tag("TestData")<TestData, {
 describe("UserRepository", () => {
   // The database connection is established ONCE and shared across all tests
   layer(Layer.provide(DatabaseLive, UserRepositoryLive))("with database", (it) => {
-    
     it.effect("should create and find users", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const repo = yield* UserRepository
-        
+
         // Create a user
         const created = yield* repo.create({
           name: "Alice",
           email: "alice@example.com"
         })
         expect(created.name).toBe("Alice")
-        
+
         // Find the user
         const found = yield* repo.findById(created.id)
         expect(found).toEqual(created)
-      })
-    )
-    
+      }))
+
     it.effect("should update user email", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const repo = yield* UserRepository
-        
+
         // Create a user
         const user = yield* repo.create({
           name: "Bob",
           email: "bob@old.com"
         })
-        
+
         // Update email
         yield* repo.updateEmail(user.id, "bob@new.com")
-        
+
         // Verify update
         const updated = yield* repo.findById(user.id)
         expect(updated?.email).toBe("bob@new.com")
-      })
-    )
-    
+      }))
+
     // You can nest layers for more complex scenarios
     describe("with test data", () => {
       const TestDataLayer = Layer.effect(
         TestData,
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           const repo = yield* UserRepository
           // Set up test data once for this nested suite
           const testUser = yield* repo.create({
@@ -224,18 +221,17 @@ describe("UserRepository", () => {
           return { testUser }
         })
       )
-      
+
       it.layer(TestDataLayer)((it) => {
         it.effect("should work with pre-created test data", () =>
-          Effect.gen(function* () {
+          Effect.gen(function*() {
             const { testUser } = yield* TestData
             const repo = yield* UserRepository
-            
+
             const found = yield* repo.findById(testUser.id)
             expect(found).toBeDefined()
             expect(found?.name).toBe("Test User")
-          })
-        )
+          }))
       })
     })
   })
@@ -277,27 +273,26 @@ Retry unreliable operations:
 ```typescript
 it.effect("flaky network call", () =>
   flakyTest(
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const response = yield* Http.get("https://flaky-api.com")
       expect(response.status).toBe(200)
     }),
-    Duration.seconds(30)  // Retry for up to 30 seconds
-  )
-)
+    Duration.seconds(30) // Retry for up to 30 seconds
+  ))
 ```
 
 ## Quick Start
 
 ```typescript
 import { describe, expect, it, layer } from "@effect-native/bun-test"
-import { Effect, TestClock, Duration, Layer, Context } from "effect"
+import { Context, Duration, Effect, Layer, TestClock } from "effect"
 
 describe("Time Control Demo", () => {
   it.effect("control the flow of time", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       // Schedule something for the future
       const futureRef = yield* Ref.make<string>("past")
-      const fiber = yield* Effect.gen(function* () {
+      const fiber = yield* Effect.gen(function*() {
         yield* Effect.sleep(Duration.minutes(10))
         yield* Ref.set(futureRef, "future")
       }).pipe(Effect.fork)
@@ -308,8 +303,7 @@ describe("Time Control Demo", () => {
 
       const value = yield* Ref.get(futureRef)
       expect(value).toBe("future")
-    })
-  )
+    }))
 })
 ```
 

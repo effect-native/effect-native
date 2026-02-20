@@ -3,6 +3,7 @@
 This document describes how to integrate the `@effect/experimental/Reactivity` service with the CR‑SQLite service in this package.
 
 The goals are:
+
 - Provide a clear, stable key scheme for invalidation.
 - Wrap mutation operations to invalidate the right keys.
 - Expose ergonomic reactive accessors for common reads.

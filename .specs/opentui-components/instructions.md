@@ -11,6 +11,7 @@ Developers building terminal UIs currently must reimplement navigation, keyboard
 This package (`opentui-components`) follows the **Shadcn UI model**: it is a **registry of styled, copy-pasteable source code** that users install into their projects. It is NOT a traditional NPM dependency of pre-built components.
 
 The underlying **headless primitives** (focus management, modal state, keyboard handling) live in a separate dependency: `@effect-native/opentui-base`. This mirrors the relationship between:
+
 - **Radix UI / Base UI** (headless primitives) → `opentui-base`
 - **Shadcn UI** (styled registry) → `opentui-components`
 

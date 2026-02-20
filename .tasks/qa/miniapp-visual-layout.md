@@ -25,6 +25,7 @@ Bramwell, please verify the miniapp's visual appearance and layout behavior.
 3. Run: `cd packages-native/opentui-dom && pnpm tui-dom`
 
 ### Test at Normal Size (~120x40)
+
 4. Take a screenshot
 5. Verify:
    - Form elements are aligned
@@ -33,6 +34,7 @@ Bramwell, please verify the miniapp's visual appearance and layout behavior.
    - Focus indicators are visible
 
 ### Test at Small Size (~80x24)
+
 6. Resize terminal to ~80 columns x 24 rows
 7. Take a screenshot
 8. Verify:
@@ -41,6 +43,7 @@ Bramwell, please verify the miniapp's visual appearance and layout behavior.
    - No elements are cut off or overlap badly
 
 ### Test at Large Size (~200x60)
+
 9. Resize terminal to ~200 columns x 60 rows
 10. Take a screenshot
 11. Verify:
@@ -48,6 +51,7 @@ Bramwell, please verify the miniapp's visual appearance and layout behavior.
     - Content doesn't stretch weirdly
 
 ### Check Theming
+
 12. Verify background color is applied
 13. Verify text colors have sufficient contrast
 14. Verify button/input borders are visible

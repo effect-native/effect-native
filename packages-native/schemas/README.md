@@ -15,7 +15,7 @@ npm install @effect-native/schemas
 Utilities for generating URL-safe slugs from strings.
 
 ```typescript
-import { slugify, Slug, SlugBranded } from "@effect-native/schemas/Slug"
+import { Slug, SlugBranded, slugify } from "@effect-native/schemas/Slug"
 
 // Function
 slugify("Hello World") // "hello-world"

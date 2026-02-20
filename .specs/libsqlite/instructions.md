@@ -11,13 +11,16 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 
 ## Personas & User Stories
 
-1) Typical Node.js developer — “Just give me the path”
+1. Typical Node.js developer — “Just give me the path”
+
 - As a Node/Bun developer who doesn’t care about native details, I want a simple API that returns the absolute path to `libsqlite3` as a string, so I can pass it to `dlopen` or my SQLite binding without any extra setup.
 
-2) 31337 power user — “Deep import, zero overhead”
+2. 31337 power user — “Deep import, zero overhead”
+
 - As an advanced user who knows the exact platform/arch I need, I want a deep import that exports a static string path to the specific binary without executing any detection logic or importing anything else.
 
-3) Effect‑pilled developer — “Idiomatic Effect integration”
+3. Effect‑pilled developer — “Idiomatic Effect integration”
+
 - As an Effect user, I want an idiomatic Effect service/Layer that provides the resolved path and integrates cleanly with my Effect application without mixing Promise APIs or imperative globals.
 
 ## Core Requirements
@@ -39,8 +42,9 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 - Compliance and metadata:
   - Include appropriate licenses/NOTICE for SQLite and nixpkgs artifacts
   - Publishable as ESM; type-checked via repository standards
-  
+
 ### Dependency Minimization
+
 - Zero runtime dependencies in `dependencies` (hard requirement)
 - No `postinstall` scripts; no dynamic downloads or optional native builds
 - Effect integration provided via optional peer dependency `effect` and isolated subpath export (`@effect-native/libsqlite/effect`) so non-Effect users don’t install or import it
@@ -65,6 +69,7 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 - No dynamic fetching at runtime; binaries are bundled in the npm tarball
 
 ### Public API Surface (v1)
+
 - Root (zero runtime deps):
   - `export const pathToLibSqlite: string` // auto-detected absolute path
   - `export function getLibSqlitePathSync(platform?: Platform): string`
@@ -78,10 +83,12 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
   - Tag/Layer that provides `pathToLibSqlite`
 
 ### Types and Errors
+
 - `export type Platform = "darwin-aarch64" | "darwin-x86_64" | "linux-x86_64" | "linux-aarch64"`
 - `export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{ readonly platform: string }>`
 
 ### Nix Build Integration
+
 - Single root `flake.nix` drives builds; expose `packages.${system}.libsqlite3`
 - Derivation implemented in a shared module (e.g., `nix/libsqlite3.nix`) and imported by root flake
 - No per-package flake in v1; consider thin wrapper later if external flake consumption is requested
@@ -99,7 +106,7 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
   - `dependencies` is empty
   - No install scripts
   - Effect integration isolated behind an optional peer dependency and subpath export
- - `@effect-native/libsqlite/paths` exports absolute strings with zero side effects
+- `@effect-native/libsqlite/paths` exports absolute strings with zero side effects
 
 ## Out of Scope (v1)
 
@@ -107,8 +114,8 @@ Universal, prebuilt libsqlite3 dynamic library bundle (Pure-Nix) that Just Works
 - Mobile platforms (iOS/Android)
 - Automatic selection of system SQLite or fallback; v1 always uses bundled binaries (env opt-out may be considered later)
 - Shipping third-party SQLite extensions; only the core `libsqlite3` is bundled
- - Any `postinstall`-time build/download steps
- - Linux musl variants
+- Any `postinstall`-time build/download steps
+- Linux musl variants
 
 ## Success Metrics
 

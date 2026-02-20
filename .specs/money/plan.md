@@ -3,12 +3,14 @@
 ## Milestones
 
 ### M1 – Specification Finalization
+
 - [ ] Review instructions, requirements, and design documents with Effect core maintainers and community financial-domain SMEs.
 - [ ] Resolve open questions regarding real-time payment coverage, multi-leg transaction modeling, and regulatory metadata.
 - [ ] Produce example JSON fixtures and schema diagrams for each core entity.
 - [ ] Publish capability taxonomy draft for community feedback.
 
 ### M2 – Core Package Implementation (`@effect/money`)
+
 - [ ] Scaffold package structure and exports consistent with `@effect/platform` conventions.
 - [ ] Implement `Schema/Common` primitives and branded identifiers.
 - [ ] Implement entity schemas (Institution, Party, Account, Instrument, Asset, Offering, Inventory, Transaction, Balance, Statement, Mandate, Transfer, StandingInstruction, Obligation, Order, Cart, Wishlist, ExchangeRate).
@@ -20,6 +22,7 @@
 - [ ] Draft contract-test interfaces for downstream drivers.
 
 ### M3 – Supporting Packages
+
 - [ ] Implement `@effect/money-client` with validation helpers, pagination utilities, and testing harness skeletons.
 - [ ] Implement `@effect/money-storage` interfaces (`CredentialStore`, `SyncStateStore`, `TransferStore`, `AuditEventSink`).
 - [ ] Provide mock/in-memory reference implementations for testing.
@@ -27,6 +30,7 @@
 - [ ] Extend contract-test scenarios to include recurring obligation forecasting, reconciliation of billed vs. actual amounts, commerce flows (catalog browsing, cart mutation, serialized inventory, checkout, returns), and lifecycle edge cases (delinquency, payoff, renegotiation).
 
 ### M4 – Pilot Driver & Persistence Integrations (Stretch Goal)
+
 - [ ] Choose one aggregator (e.g., Plaid sandbox) to validate account/transaction flows.
 - [ ] Build reference driver showcasing schema mappings, error handling, and capability declaration.
 - [ ] Implement example persistence adapter (e.g., SQLite or file-based) for stores.
@@ -44,14 +48,14 @@ Each workstream will track tasks in the repository project board once the specif
 
 ## Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-| --- | --- | --- |
-| Divergent institution data models make a single schema unwieldy | High | Provide extensible `extensions` envelopes and encourage optional fields; iterate with driver authors early. |
-| Regulatory requirements differ by region | Medium | Model jurisdiction metadata explicitly and allow pluggable compliance validators. |
-| Contract tests become too heavyweight for driver authors | Medium | Offer modular test suites and documented minimum compliance sets. |
-| Capability taxonomy drifts over time | Medium | Establish governance process (RFC or ADR) for introducing new capabilities. |
-| Obligation scenarios diverge across industries | Medium | Provide canonical obligation archetypes (subscription, utility, debt, insurance) with extension hooks and encourage driver-authored examples. |
-| Commerce breadth overwhelms implementers | Medium | Maintain scenario matrix to prioritize core primitives, gate additions via RFCs, and supply vertical sample mappings (retail, services, gaming, DeFi). |
+| Risk                                                            | Impact | Mitigation                                                                                                                                             |
+| --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Divergent institution data models make a single schema unwieldy | High   | Provide extensible `extensions` envelopes and encourage optional fields; iterate with driver authors early.                                            |
+| Regulatory requirements differ by region                        | Medium | Model jurisdiction metadata explicitly and allow pluggable compliance validators.                                                                      |
+| Contract tests become too heavyweight for driver authors        | Medium | Offer modular test suites and documented minimum compliance sets.                                                                                      |
+| Capability taxonomy drifts over time                            | Medium | Establish governance process (RFC or ADR) for introducing new capabilities.                                                                            |
+| Obligation scenarios diverge across industries                  | Medium | Provide canonical obligation archetypes (subscription, utility, debt, insurance) with extension hooks and encourage driver-authored examples.          |
+| Commerce breadth overwhelms implementers                        | Medium | Maintain scenario matrix to prioritize core primitives, gate additions via RFCs, and supply vertical sample mappings (retail, services, gaming, DeFi). |
 
 ## Next Actions
 

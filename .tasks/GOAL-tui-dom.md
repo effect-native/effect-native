@@ -28,12 +28,12 @@ basis: |
   - GOAL-tui-testing-lib.md: 55 tests (18+16+21)
   - GOAL-opentui-dom-testing-lib.md: 76 tests (50+26)
   - GOAL-tui-miniapp.md: 12 integration tests
-  
+
   Packages created:
   - packages-native/opentui-dom
-  - packages-native/tui-testing-library  
+  - packages-native/tui-testing-library
   - packages-native/opentui-dom-testing-library
-  
+
   Awaiting QA from Bramwell (6 QA tasks in .tasks/qa/)
 artifacts:
   - path: .specs/tui-dom/instructions.md
@@ -60,7 +60,7 @@ This goal orchestrates the extraction of the `tui-dom-poc0` proof-of-concept int
 
 ## Sub-Goals
 
-1.  **`@effect-native/opentui-dom`**: The core bridge package.
-2.  **`@effect-native/tui-testing-library`**: Low-level PTY testing infrastructure.
-3.  **`@effect-native/opentui-dom-testing-library`**: High-level DOM testing wrapper.
-4.  **Miniapp Validation**: A standalone demo app proving the stack works.
+1. **`@effect-native/opentui-dom`**: The core bridge package.
+2. **`@effect-native/tui-testing-library`**: Low-level PTY testing infrastructure.
+3. **`@effect-native/opentui-dom-testing-library`**: High-level DOM testing wrapper.
+4. **Miniapp Validation**: A standalone demo app proving the stack works.

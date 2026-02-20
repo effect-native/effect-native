@@ -7,11 +7,13 @@
 The `@effect-native/libcrsql` package currently ships pre-built CR-SQLite extension binaries for desktop and server platforms. These binaries are built from the original C/Rust upstream codebase.
 
 The project has completed a major rewrite of CR-SQLite in Zig. This rewrite:
+
 - Produces native extension binaries for all the same platforms
 - Produces a WASM artifact for browser use (shipped separately as `@effect-native/libcrsql-browser`)
 - Has passed comprehensive testing (154/154 tests) and is ready for distribution
 
 The current package structure:
+
 - `@effect-native/libcrsql` — Native binaries for Node.js/Bun (C/Rust-built)
 - `@effect-native/libcrsql-browser` — WASM for browsers (Zig-built, new package)
 
@@ -58,6 +60,7 @@ This effort has two distinct categories of work:
 ### Depends on Zig Artifacts
 
 The core goal (shipping Zig binaries) requires:
+
 - Zig build pipeline producing binaries for all supported platforms (darwin-aarch64, darwin-x86_64, linux-aarch64, linux-x86_64, win-x86_64, win-i686)
 - Zig artifacts being placed in a location the package can consume
 - Checksums and verification scripts updated for new artifacts
@@ -65,6 +68,7 @@ The core goal (shipping Zig binaries) requires:
 ### Pure JS/Packaging Work
 
 Some aspects can proceed independently of Zig artifacts:
+
 - Selection logic for choosing between artifact sets (if coexistence is needed)
 - Version strategy documentation
 - Test infrastructure for validating artifact selection

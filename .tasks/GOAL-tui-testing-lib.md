@@ -25,11 +25,13 @@ basis: |
 Create a framework-agnostic testing library for CLI/TUI applications powered by Bun's native PTY and Ghostty WASM.
 
 ## Context
-*   **Design:** `work/effect-native/effect-native/.specs/tui-dom-testing/design.md`
-*   **Research:** `work/tui-browser/tui-dom-poc0/.research/pty-api/findings.md`
-*   **Reference:** `work/.research/opencode/vt-screenshot-testing.md` (Ghostty usage)
+
+- **Design:** `work/effect-native/effect-native/.specs/tui-dom-testing/design.md`
+- **Research:** `work/tui-browser/tui-dom-poc0/.research/pty-api/findings.md`
+- **Reference:** `work/.research/opencode/vt-screenshot-testing.md` (Ghostty usage)
 
 ## Components
-1.  **Ghostty Harness:** WASM terminal emulator running in Happy-DOM.
-2.  **PTY Spawn:** Wrapper around `Bun.spawn({ terminal: ... })`.
-3.  **Assertions:** Helpers to verify screen buffer content.
+
+1. **Ghostty Harness:** WASM terminal emulator running in Happy-DOM.
+2. **PTY Spawn:** Wrapper around `Bun.spawn({ terminal: ... })`.
+3. **Assertions:** Helpers to verify screen buffer content.

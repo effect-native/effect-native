@@ -42,6 +42,7 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 **Target environments**: Modern browsers (Chrome, Firefox, Safari, Edge) with OPFS support. Progressive enhancement for older browsers without OPFS.
 
 **Key responsibilities**:
+
 - Coordinate the "single writer, multiple readers" pattern across browser tabs
 - Manage SQLite WASM persistence to OPFS
 - Handle tab lifecycle (freeze, resume, close)
@@ -55,6 +56,7 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 **Target environments**: Node.js 18+, Bun, Deno. Uses runtime detection to adapt where APIs differ.
 
 **Key responsibilities**:
+
 - Filesystem-based persistence (configurable database path)
 - Worker Thread coordination for concurrent access patterns
 - Inter-process coordination via Unix domain sockets or TCP (for multi-process deployments)
@@ -68,6 +70,7 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 **Target environments**: iOS and Android apps built with React Native, using libraries like `op-sqlite` or `expo-sqlite` for native SQLite access.
 
 **Key responsibilities**:
+
 - Native SQLite coordination (not WASM)
 - Platform-specific background task scheduling (BackgroundFetch, WorkManager)
 - Optional same-vendor cross-app sync via shared containers (iOS App Groups, Android shared storage)
@@ -77,6 +80,7 @@ Today, a developer wanting to use the mesh sync engine must manually wire up all
 ### 4. Electron Runtime (`@effect-native/crsql-mesh-runtime-electron`)
 
 **Why separate (or why merged)**: Electron is a hybrid — it has both a browser-like renderer process and a Node-like main process. Developers may want:
+
 - Database in the main process (filesystem access, no OPFS)
 - Renderer processes that coordinate via IPC to the main process
 

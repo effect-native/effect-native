@@ -1,9 +1,9 @@
-import * as List from "@effect-native/patterns/List"
-import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
+import * as List from "@effect-native/patterns/List"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
+import * as assert from "node:assert"
 
 describe("List", () => {
   it("roundtrips iterable input", () => {

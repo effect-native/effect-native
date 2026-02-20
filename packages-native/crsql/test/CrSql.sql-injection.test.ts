@@ -1,8 +1,8 @@
-import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as assert from "node:assert"
 import { layer } from "@effect-native/bun-test"
+import * as NodeSqlite from "@effect/sql-sqlite-node"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
+import * as assert from "node:assert"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 

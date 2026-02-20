@@ -16,16 +16,16 @@
 
 ## Task Categories
 
-| Category | Location | Purpose | TDD Phase |
-|----------|----------|---------|-----------|
-| GOAL | `.tasks/GOAL-*.md` | Major milestones (active) | - |
-| Done | `.tasks/done/GOAL-*.md` | Archived completed GOALs | - |
-| Research | `.tasks/research/*.md` | Exploration, inventories, docs | - |
-| Experiment | `.tasks/experiment/*.md` | POCs, spikes, prototypes | - |
-| Spec | `.tasks/spec/*.md` | Test specifications | Red |
-| Impl | `.tasks/impl/*.md` | Implementation work | Green |
-| Cleanup | `.tasks/cleanup/*.md` | Refactoring, polish | Refactor |
-| QA | `.tasks/qa/*.md` | Manual QA for Bramwell | - |
+| Category   | Location                 | Purpose                        | TDD Phase |
+| ---------- | ------------------------ | ------------------------------ | --------- |
+| GOAL       | `.tasks/GOAL-*.md`       | Major milestones (active)      | -         |
+| Done       | `.tasks/done/GOAL-*.md`  | Archived completed GOALs       | -         |
+| Research   | `.tasks/research/*.md`   | Exploration, inventories, docs | -         |
+| Experiment | `.tasks/experiment/*.md` | POCs, spikes, prototypes       | -         |
+| Spec       | `.tasks/spec/*.md`       | Test specifications            | Red       |
+| Impl       | `.tasks/impl/*.md`       | Implementation work            | Green     |
+| Cleanup    | `.tasks/cleanup/*.md`    | Refactoring, polish            | Refactor  |
+| QA         | `.tasks/qa/*.md`         | Manual QA for Bramwell         | -         |
 
 ## RGRTDD Workflow
 
@@ -64,6 +64,7 @@ basis: |
 ```
 
 Valid status values:
+
 - `pending` - Not started
 - `in_progress` - Currently being worked on
 - `complete` - Done, with basis explaining why
@@ -157,11 +158,13 @@ done_when: |
 **All paths in `.tasks/**/*.md` files are relative to the project root** (parent of `.tasks/`).
 
 This means:
+
 - `blocked_by` entries start with `.tasks/`
 - `artifacts` paths start with `src/`, `poc/`, `.research/`, etc.
 - Never use `../` - all paths are from project root
 
 Examples:
+
 ```yaml
 # In .tasks/impl/my-feature.md
 blocked_by:
@@ -225,6 +228,7 @@ When archiving a completed GOAL:
 4. **Update references** - Other tasks that had `blocked_by: .tasks/GOAL-100.md` should update to `.tasks/done/GOAL-100.md` (or remove the blocker if it no longer matters).
 
 **Why archive GOALs but not other tasks?**
+
 - GOALs represent major milestones worth preserving
 - Research/experiment/impl tasks are supporting work - leave them in place
 - Archiving keeps the root `.tasks/` clean and focused on active work
@@ -233,6 +237,7 @@ When archiving a completed GOAL:
 ## Artifact Paths
 
 Paths are relative to project root (see Path Convention above):
+
 ```yaml
 artifacts:
   - path: src/bridge/thing.ts
@@ -244,6 +249,7 @@ artifacts:
 ## Concurrency
 
 Multiple agents work in parallel. Avoid conflicts:
+
 - Each agent owns specific task files
 - Don't edit files another agent created
 - Coordinate via `blocked_by` dependencies
@@ -273,6 +279,7 @@ Bramwell excels at tasks that **cannot be automated**:
 ### When to Create QA Tasks
 
 Create QA tasks when:
+
 - **Test quality review** – Are the tests testing the RIGHT things? Would they catch real bugs?
 - **API design review** – Does the API follow conventions? Is it intuitive?
 - **Manual UX testing** – Interactive demos that require human judgment

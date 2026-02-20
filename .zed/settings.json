@@ -11,7 +11,7 @@
       "source.organizeImports": false
     }
   },
-  "language_servers": ["!biome","..."],
+  "language_servers": ["!biome", "..."],
   "lsp": {
     "eslint": {
       "initialization_options": {

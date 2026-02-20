@@ -18,12 +18,14 @@ Replace the pre-built cr-sqlite binaries in `@effect-native/libcrsql` with binar
 ## Current State
 
 **libcrsql package** (`work/effect-native/effect-native/packages-native/libcrsql/`):
+
 - Downloads pre-built binaries via `scripts/download-binaries.ts`
 - Stores binaries in `lib/` for 6 platforms (darwin-aarch64, darwin-x86_64, linux-aarch64, linux-x86_64, win-x86_64, win-i686)
 - Verifies checksums via `scripts/verify-binaries.ts`
 - Version: references upstream cr-sqlite
 
 **Zig implementation** (`work/cr-sqlite/cr-sqlite/zig/`):
+
 - MVP complete, 154/154 tests passing
 - Builds native libraries via `zig build`
 - Cross-compilation support for all target platforms
@@ -40,6 +42,7 @@ Replace the pre-built cr-sqlite binaries in `@effect-native/libcrsql` with binar
 ## Cross-Repository Coordination
 
 This goal spans two repositories:
+
 - Source: `work/cr-sqlite/cr-sqlite/zig/` (Zig source)
 - Target: `work/effect-native/effect-native/packages-native/libcrsql/` (npm package)
 

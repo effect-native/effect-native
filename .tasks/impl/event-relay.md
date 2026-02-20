@@ -16,24 +16,28 @@ done_when: |
 Implement the `EventRelay` to translate TUI input to DOM events.
 
 ## Context
-*   **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/event-relay.ts`
-*   **Fixes:** Ensure fixes for Radio Groups (roving tabindex) and Accesskeys from `tui-dom-poc0` are included.
+
+- **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/event-relay.ts`
+- **Fixes:** Ensure fixes for Radio Groups (roving tabindex) and Accesskeys from `tui-dom-poc0` are included.
 
 ## Tasks
-1.  [x] Port `event-relay.ts`.
-2.  [x] Implement `activateFocusTrap` / `deactivateFocusTrap`.
-3.  [x] Implement `scrollIntoView` logic.
-4.  [x] Write unit tests for event translation and focus navigation.
+
+1. [x] Port `event-relay.ts`.
+2. [x] Implement `activateFocusTrap` / `deactivateFocusTrap`.
+3. [x] Implement `scrollIntoView` logic.
+4. [x] Write unit tests for event translation and focus navigation.
 
 ## Implementation Summary
 
 ### Files Created/Modified
+
 - `packages-native/opentui-dom/src/bridge/event-relay.ts` - Main event relay implementation
 - `packages-native/opentui-dom/src/bridge/node-map.ts` - DOM<->TUI renderable mapping
 - `packages-native/opentui-dom/test/event-relay.test.ts` - Unit tests (44 tests, all passing)
 - `packages-native/opentui-dom/src/index.ts` - Updated exports
 
 ### Features Implemented
+
 1. **Event Translation**: TUI KeyEvent -> DOM KeyboardEvent, MouseEvent, InputEvent
 2. **Focus Navigation**: Tab/Shift+Tab navigation with wrap-around
 3. **Focus Trap**: Modal dialogs can trap focus with Escape release
@@ -43,6 +47,7 @@ Implement the `EventRelay` to translate TUI input to DOM events.
 7. **Scroll Into View**: Auto-scroll when focusing elements outside viewport
 
 ### Test Coverage
+
 - 44 unit tests covering:
   - attach/detach lifecycle
   - event translation (enter, space, arrows, modifiers)
@@ -56,6 +61,7 @@ Implement the `EventRelay` to translate TUI input to DOM events.
   - preventDefault integration
 
 ## Basis
+
 - Ported from `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/event-relay.ts`
 - All fixes from POC preserved including radio group handling and accesskey support
 - Fixed `Node.DOCUMENT_POSITION_*` constants for happy-dom compatibility (use numeric values directly)

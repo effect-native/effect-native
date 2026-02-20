@@ -17,11 +17,13 @@ done_when: |
 Implement the `DOMAdapter` interface and the `HappyDOMAdapter` implementation.
 
 ## Context
-*   **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/adapter.ts`
-*   **Spec:** `work/tui-browser/tui-dom-poc0/.tasks/spec/opentui-dom-adapter.md`
-*   **Design:** `work/effect-native/effect-native/.specs/tui-dom/design.md`
+
+- **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/adapter.ts`
+- **Spec:** `work/tui-browser/tui-dom-poc0/.tasks/spec/opentui-dom-adapter.md`
+- **Design:** `work/effect-native/effect-native/.specs/tui-dom/design.md`
 
 ## Tasks
+
 1. [x] Port `DOMAdapter` interface (Effect-based).
 2. [x] Port `createTestAdapter` (Happy-DOM wrapper).
 3. [x] Ensure `ElementRef` locator pattern is implemented.
@@ -59,6 +61,7 @@ Implement the `DOMAdapter` interface and the `HappyDOMAdapter` implementation.
      - MutationStream interface
 
 ### Package Configuration
+
 - Added `vitest.config.ts` with `sequence.concurrent: false` to avoid shared state issues
 - Updated tsconfig files following existing package patterns
 - Added `happy-dom` as devDependency
@@ -66,27 +69,27 @@ Implement the `DOMAdapter` interface and the `HappyDOMAdapter` implementation.
 ## Test Results
 
 ```
- ✓ test/DOMAdapter.test.ts (25 tests) 166ms
-   ✓ ElementRef > ref() > creates ref with selector
-   ✓ ElementRef > ref() > creates ref with parent
-   ✓ ElementRef > refNth() > creates indexed ref
-   ✓ ElementRef > refNth() > creates indexed ref with parent
-   ✓ Error Types > ElementNotFoundError has correct tag and selector
-   ✓ Error Types > MultipleElementsError has correct tag, selector, and count
-   ✓ Error Types > AdapterError has correct tag and message
-   ✓ DOMAdapter > document > returns Effect with Document
-   ✓ DOMAdapter > exists() > returns true/false for existing/missing elements
-   ✓ DOMAdapter > count() > returns number of matching elements
-   ✓ DOMAdapter > textContent() > returns text content
-   ✓ DOMAdapter > getAttribute() > returns attribute values
-   ✓ DOMAdapter > getValue() > returns input value
-   ✓ DOMAdapter > fill() > sets input value
-   ✓ DOMAdapter > focus() and blur() > manages focus
-   ✓ DOMAdapter > click() > triggers click events
-   ✓ DOMAdapter > dispatchEvent() > dispatches custom events
-   ✓ DOMAdapter > observeMutations() > returns MutationStream interface
-   ✓ DOMAdapter > scoped queries > finds elements within parent scope
-   ✓ DOMAdapter > indexed queries > selects nth matching element
+✓ test/DOMAdapter.test.ts (25 tests) 166ms
+  ✓ ElementRef > ref() > creates ref with selector
+  ✓ ElementRef > ref() > creates ref with parent
+  ✓ ElementRef > refNth() > creates indexed ref
+  ✓ ElementRef > refNth() > creates indexed ref with parent
+  ✓ Error Types > ElementNotFoundError has correct tag and selector
+  ✓ Error Types > MultipleElementsError has correct tag, selector, and count
+  ✓ Error Types > AdapterError has correct tag and message
+  ✓ DOMAdapter > document > returns Effect with Document
+  ✓ DOMAdapter > exists() > returns true/false for existing/missing elements
+  ✓ DOMAdapter > count() > returns number of matching elements
+  ✓ DOMAdapter > textContent() > returns text content
+  ✓ DOMAdapter > getAttribute() > returns attribute values
+  ✓ DOMAdapter > getValue() > returns input value
+  ✓ DOMAdapter > fill() > sets input value
+  ✓ DOMAdapter > focus() and blur() > manages focus
+  ✓ DOMAdapter > click() > triggers click events
+  ✓ DOMAdapter > dispatchEvent() > dispatches custom events
+  ✓ DOMAdapter > observeMutations() > returns MutationStream interface
+  ✓ DOMAdapter > scoped queries > finds elements within parent scope
+  ✓ DOMAdapter > indexed queries > selects nth matching element
 ```
 
 ## Basis

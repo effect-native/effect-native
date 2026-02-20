@@ -1,10 +1,10 @@
-import * as Thing from "@effect-native/patterns/Thing"
-import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
+import * as Thing from "@effect-native/patterns/Thing"
 import * as Data from "effect/Data"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
 import * as HashSet from "effect/HashSet"
+import * as assert from "node:assert"
 
 class Counter extends Data.Class<{ readonly count: number }> {}
 

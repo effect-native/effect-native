@@ -28,9 +28,11 @@ basis: |
 Create a convenience wrapper for testing `opentui-dom` applications using standard `@testing-library` patterns.
 
 ## Context
-*   **Design:** `work/effect-native/effect-native/.specs/tui-dom-testing/design.md`
-*   **Source:** `work/tui-browser/tui-dom-poc0/src/testing/` (Existing implementation to port)
+
+- **Design:** `work/effect-native/effect-native/.specs/tui-dom-testing/design.md`
+- **Source:** `work/tui-browser/tui-dom-poc0/src/testing/` (Existing implementation to port)
 
 ## Components
-1.  **Render Helper:** Mounts React, inits Bridge, returns `screen`.
-2.  **Fire Event:** Dispatches DOM events simulating TUI input.
+
+1. **Render Helper:** Mounts React, inits Bridge, returns `screen`.
+2. **Fire Event:** Dispatches DOM events simulating TUI input.

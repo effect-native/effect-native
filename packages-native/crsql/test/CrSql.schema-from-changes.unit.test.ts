@@ -1,9 +1,9 @@
+import { it } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as assert from "node:assert"
-import { it } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
+import * as assert from "node:assert"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
 // TDD style: focused unit tests to narrow behavior

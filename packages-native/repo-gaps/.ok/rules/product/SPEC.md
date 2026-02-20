@@ -17,10 +17,12 @@ tags:
 # Intent
 
 Provide an automated system that maintains living documentation tracking:
+
 1. **Gaps** — discrepancies between what specs require and what implementations do
 2. **QA items** — open questions, ambiguities, and concerns about specs themselves
 
 The system enables spec-first development where:
+
 - Specs are the source of truth for intended behavior
 - Gaps are automatically identified and tracked
 - Quality improves through continuous validation
@@ -56,6 +58,7 @@ The system enables spec-first development where:
 ## US1 — Check project health instantly
 
 As a developer, I want to run `bun ok` and instantly see:
+
 - How many gaps exist and their severity
 - How many spec questions are open
 - What's blocking what
@@ -90,21 +93,25 @@ As a developer working in a public submodule, I want to reference private docs i
 # Quality Attributes
 
 ## Instant feedback
+
 - `bun ok` completes in <100ms
 - No network calls for status checks
 - Works fully offline
 
 ## Non-blocking workflow
+
 - Commits remain instant (no hooks)
 - Analysis runs on push (acceptable delay)
 - Developer decides when to commit generated files
 
 ## Single source of truth
+
 - No duplicate data (e.g., `blocked_by` derived from `blocks`)
 - Specs define behavior, gaps track deviations
 - Git history captures all changes
 
 ## Prioritization support
+
 - Severity levels (critical/high/medium/low)
 - Badness scoring across multiple dimensions
 - Blocking relationships surface actionable items

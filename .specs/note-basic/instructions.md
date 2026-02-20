@@ -10,10 +10,10 @@ A minimal CLI tool for creating timestamped markdown notes from the command line
 
 ## Personas & User Stories
 
-1) Developer taking quick notes
+1. Developer taking quick notes
    - As a developer who wants to capture a thought quickly, I want to run a single command with my note title as arguments, so that a properly formatted markdown file is created without interrupting my flow.
 
-2) Documentation-oriented user
+2. Documentation-oriented user
    - As someone who organizes notes by date, I want the generated filename to include the current date, so that notes are naturally sorted chronologically in the filesystem.
 
 ## Core Requirements

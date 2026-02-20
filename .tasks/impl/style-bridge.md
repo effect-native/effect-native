@@ -20,11 +20,13 @@ basis: |
 Implement the `StyleBridge` and `tailwind-mapper`.
 
 ## Context
-*   **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/style-bridge.ts`
-*   **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/tailwind-mapper.ts`
-*   **Research:** `work/tui-browser/tui-dom-poc0/.research/css-mapping/tailwind-mapping-notes.md`
+
+- **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/style-bridge.ts`
+- **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/tailwind-mapper.ts`
+- **Research:** `work/tui-browser/tui-dom-poc0/.research/css-mapping/tailwind-mapping-notes.md`
 
 ## Tasks
+
 1. [x] Create package structure for `packages-native/opentui-dom`
 2. [x] Port `tailwind-mapper.ts` (80/20 rule for classes)
 3. [x] Port `style-bridge.ts` (Class extraction, data-attribute overrides)
@@ -34,6 +36,7 @@ Implement the `StyleBridge` and `tailwind-mapper`.
 ## Progress Log
 
 ### 2025-12-29 - Implementation Complete
+
 - Created `packages-native/opentui-dom/` package structure
 - Ported `tailwind-mapper.ts` with TuiStyleProps interface and mapping functions:
   - Flex layout (direction, wrap, grow/shrink)

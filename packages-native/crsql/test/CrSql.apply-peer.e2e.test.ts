@@ -1,11 +1,11 @@
+import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as assert from "node:assert"
-import { layer } from "@effect-native/bun-test"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import { Reactivity } from "effect/unstable/reactivity"
 import { SqlClient } from "effect/unstable/sql"
+import * as assert from "node:assert"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {

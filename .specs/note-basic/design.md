@@ -30,27 +30,30 @@ packages-native/note/
 ## Data Models
 
 ### NoteOptions
+
 - `title`: string — the original title text with spaces preserved
 
 ### NoteResult
+
 - `filename`: string — generated filename (e.g., `note-2025-11-26-my-title.md`)
 - `content`: string — the markdown content written to file
 
 ### ValidationError
+
 - Tagged error type for argument validation failures
 - Fields: `type` (filename | flag | existing-file), `arg` (the problematic argument), `message` (user-facing explanation)
 
 ## API Signatures
 
-| Module | Function | Inputs | Output | Description |
-|--------|----------|--------|--------|-------------|
-| Slug | `slugify` | title: string | string | Converts title to URL-safe slug |
-| Note | `makeFilename` | title: string, date: Date | string | Generates `note-YYYY-MM-DD-slug.md` filename |
-| Note | `makeContent` | title: string, timestamp: Date | string | Generates markdown content |
-| Note | `createNote` | options: NoteOptions | Effect\<NoteResult, PlatformError, FileSystem \| Path\> | Creates note file in cwd |
-| Validate | `looksLikeFilename` | arg: string | boolean | True if arg has dot and no spaces |
-| Validate | `looksLikeFlag` | arg: string | boolean | True if arg starts with `-`/`--` or contains `=` |
-| Validate | `TitleWord` | — | Schema\<string, string\> | Schema that validates a string is a plain title word |
+| Module   | Function            | Inputs                         | Output                                                  | Description                                          |
+| -------- | ------------------- | ------------------------------ | ------------------------------------------------------- | ---------------------------------------------------- |
+| Slug     | `slugify`           | title: string                  | string                                                  | Converts title to URL-safe slug                      |
+| Note     | `makeFilename`      | title: string, date: Date      | string                                                  | Generates `note-YYYY-MM-DD-slug.md` filename         |
+| Note     | `makeContent`       | title: string, timestamp: Date | string                                                  | Generates markdown content                           |
+| Note     | `createNote`        | options: NoteOptions           | Effect\<NoteResult, PlatformError, FileSystem \| Path\> | Creates note file in cwd                             |
+| Validate | `looksLikeFilename` | arg: string                    | boolean                                                 | True if arg has dot and no spaces                    |
+| Validate | `looksLikeFlag`     | arg: string                    | boolean                                                 | True if arg starts with `-`/`--` or contains `=`     |
+| Validate | `TitleWord`         | —                              | Schema\<string, string\>                                | Schema that validates a string is a plain title word |
 
 ## Slug Algorithm
 
@@ -91,18 +94,19 @@ packages-native/note/
 
 ## Error Handling Strategy
 
-| Error Scenario | Handling Approach |
-|----------------|-------------------|
-| No title provided | `@effect/cli` handles via `Args.atLeast(1)` — automatic error message |
-| Argument looks like filename | Check if arg contains dot and no spaces; abort with helpful message |
-| Argument matches existing file | Check filesystem before proceeding; abort with confusion warning |
-| Argument looks like flag/option | Check if arg starts with `-`/`--` or contains `=`; abort and show help |
-| File write failure | `FileSystem.writeFileString` returns `PlatformError` — surfaced by `NodeRuntime.runMain` |
-| Invalid slug (empty after processing) | Slug function returns empty string; caller should validate |
+| Error Scenario                        | Handling Approach                                                                        |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| No title provided                     | `@effect/cli` handles via `Args.atLeast(1)` — automatic error message                    |
+| Argument looks like filename          | Check if arg contains dot and no spaces; abort with helpful message                      |
+| Argument matches existing file        | Check filesystem before proceeding; abort with confusion warning                         |
+| Argument looks like flag/option       | Check if arg starts with `-`/`--` or contains `=`; abort and show help                   |
+| File write failure                    | `FileSystem.writeFileString` returns `PlatformError` — surfaced by `NodeRuntime.runMain` |
+| Invalid slug (empty after processing) | Slug function returns empty string; caller should validate                               |
 
 ## Test Strategy
 
 ### Unit Tests (Slug.test.ts)
+
 - Lowercase conversion
 - Space to hyphen replacement
 - Special character removal
@@ -112,15 +116,18 @@ packages-native/note/
 - Mixed case with special characters
 
 ### Validation Tests (Validate.test.ts)
+
 - `looksLikeFilename`: true for "foo.md", "test.txt", false for "foo bar.md", "hello"
 - `looksLikeFlag`: true for "--help", "-v", "--key=val", false for "hello", "my-title"
 - `validateArgs`: fails when arg matches existing file in cwd
 
 ### Function Tests (Note.test.ts)
+
 - `makeFilename` produces correct format given fixed date
 - `makeContent` produces correct markdown structure
 - Both functions handle edge cases (very long titles, unicode)
 
 ### Integration Verification
+
 - Manual verification: run `npx note test title` and inspect output file
 - Build verification: `pnpm build`, `pnpm check`, `pnpm lint` pass

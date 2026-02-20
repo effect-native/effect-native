@@ -15,9 +15,11 @@ done_when: |
 Create the validation app.
 
 ## Context
-*   **Reference:** `work/tui-browser/tui-dom-poc0/poc/form-demo.tsx`
+
+- **Reference:** `work/tui-browser/tui-dom-poc0/poc/form-demo.tsx`
 
 ## Tasks
+
 1. [x] Create `miniapp.tsx` using @effect-native/opentui-dom components.
 2. [x] Create `miniapp.html` entry point.
 3. [x] Ensure it uses the new `@effect-native/opentui-dom` package.
@@ -59,25 +61,26 @@ Create the validation app.
 ### Package.json Updates
 
 Added to `packages-native/opentui-dom/package.json`:
+
 - Script: `"tui-dom": "bun run poc/miniapp.tsx"`
 - DevDependencies: `@opentui/core`, `react`, `react-dom`, `@types/react`, `@types/react-dom`
 
 ## Keyboard Controls
 
-| Key | Action |
-|-----|--------|
-| Tab / Shift+Tab | Navigate between elements |
-| Space | Toggle checkbox, check radio, activate button |
-| Enter | Activate button, confirm dialog |
-| Arrow Up/Down | Navigate radio group or select options |
-| Backspace | Delete character in text fields |
-| Alt+N | Focus Name input |
-| Alt+E | Focus Email input |
-| Alt+D | Open dialog |
-| Alt+S | Submit form |
-| Alt+R | Reset form |
-| Escape | Close dialog |
-| Ctrl+C | Exit |
+| Key             | Action                                        |
+| --------------- | --------------------------------------------- |
+| Tab / Shift+Tab | Navigate between elements                     |
+| Space           | Toggle checkbox, check radio, activate button |
+| Enter           | Activate button, confirm dialog               |
+| Arrow Up/Down   | Navigate radio group or select options        |
+| Backspace       | Delete character in text fields               |
+| Alt+N           | Focus Name input                              |
+| Alt+E           | Focus Email input                             |
+| Alt+D           | Open dialog                                   |
+| Alt+S           | Submit form                                   |
+| Alt+R           | Reset form                                    |
+| Escape          | Close dialog                                  |
+| Ctrl+C          | Exit                                          |
 
 ## Running the Miniapp
 
@@ -87,6 +90,7 @@ pnpm tui-dom
 ```
 
 Or directly:
+
 ```bash
 bun run poc/miniapp.tsx
 ```
@@ -94,19 +98,19 @@ bun run poc/miniapp.tsx
 ## Test Results
 
 ```
- ✓ test/miniapp.test.ts (12 tests) 15ms
-   ✓ NodeMap > maps DOM nodes to renderables bidirectionally
-   ✓ NodeMap > handles multiple elements
-   ✓ EventRelay > attaches and detaches from renderer
-   ✓ EventRelay > handles Tab navigation between form elements
-   ✓ EventRelay > handles Shift+Tab for reverse navigation
-   ✓ EventRelay > handles text input in form fields
-   ✓ EventRelay > handles accesskey shortcuts
-   ✓ Focus Trap > constrains Tab navigation to dialog when active
-   ✓ Focus Trap > releases focus trap on Escape
-   ✓ Form Controls > handles checkbox toggle with Space
-   ✓ Form Controls > handles radio group arrow navigation
-   ✓ Form Controls > handles select navigation with Arrow keys
+✓ test/miniapp.test.ts (12 tests) 15ms
+  ✓ NodeMap > maps DOM nodes to renderables bidirectionally
+  ✓ NodeMap > handles multiple elements
+  ✓ EventRelay > attaches and detaches from renderer
+  ✓ EventRelay > handles Tab navigation between form elements
+  ✓ EventRelay > handles Shift+Tab for reverse navigation
+  ✓ EventRelay > handles text input in form fields
+  ✓ EventRelay > handles accesskey shortcuts
+  ✓ Focus Trap > constrains Tab navigation to dialog when active
+  ✓ Focus Trap > releases focus trap on Escape
+  ✓ Form Controls > handles checkbox toggle with Space
+  ✓ Form Controls > handles radio group arrow navigation
+  ✓ Form Controls > handles select navigation with Arrow keys
 ```
 
 ## Basis

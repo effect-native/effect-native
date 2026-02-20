@@ -18,16 +18,19 @@ done_when: |
 Implement `NodeMap` and the main `DOMToTUIBridge` class.
 
 ## Context
-*   **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/node-map.ts`
-*   **Source:** `work/tui-browser/tui-dom-poc0/src/tui-renderer.ts` (Logic needs extraction)
+
+- **Source:** `work/tui-browser/tui-dom-poc0/packages/opentui-dom/src/bridge/node-map.ts`
+- **Source:** `work/tui-browser/tui-dom-poc0/src/tui-renderer.ts` (Logic needs extraction)
 
 ## Tasks
-1.  [x] Port `node-map.ts` (WeakMap implementation) - ALREADY DONE
-2.  [x] Implement `DOMToTUIBridge` class (MutationObserver loop)
-3.  [x] Wire up `StyleBridge` for attribute mutations
-4.  [x] Write unit tests for mutation handling
+
+1. [x] Port `node-map.ts` (WeakMap implementation) - ALREADY DONE
+2. [x] Implement `DOMToTUIBridge` class (MutationObserver loop)
+3. [x] Wire up `StyleBridge` for attribute mutations
+4. [x] Write unit tests for mutation handling
 
 ## Basis
+
 - NodeMap already exists at `packages-native/opentui-dom/src/bridge/node-map.ts`
 - StyleBridge exists at `packages-native/opentui-dom/src/bridge/style-bridge.ts`
 - EventRelay exists at `packages-native/opentui-dom/src/bridge/event-relay.ts`
@@ -37,9 +40,11 @@ Implement `NodeMap` and the main `DOMToTUIBridge` class.
 ## Implementation Summary
 
 ### `DOMToTUIBridge` (`dom-to-tui-bridge.ts`)
+
 Core bridge that observes DOM mutations via MutationObserver and syncs to TUI Renderables:
 
 **Features:**
+
 - Observes childList, characterData, and attributes mutations
 - Creates TUI Renderables (via RenderableFactory) for new DOM nodes
 - Updates existing Renderables when DOM nodes change (text content, attributes)
@@ -48,6 +53,7 @@ Core bridge that observes DOM mutations via MutationObserver and syncs to TUI Re
 - Accepts custom `window` parameter for MutationObserver (for happy-dom compatibility)
 
 **API:**
+
 ```ts
 interface DOMToTUIBridge {
   observe(container: Element): void
@@ -60,6 +66,7 @@ function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBridge
 ```
 
 **Options:**
+
 - `factory`: RenderableFactory - creates box/text renderables
 - `root`: TUIContainer - root container for elements
 - `window?`: WindowLike - for MutationObserver constructor (defaults to globalThis)
@@ -68,6 +75,7 @@ function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBridge
 - `debug?`: boolean - enable logging
 
 ### Unit Tests (19 tests, all passing)
+
 - observe() starts observing mutations
 - observe() handles multiple observations by disconnecting previous
 - disconnect() stops observing
@@ -89,4 +97,5 @@ function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBridge
 - style: applies data-tui-* attributes
 
 ## Status: COMPLETE
+
 All unit tests pass (194 total in opentui-dom package).

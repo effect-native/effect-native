@@ -102,13 +102,14 @@ Single file per spec containing all QA items with YAML frontmatter per item.
 
 # Path Resolution
 
-| Prefix | Resolves to |
-|--------|-------------|
-| `@/` | Current repo root (`git rev-parse --show-toplevel`) |
-| `@wrapper/` | Parent wrapper repo (for submodules) |
-| `@wrapper/wrapper/` | Grandparent wrapper |
+| Prefix              | Resolves to                                         |
+| ------------------- | --------------------------------------------------- |
+| `@/`                | Current repo root (`git rev-parse --show-toplevel`) |
+| `@wrapper/`         | Parent wrapper repo (for submodules)                |
+| `@wrapper/wrapper/` | Grandparent wrapper                                 |
 
 Resolution algorithm:
+
 1. `@/` → `git rev-parse --show-toplevel`
 2. `@wrapper/` → walk up from repo root looking for parent `.git`
 3. If not found → log warning, skip ref
@@ -129,6 +130,7 @@ Derives `blocked_by` by inverting `blocks` graph.
 Computes total badness and sorts by it.
 
 Exit codes:
+
 - 0: All critical/high resolved
 - 1: Has open critical items
 - 2: Has open high items (no critical)
@@ -152,6 +154,7 @@ Does NOT auto-commit. User decides when to commit.
 Location: `.ok/hooks/pre-push` (symlinked from `.git/hooks/`)
 
 Behavior:
+
 1. Get changed files since last push
 2. Find affected `.ok/` directories by walking up
 3. Run AI analysis for each affected spec
@@ -163,6 +166,7 @@ Auto-commits marked `[auto]` are skipped on subsequent analysis.
 # AI Integration
 
 ## Prompt inputs
+
 - SPEC.md content
 - Implementation files matching `files` patterns
 - Referenced docs from `refs`
@@ -170,6 +174,7 @@ Auto-commits marked `[auto]` are skipped on subsequent analysis.
 - Existing SPEC.QA.md
 
 ## Prompt outputs
+
 - Updated/new gap files
 - Updated SPEC.QA.md
 

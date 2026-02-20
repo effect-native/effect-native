@@ -1,8 +1,8 @@
-import * as CodexSession from "@effect-native/patterns/CodexSession"
-import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
+import * as CodexSession from "@effect-native/patterns/CodexSession"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import * as assert from "node:assert"
 
 const sampleSession = [
   {

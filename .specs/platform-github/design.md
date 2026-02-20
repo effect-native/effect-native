@@ -13,6 +13,7 @@ The package provides three main capabilities:
 **Programs must never need to know environment variable names.**
 
 All GitHub Actions environment data is exposed through:
+
 - Typed services (ActionContext, ActionRunner, etc.)
 - Schema-validated inputs via `Input.parse`
 - Typed outputs via `Output.set`
@@ -52,21 +53,21 @@ There is no legitimate reason for a program to access `process.env.GITHUB_*` dir
 
 ### Failure vs Error
 
-| Term | Meaning | Example |
-|------|---------|---------|
+| Term        | Meaning                          | Example                                                     |
+| ----------- | -------------------------------- | ----------------------------------------------------------- |
 | **Failure** | Action correctly decided to stop | Invalid input, missing required value, precondition not met |
-| **Error** | Something unexpected broke | Network error, API error, bug |
+| **Error**   | Something unexpected broke       | Network error, API error, bug                               |
 
 ### Failure Types
 
 ```typescript
 // Input validation failed
 export class InputValidationFailure extends Data.TaggedError("InputValidationFailure")<{
-  readonly input: string           // Input name
+  readonly input: string // Input name
   readonly reason: "MissingRequired" | "InvalidType" | "InvalidJson" | "SchemaValidation"
-  readonly value: string           // The raw value that failed
-  readonly message: string         // Human-readable message
-  readonly cause?: unknown         // Underlying error (e.g., ParseError)
+  readonly value: string // The raw value that failed
+  readonly message: string // Human-readable message
+  readonly cause?: unknown // Underlying error (e.g., ParseError)
 }> {}
 
 // User explicitly fails the action
@@ -81,6 +82,7 @@ export class ActionFailed extends Data.TaggedError("ActionFailed")<{
 `Action.runMain` accepts `Effect<A, E, ActionRequirements>` with **any error type E** (like NodeRuntime.runMain).
 
 On failure:
+
 1. Logs error via Effect's logger (pretty printed)
 2. Formats message nicely for known failure types
 3. Calls `core.setFailed(message)` for GitHub UI annotation
@@ -95,18 +97,22 @@ Users don't need to handle errors explicitly - they flow through naturally. But 
 The primary entry point for running an Effect as a GitHub Action.
 
 **Signature**:
+
 ```typescript
-runMain: <E, A>(
+runMain: ;
+;(<E, A>(
   effect: Effect<A, E, ActionRequirements>,
   options?: RunMainOptions
-) => void
+) => void )
 ```
 
 **RunMainOptions**:
+
 - `disableErrorReporting`: boolean (default false) - Turn off automatic error logging
 - `disablePrettyLogger`: boolean (default false) - Use default logger instead of pretty
 
 **Behavior**:
+
 1. Provides `Action.layer` automatically (ActionRunner, ActionContext, ActionClient, ActionSummary)
 2. Runs the Effect with fiber-based execution
 3. Logs errors via Effect's logging system
@@ -115,14 +121,15 @@ runMain: <E, A>(
 6. On interrupt (SIGINT/SIGTERM): interrupts fiber, exits gracefully
 
 **Example - errors flow naturally**:
+
 ```typescript
-import { Action, Input, ActionRunner } from "@effect-native/platform-github"
+import { Action, ActionRunner, Input } from "@effect-native/platform-github"
 import { Effect, Schema } from "effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // If invalid, InputValidationFailure propagates to runMain
   const count = yield* Input.parse("count", Schema.NumberFromString)
-  
+
   const runner = yield* ActionRunner
   yield* runner.info(`Count: ${count}`)
 })
@@ -132,22 +139,26 @@ Action.runMain(program)
 ```
 
 **Example - explicit recovery**:
+
 ```typescript
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const count = yield* Input.parse("count", Schema.NumberFromString).pipe(
-    Effect.orElseSucceed(() => 10)  // Default on error
+    Effect.orElseSucceed(() => 10) // Default on error
   )
 })
 ```
 
 **Example - explicit failure**:
+
 ```typescript
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const pr = yield* getPullRequest()
   if (pr.draft) {
-    yield* Effect.fail(new ActionFailed({ 
-      message: "Cannot merge draft PRs" 
-    }))
+    yield* Effect.fail(
+      new ActionFailed({
+        message: "Cannot merge draft PRs"
+      })
+    )
   }
 })
 ```
@@ -302,27 +313,27 @@ Output.json(name, value: unknown) = Output.set(name, JSON.stringify(value))
 
 Low-level runner communication:
 
-| Method | Purpose |
-|--------|---------|
-| `getInput(name, options?)` | Get input value (returns "" if missing) |
-| `getBooleanInput(name)` | Get boolean input |
-| `getMultilineInput(name)` | Get multiline input as array |
-| `setOutput(name, value)` | Set output value |
-| `debug(message)` | Write debug message |
-| `info(message)` | Write info message |
-| `warning(message, props?)` | Create warning annotation |
-| `error(message, props?)` | Create error annotation |
-| `notice(message, props?)` | Create notice annotation |
-| `startGroup(name)` | Begin log group |
-| `endGroup()` | End log group |
-| `group(name, effect)` | Run effect in group |
-| `exportVariable(name, value)` | Set environment variable |
-| `addPath(path)` | Add to PATH |
-| `setSecret(secret)` | Mask value in logs |
-| `saveState(name, value)` | Save state for post action |
-| `getState(name)` | Get saved state |
-| `setFailed(message)` | Fail the action |
-| `getIDToken(audience?)` | Get OIDC token |
+| Method                        | Purpose                                 |
+| ----------------------------- | --------------------------------------- |
+| `getInput(name, options?)`    | Get input value (returns "" if missing) |
+| `getBooleanInput(name)`       | Get boolean input                       |
+| `getMultilineInput(name)`     | Get multiline input as array            |
+| `setOutput(name, value)`      | Set output value                        |
+| `debug(message)`              | Write debug message                     |
+| `info(message)`               | Write info message                      |
+| `warning(message, props?)`    | Create warning annotation               |
+| `error(message, props?)`      | Create error annotation                 |
+| `notice(message, props?)`     | Create notice annotation                |
+| `startGroup(name)`            | Begin log group                         |
+| `endGroup()`                  | End log group                           |
+| `group(name, effect)`         | Run effect in group                     |
+| `exportVariable(name, value)` | Set environment variable                |
+| `addPath(path)`               | Add to PATH                             |
+| `setSecret(secret)`           | Mask value in logs                      |
+| `saveState(name, value)`      | Save state for post action              |
+| `getState(name)`              | Get saved state                         |
+| `setFailed(message)`          | Fail the action                         |
+| `getIDToken(audience?)`       | Get OIDC token                          |
 
 ### ActionContext
 
@@ -330,24 +341,24 @@ Low-level runner communication:
 
 Typed access to workflow context:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `eventName` | string | Event that triggered workflow |
-| `payload` | WebhookPayload | Full webhook payload |
-| `sha` | string | Commit SHA |
-| `ref` | string | Git ref |
-| `workflow` | string | Workflow name |
-| `action` | string | Action/step identifier |
-| `actor` | string | Triggering user |
-| `job` | string | Job identifier |
-| `runId` | number | Unique run ID |
-| `runNumber` | number | Run number |
-| `runAttempt` | number | Attempt number |
-| `apiUrl` | string | API base URL |
-| `serverUrl` | string | Server base URL |
-| `graphqlUrl` | string | GraphQL endpoint |
-| `repo` | { owner, name } | Repository info |
-| `issue` | Option<{ owner, repo, number }> | Issue/PR info |
+| Property     | Type                            | Description                   |
+| ------------ | ------------------------------- | ----------------------------- |
+| `eventName`  | string                          | Event that triggered workflow |
+| `payload`    | WebhookPayload                  | Full webhook payload          |
+| `sha`        | string                          | Commit SHA                    |
+| `ref`        | string                          | Git ref                       |
+| `workflow`   | string                          | Workflow name                 |
+| `action`     | string                          | Action/step identifier        |
+| `actor`      | string                          | Triggering user               |
+| `job`        | string                          | Job identifier                |
+| `runId`      | number                          | Unique run ID                 |
+| `runNumber`  | number                          | Run number                    |
+| `runAttempt` | number                          | Attempt number                |
+| `apiUrl`     | string                          | API base URL                  |
+| `serverUrl`  | string                          | Server base URL               |
+| `graphqlUrl` | string                          | GraphQL endpoint              |
+| `repo`       | { owner, name }                 | Repository info               |
+| `issue`      | Option<{ owner, repo, number }> | Issue/PR info                 |
 
 ### ActionClient
 
@@ -355,12 +366,12 @@ Typed access to workflow context:
 
 GitHub API client:
 
-| Method | Purpose |
-|--------|---------|
-| `octokit` | Get configured Octokit instance |
-| `request(fn)` | Effect-wrapped API request |
-| `graphql(query, vars?)` | Effect-wrapped GraphQL |
-| `paginate(fn)` | Collect paginated results |
+| Method                  | Purpose                         |
+| ----------------------- | ------------------------------- |
+| `octokit`               | Get configured Octokit instance |
+| `request(fn)`           | Effect-wrapped API request      |
+| `graphql(query, vars?)` | Effect-wrapped GraphQL          |
+| `paginate(fn)`          | Collect paginated results       |
 
 ### ActionSummary
 
@@ -368,48 +379,48 @@ GitHub API client:
 
 Job summary builder (chainable):
 
-| Method | HTML Output |
-|--------|-------------|
-| `addRaw(text, addEOL?)` | Raw text |
-| `addHeading(text, level?)` | `<h1>`-`<h6>` |
-| `addCodeBlock(code, lang?)` | `<pre><code>` |
-| `addList(items, ordered?)` | `<ul>` or `<ol>` |
-| `addTable(rows)` | `<table>` |
-| `addDetails(label, content)` | `<details>` |
-| `addImage(src, alt, opts?)` | `<img>` |
-| `addSeparator()` | `<hr>` |
-| `addBreak()` | `<br>` |
-| `addQuote(text, cite?)` | `<blockquote>` |
-| `addLink(text, href)` | `<a>` |
-| `write(options?)` | Write to file (Effect) |
-| `clear()` | Clear buffer and file (Effect) |
+| Method                       | HTML Output                    |
+| ---------------------------- | ------------------------------ |
+| `addRaw(text, addEOL?)`      | Raw text                       |
+| `addHeading(text, level?)`   | `<h1>`-`<h6>`                  |
+| `addCodeBlock(code, lang?)`  | `<pre><code>`                  |
+| `addList(items, ordered?)`   | `<ul>` or `<ol>`               |
+| `addTable(rows)`             | `<table>`                      |
+| `addDetails(label, content)` | `<details>`                    |
+| `addImage(src, alt, opts?)`  | `<img>`                        |
+| `addSeparator()`             | `<hr>`                         |
+| `addBreak()`                 | `<br>`                         |
+| `addQuote(text, cite?)`      | `<blockquote>`                 |
+| `addLink(text, href)`        | `<a>`                          |
+| `write(options?)`            | Write to file (Effect)         |
+| `clear()`                    | Clear buffer and file (Effect) |
 
 ---
 
 ## Complete Example
 
 ```typescript
-import { Action, Input, Output, ActionContext, ActionRunner, ActionClient } from "@effect-native/platform-github"
+import { Action, ActionClient, ActionContext, ActionRunner, Input, Output } from "@effect-native/platform-github"
 import { Effect, Schema } from "effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // Parse inputs with Schema validation
   const token = yield* Input.parse("github-token", Schema.Redacted(Schema.NonEmptyString))
   const title = yield* Input.parse("title", Schema.NonEmptyString)
   const labels = yield* Input.parse("labels", Schema.String).pipe(
-    Effect.map(s => s.split(",").map(l => l.trim()).filter(Boolean)),
+    Effect.map((s) => s.split(",").map((l) => l.trim()).filter(Boolean)),
     Effect.orElseSucceed(() => [])
   )
-  
+
   // Get context
   const ctx = yield* ActionContext
   const client = yield* ActionClient
   const runner = yield* ActionRunner
-  
+
   yield* runner.info(`Creating issue in ${ctx.repo.owner}/${ctx.repo.name}`)
-  
+
   // Create issue
-  const response = yield* client.request(octokit =>
+  const response = yield* client.request((octokit) =>
     octokit.rest.issues.create({
       owner: ctx.repo.owner,
       repo: ctx.repo.name,
@@ -417,9 +428,9 @@ const program = Effect.gen(function* () {
       labels
     })
   )
-  
+
   yield* runner.info(`Created issue #${response.data.number}`)
-  
+
   // Set outputs
   yield* Output.set("issue-number", String(response.data.number))
   yield* Output.set("issue-url", response.data.html_url)
@@ -435,34 +446,33 @@ Action.runMain(program)
 
 ### Test Layers
 
-| Layer | Purpose |
-|-------|---------|
-| `ActionRunnerTest.make(config)` | Mock runner with configurable inputs |
-| `ActionContextTest.make(data)` | Mock context data |
-| `ActionClientTest.make(responses?)` | Mock API responses |
-| `ActionSummaryTest.make()` | Capture summary buffer |
+| Layer                               | Purpose                              |
+| ----------------------------------- | ------------------------------------ |
+| `ActionRunnerTest.make(config)`     | Mock runner with configurable inputs |
+| `ActionContextTest.make(data)`      | Mock context data                    |
+| `ActionClientTest.make(responses?)` | Mock API responses                   |
+| `ActionSummaryTest.make()`          | Capture summary buffer               |
 
 ### Example Test
 
 ```typescript
-import { Input, ActionRunnerTest } from "@effect-native/platform-github"
+import { ActionRunnerTest, Input } from "@effect-native/platform-github"
+import { describe, expect, it } from "@effect/vitest"
 import { Effect, Schema } from "effect"
-import { describe, it, expect } from "@effect/vitest"
 
 describe("Input", () => {
   it.effect("parses integer input", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const count = yield* Input.parse("count", Schema.NumberFromString)
       expect(count).toBe(42)
     }).pipe(
       Effect.provide(ActionRunnerTest.make({
         inputs: { count: "42" }
       }))
-    )
-  )
-  
+    ))
+
   it.effect("fails on invalid integer", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const result = yield* Input.parse("count", Schema.NumberFromString).pipe(
         Effect.either
       )
@@ -471,7 +481,6 @@ describe("Input", () => {
       Effect.provide(ActionRunnerTest.make({
         inputs: { count: "not-a-number" }
       }))
-    )
-  )
+    ))
 })
 ```

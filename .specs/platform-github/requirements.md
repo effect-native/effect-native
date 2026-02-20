@@ -16,7 +16,7 @@ The package shall re-use Node.js implementations for services where GitHub Actio
 ### AR-2: No Magic Strings
 
 **AR-2.1** (Ubiquitous)
-Programs shall NOT need to know any environment variable names (GITHUB_*, INPUT_*, etc.).
+Programs shall NOT need to know any environment variable names (GITHUB__, INPUT__, etc.).
 
 **AR-2.2** (Ubiquitous)
 All environment data shall be accessible exclusively through typed services and Schema-validated inputs/outputs.
@@ -184,6 +184,7 @@ the System shall write all output values to `GITHUB_OUTPUT` in the required form
 
 **FR-3.1.1** (Ubiquitous)
 The `Action.make(name, config, handler)` constructor shall create an action definition with:
+
 - name: Action identifier
 - config.inputs: Declarative input schema
 - config.outputs: Declarative output schema
@@ -200,6 +201,7 @@ The handler function shall return values matching the output schema.
 **FR-3.2.1** (Event-Driven)
 When `Action.run(action)` is called,
 the System shall:
+
 1. Parse all inputs according to their schemas
 2. Execute the handler with parsed inputs
 3. Write outputs according to their schemas
@@ -268,6 +270,7 @@ the System shall write the buffer to `GITHUB_STEP_SUMMARY`.
 
 **FR-8.1.1** (Ubiquitous)
 The `GitHubContext.layer` shall provide:
+
 - FileSystem (from @effect/platform-node)
 - Path (from @effect/platform-node)
 - CommandExecutor (from @effect/platform-node)
@@ -305,8 +308,6 @@ Terminal shall respect `RUNNER_DEBUG` for debug output visibility.
 
 **FR-9.5** (Ubiquitous)
 `ActionSummaryError` shall contain: reason (MissingPath, WriteError).
-
-
 
 ---
 

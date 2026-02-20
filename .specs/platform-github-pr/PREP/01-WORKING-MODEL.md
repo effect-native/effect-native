@@ -21,7 +21,7 @@ export interface IssueCommentContext {
   readonly isPullRequest: boolean
 }
 
-// PullRequest.ts - for pull_request events  
+// PullRequest.ts - for pull_request events
 export interface PullRequestContext {
   readonly payload: PullRequestEvent
   readonly owner: string
@@ -67,18 +67,18 @@ High-level layers that combine context + operations:
 // For issue_comment triggered workflows
 export const IssueCommentWorkflow = Layer.effect(
   IssueCommentContext,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const payload = yield* ActionContext.typedPayload("issue_comment")
-    return { /* context properties */ }
+    return {/* context properties */}
   })
 )
 
 // For pull_request triggered workflows
 export const PullRequestWorkflow = Layer.effect(
   PullRequestContext,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const payload = yield* ActionContext.typedPayload("pull_request")
-    return { /* context properties */ }
+    return {/* context properties */}
   })
 )
 ```

@@ -406,7 +406,7 @@ export const stripAnsi = (text: string): string => {
     // eslint-disable-next-line no-control-regex
     /\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[()][AB012]|\x1b[=>]|\x1b[78]|\x1b[DMEH]/g,
     ""
-  );
+  )
 }
 
 /**

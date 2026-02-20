@@ -3,6 +3,7 @@
 Absolute paths to the cr-sqlite extension binaries for common desktop/server platforms, plus an optional Effect entrypoint.
 
 Supported platforms (verified on release):
+
 - macOS: darwin-aarch64, darwin-x86_64
 - Linux: linux-aarch64, linux-x86_64
 - Windows: win-x86_64, win-i686
@@ -16,8 +17,8 @@ pnpm add @effect-native/libcrsql
 ## Usage (no Effect)
 
 ```ts
+import { getCrSqliteExtensionPathSync, pathToCrSqliteExtension } from "@effect-native/libcrsql"
 import Database from "better-sqlite3"
-import { pathToCrSqliteExtension, getCrSqliteExtensionPathSync } from "@effect-native/libcrsql"
 
 const db = new Database(":memory:")
 db.loadExtension(pathToCrSqliteExtension)
@@ -32,13 +33,13 @@ Use the Node Sqlite client from Effect and load the CR‑SQLite extension before
 Simple usage (Effect):
 
 ```ts
-import { SqliteClient } from "@effect/sql-sqlite-node"
 import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
+import { SqliteClient } from "@effect/sql-sqlite-node"
 import { Effect, Layer } from "effect"
 
 const SqliteBase = SqliteClient.layer({ filename: ":memory:" })
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const client = yield* SqliteClient.SqliteClient
   const ext = yield* getCrSqliteExtensionPath
   yield* client.loadExtension(ext)
@@ -50,15 +51,15 @@ const program = Effect.gen(function* () {
 Idiomatic Layer composition for tests:
 
 ```ts
-import { SqliteClient } from "@effect/sql-sqlite-node"
 import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
+import { SqliteClient } from "@effect/sql-sqlite-node"
 import { Effect, Layer } from "effect"
 
 const SqliteBase = SqliteClient.layer({ filename: ":memory:" })
 
 export const SqliteWithCr = Layer.effect(
   SqliteClient.SqliteClient,
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const client = yield* SqliteClient.SqliteClient
     const ext = yield* getCrSqliteExtensionPath
     yield* client.loadExtension(ext)
@@ -71,6 +72,7 @@ export const SqliteWithCr = Layer.effect(
 ```
 
 Notes:
+
 - better‑sqlite3 compiles with SQLite built in; you do not need @effect‑native/libsqlite for Node.
 - If you need to control the SQLite binary (e.g. Bun), use @effect‑native/libsqlite and its `Database.setCustomSQLite` APIs.
 
@@ -85,14 +87,15 @@ import { linux_x86_64 } from "@effect-native/libcrsql/paths"
 ## Effect entrypoint (optional)
 
 ```ts
-import { Effect } from "effect"
 import { getCrSqliteExtensionPath } from "@effect-native/libcrsql/effect"
+import { Effect } from "effect"
 
 const program = getCrSqliteExtensionPath()
 Effect.runPromise(program)
 ```
 
 ## Notes
+
 - No network or postinstall scripts. Binaries are bundled in `lib/`.
 - Android and iOS are out of scope for this release.
 - Root and paths entrypoints have zero external runtime dependencies.
@@ -113,6 +116,7 @@ console.log(CRSQLITE_VERSION) // "0.16.3"
 ## Performance Note
 
 The module uses a synchronous file existence check (`fs.accessSync`) to ensure the returned path points to a real binary. This runs once per import/use and is acceptable for this package’s contract. If needed, this can be revisited later with memoization.
+
 ## Binary Integrity
 
 Run a local integrity check to verify bundled binaries match the expected SHA256:
@@ -128,8 +132,8 @@ pnpm --filter @effect-native/libcrsql run verify
 ## nodejs + better-sqlite3
 
 ```ts
-import Database from "better-sqlite3"
 import { pathToCrSqliteExtension } from "@effect-native/libcrsql"
+import Database from "better-sqlite3"
 
 const db = new Database(":memory:")
 db.loadExtension(pathToCrSqliteExtension)
@@ -139,7 +143,6 @@ console.log("LibSqlite loaded successfully?", db.prepare("SELECT sqlite_version(
 console.log("CR-SQLite extension loaded successfully")
 console.log("Site ID:", db.prepare("SELECT hex(crsql_site_id()) as site_id").get())
 ```
-
 
 ## bun build --compile
 

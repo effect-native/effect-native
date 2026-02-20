@@ -2,7 +2,7 @@
 
 ## Context
 
-This spec evolved from the original instructions.md. After PREP analysis, we adopted 
+This spec evolved from the original instructions.md. After PREP analysis, we adopted
 `Effect.Service` with `accessors: true` pattern instead of the events/ folder approach.
 
 The goal: Make GitHub Actions as clean as possible for Effect developers.
@@ -17,12 +17,13 @@ The goal: Make GitHub Actions as clean as possible for Effect developers.
 When the workflow event is `issue_comment`,
 the Comment service shall provide access to the triggering comment's properties.
 
-**FR-1.2** (Event-Driven)  
+**FR-1.2** (Event-Driven)\
 When the workflow event is NOT `issue_comment`,
 the Comment service shall fail with `ActionContextError` reason `EventMismatch`.
 
 **FR-1.3** (Ubiquitous)
 The Comment service shall expose these accessors as Effects:
+
 - `Comment.id` → `Effect<number>`
 - `Comment.body` → `Effect<string>`
 - `Comment.author` → `Effect<string>`
@@ -30,6 +31,7 @@ The Comment service shall expose these accessors as Effects:
 
 **FR-1.4** (Ubiquitous)
 The Comment service shall expose these operations:
+
 - `Comment.react(reaction)` → `Effect<void, ActionApiError>`
 - `Comment.reply(body)` → `Effect<void, ActionApiError>`
 - `Comment.update(body)` → `Effect<void, ActionApiError>`
@@ -46,6 +48,7 @@ the Issue service shall fail with `ActionContextError` reason `EventMismatch`.
 
 **FR-2.3** (Ubiquitous)
 The Issue service shall expose these accessors as Effects:
+
 - `Issue.number` → `Effect<number>`
 - `Issue.title` → `Effect<string>`
 - `Issue.body` → `Effect<string | null>`
@@ -55,6 +58,7 @@ The Issue service shall expose these accessors as Effects:
 
 **FR-2.4** (Ubiquitous)
 The Issue service shall expose these operations:
+
 - `Issue.addLabel(label)` → `Effect<void, ActionApiError>`
 - `Issue.removeLabel(label)` → `Effect<void, ActionApiError>`
 - `Issue.close` → `Effect<void, ActionApiError>`
@@ -76,6 +80,7 @@ the PR service shall provide PR operations using the payload's PR data.
 
 **FR-3.4** (Ubiquitous)
 The PR service shall expose these accessors as Effects:
+
 - `PR.number` → `Effect<number>`
 - `PR.diff` → `Effect<string, ActionApiError>` (truncated at 100KB)
 - `PR.files` → `Effect<Array<PRFile>, ActionApiError>`
@@ -87,6 +92,7 @@ The PR service shall expose these accessors as Effects:
 
 **FR-3.5** (Ubiquitous)
 The PR service shall expose these operations:
+
 - `PR.merge(options?)` → `Effect<void, ActionApiError>`
 - `PR.requestReview(reviewers)` → `Effect<void, ActionApiError>`
 
@@ -94,6 +100,7 @@ The PR service shall expose these operations:
 
 **FR-4.1** (Ubiquitous)
 Each service shall provide a static `Test` factory that creates a mock layer:
+
 - `Comment.Test({ id?, body?, author?, action? })`
 - `Issue.Test({ number?, title?, isPullRequest?, ... })`
 - `PR.Test({ number?, diff?, files?, ... })`
@@ -137,12 +144,15 @@ Static accessors shall be generated via `Effect.Service` with `accessors: true`.
 ## Constraints
 
 ### C-1: Backward Compatibility
+
 All existing exports from `@effect-native/platform-github` shall remain unchanged.
 
 ### C-2: Dependencies
+
 Only use existing dependencies. No new npm packages required.
 
 ### C-3: Layer Composition
+
 Services shall compose with existing `ActionContext.layer` and `ActionClient.layer`.
 
 ---
@@ -150,15 +160,19 @@ Services shall compose with existing `ActionContext.layer` and `ActionClient.lay
 ## Open Questions
 
 ### Q-1: Real Integration Testing
+
 How do we verify these modules work in a real GitHub Actions environment?
+
 - Option A: Manual testing via workflow_dispatch
 - Option B: Automated integration test in CI that creates/reacts to comments
 - Option C: Rely on scratchpad action to smoke test
 
 ### Q-2: Error Recovery
+
 Should operations like `Comment.react` silently succeed if already reacted?
 Current: Let GitHub API decide (returns success even if duplicate).
 
 ### Q-3: Rate Limiting
+
 Should we add retry logic for rate-limited API calls?
 Current: User handles via `Effect.retry`.

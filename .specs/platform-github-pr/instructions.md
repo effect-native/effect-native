@@ -9,6 +9,7 @@ Add PR helpers to `@effect-native/platform-github` for type-safe, testable GitHu
 ### Phase 1: IssueCommentContext (Priority)
 
 Create `src/events/IssueComment.ts`:
+
 - `IssueCommentContext` service with typed payload access
 - Convenience methods: `addReaction()`, `reply()`
 - Validates event type at layer construction
@@ -17,6 +18,7 @@ Create `src/events/IssueComment.ts`:
 ### Phase 2: PR Operations Module
 
 Create `src/PR.ts`:
+
 - Parameterized operations that work with any PR
 - `createComment(ref, body)`
 - `addReactionToComment(ref, reaction)`
@@ -38,7 +40,7 @@ interface IssueCommentContext {
   readonly commentBody: string
   readonly commentAuthor: string
   readonly isPullRequest: boolean
-  
+
   // Bound to trigger comment
   readonly addReaction: (reaction: Reaction) => Effect<void, ActionApiError>
   readonly reply: (body: string) => Effect<void, ActionApiError>

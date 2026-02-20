@@ -5,6 +5,7 @@
 We are creating a new package `@effect-native/opentui-base` to serve as the "headless" primitive layer for TUI applications. This package acts as the **Radix UI / Base UI equivalent** for the terminal, enabling a downstream "Shadcn-like" registry (`@effect-native/opentui-components`) to distribute styled, copy-pasteable components without duplicating low-level logic.
 
 Currently, developers building TUI applications with `@opentui/react` must implement complex interaction patterns from scratch:
+
 - Focus management and modal layering
 - Keyboard navigation with vim-style and arrow key bindings
 - Mouse click handling
@@ -17,6 +18,7 @@ The `brancher-tui` project has implemented these patterns but they are tightly c
 ## User Story
 
 As a developer building TUI interfaces with `@opentui/react`, I want a set of **headless, unstyled primitives** (Listbox, Menu, Dialog, Combobox) that match the API patterns of standard web primitives, so that I can:
+
 1. Easily adapt Shadcn/web component patterns to the terminal
 2. Build robust TUI applications with consistent keyboard/mouse interaction
 3. Focus on styling and business logic rather than low-level interaction code

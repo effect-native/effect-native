@@ -3,15 +3,18 @@ codex resume 019986ed-5f8e-77e0-9b3e-b29d7d67d58f
 # Debug Service Preference Tracking
 
 ## Instruction Log
+
 - Initial instruction (recorded): "I have a learning disability. i can't read all that. let's do this: think about my stated/unstates and revealed/unrevealed preferences and goals and anti-goals and anti-preferences and then rank them by clarity. then print out both the one thing you are most certain of and the one thing you are least certain of. Then I will either increase your certainty or increase your uncertainty in same way by saying stuff. you shall keep track of your guesses and my responses in .specs/debug somewhere that is clear. also include therein this instruction itself. let's start this loop by clarifying these instructions themselves (after recording them)"
 
 ## Preference Certainty Tracking
+
 - Round 1
   - Assistant inference: The loop focuses on iterative collaborative ideation and goal discovery rather than cataloging personal preferences.
   - User response: "seems legit. but seems like you've over-indexed on "preferences". it's less about favorite color and more about iterative collaborative ideation and goal discovery"
   - Adjustment: Reframe future rankings around collaboration goals, iteration cadence, and comprehension needs instead of generic preferences.
 
 ## Conversation Notes
+
 - Loop instructions confirmed with emphasis on collaborative goal discovery.
 - Round 2
   - Assistant inference: User prefers exactly two certainty statements per loop to stay manageable.

@@ -33,42 +33,38 @@ import { Effect } from "effect"
 
 // Use it.effect for Effect-based tests
 it.effect("works with Effects", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someEffect
     expect(result).toBe(expectedValue)
-  })
-)
+  }))
 
 // With scoped resources (automatic cleanup)
 it.scoped("handles resources", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const resource = yield* Effect.acquireRelease(
       Effect.succeed("resource"),
       () => Effect.void
     )
     expect(resource).toBe("resource")
-  })
-)
+  }))
 
 // Live tests (no TestServices, real time)
 it.live("integration test", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someRealWorldEffect
     expect(result).toBeDefined()
-  })
-)
+  }))
 
 // Layer-based tests (shared setup)
 import { layer } from "@effect-native/bun-test"
 
 layer(DatabaseLive)("with database", (it) => {
   it.effect("queries work", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const db = yield* Database
       const result = yield* db.query("SELECT 1")
       expect(result).toBeDefined()
-    })
-  )
+    }))
 })
 ```
 
@@ -80,40 +76,36 @@ import { Effect } from "effect"
 
 // Use it.effect for Effect-based tests
 it.effect("works with Effects", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someEffect
     assert.strictEqual(result, expectedValue)
-  })
-)
+  }))
 
 // With scoped resources
 it.scoped("handles resources", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const resource = yield* Effect.acquireRelease(
       Effect.succeed("resource"),
       () => Effect.void
     )
     assert.strictEqual(resource, "resource")
-  })
-)
+  }))
 
 // Live tests
 it.live("integration test", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someRealWorldEffect
     assert.isDefined(result)
-  })
-)
+  }))
 
 // Layer-based tests
 it.layer(DatabaseLive)("with database", (it) => {
   it.effect("queries work", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const db = yield* Database
       const result = yield* db.query("SELECT 1")
       assert.isDefined(result)
-    })
-  )
+    }))
 })
 ```
 
@@ -143,7 +135,7 @@ import { describe, expect, test } from "bun:test" // or "vitest"
 
 test("wrong pattern", () => {
   const result = Effect.runSync(
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       return yield* someEffect
     })
   )
@@ -154,11 +146,10 @@ test("wrong pattern", () => {
 import { describe, expect, it } from "@effect-native/bun-test"
 
 it.effect("correct pattern", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someEffect
     expect(result).toBe(value)
-  })
-)
+  }))
 ```
 
 #### Never import from bun:test or vitest directly for Effect tests
@@ -169,7 +160,7 @@ import { describe, expect, test } from "bun:test"
 
 test("no TestClock available", async () => {
   await Effect.runPromise(
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       // TestClock.adjust won't work here!
       yield* Effect.sleep("1 second")
     })
@@ -180,12 +171,11 @@ test("no TestClock available", async () => {
 import { describe, expect, it } from "@effect-native/bun-test"
 
 it.effect("TestClock available", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const fiber = yield* Effect.fork(Effect.sleep("1 hour"))
     yield* TestClock.adjust("1 hour")
     yield* fiber.join
-  })
-)
+  }))
 ```
 
 ## 🕐 TIME-DEPENDENT TESTING WITH TESTCLOCK
@@ -200,14 +190,14 @@ import { describe, expect, it } from "@effect-native/bun-test"
 // Or Vitest
 // import { assert, describe, it } from "@effect/vitest"
 
-import { Effect, TestClock, Duration } from "effect"
+import { Duration, Effect, TestClock } from "effect"
 
 describe("time-dependent operations", () => {
   it.effect("handles delays with TestClock", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       // Start operation that takes 5 seconds
       const fiber = yield* Effect.fork(
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Effect.sleep(Duration.seconds(5))
           return "completed"
         })
@@ -218,11 +208,10 @@ describe("time-dependent operations", () => {
 
       const result = yield* fiber.join
       expect(result).toBe("completed")
-    })
-  )
+    }))
 
   it.effect("tests timeout behavior", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const timeoutEffect = Effect.timeout(
         Effect.sleep(Duration.seconds(10)),
         Duration.seconds(5)
@@ -235,8 +224,7 @@ describe("time-dependent operations", () => {
 
       const result = yield* Effect.exit(fiber.join)
       expect(result._tag).toBe("Failure")
-    })
-  )
+    }))
 })
 ```
 
@@ -263,33 +251,30 @@ import * as MyModule from "../src/MyModule.js"
 describe("MyModule", () => {
   describe("constructors", () => {
     it.effect("create initializes with default values", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const instance = yield* MyModule.create()
 
         expect(MyModule.isInstance(instance)).toBe(true)
         expect(MyModule.getValue(instance)).toBe(0)
-      })
-    )
+      }))
 
     it.effect("create accepts custom configuration", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const config = { initialValue: 42 }
         const instance = yield* MyModule.create(config)
 
         expect(MyModule.getValue(instance)).toBe(42)
-      })
-    )
+      }))
   })
 
   describe("combinators", () => {
     it.effect("map transforms values", () =>
-      Effect.gen(function* () {
+      Effect.gen(function*() {
         const instance = yield* MyModule.create({ initialValue: 10 })
         const transformed = yield* MyModule.map(instance, (x) => x * 2)
 
         expect(MyModule.getValue(transformed)).toBe(20)
-      })
-    )
+      }))
   })
 })
 ```
@@ -306,18 +291,17 @@ import * as MyModule from "../src/MyModule.js"
 
 describe("error handling", () => {
   it.effect("fails with validation error for negative values", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const result = yield* Effect.exit(MyModule.create({ initialValue: -1 }))
 
       expect(result._tag).toBe("Failure")
       if (result._tag === "Failure") {
         expect(MyModule.isValidationError(result.cause)).toBe(true)
       }
-    })
-  )
+    }))
 
   it.effect("handles network errors gracefully", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const mockNetworkFailure = Effect.fail(
         new MyModule.NetworkError({
           message: "Connection timeout"
@@ -335,8 +319,7 @@ describe("error handling", () => {
       )
 
       expect(Exit.isFailure(result)).toBe(true)
-    })
-  )
+    }))
 })
 ```
 
@@ -352,7 +335,7 @@ import * as ResourceModule from "../src/ResourceModule.js"
 
 describe("resource management", () => {
   it.effect("properly acquires and releases resources", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const acquired = yield* Ref.make(false)
       const released = yield* Ref.make(false)
 
@@ -371,11 +354,10 @@ describe("resource management", () => {
       expect(result).toBe("used")
       expect(yield* Ref.get(acquired)).toBe(true)
       expect(yield* Ref.get(released)).toBe(true)
-    })
-  )
+    }))
 
   it.effect("releases resources even on failure", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const released = yield* Ref.make(false)
 
       const result = yield* Effect.exit(
@@ -388,8 +370,7 @@ describe("resource management", () => {
 
       expect(Exit.isFailure(result)).toBe(true)
       expect(yield* Ref.get(released)).toBe(true)
-    })
-  )
+    }))
 })
 ```
 
@@ -400,12 +381,12 @@ describe("resource management", () => {
 import { describe, expect, it } from "@effect-native/bun-test"
 // import { assert, describe, it } from "@effect/vitest"
 
-import { Effect, Fiber, Ref, TestClock, Duration } from "effect"
+import { Duration, Effect, Fiber, Ref, TestClock } from "effect"
 import * as ConcurrentModule from "../src/ConcurrentModule.js"
 
 describe("concurrent operations", () => {
   it.effect("handles multiple concurrent operations", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const operations = [
         ConcurrentModule.operation("A"),
         ConcurrentModule.operation("B"),
@@ -420,15 +401,14 @@ describe("concurrent operations", () => {
       expect(results).toContain("A")
       expect(results).toContain("B")
       expect(results).toContain("C")
-    })
-  )
+    }))
 
   it.effect("respects concurrency limits", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const startTimes = yield* Ref.make<string[]>([])
 
       const timedOperation = (id: string) =>
-        Effect.gen(function* () {
+        Effect.gen(function*() {
           yield* Ref.update(startTimes, (arr) => [...arr, id])
           yield* Effect.sleep(Duration.seconds(1))
           return id
@@ -448,8 +428,7 @@ describe("concurrent operations", () => {
       yield* TestClock.adjust(Duration.seconds(1))
       const finalResults = yield* fiber.join
       expect(finalResults.length).toBe(4)
-    })
-  )
+    }))
 })
 ```
 
@@ -473,7 +452,7 @@ class TestDatabaseService extends Context.Tag("TestDatabaseService")<
 
 describe("service integration", () => {
   it.effect("works with mock services", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const mockData = [{ id: 1, name: "test" }]
 
       const result = yield* ServiceModule.findUser("1").pipe(
@@ -485,11 +464,10 @@ describe("service integration", () => {
       )
 
       expect(result).toEqual(mockData[0])
-    })
-  )
+    }))
 
   it.effect("handles service failures", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const result = yield* Effect.exit(
         ServiceModule.findUser("1").pipe(
           Effect.provide(
@@ -501,19 +479,17 @@ describe("service integration", () => {
       )
 
       expect(Exit.isFailure(result)).toBe(true)
-    })
-  )
+    }))
 })
 
 // Using layer() for shared setup (Bun)
 layer(TestDatabaseService.Live)("with database layer", (it) => {
   it.effect("queries work with shared layer", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const db = yield* TestDatabaseService
       const result = yield* db.query("SELECT 1")
       expect(result).toBeDefined()
-    })
-  )
+    }))
 })
 ```
 
@@ -525,7 +501,7 @@ layer(TestDatabaseService.Live)("with database layer", (it) => {
 import { describe, expect, it } from "@effect-native/bun-test"
 
 it.effect("assertions with expect", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someEffect
 
     expect(result).toBe(expected)
@@ -533,8 +509,7 @@ it.effect("assertions with expect", () =>
     expect(condition).toBe(true)
     expect(Exit.isSuccess(result)).toBe(true)
     expect(Exit.isFailure(result)).toBe(true)
-  })
-)
+  }))
 ```
 
 ### Vitest (@effect/vitest) - use assert.\*
@@ -543,7 +518,7 @@ it.effect("assertions with expect", () =>
 import { assert, describe, it } from "@effect/vitest"
 
 it.effect("assertions with assert", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const result = yield* someEffect
 
     assert.strictEqual(actual, expected)
@@ -554,8 +529,7 @@ it.effect("assertions with assert", () =>
     assert.isUndefined(value)
     assert.isTrue(Exit.isSuccess(result))
     assert.isTrue(Exit.isFailure(result))
-  })
-)
+  }))
 ```
 
 ### Testing Complex Data Structures
@@ -565,7 +539,7 @@ it.effect("assertions with assert", () =>
 import { describe, expect, it } from "@effect-native/bun-test"
 
 it.effect("handles complex data transformations", () =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     const input = {
       users: [
         { id: "1", name: "Alice", age: 30 },
@@ -584,8 +558,7 @@ it.effect("handles complex data transformations", () =>
     expect(alice).toBeDefined()
     expect(alice?.name).toBe("Alice")
     expect(alice?.processed).toBe(true)
-  })
-)
+  }))
 ```
 
 ## 🔧 TEST ORGANIZATION PATTERNS

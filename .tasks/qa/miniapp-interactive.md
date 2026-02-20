@@ -27,6 +27,7 @@ Bramwell, please manually test the TUI miniapp to verify it works interactively.
 4. The miniapp should launch and display a form
 
 ### Test Keyboard Navigation
+
 5. Press Tab to move between form elements
 6. Verify focus indicator moves to each element
 7. Press Shift+Tab to move backwards
@@ -34,6 +35,7 @@ Bramwell, please manually test the TUI miniapp to verify it works interactively.
 9. On select dropdown, use Arrow keys to change selection
 
 ### Test Form Elements
+
 10. Type in the Name text input
 11. Type in the Email input
 12. Type in the Textarea
@@ -41,15 +43,18 @@ Bramwell, please manually test the TUI miniapp to verify it works interactively.
 14. Change radio button selection
 
 ### Test Dialog
+
 15. Press Alt+D (or click Dialog button) to open dialog
 16. Verify dialog appears with focus trap
 17. Press Escape to close dialog
 
 ### Test Form Actions
+
 18. Press Alt+S (or click Submit) - verify form data is logged
 19. Press Alt+R (or click Reset) - verify form resets
 
 ### Test Mouse (if terminal supports)
+
 20. Click on various elements
 21. Verify clicks trigger the same actions as keyboard
 

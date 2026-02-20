@@ -56,6 +56,7 @@ The split between `@effect-native/crsql` and `@effect-native/crsql-mesh-core` sh
 - **`@effect-native/crsql-mesh-core`**: Sync orchestration. Version vector management. Peer tracking. Anti-entropy loops. Multi-peer coordination. Depends on crsql for database access.
 
 The integration points are:
+
 - Typed change row structures (schema definition)
 - Change retrieval helpers (pull from local database)
 - Change application helpers (apply to local database)

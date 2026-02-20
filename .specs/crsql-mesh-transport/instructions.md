@@ -5,6 +5,7 @@
 The CR-SQLite global mesh architecture requires peers to exchange change data across many different communication channels. Today, there is no unified abstraction for these channels — every sync implementation would need to hardcode its transport logic, creating tight coupling between the sync engine and the specific networking mechanism.
 
 This creates several problems:
+
 - The sync engine cannot be reused across different deployment contexts (browser tabs, server processes, mobile apps, edge devices)
 - Testing sync behavior requires spinning up real network infrastructure
 - Adding new transport types requires modifying the core sync logic

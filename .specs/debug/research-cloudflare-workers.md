@@ -161,7 +161,7 @@ await Debugger.enable()
 
 // Evaluate in worker context
 const result = await Runtime.evaluate({
-  expression: 'globalThis.navigator?.userAgent || "workerd"',
+  expression: "globalThis.navigator?.userAgent || \"workerd\"",
   returnByValue: true
 })
 
@@ -299,7 +299,7 @@ npx -y wscat -c "$(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDeb
 | Source Maps          | ✅ Automatic                 | ✅               | ✅               | ✅                  |
 | VSCode Integration   | ✅                           | ✅               | ✅               | ✅                  |
 | Chrome DevTools      | ✅                           | ✅               | ✅               | ✅ via debug.bun.sh |
-| Hot Reload           | ✅ Built-in                  | ⚠️ via nodemon   | ✅ --watch       | ✅ --hot            |
+| Hot Reload           | ✅ Built-in                  | ⚠️ via nodemon    | ✅ --watch       | ✅ --hot            |
 
 ## Security Considerations
 
@@ -359,10 +359,10 @@ npx -y wscat -c "$(curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDeb
 ### Example Effect Integration
 
 ```typescript
-import * as Effect from "effect/Effect"
 import * as Debug from "@effect-native/debug"
+import * as Effect from "effect/Effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const debug = yield* Debug.Debug
 
   // Connect to local wrangler dev

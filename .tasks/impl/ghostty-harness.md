@@ -13,24 +13,28 @@ done_when: |
 Set up `ghostty-web` inside `happy-dom` for high-fidelity terminal emulation in tests.
 
 ## Context
-*   **Reference:** `work/.research/opencode/vt-screenshot-testing.md`
-*   **Reference:** `work/.research/opencode/happy-dom-usage.md`
+
+- **Reference:** `work/.research/opencode/vt-screenshot-testing.md`
+- **Reference:** `work/.research/opencode/happy-dom-usage.md`
 
 ## Tasks
-1.  [x] Create package structure at `packages-native/tui-testing-library/`
-2.  [x] Create `happydom.ts` preload script to mock Canvas/Window for Ghostty
-3.  [x] Implement `GhosttyHarness` class to manage the emulator instance
-4.  [x] Write tests to verify Ghostty WASM loads in Bun test environment
-5.  [x] Verify the implementation works
+
+1. [x] Create package structure at `packages-native/tui-testing-library/`
+2. [x] Create `happydom.ts` preload script to mock Canvas/Window for Ghostty
+3. [x] Implement `GhosttyHarness` class to manage the emulator instance
+4. [x] Write tests to verify Ghostty WASM loads in Bun test environment
+5. [x] Verify the implementation works
 
 ## Basis
 
 The implementation is based on the OpenCode codebase patterns from:
+
 - `refs/opencode/packages/app/happydom.ts` - DOM environment setup with Canvas mock
 - `refs/opencode/packages/app/src/addons/serialize.test.ts` - Test patterns for ghostty-web
 - `refs/opencode/patches/ghostty-web@0.3.0.patch` - Unicode fix patch (not applied yet)
 
 Key insights:
+
 - `ghostty-web` requires DOM APIs (document, HTMLCanvasElement)
 - happy-dom provides these but needs Canvas 2D context mock
 - Use `Ghostty.load()` once per test suite, create Terminal instances per test
@@ -65,6 +69,7 @@ Key insights:
    - Cleanup behavior
 
 ### Dependencies Added
+
 - `ghostty-web: ^0.3.0`
 - `@happy-dom/global-registrator: ^20.0.11`
 
@@ -81,6 +86,7 @@ Ran 18 tests across 1 file. [99.00ms]
 ## Progress Log
 
 ### 2024-12-29: Implementation complete
+
 - Created happydom.ts preload with full Canvas 2D mock
 - Created GhosttyHarness class with terminal factory and helpers
 - Added comprehensive test suite (18 tests)

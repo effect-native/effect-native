@@ -1,8 +1,8 @@
 **Outcome | Obstacles | Plan**
 
-* **Outcome:** one doc that maps every major JS runtime → its remote-debug APIs, then a capability taxonomy, then paste-and-run quickstarts that prove you can drive them 😎
-* **Obstacles:** fragmented protocols (CDP, WebKit Inspector, Firefox RDP, WebDriver BiDi, V8 Inspector), platform quirks, moving targets.
-* **Plan:** matrix → taxonomy (from `postMessage` up to breakpoints/profiling) → per-runtime “taste-the-power” blocks → caveats + sources.
+- **Outcome:** one doc that maps every major JS runtime → its remote-debug APIs, then a capability taxonomy, then paste-and-run quickstarts that prove you can drive them 😎
+- **Obstacles:** fragmented protocols (CDP, WebKit Inspector, Firefox RDP, WebDriver BiDi, V8 Inspector), platform quirks, moving targets.
+- **Plan:** matrix → taxonomy (from `postMessage` up to breakpoints/profiling) → per-runtime “taste-the-power” blocks → caveats + sources.
 
 ---
 
@@ -16,13 +16,13 @@
 | **Node.js** (V8)                                                                                               | **V8 Inspector** (CDP dialect) via `--inspect`                                        | WS (+ HTTP discovery on `9229`)     | CDP-style domains exposed; `inspector` module available in-process. ([Node.js][4])                                                                                                                       |
 | **Deno**                                                                                                       | **V8 Inspector** (`--inspect`)                                                        | WS (prints `ws://…/ws/<id>`)        | Attach via Chrome DevTools or any CDP client. ([Deno][5])                                                                                                                                                |
 | **Bun** (JSC)                                                                                                  | **WebKit Inspector Protocol** (`--inspect`)                                           | WS UI at **debug.bun.sh**           | Bun speaks WebKit's protocol; opens a hosted Inspector front-end. ([Bun][6])                                                                                                                             |
-| **Cloudflare Workers** (workerd)                                                                               | **V8 Inspector** (CDP dialect) via `wrangler dev`                                     | WS (+ HTTP discovery `/json`)       | Local dev only; `wrangler dev --inspector-port=9229` exposes full CDP. Production uses tail workers and logs. Full `Runtime.*`, `Debugger.*` support. ([Cloudflare][6a])                                  |
+| **Cloudflare Workers** (workerd)                                                                               | **V8 Inspector** (CDP dialect) via `wrangler dev`                                     | WS (+ HTTP discovery `/json`)       | Local dev only; `wrangler dev --inspector-port=9229` exposes full CDP. Production uses tail workers and logs. Full `Runtime.*`, `Debugger.*` support. ([Cloudflare][6a])                                 |
 | **React Native (Hermes)**                                                                                      | **CDP-compatible Hermes Inspector**; **React Native DevTools** (frontend)             | WS via Metro/Inspector proxy        | RN 0.76+ ships React Native DevTools; Hermes implements Chrome inspector protocol for in-place debugging. ([React Native][7])                                                                            |
 | **React Native (JSC)**                                                                                         | WebKit Inspector (Direct JSC)                                                         | WS via Safari Develop (iOS)         | Use Direct JSC Debugging / Safari Web Inspector on Apple platforms. ([React Native][8])                                                                                                                  |
 | **NativeScript**                                                                                               | CDP (Android), WebKit Inspector (iOS)                                                 | As above                            | CLI + VS Code flows map to Chrome/Safari protocols. ([docs.nativescript.org][9])                                                                                                                         |
 | **Electron (main process)**                                                                                    | V8 Inspector (`--inspect`, `--inspect-brk`)                                           | WS                                  | Renderer = CDP (Chromium); main = V8 Inspector. ([electronjs.org][10])                                                                                                                                   |
 | **Servo**                                                                                                      | Firefox DevTools (RDP)                                                                | TCP                                 | Run Servo with `--devtools=<port>`, connect from Firefox `about:debugging`. ([book.servo.org][11])                                                                                                       |
-| **Ladybird**                                                                                                   | **Firefox RDP-compatible devtools server** (`--devtools[=port]`)                       | TCP (length-prefixed JSON)          | Ships documented RDP handshake; enable `--devtools` and connect from Firefox `about:debugging`. (`Documentation/DevTools.md` via `.specs/debug/research-ladybird.md`)                                      |
+| **Ladybird**                                                                                                   | **Firefox RDP-compatible devtools server** (`--devtools[=port]`)                      | TCP (length-prefixed JSON)          | Ships documented RDP handshake; enable `--devtools` and connect from Firefox `about:debugging`. (`Documentation/DevTools.md` via `.specs/debug/research-ladybird.md`)                                    |
 | **LynxJS / PrimJS**                                                                                            | **CDP** (engine claims full impl.) + custom DevTool bridge                            | WS/USB via Lynx DevTool             | PrimJS advertises full CDP; desktop DevTool app bridges protocols. ([GitHub][13])                                                                                                                        |
 | **GraalVM JavaScript**                                                                                         | **CDP** (`--inspect`), also **Debug Adapter Protocol**                                | WS (CDP) / DAP                      | Attach Chrome DevTools or VS Code. ([graalvm.org][14])                                                                                                                                                   |
 
@@ -32,39 +32,39 @@
 
 ## A) Message-passing primitives (no “debugger” needed)
 
-* `window.postMessage` (cross-doc), `Worker.postMessage`, `MessageChannel`/`MessagePort`, `BroadcastChannel`, Service Worker `clients.postMessage`. Use these to build app-level RPC and prove comms lines before any debugger work. ([MDN Web Docs][15])
+- `window.postMessage` (cross-doc), `Worker.postMessage`, `MessageChannel`/`MessagePort`, `BroadcastChannel`, Service Worker `clients.postMessage`. Use these to build app-level RPC and prove comms lines before any debugger work. ([MDN Web Docs][15])
 
 ## B) Attach & “RPC with preparation”
 
-* **Discover targets** (HTTP `/json` on CDP; Firefox `about:debugging`; Safari Develop menu; RN DevTools launcher). **Open transport** (WS/TCP). **Send commands** (e.g., `Runtime.enable`, `Target.setAutoAttach`). This is the baseline to call any later feature. ([chromedevtools.github.io][1])
+- **Discover targets** (HTTP `/json` on CDP; Firefox `about:debugging`; Safari Develop menu; RN DevTools launcher). **Open transport** (WS/TCP). **Send commands** (e.g., `Runtime.enable`, `Target.setAutoAttach`). This is the baseline to call any later feature. ([chromedevtools.github.io][1])
 
 ## C) Remote eval (REPL)
 
-* **`Runtime.evaluate`** (CDP/V8 inspector) / **Console expression eval** (WebKit Inspector) / **RDP console actors** (Firefox). Used for probes, feature flags, live patching. (Security: only on trusted hosts; a mis-exposed port is full code-exec.) ([Chrome for Developers][16])
+- **`Runtime.evaluate`** (CDP/V8 inspector) / **Console expression eval** (WebKit Inspector) / **RDP console actors** (Firefox). Used for probes, feature flags, live patching. (Security: only on trusted hosts; a mis-exposed port is full code-exec.) ([Chrome for Developers][16])
 
 ## D) Debugger control
 
-* Set / remove **breakpoints**, **pause/resume**, step in/out/over, **pause on exceptions**, watchpoints (CDP has conditional BPs). Hermes, Node, Browsers all expose this. ([chromedevtools.github.io][1])
+- Set / remove **breakpoints**, **pause/resume**, step in/out/over, **pause on exceptions**, watchpoints (CDP has conditional BPs). Hermes, Node, Browsers all expose this. ([chromedevtools.github.io][1])
 
 ## E) DOM/CSS tooling (browser engines)
 
-* **Elements** tree, **styles** mutations, overlay highlighters. CDP/WebKit provide `DOM.*`, `CSS.*`. NativeScript added Elements-like view tree. ([chromedevtools.github.io][1])
+- **Elements** tree, **styles** mutations, overlay highlighters. CDP/WebKit provide `DOM.*`, `CSS.*`. NativeScript added Elements-like view tree. ([chromedevtools.github.io][1])
 
 ## F) Network, storage, and device emulation
 
-* Observe/modify requests, throttling, cache/storage introspection; mobile emulation, geolocation, sensors (CDP), partial in WebKit Inspector. ([Chrome for Developers][17])
+- Observe/modify requests, throttling, cache/storage introspection; mobile emulation, geolocation, sensors (CDP), partial in WebKit Inspector. ([Chrome for Developers][17])
 
 ## G) Performance & memory
 
-* **CPU profiler**, **heap snapshots**, **sampling heap profiler**, **coverage**; timeline/tracing. Broad in CDP; equivalents in WebKit and Firefox DevTools. ([chromedevtools.github.io][1])
+- **CPU profiler**, **heap snapshots**, **sampling heap profiler**, **coverage**; timeline/tracing. Broad in CDP; equivalents in WebKit and Firefox DevTools. ([chromedevtools.github.io][1])
 
 ## H) Target management & workers
 
-* Enumerate/attach to subtargets (tabs, iframes, **workers**), auto-attach to new ones (CDP `Target.*`). ([Stack Overflow][18])
+- Enumerate/attach to subtargets (tabs, iframes, **workers**), auto-attach to new ones (CDP `Target.*`). ([Stack Overflow][18])
 
 ## I) Cross-browser automation standard
 
-* **WebDriver BiDi**: streaming, bidirectional, standardizing many CDP-like capabilities; production-ready in Firefox, supported across vendors; ecosystem adding support (Puppeteer, Cypress). Use BiDi where portability matters. ([Chrome for Developers][19])
+- **WebDriver BiDi**: streaming, bidirectional, standardizing many CDP-like capabilities; production-ready in Firefox, supported across vendors; ecosystem adding support (Puppeteer, Cypress). Use BiDi where portability matters. ([Chrome for Developers][19])
 
 ---
 
@@ -324,29 +324,29 @@ echo 'npx -y wscat -c "ws://<lynx-ws>" -x "{\"id\":1,\"method\":\"Runtime.evalua
 
 # 4) How to **think** about these APIs (mastery map)
 
-* **Start with messaging**: Prove basic signal paths (`postMessage`, Channels, Workers). Many “remote” workflows only need structured messaging—not a debugger. ([MDN Web Docs][15])
-* **Pick your transport**: For browsers/Chromium-derivatives, CDP WS is the lingua franca. For Safari family, attach via WebKit’s Inspector. For Firefox, use DevTools RDP (interactive) or **BiDi** (portable automation). ([chromedevtools.github.io][1])
-* **Escalate capabilities** by domain: `Runtime` (eval) → `Debugger` (breakpoints/stepping) → `Network` (observe/modify) → `Profiler/Heap` (perf/memory) → `Target` (workers/iframes) → `Emulation` (devices). The nouns don’t change—only the wire grammar does. ([chromedevtools.github.io][1])
-* **Portability vs power**: CDP is rich but vendor-specific; **WebDriver BiDi** brings cross-browser parity and is now production-ready in Firefox with growing support elsewhere (Puppeteer, Cypress). Use BiDi when you must run everywhere; use native protocols when you need the deepest hooks. ([Chrome for Developers][19])
-* **Memory debugging workflow**: Start with `Runtime.getHeapUsage` to monitor trends, escalate to sampling heap profiler (low overhead) when growth is suspected, then capture full heap snapshots for leak analysis. Use three-snapshot technique (baseline → action → repeat → compare) to isolate leaked objects. Always force GC before snapshots for consistency. See `.specs/debug/research-memory.md` for heap snapshot format, allocation tracking, retainer path analysis, and cross-runtime profiling strategies.
+- **Start with messaging**: Prove basic signal paths (`postMessage`, Channels, Workers). Many “remote” workflows only need structured messaging—not a debugger. ([MDN Web Docs][15])
+- **Pick your transport**: For browsers/Chromium-derivatives, CDP WS is the lingua franca. For Safari family, attach via WebKit’s Inspector. For Firefox, use DevTools RDP (interactive) or **BiDi** (portable automation). ([chromedevtools.github.io][1])
+- **Escalate capabilities** by domain: `Runtime` (eval) → `Debugger` (breakpoints/stepping) → `Network` (observe/modify) → `Profiler/Heap` (perf/memory) → `Target` (workers/iframes) → `Emulation` (devices). The nouns don’t change—only the wire grammar does. ([chromedevtools.github.io][1])
+- **Portability vs power**: CDP is rich but vendor-specific; **WebDriver BiDi** brings cross-browser parity and is now production-ready in Firefox with growing support elsewhere (Puppeteer, Cypress). Use BiDi when you must run everywhere; use native protocols when you need the deepest hooks. ([Chrome for Developers][19])
+- **Memory debugging workflow**: Start with `Runtime.getHeapUsage` to monitor trends, escalate to sampling heap profiler (low overhead) when growth is suspected, then capture full heap snapshots for leak analysis. Use three-snapshot technique (baseline → action → repeat → compare) to isolate leaked objects. Always force GC before snapshots for consistency. See `.specs/debug/research-memory.md` for heap snapshot format, allocation tracking, retainer path analysis, and cross-runtime profiling strategies.
 
 ---
 
 # 5) Caveats, counter-views, and security
 
-* **Firefox CDP**: not enabled by default anymore; prefer BiDi/RDP. You can toggle `remote.active-protocols` if you must, but future is BiDi. ([fxdx.dev][27])
-* **Ladybird**: ships a documented Firefox-compatible RDP server; enable `--devtools` and consult `Documentation/DevTools.md` (see `.specs/debug/research-ladybird.md`) for watcher details and known disconnect issues.
-* **Bun vs CDP**: Bun speaks **WebKit Inspector**, not CDP; you’ll use its hosted inspector UI (`debug.bun.sh`) instead of Chrome’s DevTools. ([Bun][6])
-* **React Native**: new **React Native DevTools** replaces Flipper/old Chrome-based flows; for JSC (not Hermes), use Safari’s Direct JSC debugging. ([React Native][7])
-* **Security**: exposing a debug port is **code execution**—bind to loopback, tunnel via ADB/SSH only. ([kenneth.io][28])
+- **Firefox CDP**: not enabled by default anymore; prefer BiDi/RDP. You can toggle `remote.active-protocols` if you must, but future is BiDi. ([fxdx.dev][27])
+- **Ladybird**: ships a documented Firefox-compatible RDP server; enable `--devtools` and consult `Documentation/DevTools.md` (see `.specs/debug/research-ladybird.md`) for watcher details and known disconnect issues.
+- **Bun vs CDP**: Bun speaks **WebKit Inspector**, not CDP; you’ll use its hosted inspector UI (`debug.bun.sh`) instead of Chrome’s DevTools. ([Bun][6])
+- **React Native**: new **React Native DevTools** replaces Flipper/old Chrome-based flows; for JSC (not Hermes), use Safari’s Direct JSC debugging. ([React Native][7])
+- **Security**: exposing a debug port is **code execution**—bind to loopback, tunnel via ADB/SSH only. ([kenneth.io][28])
 
 ---
 
 # 6) Where to go next (build your own devtools)
 
-* **CDP viewer + sender**: start with `Runtime.evaluate`, then add `Debugger.enable`, `setBreakpointByUrl`, `Network.enable`. Chrome’s protocol viewer + command editor makes this trivial. ([chromedevtools.github.io][1])
-* **WebDriver BiDi client**: stand up a tiny WS client that does `session.new` → `browsingContext.create` → `script.evaluate`. Then layer logging/network events. ([W3C][29])
-* **Inspector shims**: for mixed fleets (Hermes, JSC, PrimJS), normalize to a small internal RPC (eval/pause/breakpoints) and write thin adapters to CDP/WebKit/RDP.
+- **CDP viewer + sender**: start with `Runtime.evaluate`, then add `Debugger.enable`, `setBreakpointByUrl`, `Network.enable`. Chrome’s protocol viewer + command editor makes this trivial. ([chromedevtools.github.io][1])
+- **WebDriver BiDi client**: stand up a tiny WS client that does `session.new` → `browsingContext.create` → `script.evaluate`. Then layer logging/network events. ([W3C][29])
+- **Inspector shims**: for mixed fleets (Hermes, JSC, PrimJS), normalize to a small internal RPC (eval/pause/breakpoints) and write thin adapters to CDP/WebKit/RDP.
 
 ---
 

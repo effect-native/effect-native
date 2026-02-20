@@ -34,7 +34,7 @@ Database.setCustomSQLite(linux_x86_64)
 import { getLibSqlitePath } from "@effect-native/libsqlite/effect"
 import * as Effect from "effect/Effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   // IMPORTANT: gotta setCustomSQLite before loading any databases
   Database.setCustomSQLite(yield* getLibSqlitePath)
 

@@ -97,7 +97,7 @@ function getClassName(element: Element): string {
  * Convert kebab-case to camelCase
  */
 function kebabToCamel(str: string): string {
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 }
 
 /**

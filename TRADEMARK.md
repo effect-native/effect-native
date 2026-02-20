@@ -30,6 +30,7 @@ The "effect-native" name and @effect-native npm namespace are used to:
 - Fork-specific packages: `@effect-native/*`
 
 The @effect-native namespace clearly indicates packages that are:
+
 - Maintained by the effect-native community
 - Not official Effect packages
 - Not endorsed by Effectful Technologies Inc
@@ -39,11 +40,13 @@ The @effect-native namespace clearly indicates packages that are:
 When referencing this fork:
 
 ✅ **DO**:
+
 - Use "effect-native fork" or "fork of Effect"
 - Clearly indicate this is a derivative work
 - Link to the original Effect project for attribution
 
 ❌ **DON'T**:
+
 - Imply official affiliation with Effect or Effectful Technologies Inc
 - Use Effect branding, logos, or visual identity
 - Create confusion about the relationship between projects
@@ -51,6 +54,7 @@ When referencing this fork:
 ## Contribution Attribution
 
 When contributing code from this fork back to the original Effect project:
+
 - Contributions are made under the original project's terms
 - No special rights or affiliations are claimed
 - The Effect maintainers have full discretion over acceptance
@@ -58,6 +62,7 @@ When contributing code from this fork back to the original Effect project:
 ## Questions
 
 For questions about:
+
 - Effect trademarks: Contact Effectful Technologies Inc
 - effect-native naming: Open an issue in this repository
 

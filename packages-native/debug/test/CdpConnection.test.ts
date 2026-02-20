@@ -1,5 +1,5 @@
-import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import { describe, expect, it } from "@effect-native/bun-test"
+import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as Schema from "effect/Schema"

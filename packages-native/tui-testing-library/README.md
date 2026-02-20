@@ -15,8 +15,8 @@ This library provides testing utilities for terminal user interface (TUI) applic
 Tests in this package use Bun's test runner (`bun:test`), not Vitest.
 
 ```typescript
-import { describe, test, expect, beforeAll, afterEach } from "bun:test"
 import { GhosttyHarness } from "@effect-native/tui-testing-library/GhosttyHarness"
+import { afterEach, beforeAll, describe, expect, test } from "bun:test"
 
 let harness: GhosttyHarness
 

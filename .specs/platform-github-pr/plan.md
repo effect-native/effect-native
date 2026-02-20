@@ -10,6 +10,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 ## Phase A: Comment Module Tests
 
 ### A1. RED: Write Comment.test.ts with failing tests
+
 - Test: Construction succeeds with issue_comment event
 - Test: Construction fails with wrong event type (push, issues, etc.)
 - Test: `Comment.id` returns comment ID from payload
@@ -24,6 +25,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 **Verification:** `pnpm test` shows failing tests
 
 ### A2. GREEN: Fix any implementation bugs found by tests
+
 - If tests reveal implementation bugs, fix them
 - Run tests until all pass
 
@@ -34,6 +36,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 ## Phase B: Issue Module Tests
 
 ### B1. RED: Write Issue.test.ts with failing tests
+
 - Test: Construction succeeds with issue_comment event
 - Test: Construction succeeds with issues event
 - Test: Construction fails with wrong event type (push, pull_request, etc.)
@@ -61,6 +64,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 ## Phase C: PR Module Tests
 
 ### C1. RED: Write PR.test.ts with failing tests
+
 - Test: Construction succeeds with issue_comment on PR
 - Test: Construction succeeds with pull_request event
 - Test: Construction fails with issue_comment on regular issue (NotPullRequestError)
@@ -89,6 +93,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 ## Phase D: Integration Tests
 
 ### D1. Write integration test showing full workflow pattern
+
 - Test: User code using Comment + Issue + PR together
 - Test: Conditional logic based on `Issue.isPullRequest`
 - Test: Error handling with `Effect.catchTag`
@@ -97,6 +102,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 **Verification:** `pnpm test` shows integration tests passing
 
 ### D2. Update scratchpad action to use new modules
+
 - Refactor main.ts to use Comment/Issue/PR instead of old pattern
 - Verify CI workflow still passes
 
@@ -107,6 +113,7 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 ## Phase E: Documentation
 
 ### E1. Add JSDoc examples to each module
+
 - Ensure each public export has usage examples
 - Examples should be copy-pasteable
 
@@ -123,8 +130,8 @@ However, **no tests exist for these modules**. This plan focuses on adding tests
 const issueCommentOnPRPayload = {
   action: "created",
   comment: { id: 123, body: "test", user: { login: "alice" } },
-  issue: { 
-    number: 42, 
+  issue: {
+    number: 42,
     title: "Test PR",
     body: "PR body",
     state: "open",
@@ -134,11 +141,11 @@ const issueCommentOnPRPayload = {
   repository: { owner: { login: "org" }, name: "repo" }
 }
 
-// issue_comment on regular issue  
+// issue_comment on regular issue
 const issueCommentOnIssuePayload = {
   action: "created",
   comment: { id: 123, body: "test", user: { login: "alice" } },
-  issue: { 
+  issue: {
     number: 42,
     title: "Bug report",
     body: null,

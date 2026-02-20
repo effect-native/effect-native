@@ -90,9 +90,9 @@ Example (pseudocode):
 
 ```ts
 export interface InstitutionDirectoryService {
-  readonly list: Effect<ReadonlyArray<Institution>>;
-  readonly get: (id: InstitutionId) => Effect<Option<Institution>>;
-  readonly capabilities: (id: InstitutionId) => Effect<CapabilityMatrix>;
+  readonly list: Effect<ReadonlyArray<Institution>>
+  readonly get: (id: InstitutionId) => Effect<Option<Institution>>
+  readonly capabilities: (id: InstitutionId) => Effect<CapabilityMatrix>
 }
 ```
 

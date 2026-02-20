@@ -17,17 +17,17 @@ npx @effect-native/debug steps [options] <file>
 
 ## Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `<file>` | Path to the JavaScript or TypeScript file to debug | Yes |
+| Argument | Description                                        | Required |
+| -------- | -------------------------------------------------- | -------- |
+| `<file>` | Path to the JavaScript or TypeScript file to debug | Yes      |
 
 ## Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--max-steps <n>` | Maximum number of steps to execute | `200` |
-| `--port <n>` | Inspector port to use (1-65535) | Random (9300-9399) |
-| `-h, --help` | Show help message | - |
+| Option            | Description                        | Default            |
+| ----------------- | ---------------------------------- | ------------------ |
+| `--max-steps <n>` | Maximum number of steps to execute | `200`              |
+| `--port <n>`      | Inspector port to use (1-65535)    | Random (9300-9399) |
+| `-h, --help`      | Show help message                  | -                  |
 
 ## Examples
 
@@ -194,6 +194,7 @@ The CLI uses `tsx` to handle TypeScript files automatically.
 ### Connection Timeout
 
 If the debugger fails to connect:
+
 - Check that no other debugger is attached to the same port
 - Try a different port with `--port`
 - Ensure your script doesn't immediately exit

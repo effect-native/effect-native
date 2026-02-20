@@ -8,6 +8,7 @@ GitHub Actions is GitHub's CI/CD platform that allows developers to automate wor
 - `@actions/github` - GitHub API client and workflow context
 
 Currently, developers using Effect-TS for their GitHub Actions must manually wrap these libraries, leading to:
+
 - Inconsistent error handling patterns
 - Boilerplate for Effect integration
 - No type-safe access to context properties

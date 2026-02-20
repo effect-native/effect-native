@@ -1,10 +1,10 @@
+import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as assert from "node:assert"
-import { layer } from "@effect-native/bun-test"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 import { Reactivity } from "effect/unstable/reactivity"
+import * as assert from "node:assert"
 
 function maxVersionAndSeq(
   changes: ReadonlyArray<{

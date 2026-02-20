@@ -60,8 +60,8 @@ Obstacle: Terminal emulation is complex; only human review can assess if tests c
 
 ### blocker-screenshot-garbage
 
-**Status:** resolved  
-**Reported:** 2025-12-29 by Bramwell  
+**Status:** resolved\
+**Reported:** 2025-12-29 by Bramwell\
 **Symptom:** `expect(screenshot).toMatchInlineSnapshot(...)` produces garbage Unicode characters like `臘漏略咽阮燐猪慨辶搜襁﫞ﬆאַﭖﭾﮦ﯎ﯶ...`
 
 **Root Cause:** Uninitialized WASM memory being read as valid Unicode codepoints.
@@ -69,11 +69,13 @@ Obstacle: Terminal emulation is complex; only human review can assess if tests c
 When `ghostty-web` allocates a buffer for terminal cell data and calls `ghostty_terminal_get_line`, the WASM function may only fill part of the buffer. The remaining buffer space contains uninitialized memory values (e.g., 33240, 64222) that happen to be valid Unicode codepoints for Chinese characters, Arabic presentation forms, etc.
 
 **Evidence:**
+
 - `packages-native/tui-testing-library/test/GhosttyHarness.test.ts:184-219` shows inline snapshots with garbage
 - The `llT` suffix and `NORMAL` appearing in output suggests memory from other parts bleeding through
 - Issue is intermittent because WASM memory state varies between runs
 
 **Suggested Fixes:**
+
 1. Apply the ghostty-web patch from `refs/opencode/patches/ghostty-web@0.3.0.patch` (adds bounds checking)
 2. Modify `screenshot()` in `GhosttyHarness.ts` to filter out high codepoints: `text.replace(/[\u3000-\uFFFF\u{10000}-\u{10FFFF}]/gu, "")`
 3. Zero the buffer before WASM calls in ghostty-web's `getLine()` implementation

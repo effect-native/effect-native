@@ -1,8 +1,8 @@
-import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
-import * as assert from "node:assert"
 import { it } from "@effect-native/bun-test"
+import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
 import { Effect } from "effect"
 import * as Schema from "effect/Schema"
+import * as assert from "node:assert"
 
 it("ExtInfoLoaded: decodeUnknown succeeds for valid input", () =>
   Effect.gen(function*() {

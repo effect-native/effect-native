@@ -23,10 +23,12 @@ basis: |
 Create a standalone `miniapp.html` that uses the extracted packages to render a functional application in the terminal.
 
 ## Context
-*   **POC:** `work/tui-browser/tui-dom-poc0/poc/form-demo.tsx` (The Capstone demo)
-*   **Requirements:** `work/effect-native/effect-native/.specs/tui-dom/requirements.md`
+
+- **POC:** `work/tui-browser/tui-dom-poc0/poc/form-demo.tsx` (The Capstone demo)
+- **Requirements:** `work/effect-native/effect-native/.specs/tui-dom/requirements.md`
 
 ## Scope
-*   Mouse and keyboard navigation.
-*   Form elements, dialogs, buttons.
-*   Tailwind styling.
+
+- Mouse and keyboard navigation.
+- Form elements, dialogs, buttons.
+- Tailwind styling.

@@ -9,6 +9,7 @@ Control JavaScript runtime debuggers programmatically through the Chrome DevTool
 ## Motivation
 
 You're debugging a memory leak. You need to:
+
 1. Connect to your Node.js app's inspector
 2. Enable the heap profiler
 3. Take a baseline snapshot
@@ -21,6 +22,7 @@ You're debugging a memory leak. You need to:
 **The automated way**: Write an Effect program that does all of this for you, repeatedly, consistently, and logs the results.
 
 Or maybe you want to:
+
 - Step through your code programmatically and log each line execution
 - Pause on every exception and capture stack traces
 - Monitor heap usage continuously and alert when it grows
@@ -34,6 +36,7 @@ Or maybe you want to:
 ## Goal
 
 **Build debugging tools as Effect programs** that can:
+
 - Connect to any JavaScript runtime's debugger (Node.js, Chrome, Deno, Workers)
 - Send commands (evaluate code, set breakpoints, capture heap snapshots)
 - Subscribe to events (paused, resumed, console output, heap updates)
@@ -77,6 +80,7 @@ const stepThroughMyCode = Effect.gen(function*() {
 ### 1. Inspector Protocols Are Complex
 
 Each runtime has its own protocol:
+
 - **CDP** (Chrome DevTools Protocol): Chrome, Node.js, Deno, Cloudflare Workers
 - **WebKit Inspector**: Safari, iOS, Bun
 - **Firefox RDP**: Firefox, Servo, Ladybird
@@ -86,6 +90,7 @@ Each has different message formats, transports, and capabilities.
 ### 2. Low-Level API Is Tedious
 
 Raw WebSocket messages:
+
 ```json
 {"id":1,"method":"Debugger.enable"}
 {"id":2,"method":"Debugger.stepOver"}
@@ -93,6 +98,7 @@ Raw WebSocket messages:
 ```
 
 You have to:
+
 - Manage WebSocket connections
 - Track request/response IDs
 - Parse JSON messages
@@ -124,7 +130,7 @@ One API that works across runtimes:
 
 ```typescript
 // Same code works for Node.js, Chrome, Deno, Workers
-const session = yield* debug.connect({
+const session = yield * debug.connect({
   endpoint: inspectorUrl,
   transport: Debug.Transport.cdp()
 })
@@ -181,7 +187,7 @@ const GetBrowserVersion = command({
 })
 
 // Type-safe response
-const version = yield* debug.sendCommand(session, GetBrowserVersion)
+const version = yield * debug.sendCommand(session, GetBrowserVersion)
 console.log(version.product) // ✅ TypeScript knows this is a string
 ```
 
@@ -216,6 +222,7 @@ npx @effect-native/debug steps --ws-url ws://127.0.0.1:9229/abc-123-def-456
 ```
 
 **Works with any CDP-compatible endpoint**, including:
+
 - Node.js (`node --inspect-brk`)
 - Bun (`bun --inspect-brk`)
 - Deno (`deno run --inspect-brk`)
@@ -225,6 +232,7 @@ npx @effect-native/debug steps --ws-url ws://127.0.0.1:9229/abc-123-def-456
 ### What It Does
 
 The CLI tool will:
+
 1. ✅ Connect to any CDP-compatible WebSocket debugger endpoint
 2. ✅ Enable the debugger and resume execution
 3. ✅ Step through **every line of execution**
@@ -233,11 +241,11 @@ The CLI tool will:
 
 ### CLI Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--ws-url <url>` | WebSocket URL or HTTP endpoint (e.g., `127.0.0.1:9229`, `http://127.0.0.1:9229`, or `ws://...`) | - |
-| `--max-steps <n>` | Maximum steps to execute | 200 |
-| `-h, --help` | Show help message | - |
+| Option            | Description                                                                                     | Default |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ------- |
+| `--ws-url <url>`  | WebSocket URL or HTTP endpoint (e.g., `127.0.0.1:9229`, `http://127.0.0.1:9229`, or `ws://...`) | -       |
+| `--max-steps <n>` | Maximum steps to execute                                                                        | 200     |
+| `-h, --help`      | Show help message                                                                               | -       |
 
 ### Example Output
 
@@ -279,6 +287,7 @@ The CLI tool will:
 The `steps` command accepts either a simple endpoint (like `127.0.0.1:9229`) or a full WebSocket URL. The tool will automatically discover the WebSocket URL from the HTTP endpoint.
 
 **Simplest Usage** (recommended):
+
 ```bash
 # Just pass the host:port - we'll discover the WebSocket URL
 npx @effect-native/debug steps --ws-url 127.0.0.1:9229
@@ -286,6 +295,7 @@ npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 # Or with http:// prefix
 npx @effect-native/debug steps --ws-url http://127.0.0.1:9229
 ```
+
 </text>
 
 <old_text line=281>
@@ -299,6 +309,7 @@ Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
 **Copy the entire `ws://...` URL** and pass it to the `--ws-url` option.
 
 **Find it programmatically**:
+
 ```bash
 # Query the inspector HTTP endpoint
 curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl'
@@ -323,6 +334,7 @@ Debugger listening on ws://127.0.0.1:9229/abc-123-def-456
 **Copy the entire `ws://...` URL** and pass it to the `--ws-url` option.
 
 **Find it programmatically**:
+
 ```bash
 # Query the inspector HTTP endpoint
 curl -s http://127.0.0.1:9229/json | jq -r '.[0].webSocketDebuggerUrl'
@@ -370,6 +382,7 @@ npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 1. Open `chrome://inspect` in Chrome
 2. Click "inspect" on your target
 3. Or connect programmatically:
+
 ```bash
 # Simple endpoint
 npx @effect-native/debug steps --ws-url localhost:9222
@@ -403,20 +416,20 @@ kill $APP_PID
 ---
 
 ## Quick Start
-</text>
 
+</text>
 
 ### Step Through Your Code
 
 See every line as it executes:
 
 ```typescript
+import { command, Debug, layerCdp, Transport } from "@effect-native/debug"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import * as Effect from "effect/Effect"
 import * as Console from "effect/Console"
-import * as Stream from "effect/Stream"
-import { Debug, layerCdp, Transport, command } from "@effect-native/debug"
+import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
 
 // Define commands
 const EnableDebugger = command({
@@ -433,19 +446,19 @@ const StepOver = command({
 
 const program = Effect.gen(function*() {
   const debug = yield* Debug
-  
+
   // Connect to Node.js inspector (launch your app with --inspect-brk=9229)
   const session = yield* debug.connect({
     endpoint: "ws://127.0.0.1:9229/...",
     transport: Transport.cdp()
   })
-  
+
   // Enable debugger
   yield* debug.sendCommand(session, EnableDebugger)
-  
+
   // Subscribe to events
   const events = yield* debug.subscribe(session)
-  
+
   yield* Effect.forkScoped(
     Stream.runForEach(events, (event) =>
       Effect.gen(function*() {
@@ -457,10 +470,9 @@ const program = Effect.gen(function*() {
           // Step to next line
           yield* debug.sendCommand(session, StepOver)
         }
-      })
-    )
+      }))
   )
-  
+
   // Keep running while stepping
   yield* Effect.never
 })
@@ -474,6 +486,7 @@ Effect.runPromise(runnable)
 ```
 
 **Run your app**:
+
 ```bash
 # Terminal 1: Your app with inspector
 node --inspect-brk=9229 your-app.js
@@ -483,6 +496,7 @@ node debug-script.js
 ```
 
 **Output**:
+
 ```
 [Step] file:///your-app.js:10 in main
 [Step] file:///your-app.js:11 in main
@@ -505,24 +519,23 @@ const EvaluateExpression = command({
   })
 })
 
-const result = yield* debug.sendCommand(session, EvaluateExpression)
+const result = yield * debug.sendCommand(session, EvaluateExpression)
 console.log(result.result.value) // 4
 ```
 
 ### Listen to Console Output
 
 ```typescript
-const events = yield* debug.subscribe(session)
+const events = yield * debug.subscribe(session)
 
-yield* Stream.runForEach(events, (event) =>
+yield * Stream.runForEach(events, (event) =>
   Effect.gen(function*() {
     if (event.method === "Runtime.consoleAPICalled") {
       const params = event.params as any
       const args = params.args || []
-      yield* Console.log("Console:", args.map(a => a.value).join(" "))
+      yield* Console.log("Console:", args.map((a) => a.value).join(" "))
     }
-  })
-)
+  }))
 ```
 
 ---
@@ -532,6 +545,7 @@ yield* Stream.runForEach(events, (event) =>
 **See it in action**: The `steps` CLI tool (`packages-native/debug/src/cli/steps.ts`)
 
 **Run it**:
+
 ```bash
 # Terminal 1: Start your Node.js app with debugging enabled
 node --inspect-brk=9229 my-script.js
@@ -541,6 +555,7 @@ npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 ```
 
 **What it does**:
+
 1. Connects to the provided WebSocket debugger endpoint
 2. Subscribes to debugger events
 3. Enables the Debugger domain
@@ -555,6 +570,7 @@ npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 8. Disconnects and exits
 
 **Works with any CDP-compatible runtime**:
+
 - Node.js: `node --inspect-brk`
 - Bun: `bun --inspect-brk`
 - Deno: `deno run --inspect-brk`
@@ -562,6 +578,7 @@ npx @effect-native/debug steps --ws-url 127.0.0.1:9229
 - Chrome/Chromium browsers
 
 **Output**:
+
 ```
 [   1] my-script.js:1:0 (anonymous)
       > /**
@@ -589,18 +606,18 @@ interface Service {
   readonly connect: (
     options: ConnectOptions
   ) => Effect.Effect<Session, DebugError, Scope.Scope>
-  
+
   // Disconnect and cleanup
   readonly disconnect: (
     session: Session
   ) => Effect.Effect<void, DebugError>
-  
+
   // Send a command
   readonly sendCommand: <A, I>(
     session: Session,
     cmd: Command<A, I>
   ) => Effect.Effect<A, DebugError>
-  
+
   // Subscribe to events
   readonly subscribe: (
     session: Session
@@ -629,6 +646,7 @@ const result = yield* debug.sendCommand(session, MyCommand)
 ### Error Handling
 
 All operations return `Effect<A, DebugError>` where DebugError is a union of:
+
 - `DebugStateError` - Invalid session or state
 - `DebugTransportError` - WebSocket/network errors
 - `DebugCommandError` - Command execution failed
@@ -639,9 +657,7 @@ All operations return `Effect<A, DebugError>` where DebugError is a union of:
 const program = Effect.gen(function*() {
   // ...
 }).pipe(
-  Effect.catchTag("DebugTransportError", (error) =>
-    Console.error(`Connection failed: ${error.cause}`)
-  )
+  Effect.catchTag("DebugTransportError", (error) => Console.error(`Connection failed: ${error.cause}`))
 )
 ```
 
@@ -649,17 +665,17 @@ const program = Effect.gen(function*() {
 
 ## Supported Runtimes
 
-| Runtime | Protocol | Inspector Flag | Discovery Endpoint |
-|---------|----------|----------------|-------------------|
-| **Node.js** | CDP | `--inspect=9229` | `http://127.0.0.1:9229/json` |
-| **Chrome/Chromium** | CDP | `--remote-debugging-port=9222` | `http://127.0.0.1:9222/json` |
-| **Deno** | CDP | `--inspect=9229` | `http://127.0.0.1:9229/json` |
-| **Cloudflare Workers** | CDP | `wrangler dev --inspector-port=9229` | `http://127.0.0.1:9229/json` |
-| **Bun** | WebKit | `--inspect` | (debug.bun.sh) |
-| **Safari/iOS** | WebKit | (Develop menu) | (via proxy) |
-| **Firefox** | RDP | `-remote-debugging-port` | TCP socket |
+| Runtime                | Protocol | Inspector Flag                       | Discovery Endpoint           |
+| ---------------------- | -------- | ------------------------------------ | ---------------------------- |
+| **Node.js**            | CDP      | `--inspect=9229`                     | `http://127.0.0.1:9229/json` |
+| **Chrome/Chromium**    | CDP      | `--remote-debugging-port=9222`       | `http://127.0.0.1:9222/json` |
+| **Deno**               | CDP      | `--inspect=9229`                     | `http://127.0.0.1:9229/json` |
+| **Cloudflare Workers** | CDP      | `wrangler dev --inspector-port=9229` | `http://127.0.0.1:9229/json` |
+| **Bun**                | WebKit   | `--inspect`                          | (debug.bun.sh)               |
+| **Safari/iOS**         | WebKit   | (Develop menu)                       | (via proxy)                  |
+| **Firefox**            | RDP      | `-remote-debugging-port`             | TCP socket                   |
 
-**Currently implemented**: CDP (Chrome/Node.js/Deno/Workers)  
+**Currently implemented**: CDP (Chrome/Node.js/Deno/Workers)\
 **Coming soon**: WebKit, Firefox RDP
 
 ---
@@ -680,12 +696,12 @@ const program = Effect.gen(function*() {
 const stepThrough = Effect.gen(function*() {
   const debug = yield* Debug
   const session = yield* debug.connect({ endpoint: wsUrl, transport: Transport.cdp() })
-  
+
   yield* debug.sendCommand(session, EnableDebugger)
-  
+
   const events = yield* debug.subscribe(session)
   let stepCount = 0
-  
+
   yield* Stream.runForEach(events, (event) =>
     Effect.gen(function*() {
       if (event.method === "Debugger.paused" && stepCount < 100) {
@@ -693,8 +709,7 @@ const stepThrough = Effect.gen(function*() {
         yield* Console.log(`[${stepCount++}] ${frame.url}:${frame.location.lineNumber}`)
         yield* debug.sendCommand(session, StepOver)
       }
-    })
-  )
+    }))
 })
 ```
 
@@ -776,7 +791,7 @@ const debugWorker = Effect.gen(function*() {
     endpoint: "http://127.0.0.1:9229", // wrangler dev inspector
     transport: Transport.cdp()
   })
-  
+
   // Evaluate in worker context
   const result = yield* debug.sendCommand(session, {
     transport: Transport.cdp(),
@@ -784,7 +799,7 @@ const debugWorker = Effect.gen(function*() {
     params: { expression: "typeof Request", returnByValue: true },
     response: EvaluateResponseSchema
   })
-  
+
   yield* Console.log("Worker global check:", result.result.value)
 })
 ```
@@ -805,6 +820,7 @@ const debugWorker = Effect.gen(function*() {
 - **Tests**: Integration tests for Chrome and Node.js inspectors
 
 **You can use it today** for:
+
 - Connecting to inspectors
 - Sending raw CDP commands
 - Subscribing to events
@@ -813,17 +829,20 @@ const debugWorker = Effect.gen(function*() {
 ### ⏳ What's Coming
 
 **Memory Debugging** (planned for 0.2.0):
+
 - `getHeapUsage()` - Query heap statistics
 - `takeHeapSnapshot()` - Capture heap snapshots (streaming)
 - `startSamplingHeapProfiler()` - Low-overhead sampling
 - `collectGarbage()` - Force GC
 
 **Safe Stepping** (planned for 0.2.0):
+
 - `setBlackboxPatterns()` - Skip third-party code when stepping
 - `safeStepInto()` - StepInto with safety checks
 - `stepThroughWithLimits()` - Bounded stepping with automatic exit
 
 **Additional Protocols** (future):
+
 - WebKit Inspector (Safari, Bun)
 - Firefox RDP (Firefox, Servo, Ladybird)
 
@@ -838,22 +857,22 @@ const debugWorker = Effect.gen(function*() {
 
 const program = Effect.gen(function*() {
   const debug = yield* Debug
-  
+
   // Discover WebSocket URL
   const response = await fetch("http://127.0.0.1:9229/json/list")
   const targets = await response.json()
   const wsUrl = targets[0].webSocketDebuggerUrl
-  
+
   // Connect
   const session = yield* debug.connect({
     endpoint: wsUrl,
     transport: Transport.cdp()
   })
-  
+
   // Send a command
   const version = yield* debug.sendCommand(session, GetBrowserVersion)
   yield* Console.log("Runtime:", version.product)
-  
+
   yield* debug.disconnect(session)
 })
 
@@ -881,30 +900,29 @@ const SetBreakpoint = command({
   })
 })
 
-const breakpoint = yield* debug.sendCommand(session, SetBreakpoint)
-yield* Console.log("Breakpoint set:", breakpoint.breakpointId)
+const breakpoint = yield * debug.sendCommand(session, SetBreakpoint)
+yield * Console.log("Breakpoint set:", breakpoint.breakpointId)
 ```
 
 ### Handle Paused Events
 
 ```typescript
-const events = yield* debug.subscribe(session)
+const events = yield * debug.subscribe(session)
 
-yield* Stream.runForEach(events, (event) =>
+yield * Stream.runForEach(events, (event) =>
   Effect.gen(function*() {
     if (event.method === "Debugger.paused") {
       const params = event.params as any
       const reason = params.reason
       const callFrames = params.callFrames || []
-      
+
       yield* Console.log(`Paused: ${reason}`)
       yield* Console.log(`Call stack: ${callFrames.length} frames`)
-      
+
       // Resume execution
       yield* debug.sendCommand(session, ResumeCommand)
     }
-  })
-)
+  }))
 ```
 
 ---
@@ -932,6 +950,7 @@ The step-through demo (`test-fixtures/debug-step-through.ts`) shows how to build
 **Problem**: Can't connect to inspector
 
 **Solution**: Ensure target is running with inspector enabled:
+
 ```bash
 node --inspect=9229 your-app.js
 # Check: curl http://127.0.0.1:9229/json
@@ -960,18 +979,21 @@ node --inspect=9229 your-app.js
 ## Resources
 
 ### Documentation
+
 - **Specifications**: `.specs/debug/` - Comprehensive research and task specs
 - **Demos**: `packages-native/debug-demos/` - Memory leak detection demos
-- **Guides**: 
+- **Guides**:
   - Node.js leak hunting: `packages-native/debug-demos/BLOG-POST.md`
   - Workers debugging: `packages-native/debug-demos/WORKERS-MEMORY-GUIDE.md`
 
 ### Protocol References
+
 - **CDP**: https://chromedevtools.github.io/devtools-protocol/
 - **WebKit Inspector**: https://webkit.org/web-inspector/
 - **Firefox RDP**: https://firefox-source-docs.mozilla.org/devtools/backend/protocol.html
 
 ### Related Packages
+
 - **Effect**: https://effect.website
 - **@effect/platform**: https://effect.website/docs/guides/platform/introduction
 
@@ -982,6 +1004,7 @@ node --inspect=9229 your-app.js
 This package is part of the Effect Native project. See the main repository for contribution guidelines.
 
 **Current focus**:
+
 - Memory debugging implementation (task-006)
 - Safe stepping API (task-007)
 - Documentation improvements
@@ -997,8 +1020,8 @@ MIT
 
 ## Status
 
-**Current Version**: 0.0.0 (pre-release)  
-**Stability**: Experimental - API may change  
+**Current Version**: 0.0.0 (pre-release)\
+**Stability**: Experimental - API may change\
 **Production Ready**: Core CDP features work, memory features pending
 
 **Recommended**: Use for prototyping and internal tools. Wait for 0.1.0 for production use.

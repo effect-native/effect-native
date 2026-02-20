@@ -1,10 +1,10 @@
-import * as Tree from "@effect-native/patterns/Tree"
-import * as assert from "node:assert"
 import { describe, it } from "@effect-native/bun-test"
+import * as Tree from "@effect-native/patterns/Tree"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Hash from "effect/Hash"
+import * as assert from "node:assert"
 
 class NodeData extends Data.Class<{ readonly id: number }> {}
 

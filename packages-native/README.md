@@ -14,6 +14,7 @@ This directory contains custom packages maintained in the `effect-native/effect`
 All packages in this directory should be published under the `@effect-native/` namespace to distinguish them from official Effect packages.
 
 Example:
+
 - `@effect-native/my-package` ✅
 - `@effect/my-package` ❌ (reserved for official packages)
 

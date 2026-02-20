@@ -16,14 +16,14 @@ Can we replace YAML workflows with TypeScript powered by `@effect-native/platfor
 
 ## What CAN Be TypeScript
 
-| Component | Current | Can Be TS? | Value |
-|-----------|---------|------------|-------|
-| `setup/action.yml` | Shell + YAML | Maybe | Low - simple shell is fine |
-| `check.yml` jobs | pnpm commands | No | Already simple |
-| `release.yml` | changesets/action | No | Uses existing action |
-| `claude.yml` | anthropics/claude-code-action | No | Uses existing action |
-| `snapshot.yml` | pkg-pr-new | No | One-liner |
-| `test-github-action-scratchpad.yml` | Our action | Already TS | Already dogfooding |
+| Component                           | Current                       | Can Be TS? | Value                      |
+| ----------------------------------- | ----------------------------- | ---------- | -------------------------- |
+| `setup/action.yml`                  | Shell + YAML                  | Maybe      | Low - simple shell is fine |
+| `check.yml` jobs                    | pnpm commands                 | No         | Already simple             |
+| `release.yml`                       | changesets/action             | No         | Uses existing action       |
+| `claude.yml`                        | anthropics/claude-code-action | No         | Uses existing action       |
+| `snapshot.yml`                      | pkg-pr-new                    | No         | One-liner                  |
+| `test-github-action-scratchpad.yml` | Our action                    | Already TS | Already dogfooding         |
 
 ## What WOULD Benefit from TS
 
@@ -35,6 +35,7 @@ Can we replace YAML workflows with TypeScript powered by `@effect-native/platfor
 ## Expected Conclusion
 
 **The workflows themselves should stay YAML.** What we should dogfood is:
+
 - The scratchpad action (already doing this)
 - Add NEW actions for automation tasks
 - Use platform-github for comment-triggered workflows
@@ -42,6 +43,7 @@ Can we replace YAML workflows with TypeScript powered by `@effect-native/platfor
 ## Key Realization
 
 The `setup/action.yml` is a **composite action**, not a workflow. It COULD theoretically be a Node action, but:
+
 - It's mostly shell commands
 - It needs to run BEFORE node is installed
 - Converting it would be over-engineering

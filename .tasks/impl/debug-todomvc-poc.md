@@ -16,6 +16,7 @@ artifacts:
 ## Objective
 
 Create a proof-of-concept script that demonstrates the full debugging workflow:
+
 1. Connect to running TodoMVC app
 2. Set a breakpoint in application code
 3. Read runtime state when paused
@@ -30,11 +31,11 @@ Create a proof-of-concept script that demonstrates the full debugging workflow:
 
 ```ts
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import * as Effect from "effect/Effect"
 import * as Console from "effect/Console"
-import * as Stream from "effect/Stream"
-import { Debug, layerCdp, Transport, command } from "../src"
+import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
+import * as Stream from "effect/Stream"
+import { command, Debug, layerCdp, Transport } from "../src"
 
 // CDP Commands
 const EnableDebugger = command({
@@ -53,8 +54,8 @@ const SetBreakpointByUrl = command({
   transport: Transport.cdp(),
   command: "Debugger.setBreakpointByUrl",
   params: {
-    lineNumber: 0,      // Will be set dynamically
-    url: "",            // Will be set dynamically
+    lineNumber: 0, // Will be set dynamically
+    url: "", // Will be set dynamically
     columnNumber: 0
   },
   response: Schema.Struct({
@@ -67,8 +68,8 @@ const EvaluateOnCallFrame = command({
   transport: Transport.cdp(),
   command: "Debugger.evaluateOnCallFrame",
   params: {
-    callFrameId: "",    // Will be set dynamically
-    expression: "",     // Will be set dynamically
+    callFrameId: "", // Will be set dynamically
+    expression: "", // Will be set dynamically
     returnByValue: true
   },
   response: Schema.Struct({
@@ -87,48 +88,48 @@ const Resume = command({
 
 const program = Effect.gen(function*() {
   const debug = yield* Debug
-  
+
   // 1. Discover WebSocket URL from inspector endpoint
   yield* Console.log("Discovering inspector endpoint...")
-  
+
   // For POC, assume URL is passed as arg or use default
   const wsUrl = process.argv[2] || "ws://127.0.0.1:9229"
-  
+
   yield* Console.log(`Connecting to ${wsUrl}...`)
-  
+
   // 2. Connect to the inspector
   const session = yield* debug.connect({
     endpoint: wsUrl,
     transport: Transport.cdp()
   })
-  
+
   yield* Console.log("Connected!")
-  
+
   // 3. Enable debugger and runtime
   yield* debug.sendCommand(session, EnableDebugger)
   yield* debug.sendCommand(session, EnableRuntime)
   yield* Console.log("Debugger and Runtime enabled")
-  
+
   // 4. Subscribe to events
   const events = yield* debug.subscribe(session)
-  
+
   // 5. Set breakpoint in addTodo function
   // (Actual URL will depend on where TodoMVC is served from)
   yield* Console.log("Setting breakpoint in addTodo handler...")
-  
+
   const breakpoint = yield* debug.sendCommand(session, {
     ...SetBreakpointByUrl,
     params: {
-      lineNumber: 10,  // Adjust based on actual source
+      lineNumber: 10, // Adjust based on actual source
       url: "http://localhost:5173/src/atoms/todos.ts",
       columnNumber: 0
     }
   })
-  
+
   yield* Console.log(`Breakpoint set: ${breakpoint.breakpointId}`)
   yield* Console.log("Waiting for breakpoint hit...")
   yield* Console.log("(Add a todo in the app to trigger the breakpoint)")
-  
+
   // 6. Wait for paused event and read state
   yield* Stream.runForEach(events, (event) =>
     Effect.gen(function*() {
@@ -136,16 +137,16 @@ const program = Effect.gen(function*() {
         const params = event.params as any
         const callFrames = params.callFrames || []
         const frame = callFrames[0]
-        
+
         if (!frame) return
-        
+
         yield* Console.log("\n=== Breakpoint Hit! ===")
         yield* Console.log(`Location: ${frame.url}:${frame.location.lineNumber}`)
         yield* Console.log(`Function: ${frame.functionName || "(anonymous)"}`)
-        
+
         // 7. Read local variables
         yield* Console.log("\n--- Local Variables ---")
-        
+
         // Get scope variables
         for (const scope of frame.scopeChain || []) {
           if (scope.type === "local") {
@@ -153,10 +154,10 @@ const program = Effect.gen(function*() {
             // Would need Runtime.getProperties to expand the object
           }
         }
-        
+
         // 8. Evaluate expression to read atom state
         yield* Console.log("\n--- Reading Application State ---")
-        
+
         try {
           // Try to read the todos from effect-atom state
           // This depends on how atoms are exposed
@@ -168,23 +169,22 @@ const program = Effect.gen(function*() {
               returnByValue: true
             }
           })
-          
+
           yield* Console.log(`this: ${JSON.stringify(result.result.value)}`)
         } catch (e) {
           yield* Console.log("Could not evaluate 'this'")
         }
-        
+
         // 9. Resume execution
         yield* Console.log("\nResuming execution...")
         yield* debug.sendCommand(session, Resume)
-        
+
         // Exit after first breakpoint for POC
         yield* Console.log("\nPOC complete! Disconnecting...")
         yield* debug.disconnect(session)
         yield* Effect.interrupt
       }
-    })
-  )
+    }))
 })
 
 const runnable = Effect.scoped(program).pipe(

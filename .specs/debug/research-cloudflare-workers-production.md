@@ -412,30 +412,29 @@ export default {
 ### Log + Measure Wrapper
 
 ```typescript
-export const withObs =
-  (h: (req: Request) => Promise<Response>) => async (req: Request) => {
-    const t0 = Date.now()
-    try {
-      const res = await h(req)
-      console.log(
-        JSON.stringify({
-          ok: true,
-          ms: Date.now() - t0,
-          route: new URL(req.url).pathname
-        })
-      )
-      return res
-    } catch (err) {
-      console.error(
-        JSON.stringify({
-          ok: false,
-          ms: Date.now() - t0,
-          err: String(err)
-        })
-      )
-      return new Response("internal error", { status: 500 })
-    }
+export const withObs = (h: (req: Request) => Promise<Response>) => async (req: Request) => {
+  const t0 = Date.now()
+  try {
+    const res = await h(req)
+    console.log(
+      JSON.stringify({
+        ok: true,
+        ms: Date.now() - t0,
+        route: new URL(req.url).pathname
+      })
+    )
+    return res
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        ok: false,
+        ms: Date.now() - t0,
+        err: String(err)
+      })
+    )
+    return new Response("internal error", { status: 500 })
   }
+}
 ```
 
 ### Safe Body Reader (Size-Limited)
@@ -549,17 +548,15 @@ When submitting Worker changes, verify:
 Potential future integration:
 
 ```typescript
-import * as Effect from "effect/Effect"
 import * as CloudflareObservability from "@effect-native/debug/CloudflareObservability"
+import * as Effect from "effect/Effect"
 
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const obs = yield* CloudflareObservability.CloudflareObservability
 
   const logs = yield* obs.tailWorker("my-worker")
 
-  yield* Stream.runForEach(logs, (log) =>
-    Console.log(`[${log.timestamp}] ${log.outcome}: ${log.logs}`)
-  )
+  yield* Stream.runForEach(logs, (log) => Console.log(`[${log.timestamp}] ${log.outcome}: ${log.logs}`))
 })
 ```
 

@@ -5,6 +5,7 @@
 Stepping through JavaScript code with debugger protocols exposes several challenges: stepping into runtime internals can trigger V8 inspector crashes, performance degradation, or simply create noise in debugging sessions. Modern debugger protocols provide **blackboxing** mechanisms to mark scripts as "uninteresting" so that step operations (stepInto, stepOver, stepOut) skip over them automatically. Combined with dynamic safe-stepping heuristics—checking frame locations before issuing step commands and using stepOut/resume when execution lands in non-target code—debugging can remain focused on user code while avoiding crashes and infinite stepping loops.
 
 **Key Capabilities:**
+
 - **Blackboxing** (CDP, WebKit): Mark scripts/ranges as "skip during stepping"
 - **Pattern-based blackboxing**: Regex patterns for script URLs (e.g., `node_modules/.*`, `^node:.*`)
 - **Range-based blackboxing**: Specific line ranges within a script
@@ -12,6 +13,7 @@ Stepping through JavaScript code with debugger protocols exposes several challen
 - **Step limits**: Terminate after MAX_STEPS to prevent infinite loops
 
 **Protocols:**
+
 - **CDP**: `Debugger.setBlackboxPatterns`, `Debugger.setBlackboxedRanges`
 - **WebKit Inspector**: Blackboxing via Web Inspector settings (limited protocol support)
 - **Firefox RDP**: Blackboxing via DevTools preferences (actor-based configuration)
@@ -21,6 +23,7 @@ Stepping through JavaScript code with debugger protocols exposes several challen
 ### V8 Inspector Crash (Node.js v24.8.0)
 
 When stepping through Node.js code with `Debugger.stepInto`, execution can descend into:
+
 - Node.js internal modules (`node:internal/*`)
 - V8 runtime code
 - Microtask queue handlers
@@ -28,6 +31,7 @@ When stepping through Node.js code with `Debugger.stepInto`, execution can desce
 - Module loader code
 
 **Observed crash** (Node.js v24.8.0 with ESM + async/await):
+
 ```
 Fatal error in , line 0
 Check failed: needs_context && current_scope_ == closure_scope_ && 
@@ -42,6 +46,7 @@ Check failed: needs_context && current_scope_ == closure_scope_ &&
 ### Performance Issues
 
 Even when stepping doesn't crash, stepping through thousands of lines of:
+
 - `node_modules` dependencies
 - Node.js bootstrap code
 - Framework internals (React, Effect runtime, etc.)
@@ -51,6 +56,7 @@ Even when stepping doesn't crash, stepping through thousands of lines of:
 ### Solution: Blackboxing + Safe Stepping
 
 Combine two techniques:
+
 1. **Blackboxing**: Tell the debugger which scripts to skip during stepping
 2. **Safe stepping heuristics**: Check frame location before stepping, bail out if in non-target code
 
@@ -81,6 +87,7 @@ Mark scripts matching regex patterns as blackboxed:
 **Patterns syntax**: JavaScript regex as strings (no delimiters, no flags)
 
 **Common patterns**:
+
 - `node_modules/.*` - All npm dependencies
 - `^node:.*` - Node.js built-in modules
 - `^internal/.*` - Node.js internals
@@ -121,11 +128,13 @@ Mark specific line ranges within a script as blackboxed:
 ### When to Apply Blackboxing
 
 **Strategy 1: At session start**
+
 - Call `setBlackboxPatterns` immediately after `Debugger.enable`
 - Use predefined patterns for common third-party code
 - Works for static patterns (node_modules, node:*, etc.)
 
 **Strategy 2: During script parsing**
+
 - Listen to `Debugger.scriptParsed` events
 - For each parsed script:
   - If `url` doesn't match target file(s), call `setBlackboxedRanges`
@@ -147,6 +156,7 @@ WebKit Inspector supports blackboxing through settings, but protocol-level contr
 ### Console Domain
 
 WebKit's Console domain has some filtering:
+
 ```json
 {
   "method": "Console.addInspectedNode",
@@ -280,13 +290,13 @@ if (event.method === "Debugger.paused") {
 
 ```javascript
 const NODE_BLACKBOX_PATTERNS = [
-  "node_modules/.*",        // All npm dependencies
-  "^node:.*",               // Node.js built-ins (node:fs, node:path, etc.)
-  "^internal/.*",           // Node.js internals
-  "bootstrap_node\\.js",    // Node.js bootstrap
-  "^file:///System/.*",     // macOS system files (if any)
-  "<anonymous>",            // Eval'd code
-  "node:internal/.*"        // Node internals (alternative pattern)
+  "node_modules/.*", // All npm dependencies
+  "^node:.*", // Node.js built-ins (node:fs, node:path, etc.)
+  "^internal/.*", // Node.js internals
+  "bootstrap_node\\.js", // Node.js bootstrap
+  "^file:///System/.*", // macOS system files (if any)
+  "<anonymous>", // Eval'd code
+  "node:internal/.*" // Node internals (alternative pattern)
 ]
 ```
 
@@ -295,11 +305,11 @@ const NODE_BLACKBOX_PATTERNS = [
 ```javascript
 const BROWSER_BLACKBOX_PATTERNS = [
   "node_modules/.*",
-  "webpack://.*",           // Webpack bundled code
+  "webpack://.*", // Webpack bundled code
   "^chrome-extension://.*", // Extension code
-  "^devtools://.*",         // DevTools code itself
+  "^devtools://.*", // DevTools code itself
   "<anonymous>",
-  "VM[0-9]+"                // Eval'd scripts
+  "VM[0-9]+" // Eval'd scripts
 ]
 ```
 
@@ -309,9 +319,9 @@ const BROWSER_BLACKBOX_PATTERNS = [
 const WORKERS_BLACKBOX_PATTERNS = [
   "node_modules/.*",
   "^node:.*",
-  "wrangler/.*",            // Wrangler dev server code
-  "miniflare/.*",           // Miniflare internals
-  "workerd/.*"              // Workerd runtime (if exposed)
+  "wrangler/.*", // Wrangler dev server code
+  "miniflare/.*", // Miniflare internals
+  "workerd/.*" // Workerd runtime (if exposed)
 ]
 ```
 
@@ -322,7 +332,7 @@ const FRAMEWORK_BLACKBOX_PATTERNS = [
   "node_modules/react/.*",
   "node_modules/react-dom/.*",
   "node_modules/next/.*",
-  "node_modules/effect/.*",  // Unless debugging Effect itself
+  "node_modules/effect/.*", // Unless debugging Effect itself
   "webpack://.*",
   "_next/static/.*"
 ]
@@ -330,13 +340,13 @@ const FRAMEWORK_BLACKBOX_PATTERNS = [
 
 ## Protocol Comparison
 
-| Feature | CDP | WebKit Inspector | Firefox RDP |
-|---------|-----|------------------|-------------|
-| Pattern blackboxing | ✅ setBlackboxPatterns | ❌ UI only | ⚠️ Via actor config |
-| Range blackboxing | ✅ setBlackboxedRanges | ❌ | ⚠️ Limited |
-| Regex patterns | ✅ Full JS regex | ❌ | ⚠️ Wildcards only |
-| Dynamic blackboxing | ✅ During debugging | ⚠️ Limited | ⚠️ Limited |
-| Safe for stepInto | ✅ Yes | ⚠️ Manual filtering | ⚠️ Manual filtering |
+| Feature             | CDP                    | WebKit Inspector   | Firefox RDP        |
+| ------------------- | ---------------------- | ------------------ | ------------------ |
+| Pattern blackboxing | ✅ setBlackboxPatterns | ❌ UI only         | ⚠️ Via actor config |
+| Range blackboxing   | ✅ setBlackboxedRanges | ❌                 | ⚠️ Limited          |
+| Regex patterns      | ✅ Full JS regex       | ❌                 | ⚠️ Wildcards only   |
+| Dynamic blackboxing | ✅ During debugging    | ⚠️ Limited          | ⚠️ Limited          |
+| Safe for stepInto   | ✅ Yes                 | ⚠️ Manual filtering | ⚠️ Manual filtering |
 
 ## Paste-and-Run Examples
 
@@ -366,46 +376,46 @@ npx -y wscat -c "$WS" -x '{"id":5,"method":"Debugger.setBlackboxedRanges","param
 ### Effect Integration: Auto-Blackbox Third-Party
 
 ```typescript
-import * as Effect from "effect/Effect"
 import * as Debug from "@effect-native/debug"
+import * as Effect from "effect/Effect"
 
 const autoBlackboxThirdParty = (
   session: Debug.Session,
   targetFileUrl: string
-) => Effect.gen(function*() {
-  const debug = yield* Debug.Debug
-  const events = yield* debug.subscribe(session)
-  
-  // Blackbox everything except target file
-  yield* Effect.forkScoped(
-    Stream.runForEach(events, (event) =>
-      Effect.gen(function*() {
-        if (event.method === "Debugger.scriptParsed") {
-          const params = event.params as any
-          const scriptId = params.scriptId
-          const url = params.url || ""
-          
-          // Skip if this is our target file
-          if (url === targetFileUrl) return
-          
-          // Blackbox entire script
-          yield* debug.sendCommand(session, {
-            transport: Debug.Transport.cdp(),
-            command: "Debugger.setBlackboxedRanges",
-            params: {
-              scriptId,
-              positions: [
-                { lineNumber: 0, columnNumber: 0 },
-                { lineNumber: 999999, columnNumber: 0 }
-              ]
-            },
-            response: Schema.Struct({})
-          })
-        }
-      })
+) =>
+  Effect.gen(function*() {
+    const debug = yield* Debug.Debug
+    const events = yield* debug.subscribe(session)
+
+    // Blackbox everything except target file
+    yield* Effect.forkScoped(
+      Stream.runForEach(events, (event) =>
+        Effect.gen(function*() {
+          if (event.method === "Debugger.scriptParsed") {
+            const params = event.params as any
+            const scriptId = params.scriptId
+            const url = params.url || ""
+
+            // Skip if this is our target file
+            if (url === targetFileUrl) return
+
+            // Blackbox entire script
+            yield* debug.sendCommand(session, {
+              transport: Debug.Transport.cdp(),
+              command: "Debugger.setBlackboxedRanges",
+              params: {
+                scriptId,
+                positions: [
+                  { lineNumber: 0, columnNumber: 0 },
+                  { lineNumber: 999999, columnNumber: 0 }
+                ]
+              },
+              response: Schema.Struct({})
+            })
+          }
+        }))
     )
-  )
-})
+  })
 ```
 
 ### Effect Integration: Safe StepInto
@@ -415,34 +425,35 @@ const safeStepInto = (
   session: Debug.Session,
   targetFileUrl: string,
   currentFrame: CallFrame
-) => Effect.gen(function*() {
-  const debug = yield* Debug.Debug
-  
-  // Check if we're in target code
-  if (currentFrame.url === targetFileUrl) {
-    // Safe to step into
-    yield* debug.sendCommand(session, {
-      transport: Debug.Transport.cdp(),
-      command: "Debugger.stepInto",
-      response: Schema.Struct({})
-    })
-  } else {
-    // In third-party code, step out or resume
-    if (callFrames.length > 1) {
+) =>
+  Effect.gen(function*() {
+    const debug = yield* Debug.Debug
+
+    // Check if we're in target code
+    if (currentFrame.url === targetFileUrl) {
+      // Safe to step into
       yield* debug.sendCommand(session, {
         transport: Debug.Transport.cdp(),
-        command: "Debugger.stepOut",
+        command: "Debugger.stepInto",
         response: Schema.Struct({})
       })
     } else {
-      yield* debug.sendCommand(session, {
-        transport: Debug.Transport.cdp(),
-        command: "Debugger.resume",
-        response: Schema.Struct({})
-      })
+      // In third-party code, step out or resume
+      if (callFrames.length > 1) {
+        yield* debug.sendCommand(session, {
+          transport: Debug.Transport.cdp(),
+          command: "Debugger.stepOut",
+          response: Schema.Struct({})
+        })
+      } else {
+        yield* debug.sendCommand(session, {
+          transport: Debug.Transport.cdp(),
+          command: "Debugger.resume",
+          response: Schema.Struct({})
+        })
+      }
     }
-  }
-})
+  })
 ```
 
 ## Strategies for Safe Stepping
@@ -452,16 +463,19 @@ const safeStepInto = (
 **When**: You only care about one file (or a small set of files)
 
 **Implementation**:
+
 1. Call `Debugger.setBlackboxPatterns` with patterns for all third-party code
 2. During `scriptParsed` events, blackbox any script that's not in your target set
 3. Use `stepInto` freely—CDP handles the filtering
 
 **Pros**:
+
 - Cleanest code
 - CDP does the work
 - Works across different Node.js/Chrome versions
 
 **Cons**:
+
 - Requires CDP (not available in all protocols)
 - Must maintain pattern list
 
@@ -470,6 +484,7 @@ const safeStepInto = (
 **When**: Blackboxing isn't available or you want fine-grained control
 
 **Implementation**:
+
 1. On each `Debugger.paused` event, check `callFrames[0].url`
 2. If URL matches target files:
    - Use `stepOver` (safest) or `stepInto` (if call is to your code)
@@ -477,11 +492,13 @@ const safeStepInto = (
    - Use `stepOut` (if callFrames.length > 1) or `resume`
 
 **Pros**:
+
 - Works without blackboxing
 - Works across all protocols
 - Fine-grained control
 
 **Cons**:
+
 - More code to maintain
 - Must check on every pause
 
@@ -495,6 +512,7 @@ const safeStepInto = (
 4. Add step limit (MAX_STEPS) to prevent infinite loops
 
 **Benefits**:
+
 - Defense in depth
 - Handles edge cases blackboxing might miss
 - Prevents infinite stepping
@@ -503,21 +521,25 @@ const safeStepInto = (
 ## Step Command Reference
 
 ### stepInto
+
 - **Behavior**: Step into next function call, or to next statement if no call
 - **Risk**: Can descend into third-party code and trigger V8 crashes
 - **Use when**: Blackboxing is active OR you've verified the call is to your code
 
 ### stepOver
+
 - **Behavior**: Execute next statement, skip over function calls
 - **Risk**: Low—stays at same call depth
 - **Use when**: You want to stay in current function
 
 ### stepOut
+
 - **Behavior**: Resume until current function returns, then pause
 - **Risk**: Low—goes up the call stack
 - **Use when**: You're in third-party code and want to return to your code
 
 ### resume
+
 - **Behavior**: Continue execution until next breakpoint/pause
 - **Risk**: Low—just continues
 - **Use when**: You want to skip over large sections or you're stuck in internals
@@ -527,6 +549,7 @@ const safeStepInto = (
 ### Problem
 
 Stepping through code can create infinite loops:
+
 - setInterval/setTimeout callbacks execute forever
 - Event listeners fire repeatedly
 - Recursive functions
@@ -541,14 +564,14 @@ let stepCount = 0
 
 if (event.method === "Debugger.paused") {
   stepCount++
-  
+
   if (stepCount >= MAX_STEPS) {
-    yield* Console.log(`🏁 Step limit (${MAX_STEPS}) reached`)
-    yield* debug.sendCommand(session, ResumeCommand)
-    yield* debug.disconnect(session)
-    yield* Effect.sync(() => process.exit(0))
+    yield * Console.log(`🏁 Step limit (${MAX_STEPS}) reached`)
+    yield * debug.sendCommand(session, ResumeCommand)
+    yield * debug.disconnect(session)
+    yield * Effect.sync(() => process.exit(0))
   }
-  
+
   // Continue stepping...
 }
 ```
@@ -561,11 +584,11 @@ const TARGET_LAST_LINE = 100
 
 if (event.method === "Debugger.paused") {
   const lineNumber = callFrames[0].location.lineNumber
-  
+
   if (lineNumber >= TARGET_LAST_LINE) {
-    yield* Console.log("🏁 Reached end of target script")
-    yield* debug.sendCommand(session, ResumeCommand)
-    yield* cleanupAndExit()
+    yield * Console.log("🏁 Reached end of target script")
+    yield * debug.sendCommand(session, ResumeCommand)
+    yield * cleanupAndExit()
   }
 }
 ```
@@ -618,6 +641,7 @@ const steppingSession = Effect.gen(function*() {
 **Cause**: Stepping into async/module boundary where V8 can't synthesize frames
 
 **Fix**:
+
 - Use `stepOver` instead of `stepInto`
 - Blackbox the script causing issues
 - Add URL check before stepping
@@ -628,6 +652,7 @@ const steppingSession = Effect.gen(function*() {
 **Cause**: Blackboxing not configured or patterns don't match
 
 **Fix**:
+
 - Check blackbox patterns include `node_modules/.*`
 - Verify patterns were applied (send command successfully)
 - Add dynamic blackboxing during scriptParsed
@@ -638,6 +663,7 @@ const steppingSession = Effect.gen(function*() {
 **Cause**: Stepping through setInterval/event loop code
 
 **Fix**:
+
 - Add MAX_STEPS limit
 - Check line number, stop after target script ends
 - Add session timeout
@@ -648,6 +674,7 @@ const steppingSession = Effect.gen(function*() {
 **Cause**: Call stack entirely in third-party code
 
 **Fix**:
+
 - Use `resume` instead of `stepOut`
 - Set breakpoint in your code and resume to it
 - Check all frames, not just top frame
@@ -662,21 +689,21 @@ interface DebuggerControl {
   readonly setBlackboxPatterns: (
     patterns: Array<string>
   ) => Effect.Effect<void, DebugError>
-  
+
   readonly setBlackboxedRanges: (
     scriptId: string,
     ranges: Array<{ start: Position; end: Position }>
   ) => Effect.Effect<void, DebugError>
-  
+
   // Safe stepping
   readonly safeStepInto: (
     targetUrls: Array<string>
   ) => Effect.Effect<void, DebugError>
-  
+
   readonly safeStepOver: Effect.Effect<void, DebugError>
-  
+
   readonly stepOut: Effect.Effect<void, DebugError>
-  
+
   // Auto-blackboxing
   readonly autoBlackboxThirdParty: (
     targetUrls: Array<string>
@@ -693,29 +720,29 @@ const stepThroughMyCode = Effect.gen(function*() {
     endpoint: "http://127.0.0.1:9229",
     transport: Debug.Transport.cdp()
   })
-  
+
   // Enable debugger
   yield* debug.sendCommand(session, EnableDebuggerCommand)
-  
+
   // Blackbox third-party code
   yield* debug.setBlackboxPatterns(session, [
     "node_modules/.*",
     "^node:.*",
     "^internal/.*"
   ])
-  
+
   // Auto-blackbox scripts as they're parsed
   yield* debug.autoBlackboxThirdParty(session, [
     "file:///path/to/my-app.js"
   ])
-  
+
   // Start stepping with limits
   yield* debug.stepThroughWithLimits(session, {
     maxSteps: 200,
     timeout: Duration.seconds(30),
     targetUrls: ["file:///path/to/my-app.js"]
   })
-  
+
   yield* debug.disconnect(session)
 })
 ```
@@ -723,6 +750,7 @@ const stepThroughMyCode = Effect.gen(function*() {
 ## References
 
 ### CDP Documentation
+
 - Debugger.setBlackboxPatterns: https://chromedevtools.github.io/devtools-protocol/tot/Debugger/#method-setBlackboxPatterns
 - Debugger.setBlackboxedRanges: https://chromedevtools.github.io/devtools-protocol/tot/Debugger/#method-setBlackboxedRanges
 - Debugger.stepInto: https://chromedevtools.github.io/devtools-protocol/tot/Debugger/#method-stepInto
@@ -730,18 +758,22 @@ const stepThroughMyCode = Effect.gen(function*() {
 - Debugger.stepOut: https://chromedevtools.github.io/devtools-protocol/tot/Debugger/#method-stepOut
 
 ### WebKit Inspector
+
 - Web Inspector Protocol: https://github.com/WebKit/WebKit/tree/main/Source/JavaScriptCore/inspector/protocol
 - Debugger domain: https://github.com/WebKit/WebKit/blob/main/Source/JavaScriptCore/inspector/protocol/Debugger.json
 
 ### Firefox RDP
+
 - Remote Debugging Protocol: https://firefox-source-docs.mozilla.org/devtools/backend/protocol.html
 - Thread actor: https://firefox-source-docs.mozilla.org/devtools/backend/actors.html
 
 ### V8 Inspector Issues
+
 - V8 issue tracker: https://bugs.chromium.org/p/v8/issues/list
 - Node.js inspector issues: https://github.com/nodejs/node/labels/inspector
 
 ### Related
+
 - Chrome DevTools blackboxing UI: https://developer.chrome.com/docs/devtools/settings/ignore-list/
 - VS Code skip files: https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_skipping-uninteresting-code
 

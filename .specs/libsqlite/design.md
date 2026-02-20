@@ -66,6 +66,7 @@ This document describes the architecture and implementation plan for a universal
 ## Code Examples (Illustrative)
 
 ### `src/paths.ts` (no logic, string constants)
+
 ```ts
 /** @since 3.50.2 */
 /** @category Paths */
@@ -79,6 +80,7 @@ export const linux_aarch64 = new URL("../lib/linux-aarch64/libsqlite3.so", impor
 ```
 
 ### `src/index.ts` (root, zero deps)
+
 ```ts
 export type Platform = "darwin-aarch64" | "darwin-x86_64" | "linux-x86_64" | "linux-aarch64"
 
@@ -138,10 +140,11 @@ export function getLibSqlitePathSync(platform?: Platform): string {
 ```
 
 ### `src/effect.ts` (Effect entrypoint)
+
 ```ts
-import * as Effect from "effect/Effect"
 import * as Context from "effect/Context"
 import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
 import { getLibSqlitePathSync } from "./index.js"
 
 export class PlatformNotSupportedError extends Data.TaggedError("PlatformNotSupportedError")<{
@@ -159,18 +162,20 @@ export const LibSqliteLive = Effect.succeed(LibSqlite, { path: getLibSqlitePathS
 
 export const getLibSqlitePath: Effect.Effect<string, PlatformNotSupportedError> = Effect.try({
   try: () => getLibSqlitePathSync(),
-  catch: (e) => new PlatformNotSupportedError({
-    platform: process.platform + "-" + process.arch,
-    help: [
-      "Unsupported platform detected.",
-      "Supported: darwin-aarch64, darwin-x86_64, linux-x86_64 (glibc), linux-aarch64 (glibc).",
-      "If you'd like support for this platform, please open an issue and we'll prioritize it."
-    ].join(" ")
-  })
+  catch: (e) =>
+    new PlatformNotSupportedError({
+      platform: process.platform + "-" + process.arch,
+      help: [
+        "Unsupported platform detected.",
+        "Supported: darwin-aarch64, darwin-x86_64, linux-x86_64 (glibc), linux-aarch64 (glibc).",
+        "If you'd like support for this platform, please open an issue and we'll prioritize it."
+      ].join(" ")
+    })
 })
 ```
 
 Notes:
+
 - Effect code uses `Effect.try` rather than `try/catch` in generators, preserving Effect error semantics.
 - No type assertions are used; tags and interfaces are precise.
 

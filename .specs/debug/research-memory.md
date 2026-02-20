@@ -1,37 +1,43 @@
 # Memory Debugging Research
 
 ## Summary
+
 Modern JavaScript runtimes expose memory debugging capabilities through their inspector protocols, enabling heap snapshots, allocation tracking, garbage collection monitoring, and leak detection. CDP-based runtimes (Chrome, Node.js, Deno, Workers) provide the most comprehensive tooling via `HeapProfiler` and `Profiler` domains, while WebKit and Firefox offer equivalent features through their respective protocols. Memory debugging is essential for identifying leaks, optimizing allocations, and understanding runtime memory behavior in Effect applications.
 
 ## Capability Overview
 
 ### Heap Snapshots
+
 - **What**: Point-in-time capture of all objects in the heap with their sizes, references, and retention paths.
 - **Protocols**: CDP (`HeapProfiler.takeHeapSnapshot`), WebKit Inspector (`Heap.snapshot`), Firefox RDP (`memory` actor).
 - **Use Cases**: Memory leak detection, object retention analysis, identifying unexpectedly large objects.
 - **Format**: Typically JSON with nodes array (objects) and edges array (references between objects).
 
 ### Allocation Tracking
+
 - **What**: Record every allocation with stack traces to identify where objects are created.
 - **Protocols**: CDP (`HeapProfiler.startTrackingHeapObjects`, `HeapProfiler.stopTrackingHeapObjects`), WebKit sampling allocations.
 - **Use Cases**: Finding allocation hot spots, tracking memory growth over time, identifying temporary object churn.
 - **Output**: Timeline of allocations with sizes and call stacks.
 
 ### Sampling Heap Profiler
+
 - **What**: Statistical sampling of allocations (lower overhead than full tracking).
 - **Protocols**: CDP (`HeapProfiler.startSampling`, `HeapProfiler.stopSampling`), WebKit Inspector.
 - **Use Cases**: Production-safe profiling, identifying major allocation sources without full tracking overhead.
 - **Sampling Rate**: Configurable (e.g., sample every 32KB of allocations).
 
 ### Garbage Collection Monitoring
+
 - **What**: Observe GC events, pause times, and heap statistics.
 - **Protocols**: CDP (`HeapProfiler.collectGarbage`, `Runtime.getHeapUsage`), WebKit Inspector, Node.js `v8` module.
 - **Use Cases**: Understanding GC pressure, optimizing allocation patterns, detecting GC thrashing.
 - **Metrics**: Heap size, used heap, GC pause duration, GC type (scavenge vs. mark-compact).
 
 ### Memory Leak Detection
+
 - **What**: Compare snapshots over time to find growing retainer sets.
-- **Techniques**: 
+- **Techniques**:
   - Three-snapshot technique (baseline → action → repeat → compare)
   - Detached DOM nodes (browsers)
   - Retainer path analysis
@@ -43,6 +49,7 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 ### Chrome DevTools Protocol (CDP)
 
 #### HeapProfiler Domain
+
 - **`HeapProfiler.takeHeapSnapshot`**: Captures full heap snapshot, streams as `HeapProfiler.addHeapSnapshotChunk` events.
 - **`HeapProfiler.startTrackingHeapObjects`**: Begin recording allocations with optional `trackAllocations` flag.
 - **`HeapProfiler.stopTrackingHeapObjects`**: Stop tracking, optionally report statistics.
@@ -52,10 +59,12 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 - **`HeapProfiler.collectGarbage`**: Force a garbage collection.
 
 #### Runtime Domain (Memory-Related)
+
 - **`Runtime.getHeapUsage`**: Returns `usedSize` and `totalSize` in bytes.
 - **`Runtime.evaluate`**: Can check `performance.memory` in browsers (non-standard but widely available).
 
 #### Memory Domain (Experimental in some Chrome versions)
+
 - **`Memory.getDOMCounters`**: Browser-specific, returns document/node/listener counts.
 - **`Memory.prepareForLeakDetection`**: Runs GC and clears caches before leak detection.
 - **`Memory.startSampling`**: Similar to HeapProfiler sampling.
@@ -63,6 +72,7 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 ### WebKit Inspector Protocol
 
 #### Heap Domain
+
 - **`Heap.enable`**: Enable heap tracking.
 - **`Heap.disable`**: Disable heap tracking.
 - **`Heap.gc`**: Trigger garbage collection.
@@ -72,6 +82,7 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 - **`Heap.getPreview`**: Get object preview by heap object ID.
 
 #### Events
+
 - **`Heap.garbageCollected`**: Fired after GC with collection type and duration.
 - **`Heap.trackingStart`**: Tracking has started.
 - **`Heap.trackingComplete`**: Tracking completed with snapshot data.
@@ -79,6 +90,7 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 ### Firefox Remote Debug Protocol (RDP)
 
 #### Memory Actor
+
 - **`attach`**: Attach to memory actor for a target.
 - **`detach`**: Detach from memory actor.
 - **`measure`**: Get current memory measurements (compartments, GC stats).
@@ -90,30 +102,32 @@ Modern JavaScript runtimes expose memory debugging capabilities through their in
 - **`saveHeapSnapshot`**: Save heap snapshot to disk, returns file path.
 
 ### Node.js V8 Module (In-Process)
+
 While not a remote protocol, Node.js provides the `v8` module for in-process memory inspection:
 
 ```javascript
-const v8 = require('v8');
+const v8 = require("v8")
 
 // Heap statistics
-const heapStats = v8.getHeapStatistics();
+const heapStats = v8.getHeapStatistics()
 // { total_heap_size, used_heap_size, heap_size_limit, ... }
 
 // Heap spaces
-const heapSpaces = v8.getHeapSpaceStatistics();
+const heapSpaces = v8.getHeapSpaceStatistics()
 // [{ space_name, space_size, space_used_size, ... }, ...]
 
 // Heap snapshot to stream
-const stream = v8.getHeapSnapshot();
-stream.pipe(fs.createWriteStream('heap.heapsnapshot'));
+const stream = v8.getHeapSnapshot()
+stream.pipe(fs.createWriteStream("heap.heapsnapshot"))
 
 // Code statistics
-const codeStats = v8.getHeapCodeStatistics();
+const codeStats = v8.getHeapCodeStatistics()
 ```
 
 ## Heap Snapshot Format
 
 ### V8 Heap Snapshot (.heapsnapshot)
+
 Used by Chrome, Node.js, Deno, Cloudflare Workers:
 
 ```json
@@ -135,6 +149,7 @@ Used by Chrome, Node.js, Deno, Cloudflare Workers:
 ```
 
 ### Analysis Techniques
+
 1. **Retainer Paths**: Walk edges backwards from object to GC roots to find what's keeping it alive.
 2. **Dominators**: Identify objects that, if freed, would free other objects (dominator tree).
 3. **Shallow vs. Retained Size**: Shallow = object's own size; Retained = size of objects kept alive by this object.
@@ -306,43 +321,44 @@ sock.close()
 ### Programmatic Snapshot Analysis (Node.js)
 
 ```javascript
-import CDP from 'chrome-remote-interface';
-import fs from 'fs';
+import CDP from "chrome-remote-interface"
+import fs from "fs"
 
 // Connect to Node.js inspector
-const client = await CDP({ port: 9229 });
-const { HeapProfiler, Runtime } = client;
+const client = await CDP({ port: 9229 })
+const { HeapProfiler, Runtime } = client
 
-await HeapProfiler.enable();
+await HeapProfiler.enable()
 
 // Take snapshot
-const chunks = [];
+const chunks = []
 HeapProfiler.addHeapSnapshotChunk(({ chunk }) => {
-  chunks.push(chunk);
-});
+  chunks.push(chunk)
+})
 
-await HeapProfiler.takeHeapSnapshot();
+await HeapProfiler.takeHeapSnapshot()
 
 // Save snapshot
-const snapshot = chunks.join('');
-fs.writeFileSync('heap.heapsnapshot', snapshot);
-console.log('Snapshot saved:', snapshot.length, 'bytes');
+const snapshot = chunks.join("")
+fs.writeFileSync("heap.heapsnapshot", snapshot)
+console.log("Snapshot saved:", snapshot.length, "bytes")
 
 // Parse and analyze
-const data = JSON.parse(snapshot);
-console.log('Node count:', data.snapshot.node_count);
-console.log('Edge count:', data.snapshot.edge_count);
+const data = JSON.parse(snapshot)
+console.log("Node count:", data.snapshot.node_count)
+console.log("Edge count:", data.snapshot.edge_count)
 
 // Get current heap usage
-const { usedSize, totalSize } = await Runtime.getHeapUsage();
-console.log(`Heap: ${(usedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+const { usedSize, totalSize } = await Runtime.getHeapUsage()
+console.log(`Heap: ${(usedSize / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB`)
 
-await client.close();
+await client.close()
 ```
 
 ## Memory Leak Detection Techniques
 
 ### Three-Snapshot Technique
+
 1. **Baseline**: Take snapshot before suspected leak action.
 2. **Action**: Perform the action that may leak (e.g., open/close modal 10 times).
 3. **Repeat**: Perform action again.
@@ -350,36 +366,41 @@ await client.close();
 
 ```javascript
 // Pseudocode for three-snapshot leak detection
-const snapshot1 = await takeHeapSnapshot();  // Baseline
-await performAction();                        // First action
-const snapshot2 = await takeHeapSnapshot();  // After first action
-await performAction();                        // Repeat action
-const snapshot3 = await takeHeapSnapshot();  // After repeat
+const snapshot1 = await takeHeapSnapshot() // Baseline
+await performAction() // First action
+const snapshot2 = await takeHeapSnapshot() // After first action
+await performAction() // Repeat action
+const snapshot3 = await takeHeapSnapshot() // After repeat
 
 // Analyze: Objects in snapshot3 that weren't in snapshot1
 // but are similar to objects added in snapshot2 → likely leaks
-const leaked = findObjectsGrowingBetween(snapshot2, snapshot3);
+const leaked = findObjectsGrowingBetween(snapshot2, snapshot3)
 ```
 
 ### Allocation Timeline
+
 1. **Start Tracking**: `HeapProfiler.startTrackingHeapObjects({"trackAllocations": true})`.
 2. **Perform Actions**: Execute code that may allocate.
 3. **Stop Tracking**: `HeapProfiler.stopTrackingHeapObjects({"reportProgress": true})`.
 4. **Analyze Timeline**: Look for allocations that never get freed.
 
 ### Retainer Path Analysis
+
 For each leaked object, walk the retainer chain to find the root:
+
 ```
 Object → retainedBy → parentObject → retainedBy → EventListener → retainedBy → Window (root)
 ```
 
 Common leak patterns:
+
 - **Forgotten Event Listeners**: DOM nodes retained by event listeners.
 - **Closures**: Functions capturing large scopes.
 - **Global References**: Accidental globals or module-level caches.
 - **Detached DOM**: DOM nodes removed from document but still referenced.
 
 ### Snapshot Comparison Tools
+
 - **Chrome DevTools**: Load multiple snapshots, use "Comparison" view.
 - **@memlab/api**: Automated leak detection framework by Meta.
 - **heapsnapshot-parser**: Node.js library for parsing .heapsnapshot files.
@@ -387,6 +408,7 @@ Common leak patterns:
 ## Runtime-Specific Considerations
 
 ### Node.js
+
 - **`--max-old-space-size`**: Set heap limit (default ~2GB on 64-bit).
 - **`--expose-gc`**: Expose `global.gc()` for manual GC triggers.
 - **`--heap-prof`**: Generate heap profile on exit.
@@ -394,23 +416,27 @@ Common leak patterns:
 - **Native Addons**: C++ memory not visible in heap snapshots.
 
 ### Deno
+
 - **V8 Flags**: Use `--v8-flags=--expose-gc` for manual GC.
 - **Permissions**: Heap snapshots require `--allow-env` and `--allow-read` for file access.
 - **Worker Isolation**: Each worker has separate heap; snapshot per worker.
 
 ### Cloudflare Workers
+
 - **Local Dev Only**: Heap profiling available in `wrangler dev`, not production.
 - **Memory Limits**: 128MB limit enforced; heap snapshots show isolate usage.
 - **Ephemeral Isolates**: Worker isolate recycled after requests; snapshots are per-session.
 - **No Persistent State**: Heap resets between invocations in production.
 
 ### Browsers
+
 - **Detached DOM Nodes**: Common leak source; nodes removed from DOM but still referenced.
 - **Service Workers**: Separate heap; profile via `chrome://inspect`.
 - **SharedArrayBuffer**: Shared memory not tracked in heap snapshots.
 - **Web Workers**: Each worker has isolated heap; profile separately.
 
 ### Bun (JavaScriptCore)
+
 - **JSC Heap**: Different GC algorithm than V8 (generational, incremental).
 - **WebKit Inspector**: Heap snapshots via WebKit protocol, different format than V8.
 - **Native Modules**: FFI allocations not tracked in heap snapshots.
@@ -420,9 +446,9 @@ Common leak patterns:
 ### Memory Profiling Service Design
 
 ```typescript
+import * as Schema from "@effect/schema/Schema"
 import * as Effect from "effect/Effect"
 import * as Stream from "effect/Stream"
-import * as Schema from "@effect/schema/Schema"
 
 // Memory snapshot chunk schema
 const HeapSnapshotChunk = Schema.Struct({
@@ -451,17 +477,17 @@ const SamplingProfile = Schema.Struct({
 interface MemoryDebug {
   // Get current heap usage
   readonly getHeapUsage: Effect.Effect<typeof HeapUsage.Type, DebugError>
-  
+
   // Take heap snapshot (streaming)
   readonly takeHeapSnapshot: Effect.Effect<
     Stream.Stream<string, DebugError>,
     DebugError
   >
-  
+
   // Start/stop allocation tracking
   readonly startTrackingAllocations: Effect.Effect<void, DebugError>
   readonly stopTrackingAllocations: Effect.Effect<void, DebugError>
-  
+
   // Sampling heap profiler
   readonly startSamplingHeapProfiler: (
     samplingInterval?: number
@@ -470,7 +496,7 @@ interface MemoryDebug {
     typeof SamplingProfile.Type,
     DebugError
   >
-  
+
   // Force garbage collection
   readonly collectGarbage: Effect.Effect<void, DebugError>
 }
@@ -479,70 +505,70 @@ interface MemoryDebug {
 ### Example Usage
 
 ```typescript
-import * as Effect from "effect/Effect"
-import * as Stream from "effect/Stream"
 import * as Debug from "@effect-native/debug"
 import * as NodeFs from "@effect/platform-node/NodeFileSystem"
+import * as Effect from "effect/Effect"
+import * as Stream from "effect/Stream"
 
-const detectMemoryLeak = Effect.gen(function* () {
+const detectMemoryLeak = Effect.gen(function*() {
   const debug = yield* Debug.Debug
   const fs = yield* NodeFs.NodeFileSystem
-  
+
   // Connect to Node.js inspector
-  yield* debug.connect({ 
+  yield* debug.connect({
     endpoint: "http://127.0.0.1:9229",
-    type: "cdp" 
+    type: "cdp"
   })
-  
+
   // Enable heap profiler
   yield* debug.sendCommand({
     method: "HeapProfiler.enable"
   })
-  
+
   // Take baseline snapshot
   console.log("Taking baseline snapshot...")
   const baseline = yield* debug.memory.takeHeapSnapshot
   yield* Stream.runCollect(baseline).pipe(
-    Effect.map(chunks => chunks.join("")),
-    Effect.flatMap(data => fs.writeFileString("baseline.heapsnapshot", data))
+    Effect.map((chunks) => chunks.join("")),
+    Effect.flatMap((data) => fs.writeFileString("baseline.heapsnapshot", data))
   )
-  
+
   // Perform suspected leak action
   yield* performSuspectedLeakAction()
-  
+
   // Take second snapshot
   console.log("Taking second snapshot...")
   const snapshot2 = yield* debug.memory.takeHeapSnapshot
   yield* Stream.runCollect(snapshot2).pipe(
-    Effect.map(chunks => chunks.join("")),
-    Effect.flatMap(data => fs.writeFileString("snapshot2.heapsnapshot", data))
+    Effect.map((chunks) => chunks.join("")),
+    Effect.flatMap((data) => fs.writeFileString("snapshot2.heapsnapshot", data))
   )
-  
+
   // Repeat action
   yield* performSuspectedLeakAction()
-  
+
   // Take third snapshot
   console.log("Taking third snapshot...")
   const snapshot3 = yield* debug.memory.takeHeapSnapshot
   yield* Stream.runCollect(snapshot3).pipe(
-    Effect.map(chunks => chunks.join("")),
-    Effect.flatMap(data => fs.writeFileString("snapshot3.heapsnapshot", data))
+    Effect.map((chunks) => chunks.join("")),
+    Effect.flatMap((data) => fs.writeFileString("snapshot3.heapsnapshot", data))
   )
-  
+
   console.log("Snapshots saved. Compare in Chrome DevTools.")
-  
+
   yield* debug.disconnect()
 })
 
 // Heap usage monitoring
-const monitorHeapUsage = Effect.gen(function* () {
+const monitorHeapUsage = Effect.gen(function*() {
   const debug = yield* Debug.Debug
-  
+
   yield* debug.connect({ endpoint: "http://127.0.0.1:9229" })
-  
+
   // Monitor heap every 5 seconds
   yield* Effect.repeat(
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const usage = yield* debug.memory.getHeapUsage
       const usedMB = (usage.usedSize / 1024 / 1024).toFixed(2)
       const totalMB = (usage.totalSize / 1024 / 1024).toFixed(2)
@@ -553,25 +579,25 @@ const monitorHeapUsage = Effect.gen(function* () {
 })
 
 // Sampling profiler
-const profileAllocations = Effect.gen(function* () {
+const profileAllocations = Effect.gen(function*() {
   const debug = yield* Debug.Debug
-  
+
   yield* debug.connect({ endpoint: "http://127.0.0.1:9229" })
   yield* debug.sendCommand({ method: "HeapProfiler.enable" })
-  
+
   // Start sampling (sample every 32KB)
   yield* debug.memory.startSamplingHeapProfiler(32768)
-  
+
   // Run workload
   yield* runWorkload()
-  
+
   // Stop and get profile
   const profile = yield* debug.memory.stopSamplingHeapProfiler
-  
+
   // Analyze top allocation sites
   console.log("Top allocations:")
   printAllocationTree(profile.head)
-  
+
   yield* debug.disconnect()
 })
 ```
@@ -579,6 +605,7 @@ const profileAllocations = Effect.gen(function* () {
 ## Testing Requirements
 
 ### Memory Debugging Tests
+
 - **Heap Snapshot Streaming**: Verify complete snapshot can be captured and saved.
 - **Heap Usage Accuracy**: Compare CDP `getHeapUsage` with in-process `v8.getHeapStatistics()`.
 - **GC Triggering**: Ensure `collectGarbage` command reduces heap size.
@@ -588,84 +615,82 @@ const profileAllocations = Effect.gen(function* () {
 ### Integration Test Example
 
 ```typescript
-import { describe, it, expect } from "vitest"
-import * as Effect from "effect/Effect"
 import * as Debug from "@effect-native/debug"
+import * as Effect from "effect/Effect"
+import { describe, expect, it } from "vitest"
 
 describe("Memory Debugging", () => {
   it.effect("should capture heap snapshot", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const debug = yield* Debug.Debug
-      
+
       yield* debug.connect({ endpoint: "http://127.0.0.1:9229" })
       yield* debug.sendCommand({ method: "HeapProfiler.enable" })
-      
+
       const snapshot = yield* debug.memory.takeHeapSnapshot
       const chunks = yield* Stream.runCollect(snapshot)
-      
+
       expect(chunks.length).toBeGreaterThan(0)
-      
+
       const data = chunks.join("")
       const parsed = JSON.parse(data)
-      
+
       expect(parsed.snapshot).toBeDefined()
       expect(parsed.snapshot.node_count).toBeGreaterThan(0)
       expect(parsed.nodes).toBeDefined()
       expect(parsed.edges).toBeDefined()
-      
+
       yield* debug.disconnect()
-    })
-  )
-  
+    }))
+
   it.effect("should get heap usage", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const debug = yield* Debug.Debug
-      
+
       yield* debug.connect({ endpoint: "http://127.0.0.1:9229" })
-      
+
       const usage = yield* debug.memory.getHeapUsage
-      
+
       expect(usage.usedSize).toBeGreaterThan(0)
       expect(usage.totalSize).toBeGreaterThan(usage.usedSize)
-      
+
       yield* debug.disconnect()
-    })
-  )
-  
+    }))
+
   it.effect("should reduce heap after GC", () =>
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const debug = yield* Debug.Debug
-      
+
       yield* debug.connect({ endpoint: "http://127.0.0.1:9229" })
-      
+
       // Allocate large array
       yield* debug.sendCommand({
         method: "Runtime.evaluate",
         params: { expression: "globalThis.leak = new Array(1000000).fill(0)" }
       })
-      
+
       const before = yield* debug.memory.getHeapUsage
-      
+
       // Clear reference and GC
       yield* debug.sendCommand({
         method: "Runtime.evaluate",
         params: { expression: "delete globalThis.leak" }
       })
       yield* debug.memory.collectGarbage
-      
+
       const after = yield* debug.memory.getHeapUsage
-      
+
       expect(after.usedSize).toBeLessThan(before.usedSize)
-      
+
       yield* debug.disconnect()
-    })
-  )
+    }))
 })
 ```
 
 ## Tools and Libraries
 
 ### Analysis Tools
+
 - **Chrome DevTools Memory Tab**: Load .heapsnapshot files, compare snapshots, analyze retainers.
 - **@memlab/api**: Meta's automated leak detection (https://facebook.github.io/memlab/).
 - **heapsnapshot-parser**: Node.js parser for .heapsnapshot files.
@@ -673,6 +698,7 @@ describe("Memory Debugging", () => {
 - **0x**: Node.js flamegraph profiler (CPU, but useful with heap data).
 
 ### Snapshot Parsers
+
 ```bash
 # Install heapsnapshot-parser
 npm install heapsnapshot-parser
@@ -698,40 +724,42 @@ console.log('Retainers:', retainers);
 ### MemLab Example (Automated Leak Detection)
 
 ```javascript
-import { findLeaks } from '@memlab/api';
+import { findLeaks } from "@memlab/api"
 
 const scenario = {
-  url: () => 'http://localhost:3000',
-  
+  url: () => "http://localhost:3000",
+
   // Initial action
   action: async (page) => {
-    await page.click('#open-modal');
+    await page.click("#open-modal")
   },
-  
+
   // Action that should cleanup
   back: async (page) => {
-    await page.click('#close-modal');
+    await page.click("#close-modal")
   }
-};
+}
 
-const leaks = await findLeaks(scenario);
+const leaks = await findLeaks(scenario)
 
 if (leaks.length > 0) {
-  console.log('Memory leaks detected:');
-  leaks.forEach(leak => {
-    console.log(`- ${leak.retainedSize} bytes: ${leak.className}`);
-  });
+  console.log("Memory leaks detected:")
+  leaks.forEach((leak) => {
+    console.log(`- ${leak.retainedSize} bytes: ${leak.className}`)
+  })
 }
 ```
 
 ## Best Practices
 
 ### Snapshot Timing
+
 - **After GC**: Always run GC before taking snapshots for consistency.
 - **Idle State**: Take snapshots when app is idle, not mid-action.
 - **Warm-Up**: Run actions once before baseline snapshot to stabilize JIT/optimizations.
 
 ### Leak Investigation
+
 1. **Reproduce Reliably**: Ensure leak is consistent and reproducible.
 2. **Isolate**: Remove code sections until leak disappears.
 3. **Compare Snapshots**: Use 3-snapshot technique to isolate growth.
@@ -739,6 +767,7 @@ if (leaks.length > 0) {
 5. **Fix and Verify**: Re-test with snapshots to confirm fix.
 
 ### Production Monitoring
+
 - **Sampling Only**: Use sampling heap profiler in production (lower overhead).
 - **Heap Usage Metrics**: Monitor `Runtime.getHeapUsage` regularly.
 - **GC Metrics**: Track GC frequency and pause times.
@@ -746,6 +775,7 @@ if (leaks.length > 0) {
 - **Avoid Full Snapshots**: Too expensive for production; use only in staging.
 
 ### Effect-Specific Considerations
+
 - **Scope Lifecycle**: Effect scopes can capture large closures; profile scope retention.
 - **Fiber Leaks**: Long-running fibers that never complete can leak memory.
 - **Layer Caching**: Shared layers cache services; profile service retention.
@@ -754,12 +784,14 @@ if (leaks.length > 0) {
 ## Security Considerations
 
 ### Snapshot Contents
+
 - **Secrets**: Heap snapshots contain all in-memory data including secrets, tokens, passwords.
 - **PII**: User data (emails, names, addresses) visible in snapshots.
 - **Encryption**: Consider encrypting snapshots at rest.
 - **Sanitization**: Redact sensitive data before sharing snapshots.
 
 ### Inspector Access
+
 - **Bind Localhost**: Always bind inspector to 127.0.0.1 in production-like environments.
 - **Firewall**: Block inspector ports from external access.
 - **Authentication**: Some runtimes support inspector authentication; use it.
@@ -768,6 +800,7 @@ if (leaks.length > 0) {
 ## References
 
 ### Protocol Documentation
+
 - Chrome DevTools Protocol - HeapProfiler: https://chromedevtools.github.io/devtools-protocol/tot/HeapProfiler/
 - Chrome DevTools Protocol - Runtime: https://chromedevtools.github.io/devtools-protocol/tot/Runtime/
 - WebKit Web Inspector - Heap: https://github.com/WebKit/WebKit/blob/main/Source/JavaScriptCore/inspector/protocol/Heap.json
@@ -775,12 +808,14 @@ if (leaks.length > 0) {
 - Node.js v8 module: https://nodejs.org/api/v8.html
 
 ### Analysis Tools
+
 - Chrome DevTools Memory Profiling: https://developer.chrome.com/docs/devtools/memory-problems/
 - MemLab: https://facebook.github.io/memlab/
 - heapsnapshot-parser: https://github.com/kumavis/heapsnapshot-parser
 - Clinic.js: https://clinicjs.org/
 
 ### Learning Resources
+
 - Memory leak patterns: https://developers.google.com/web/tools/chrome-devtools/memory-problems/memory-101
 - V8 garbage collection: https://v8.dev/blog/trash-talk
 - Heap snapshot format: https://github.com/v8/v8/blob/main/src/profiler/heap-snapshot-generator.h

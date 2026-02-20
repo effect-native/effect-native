@@ -13,6 +13,7 @@ The specification must remain implementation-agnostic while being rich enough fo
 ## Functional Requirements
 
 ### 1. Canonical Data Schemas
+
 - Provide normalized schemas using `@effect/schema/Schema` for the following core domains:
   - **Institution** (financial institution metadata, capabilities, compliance constraints).
   - **Party** (person or organization, KYC/KYB attributes, risk profile).
@@ -38,6 +39,7 @@ The specification must remain implementation-agnostic while being rich enough fo
 - Commerce artifacts must express fungibility, divisibility, and uniqueness constraints; attach valuation sources and provenance (issuer, grading/certification body, minting/edition identifiers, serial numbers); and allow linking to custody accounts or escrow arrangements so game economies, collectible marketplaces, and cash-based merchants can share the same primitives.
 
 ### 2. Service Abstractions
+
 - Define Effect services for the following capability areas, each with explicit error models:
   - **InstitutionDirectoryService** for discovery of supported institutions and capabilities.
   - **AccountAggregationService** for linking, refreshing, and revoking account connections.
@@ -57,20 +59,24 @@ The specification must remain implementation-agnostic while being rich enough fo
 - Errors must use `Data.TaggedError` hierarchies with common discriminators (`type`, `reason`, `institutionId`, etc.).
 
 ### 3. Capability Modeling
+
 - Introduce a capability description model that drivers use to declare supported features (e.g., `supportsRealTimeBalances`, `transferLimits`, `statementFormats`).
 - Provide guidance on fallback behavior when capabilities are absent (e.g., degrade to batch sync, raise `CapabilityUnavailableError`).
 - Extend the taxonomy with commerce and experience facets (catalog depth, inventory reservations, customization rules, cart persistence, offer personalization, entitlement issuance, loyalty accrual, secondary-market resale permissions) so applications can negotiate features across consumer retail, professional services, gaming marketplaces, DeFi, and collectibles trading.
 
 ### 4. Security & Compliance Metadata
+
 - Require tracking of consent scopes, validity periods, and revocation metadata on all sensitive operations.
 - Include audit trails for data fetches and state changes (who performed the action, with which credentials, and correlation IDs).
 - Ensure schemas accommodate jurisdictional metadata (e.g., PSD2, NACHA, FINRA obligations).
 
 ### 5. Persistence & State Expectations
+
 - Describe minimal persistence contracts that a driver or host application might need (token storage, cursor checkpoints, scheduling state).
 - Define interfaces for pluggable storage abstractions (e.g., `CredentialStore`, `SyncStateStore`) without prescribing specific databases.
 
 ### 6. Testing & Validation Requirements
+
 - Provide contract-test guidance that driver packages must satisfy (e.g., test harness for transaction sync, transfer execution, failure scenarios).
 - Define scenario-driven validation suites covering local retail POS, cash-only settlements, crypto smart-contract obligations, online retail carts, marketplace consignments, SaaS subscriptions, personal finance aggregation, bank core ledgers, simulation games, RPG economies, and collectible exchanges to prevent over/under abstraction.
 - Require example JSON payloads for each schema with validation rules and invariants to aid implementers.

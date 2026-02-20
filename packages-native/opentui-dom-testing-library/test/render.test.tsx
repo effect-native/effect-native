@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, afterEach } from "bun:test"
+import { afterEach, beforeAll, describe, expect, it } from "bun:test"
 import React from "react"
-import { setupHappyDom, render, cleanup } from "../src/index.js"
+import { cleanup, render, setupHappyDom } from "../src/index.js"
 
 // Setup happy-dom before all tests
 beforeAll(() => {
@@ -52,13 +52,11 @@ describe("render()", () => {
   })
 
   it("supports custom wrapper components", () => {
-    const Wrapper = ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="wrapper">{children}</div>
-    )
+    const Wrapper = ({ children }: { children: React.ReactNode }) => <div data-testid="wrapper">{children}</div>
 
     const { container } = render(<span>Content</span>, { wrapper: Wrapper })
 
-    expect(container.querySelector('[data-testid="wrapper"]')).toBeDefined()
+    expect(container.querySelector("[data-testid=\"wrapper\"]")).toBeDefined()
     expect(container.innerHTML).toContain("Content")
   })
 

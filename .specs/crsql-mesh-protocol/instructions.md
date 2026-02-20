@@ -26,12 +26,15 @@ so that I can implement mesh synchronization without inventing my own protocol a
 ## What This Package Covers
 
 ### Summary Exchange
+
 Peers need to tell each other what data versions they have seen from various sites in the mesh. This enables efficient diff-based synchronization rather than broadcasting everything.
 
 ### Diff Requests
+
 When a peer learns it is missing data, it needs a standard way to ask another peer to send the missing changes.
 
 ### Change Delivery
+
 The response to a diff request: a batch of change rows that the requesting peer can apply to catch up.
 
 ## Out of Scope

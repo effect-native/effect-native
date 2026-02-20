@@ -20,11 +20,13 @@ artifacts:
 ## Summary
 
 Build a TodoMVC application using:
+
 - **effect-atom** (`@effect-atom/atom-react`) for state management
 - **React** for the UI layer
 - **Effect** for structured effects and services
 
 This serves as:
+
 1. A real-world example of effect-atom usage
 2. A debuggable target application for the debug POC demo
 3. A contribution to the TodoMVC ecosystem
@@ -37,6 +39,7 @@ This serves as:
 ## Why TodoMVC?
 
 TodoMVC is the canonical example app for demonstrating state management libraries. Having an effect-atom implementation:
+
 - Makes effect-atom approachable for new users
 - Provides a standard, well-understood codebase for debugging demos
 - Allows comparison with other state management approaches
@@ -58,6 +61,7 @@ Standard TodoMVC spec (https://github.com/tastejs/todomvc):
 ## Technical Requirements
 
 ### Stack
+
 - React 19+ (with modern patterns, no forwardRef)
 - effect-atom for state management
 - Effect for services (persistence layer)
@@ -78,7 +82,7 @@ interface Todo {
 
 // State atoms
 const todosAtom = Atom.make<Todo[]>([]).pipe(Atom.keepAlive)
-const filterAtom = Atom.make<'all' | 'active' | 'completed'>('all')
+const filterAtom = Atom.make<"all" | "active" | "completed">("all")
 
 // Derived atoms
 const filteredTodosAtom = Atom.make((get) => {
@@ -87,9 +91,7 @@ const filteredTodosAtom = Atom.make((get) => {
   // filter logic
 })
 
-const activeCountAtom = Atom.map(todosAtom, todos => 
-  todos.filter(t => !t.completed).length
-)
+const activeCountAtom = Atom.map(todosAtom, (todos) => todos.filter((t) => !t.completed).length)
 ```
 
 ### Persistence Layer
@@ -100,14 +102,15 @@ Using Effect Service pattern:
 class TodoStorage extends Effect.Service<TodoStorage>()("TodoStorage", {
   effect: Effect.gen(function*() {
     const load = Effect.try(() => {
-      const json = localStorage.getItem('todos')
+      const json = localStorage.getItem("todos")
       return json ? JSON.parse(json) : []
     })
-    
-    const save = (todos: Todo[]) => Effect.try(() => {
-      localStorage.setItem('todos', JSON.stringify(todos))
-    })
-    
+
+    const save = (todos: Todo[]) =>
+      Effect.try(() => {
+        localStorage.setItem("todos", JSON.stringify(todos))
+      })
+
     return { load, save } as const
   })
 }) {}
@@ -116,9 +119,11 @@ class TodoStorage extends Effect.Service<TodoStorage>()("TodoStorage", {
 ## Subtasks
 
 ### Research
+
 - `.tasks/research/todomvc-spec.md` - Review TodoMVC spec requirements
 
 ### Implementation (in order)
+
 - `.tasks/impl/todomvc-scaffold.md` - Project setup (Vite, React, deps)
 - `.tasks/impl/todomvc-atoms.md` - State atoms and derived state
 - `.tasks/impl/todomvc-storage.md` - Effect Service for persistence

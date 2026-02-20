@@ -21,6 +21,7 @@ Bramwell, please verify the miniapp is fully accessible via keyboard.
 ## Steps
 
 ### Full Keyboard Navigation Test
+
 1. Launch miniapp: `cd packages-native/opentui-dom && pnpm tui-dom`
 2. Starting from the top, press Tab repeatedly
 3. Count how many Tab presses to reach the last focusable element
@@ -28,6 +29,7 @@ Bramwell, please verify the miniapp is fully accessible via keyboard.
 5. Verify you can reach ALL interactive elements via Tab
 
 ### Accesskey Test
+
 6. Press Alt+N - should focus Name input
 7. Press Alt+E - should focus Email input
 8. Press Alt+D - should open Dialog
@@ -35,18 +37,21 @@ Bramwell, please verify the miniapp is fully accessible via keyboard.
 10. Press Alt+R - should reset form
 
 ### Radio Group Navigation
+
 11. Tab to the radio group
 12. Press Arrow Down/Right - should select next option
 13. Press Arrow Up/Left - should select previous option
 14. Verify only one radio is selected at a time
 
 ### Select/Dropdown Navigation
+
 15. Tab to the select dropdown
 16. Press Arrow Down to open/navigate options
 17. Press Enter to select
 18. Press Escape to close without selecting
 
 ### Dialog Focus Trap
+
 19. Open dialog (Alt+D or click)
 20. Press Tab repeatedly
 21. Verify focus stays INSIDE the dialog (doesn't escape)
@@ -54,6 +59,7 @@ Bramwell, please verify the miniapp is fully accessible via keyboard.
 23. Verify focus returns to the element that opened the dialog
 
 ### Form Submission via Keyboard
+
 24. Fill out form using only keyboard
 25. Press Enter or Alt+S to submit
 26. Verify submission works

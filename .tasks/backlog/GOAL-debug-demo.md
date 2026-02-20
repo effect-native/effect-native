@@ -63,9 +63,11 @@ The TodoMVC app must be complete before this POC can demonstrate debugging it.
 ## Subtasks
 
 Blocking dependency (in peer repo):
+
 - `../todomvc/.tasks/GOAL-effect-atom.md` - Must be complete first
 
 Implementation (in this repo):
+
 - `.tasks/impl/debug-todomvc-poc.md` - POC script implementation
 
 ## Non-Goals

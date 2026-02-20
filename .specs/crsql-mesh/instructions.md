@@ -5,6 +5,7 @@
 CR-SQLite provides conflict-free replicated SQLite databases, but it only provides the merge semantics and storage. There is currently no standard way to coordinate synchronization between multiple replicas running across different processes, threads, devices, or network boundaries.
 
 Each replica today must implement its own ad-hoc sync logic to:
+
 - detect when local changes have occurred
 - package those changes for transmission
 - receive changes from other replicas

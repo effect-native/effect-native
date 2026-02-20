@@ -55,6 +55,7 @@ These are community actions. No value in rewriting them in TS.
 ```
 
 These could theoretically be a TS script, but:
+
 - They're one-liners
 - Adding TS complexity wouldn't help
 - The value is near zero
@@ -76,10 +77,10 @@ The `/or-ai` pattern from `action-demo` shows where TS shines:
 
 ```typescript
 // This is COMPLEX LOGIC that benefits from TypeScript
-const program = Effect.gen(function* () {
+const program = Effect.gen(function*() {
   const body = yield* Comment.body
   if (!body.startsWith("/or-ai")) return
-  
+
   const diff = yield* PR.diff
   const response = yield* generateAiResponse(body, diff)
   yield* Comment.reply(response)
@@ -91,9 +92,9 @@ This would be horrible in YAML/shell.
 ### [SUPPORTS] API interactions
 
 ```typescript
-yield* Comment.react("eyes")
-yield* PR.files
-yield* Issue.addLabel("needs-review")
+yield * Comment.react("eyes")
+yield * PR.files
+yield * Issue.addLabel("needs-review")
 ```
 
 Type-safe, composable, testable. YAML can't do this.
@@ -120,12 +121,12 @@ These are battle-tested. Reimplementing them would be foolish.
 
 ## Summary of Evidence
 
-| Category | TS Value | Keep YAML? |
-|----------|----------|------------|
-| Workflow triggers | None | ✅ Yes |
-| Job orchestration | None | ✅ Yes |
-| Simple shell steps | Low | ✅ Yes |
-| Existing actions | None | ✅ Yes |
-| Comment-triggered logic | **High** | ❌ Use TS |
-| API interactions | **High** | ❌ Use TS |
-| Complex conditionals | Medium | Case-by-case |
+| Category                | TS Value | Keep YAML?   |
+| ----------------------- | -------- | ------------ |
+| Workflow triggers       | None     | ✅ Yes       |
+| Job orchestration       | None     | ✅ Yes       |
+| Simple shell steps      | Low      | ✅ Yes       |
+| Existing actions        | None     | ✅ Yes       |
+| Comment-triggered logic | **High** | ❌ Use TS    |
+| API interactions        | **High** | ❌ Use TS    |
+| Complex conditionals    | Medium   | Case-by-case |

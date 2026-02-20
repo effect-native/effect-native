@@ -9,6 +9,7 @@ Thank you for your interest in contributing! This fork accepts two types of cont
 Changes to original Effect packages that should be contributed back upstream.
 
 **Process:**
+
 1. Work from the `main` branch (synced with upstream)
 2. Create feature branch: `git checkout -b feature/description`
 3. Make changes ONLY in `packages/` directory
@@ -17,6 +18,7 @@ Changes to original Effect packages that should be contributed back upstream.
 6. Create PR to `Effect-TS/effect`
 
 **Requirements:**
+
 - Follow Effect's original contribution guidelines
 - Include tests for new functionality
 - Update documentation with JSDoc comments
@@ -28,6 +30,7 @@ Changes to original Effect packages that should be contributed back upstream.
 New packages or features specific to the effect-native ecosystem.
 
 **Process:**
+
 1. Work from `effect-native/main` branch
 2. Create feature branch: `git checkout -b native/description`
 3. Work in `packages-native/` directory
@@ -36,6 +39,7 @@ New packages or features specific to the effect-native ecosystem.
 6. Create PR to `effect-native/effect`
 
 **Requirements:**
+
 - Use `@effect-native/` namespace for packages
 - Include LICENSE file in each package
 - Add attribution to Effect in README
@@ -48,6 +52,7 @@ New packages or features specific to the effect-native ecosystem.
 For upstream contributions, we use the Developer Certificate of Origin (DCO).
 
 Add sign-off to commits:
+
 ```bash
 git commit -s -m "fix: resolve issue with Effect.map"
 ```
@@ -55,6 +60,7 @@ git commit -s -m "fix: resolve issue with Effect.map"
 This adds: `Signed-off-by: Your Name <your.email@example.com>`
 
 The DCO sign-off certifies:
+
 - You have the right to submit the work
 - The work is your original creation or properly attributed
 - You agree to the license terms
@@ -70,6 +76,7 @@ The DCO sign-off certifies:
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only
@@ -79,10 +86,12 @@ The DCO sign-off certifies:
 - `chore`: Maintenance tasks
 
 **Scopes:**
+
 - For upstream: `effect`, `platform`, `cli`, etc.
 - For fork: `native`, `example`, or specific package name
 
 **Examples:**
+
 ```
 feat(effect): add new Stream.throttle operator
 
@@ -96,42 +105,45 @@ Signed-off-by: Jane Doe <jane@example.com>
 ## Code Standards
 
 ### TypeScript Guidelines
+
 - Strict TypeScript configuration
 - No `any` types without justification
 - Comprehensive type inference
 - Pure functions preferred
 
 ### Testing Requirements
+
 - Unit tests for all new functionality
 - Use Vitest for testing
 - Property-based tests with FastCheck where appropriate
 - Test files in `test/` directory
 
 ### Documentation
+
 - JSDoc comments for all public APIs
 - Include `@since` tag with version
 - Provide `@example` with usage
 - Use `@category` for organization
 
 Example:
-```typescript
+
+````typescript
 /**
  * Creates a greeting effect
- * 
+ *
  * @since 1.0.0
  * @category Constructors
  * @example
  * ```ts
  * import { greet } from "@effect-native/example"
  * import * as Effect from "effect/Effect"
- * 
+ *
  * Effect.runSync(greet("World"))
  * // "Hello World"
  * ```
  */
-export const greet = (name: string): Effect.Effect<string> =>
-  Effect.succeed(`Hello ${name}`)
-```
+export const greet = (name: string): Effect.Effect<string> => Effect.succeed(`Hello ${name}`)
+````
 
 ## Development Setup
 
@@ -175,14 +187,18 @@ export const greet = (name: string): Effect.Effect<string> =>
 ## Legal
 
 ### Copyright
+
 - Original work: Copyright (c) 2023 Effectful Technologies Inc
 - Fork contributions: Copyright (c) 2025 effect-native contributors
 
 ### License
+
 All contributions are licensed under MIT license.
 
 ### Attribution
+
 When contributing:
+
 - Upstream contributions may be incorporated into Effect
 - Fork contributions remain in effect-native
 - Proper attribution is maintained for all work

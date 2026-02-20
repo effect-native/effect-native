@@ -1,9 +1,9 @@
 # Task 007: Safe Stepping and Blackboxing Implementation
 
-**Status**: Ready to Start  
-**Priority**: High  
-**Depends On**: CDP implementation (basic connection/command/subscribe working)  
-**Research**: `.specs/debug/research-safe-stepping.md`  
+**Status**: Ready to Start\
+**Priority**: High\
+**Depends On**: CDP implementation (basic connection/command/subscribe working)\
+**Research**: `.specs/debug/research-safe-stepping.md`\
 **Demo**: `packages-native/debug/test-fixtures/debug-step-through.ts` (working)
 
 ## Objective
@@ -17,21 +17,25 @@ As a developer using the Effect Native debug service to step through my code, I 
 ## Requirements (EARS)
 
 ### Event-Driven
+
 - [E1] When scripts are parsed (via `Debugger.scriptParsed` events), the system shall automatically blackbox scripts whose URLs do not match the target file set using `Debugger.setBlackboxedRanges`.
 - [E2] When execution pauses in a blackboxed or third-party script (frame URL doesn't match target), the system shall automatically issue `Debugger.stepOut` or `Debugger.resume` to return to user code without manual intervention.
 - [E3] When a stepping session exceeds MAX_STEPS or a configured timeout, the system shall automatically resume execution, disconnect the debug session, and exit cleanly.
 
 ### State-Driven
+
 - [S1] While stepping through code, the system shall maintain a step counter that increments on each `Debugger.paused` event and enforces a maximum step limit to prevent infinite stepping loops.
 - [S2] While blackboxing is active, the system shall track which scripts have been blackboxed to avoid duplicate blackboxing commands and to report blackboxing coverage.
 - [S3] When stepping reaches the end of the target script (determined by line number or script completion), the system shall stop stepping and resume normal execution or exit the session.
 
 ### Safe-Stepping
+
 - [SS1] When stepInto is requested in user code, the system shall verify via blackboxing that third-party code will be skipped, preventing descent into node_modules, Node.js internals, or framework code.
 - [SS2] When stepInto is requested but blackboxing is not available (non-CDP protocols), the system shall fall back to dynamic URL checking and use stepOut/resume when execution lands in non-target code.
 - [SS3] When stepping operations encounter known crash patterns (Node.js v24.x ESM async boundaries), the system shall use stepOver instead of stepInto or apply protective blackboxing to avoid V8 inspector crashes.
 
 ### Optional
+
 - [O1] When analyzing call sites, the system shall detect whether the next statement is a function call and intelligently choose stepInto (for user functions) or stepOver (for third-party functions).
 - [O2] When stepping configuration is provided, the system shall support allowlists (only step in these files) and denylists (never step in these patterns) for fine-grained control.
 
@@ -46,14 +50,14 @@ const autoBlackboxDemo = Effect.gen(function*() {
     endpoint: "http://127.0.0.1:9229",
     transport: Debug.Transport.cdp()
   })
-  
+
   // Enable debugger
   yield* debug.enableDebugger(session)
-  
+
   // Auto-blackbox everything except target
   const targetUrl = "file:///path/to/my-app.js"
   yield* debug.autoBlackboxThirdParty(session, [targetUrl])
-  
+
   // Verify blackboxing works
   // Step into a call to a third-party function
   // Should land in next line of my-app.js, not inside node_modules
@@ -207,14 +211,14 @@ interface BlackboxingSupport {
     session: Session,
     patterns: Array<string>
   ) => Effect.Effect<void, DebugError>
-  
+
   // Blackbox specific line ranges in a script
   readonly setBlackboxedRanges: (
     session: Session,
     scriptId: string,
     positions: Array<{ lineNumber: number; columnNumber: number }>
   ) => Effect.Effect<void, DebugError>
-  
+
   // Auto-blackbox all scripts except target URLs
   readonly autoBlackboxThirdParty: (
     session: Session,
@@ -224,6 +228,7 @@ interface BlackboxingSupport {
 ```
 
 **Implementation**:
+
 - Wrap CDP `Debugger.setBlackboxPatterns` and `Debugger.setBlackboxedRanges`
 - Subscribe to `Debugger.scriptParsed` events in autoBlackboxThirdParty
 - For each parsed script, check if URL matches target set
@@ -238,19 +243,19 @@ interface BlackboxingSupport {
 interface SafeSteppingSupport {
   // Step over (safest)
   readonly stepOver: (session: Session) => Effect.Effect<void, DebugError>
-  
+
   // Step into with safety checks
   readonly safeStepInto: (
     session: Session,
     options: { targetUrls: Array<string> }
   ) => Effect.Effect<void, DebugError>
-  
+
   // Step out
   readonly stepOut: (session: Session) => Effect.Effect<void, DebugError>
-  
+
   // Resume
   readonly resume: (session: Session) => Effect.Effect<void, DebugError>
-  
+
   // Step through with limits
   readonly stepThroughWithLimits: (
     session: Session,
@@ -284,6 +289,7 @@ interface StepInfo {
 ```
 
 **Implementation**:
+
 - Wrap CDP stepping commands with URL safety checks
 - For `safeStepInto`: Check if top frame URL matches targetUrls
   - If yes: send `Debugger.stepInto`
@@ -307,7 +313,7 @@ export const BlackboxPatterns = {
     "bootstrap_node\\.js",
     "node:internal/.*"
   ],
-  
+
   // Browser patterns
   browser: [
     "node_modules/.*",
@@ -317,7 +323,7 @@ export const BlackboxPatterns = {
     "<anonymous>",
     "VM[0-9]+"
   ],
-  
+
   // Cloudflare Workers patterns
   workers: [
     "node_modules/.*",
@@ -326,10 +332,10 @@ export const BlackboxPatterns = {
     "miniflare/.*",
     "workerd/.*"
   ],
-  
+
   // Framework patterns (optional, user can add)
   frameworks: (include: Array<string> = []) => [
-    ...include.flatMap(fw => [`node_modules/${fw}/.*`]),
+    ...include.flatMap((fw) => [`node_modules/${fw}/.*`]),
     "node_modules/react/.*",
     "node_modules/react-dom/.*",
     "node_modules/next/.*"
@@ -349,6 +355,7 @@ export const BlackboxPatterns = {
 ## Testing Requirements
 
 ### Unit Tests
+
 - Mock `Debugger.scriptParsed` events and verify blackboxing commands sent
 - Test step counter increments correctly
 - Test step limit enforcement (stops at MAX_STEPS)
@@ -358,6 +365,7 @@ export const BlackboxPatterns = {
 ### Integration Tests
 
 #### Test 1: Auto-Blackboxing
+
 ```typescript
 it.effect("auto-blackboxes third-party scripts", () =>
   Effect.gen(function*() {
@@ -392,3 +400,4 @@ it.effect("auto-blackboxes third-party scripts", () =>
     const blackboxed = yield* Ref.get(blackboxedScripts)
     
     // Should have
+```

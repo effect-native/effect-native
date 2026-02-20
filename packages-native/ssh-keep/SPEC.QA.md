@@ -46,6 +46,7 @@ This document captures ambiguities, contradictions, and underspecified areas in 
 **Question**: What is configurable? The spec mentions this directory but never lists config options.
 
 Candidates:
+
 - Default session name?
 - Picker UI preference (fzf vs native)?
 - MRU behavior toggle?
@@ -92,11 +93,13 @@ Candidates:
 **Question**: What are the actual numeric codes?
 
 Current impl:
+
 - `2` = tmux missing
 - `3` = no TTY
 - (user cancel not handled)
 
 **Suggestion**: Spec should define:
+
 - `0` = success (attached/created)
 - `1` = general error
 - `2` = tmux not found
@@ -110,12 +113,15 @@ Current impl:
 **Location**: B4 vs B7
 
 **B4** says:
+
 > "The user is shown an interactive list of existing tmux sessions"
 
 **B7** says:
+
 > "Fresh account... the user ends in tmux session as if it had already been installed"
 
 **Question**: When zero sessions exist, should the user:
+
 - See an empty picker with "create new" affordance (B4 interpretation)?
 - Automatically land in a new session (B7 interpretation)?
 
@@ -132,6 +138,7 @@ Current impl:
 **Question**: Does "any thin client" mean the entrypoint must work without installing anything? The current impl requires `bun` on the thin client.
 
 Options:
+
 1. Accept that thin client needs bun/node
 2. Provide a pure-shell one-liner alternative
 3. Provide a static binary
@@ -162,6 +169,7 @@ Options:
 **Question**: What happens when multiple thin clients attach to the same session?
 
 tmux supports this natively, but:
+
 - Should picker show "2 clients attached" metadata?
 - Should there be a warning?
 - Is this a non-goal?
@@ -188,9 +196,10 @@ tmux supports this natively, but:
 
 > "If the helper disappears (deleted, corrupted, reverted)"
 
-**Question**: What about an *outdated* helper? Current bootstrap only installs if file is missing (`[ ! -x ... ]`).
+**Question**: What about an _outdated_ helper? Current bootstrap only installs if file is missing (`[ ! -x ... ]`).
 
 Options:
+
 1. Version check and update if stale
 2. Always overwrite (idempotent by definition)
 3. Leave updates manual
@@ -208,6 +217,7 @@ Options:
 **Question**: Should probes be runnable scripts, or manual procedures?
 
 The current probes are described in English. Automated probes would require:
+
 - A test server
 - Ability to kill/reconnect SSH programmatically
 - Session state assertions
@@ -233,19 +243,19 @@ The current probes are described in English. Automated probes would require:
 
 ## Summary
 
-| Issue | Severity | Blocks Impl? |
-|-------|----------|--------------|
-| Env var name | Medium | Yes (if env support required) |
-| Create-new affordance | Medium | Partially |
-| Config contents | Low | No (empty is valid for now) |
-| MRU spec | Low | No (optional) |
-| List format | Low | No (current format works) |
-| Exit codes | Medium | Partially |
-| Zero-sessions behavior | Medium | No (impl chose one interpretation) |
-| Thin client runtime | High | Limits portability |
-| Session name chars | Medium | Security concern |
-| Multi-client attach | Low | No (tmux handles it) |
-| Detach behavior | Low | No (current behavior is fine) |
-| Helper updates | Medium | Maintenance concern |
-| Probe automation | Low | No (manual is fine for now) |
-| Single-session picker | Low | No |
+| Issue                  | Severity | Blocks Impl?                       |
+| ---------------------- | -------- | ---------------------------------- |
+| Env var name           | Medium   | Yes (if env support required)      |
+| Create-new affordance  | Medium   | Partially                          |
+| Config contents        | Low      | No (empty is valid for now)        |
+| MRU spec               | Low      | No (optional)                      |
+| List format            | Low      | No (current format works)          |
+| Exit codes             | Medium   | Partially                          |
+| Zero-sessions behavior | Medium   | No (impl chose one interpretation) |
+| Thin client runtime    | High     | Limits portability                 |
+| Session name chars     | Medium   | Security concern                   |
+| Multi-client attach    | Low      | No (tmux handles it)               |
+| Detach behavior        | Low      | No (current behavior is fine)      |
+| Helper updates         | Medium   | Maintenance concern                |
+| Probe automation       | Low      | No (manual is fine for now)        |
+| Single-session picker  | Low      | No                                 |

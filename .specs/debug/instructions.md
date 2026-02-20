@@ -5,6 +5,7 @@
 **Current State**: Prototype with working CDP implementation and demos
 
 **What's Working**:
+
 - ✅ Basic CDP connection (Chrome, Node.js, Deno, Cloudflare Workers local dev)
 - ✅ Command execution with typed responses
 - ✅ Event subscription with streams
@@ -15,6 +16,7 @@
 - ✅ CI builds passing
 
 **What's Missing** (blocks publication):
+
 - ❌ Memory debugging (HeapProfiler domain) - 0% implemented
 - ❌ Heap snapshot streaming
 - ❌ Allocation tracking and sampling profiler
@@ -25,6 +27,7 @@
 - ❌ Version still 0.0.0
 
 **Working Demos**:
+
 - `packages-native/debug-demos/src/memory-leak-demo.ts` - Node.js leak detection
 - `packages-native/debug-demos/src/workers-ai-proxy-leak.ts` - Workers AI proxy leaks
 - `packages-native/debug/test-fixtures/debug-step-through.ts` - **Step-through debugger using actual @effect-native/debug service**
@@ -95,12 +98,14 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 ## Implementation Roadmap
 
 ### Phase 1: Core CDP (DONE)
+
 - ✅ Connection and session management
 - ✅ Command execution with typed responses
 - ✅ Event subscription with streams
 - ✅ Basic tests and demos
 
 ### Phase 2: Memory Debugging (NOT STARTED)
+
 - ❌ HeapProfiler domain wrapper
 - ❌ Snapshot streaming (Handle `HeapProfiler.addHeapSnapshotChunk` events)
 - ❌ Allocation tracking (start/stop with timeline)
@@ -109,6 +114,7 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - ❌ Schemas: HeapUsage, SamplingHeapProfile, AllocationTimeline
 
 ### Phase 3: Safe Stepping (NOT STARTED)
+
 - ❌ Blackboxing support (`setBlackboxPatterns`, `setBlackboxedRanges`)
 - ❌ Safe stepping helpers (`safeStepInto`, `stepThroughWithLimits`)
 - ❌ Predefined pattern sets (node, browser, workers, frameworks)
@@ -116,6 +122,7 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - ❌ Step limits and timeout guards
 
 ### Phase 4: Documentation & Publication (NOT STARTED)
+
 - ❌ Comprehensive README with usage examples
 - ❌ API documentation (docgen output)
 - ❌ Examples directory
@@ -123,11 +130,13 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 - ❌ Set version to 0.1.0+
 
 ### Phase 5: Additional Protocols (FUTURE)
+
 - Actor-based adapters for Firefox, Servo, and Ladybird
 - WebKit Inspector implementation
 - React Native Hermes integration
 
 ### Phase 6: Advanced Features (FUTURE)
+
 - Snapshot comparison utilities (automated leak detection)
 - Higher-level abstractions (`detectMemoryLeaks`, `safeStepInto`)
 - Connection pooling and multiplexing
@@ -156,10 +165,10 @@ We need a new `@effect-native/debug` package that provides an Effect Service nam
 
 ## Current Test Coverage
 
-**Unit Tests**: ✅ Basic CDP connection, command execution, event subscription  
-**Integration Tests**: ✅ Chrome inspector, Node.js inspector, event flow  
-**Demo Tests**: ✅ `test:debug-log-steps` - step-through debugger (verified working)  
+**Unit Tests**: ✅ Basic CDP connection, command execution, event subscription\
+**Integration Tests**: ✅ Chrome inspector, Node.js inspector, event flow\
+**Demo Tests**: ✅ `test:debug-log-steps` - step-through debugger (verified working)\
 **Missing Tests**: ❌ Memory profiling, blackboxing, safe stepping, cross-runtime
 
-**Test Command**: `pnpm test` (passes for existing features)  
+**Test Command**: `pnpm test` (passes for existing features)\
 **Demo Command**: `cd packages-native/debug && pnpm test:debug-log-steps` (working)

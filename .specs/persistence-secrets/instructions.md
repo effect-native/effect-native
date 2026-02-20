@@ -5,10 +5,12 @@
 The `@effect/experimental` package provides a `Persistence` abstraction with `BackingPersistence` and `ResultPersistence` interfaces. These allow Effect programs to persist data with schema validation, TTL support, and proper error handling.
 
 Existing backing implementations include:
+
 - `layerMemory` - In-memory storage (testing)
 - `layerKeyValueStore` - Backed by `@effect/platform` KeyValueStore (filesystem, localStorage, etc.)
 
 However, there is no implementation for secure OS-native credential storage. Bun provides `Bun.secrets` which accesses:
+
 - macOS: Keychain
 - Linux: libsecret (GNOME Keyring, KWallet)
 - Windows: Credential Manager
