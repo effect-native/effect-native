@@ -39,6 +39,8 @@ const doctorCommand = Command.make("doctor", {}, () =>
 export const effectNativeCommand = Command.make("effect-native").pipe(
   Command.withDescription(
     [
+      `effect-native ${version}`,
+      "",
       "Effect Native CLI for ultra extreme programmers",
       "",
       "tight feedback loops keep optimism in check:",
