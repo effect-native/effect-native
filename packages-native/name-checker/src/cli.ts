@@ -55,6 +55,7 @@ const waitWithAbort = (seconds: number, label: string) =>
 
     // Poll for abort while waiting
     const checkAbort = Effect.gen(function*() {
+      // eslint-disable-next-line no-unmodified-loop-condition -- aborted is set by SIGINT handler
       while (!aborted) {
         const status = yield* Fiber.status(progressFiber)
         if (status._tag === "Done") break

@@ -185,7 +185,8 @@ export const spawnTui = (
             formatPtyDiagnostics(diag),
             `Error code: ${err.code ?? "none"} | Errno: ${err.errno ?? "none"} | Syscall: ${err.syscall ?? "none"}`,
             `Stack: ${err.stack ?? "none"}`
-          ].join("\n")
+          ].join("\n"),
+          { cause: spawnError }
         )
       }
 
