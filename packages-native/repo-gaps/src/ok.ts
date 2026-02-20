@@ -6,7 +6,6 @@
 import { glob } from "glob"
 import * as fs from "node:fs"
 import * as path from "node:path"
-import * as YAML from "yaml"
 
 // Colors
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`
@@ -44,7 +43,7 @@ function parseFrontmatter<T>(content: string): T | null {
   const match = content.match(/^---\n([\s\S]*?)\n---/)
   if (!match) return null
   try {
-    return YAML.parse(match[1]) as T
+    return Bun.YAML.parse(match[1]) as T
   } catch {
     return null
   }
@@ -85,8 +84,8 @@ function statusIcon(status: string): string {
 }
 
 export function runOk(packageDir: string = process.cwd()) {
-  const gaps = readItems<GapFrontmatter>(packageDir, ".gaps/*.md")
-  const qas = readItems<QAFrontmatter>(packageDir, ".qa/*.md")
+  const gaps = readItems<GapFrontmatter>(packageDir, ".ok/rules/**/*.gap.md")
+  const qas = readItems<QAFrontmatter>(packageDir, ".ok/rules/**/SPEC.QA.md")
 
   const openGaps = gaps.filter((g) => g.status === "open")
   const resolvedGaps = gaps.filter((g) => g.status === "resolved")

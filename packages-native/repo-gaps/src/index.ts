@@ -46,6 +46,13 @@ export const readImplementationFiles = (packageDir: string, patterns = ["src/**/
     catch: () => "[No implementation files yet]"
   })
 
+/** Scan `.ok/rules/` and return paths of all SPEC.md files relative to packageDir */
+export const findRuleSpecs = (packageDir: string) =>
+  Effect.tryPromise({
+    try: () => glob(".ok/rules/*/SPEC.md", { cwd: packageDir }),
+    catch: () => [] as Array<string>
+  })
+
 export const getLastCommitMessage = (cwd: string) =>
   Effect.tryPromise({
     try: async () => {
@@ -72,7 +79,7 @@ export const autoCommit = (cwd: string, files: Array<string>, message: string) =
 export const GAPS_PROMPT = `You are a technical analyst comparing a specification document to its implementation.
 
 Your task:
-1. Review the existing GAPS.md to understand previously identified issues
+1. Review the existing gap files to understand previously identified issues
 2. Check if any previously identified gaps have been RESOLVED in the current implementation
 3. Identify any NEW gaps where the implementation doesn't match the spec
 4. Identify where implementation goes beyond what the spec requires (informational)
@@ -118,32 +125,28 @@ export interface AnalyzeOptions {
   implPatterns?: Array<string>
 }
 
-export const analyze = (options: AnalyzeOptions) =>
+/** Analyze a single spec rule directory (e.g. `.ok/rules/impl/`) */
+const analyzeRule = (
+  options: AnalyzeOptions,
+  ruleSpecPath: string, // relative to packageDir, e.g. ".ok/rules/impl/SPEC.md"
+  openrouter: OpenRouter,
+  impl: string
+) =>
   Effect.gen(function*() {
-    const { implPatterns = ["src/**/*.ts"], packageDir, packageName } = options
+    const { packageDir, packageName } = options
+    const ruleDir = path.dirname(ruleSpecPath) // e.g. ".ok/rules/impl"
+    const ruleName = path.basename(ruleDir) // e.g. "impl"
 
-    // Check if this is an auto-commit (prevent infinite loop)
-    const lastCommit = yield* getLastCommitMessage(packageDir)
-    if (lastCommit.startsWith(AUTO_COMMIT_MARKER)) {
-      yield* Console.log(`${packageName}: Skipping auto-commit analysis`)
-      return
-    }
-
-    yield* Console.log(`${packageName}: Analyzing spec, implementation, and QA...`)
-
-    const [spec, impl, existingGaps, existingQA] = yield* Effect.all([
-      readFile(packageDir, "SPEC.md"),
-      readImplementationFiles(packageDir, implPatterns),
-      readFile(packageDir, "GAPS.md"),
-      readFile(packageDir, "SPEC.QA.md")
+    const [spec, existingGaps, existingQA] = yield* Effect.all([
+      readFile(packageDir, ruleSpecPath),
+      readFile(packageDir, path.join(ruleDir, "GAPS.md")),
+      readFile(packageDir, path.join(ruleDir, "SPEC.QA.md"))
     ])
 
     if (!spec) {
-      yield* Console.log(`${packageName}: No SPEC.md found, skipping`)
-      return
+      yield* Console.log(`${packageName}/${ruleName}: No SPEC.md found, skipping`)
+      return [] as Array<string>
     }
-
-    const openrouter = yield* OpenRouter
 
     // Run both analyses in parallel
     const [gapsResponse, qaResponse] = yield* Effect.all([
@@ -193,26 +196,64 @@ Review the specification and existing QA document. Generate an updated SPEC.QA.m
     const filesToCommit: Array<string> = []
 
     if (gaps.length >= 100) {
-      yield* writeFile(packageDir, "GAPS.md", gaps)
-      filesToCommit.push("GAPS.md")
-      yield* Console.log(`${packageName}: Updated GAPS.md`)
+      const gapsPath = path.join(ruleDir, "GAPS.md")
+      yield* writeFile(packageDir, gapsPath, gaps)
+      filesToCommit.push(gapsPath)
+      yield* Console.log(`${packageName}/${ruleName}: Updated ${gapsPath}`)
     } else {
-      yield* Console.error(`${packageName}: GAPS.md response too short, skipping`)
+      yield* Console.error(`${packageName}/${ruleName}: GAPS.md response too short, skipping`)
     }
 
     if (qa.length >= 100) {
-      yield* writeFile(packageDir, "SPEC.QA.md", qa)
-      filesToCommit.push("SPEC.QA.md")
-      yield* Console.log(`${packageName}: Updated SPEC.QA.md`)
+      const qaPath = path.join(ruleDir, "SPEC.QA.md")
+      yield* writeFile(packageDir, qaPath, qa)
+      filesToCommit.push(qaPath)
+      yield* Console.log(`${packageName}/${ruleName}: Updated ${qaPath}`)
     } else {
-      yield* Console.error(`${packageName}: SPEC.QA.md response too short, skipping`)
+      yield* Console.error(`${packageName}/${ruleName}: SPEC.QA.md response too short, skipping`)
     }
 
-    // Auto-commit if we updated anything
-    if (filesToCommit.length > 0) {
-      const committed = yield* autoCommit(packageDir, filesToCommit, `Update ${filesToCommit.join(" and ")}`)
+    return filesToCommit
+  })
+
+export const analyze = (options: AnalyzeOptions) =>
+  Effect.gen(function*() {
+    const { implPatterns = ["src/**/*.ts"], packageDir, packageName } = options
+
+    // Check if this is an auto-commit (prevent infinite loop)
+    const lastCommit = yield* getLastCommitMessage(packageDir)
+    if (lastCommit.startsWith(AUTO_COMMIT_MARKER)) {
+      yield* Console.log(`${packageName}: Skipping auto-commit analysis`)
+      return
+    }
+
+    yield* Console.log(`${packageName}: Analyzing spec, implementation, and QA...`)
+
+    // Find all rule specs under .ok/rules/*/SPEC.md
+    const ruleSpecPaths = yield* findRuleSpecs(packageDir)
+
+    if (ruleSpecPaths.length === 0) {
+      yield* Console.log(`${packageName}: No rule specs found under .ok/rules/, skipping`)
+      return
+    }
+
+    const [impl, openrouter] = yield* Effect.all([
+      readImplementationFiles(packageDir, implPatterns),
+      OpenRouter
+    ])
+
+    // Analyze each rule spec, collecting files to commit
+    const allFilesToCommit: Array<string> = []
+    for (const ruleSpecPath of ruleSpecPaths) {
+      const committed = yield* analyzeRule(options, ruleSpecPath, openrouter, impl)
+      allFilesToCommit.push(...committed)
+    }
+
+    // Auto-commit all updated files across all rules
+    if (allFilesToCommit.length > 0) {
+      const committed = yield* autoCommit(packageDir, allFilesToCommit, `Update ${allFilesToCommit.join(" and ")}`)
       if (committed) {
-        yield* Console.log(`${packageName}: Auto-committed ${filesToCommit.join(", ")}`)
+        yield* Console.log(`${packageName}: Auto-committed ${allFilesToCommit.join(", ")}`)
       } else {
         yield* Console.log(`${packageName}: No changes to commit`)
       }
