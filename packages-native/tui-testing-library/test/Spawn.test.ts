@@ -144,8 +144,8 @@ describe.skipIf(!isBun)("waitForText", () => {
       const handle = yield* spawnTui(["echo", "something else"])
       yield* handle.exited
 
-      const result = yield* Effect.either(waitForText(handle, "not-here", 100))
-      expect(result._tag).toBe("Left")
+      const result = yield* Effect.result(waitForText(handle, "not-here", 100))
+      expect(result._tag).toBe("Failure")
     }))
 })
 
