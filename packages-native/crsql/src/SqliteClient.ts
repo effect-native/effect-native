@@ -12,11 +12,12 @@
  *
  * @since 0.1.0
  */
-import { SqlClient, SqlError } from "effect/unstable/sql"
-import { Effect } from "effect"
-import * as ServiceMap from "effect/ServiceMap"
 import * as Data from "effect/Data"
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as ServiceMap from "effect/ServiceMap"
+import type { SqlError } from "effect/unstable/sql"
+import { SqlClient } from "effect/unstable/sql"
 
 /**
  * Extends the generic `SqlClient` with SQLite's `loadExtension` capability.
