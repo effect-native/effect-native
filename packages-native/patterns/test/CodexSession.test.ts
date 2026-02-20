@@ -155,14 +155,14 @@ const sampleSession = [
 describe("CodexSession", () => {
   it.effect("decodes Codex CLI session JSONL entries", () =>
     Effect.gen(function*() {
-      const decoded = yield* Schema.decodeUnknown(CodexSession.Session)(sampleSession)
+      const decoded = yield* Schema.decodeUnknownEffect(CodexSession.Session)(sampleSession)
       assert.strictEqual(decoded.length, sampleSession.length)
 
       const first = decoded[0]
       assert.ok(first && "type" in first)
       assert.strictEqual(first.type, "session_meta")
 
-      const encoded = yield* Schema.encode(CodexSession.Session)(decoded)
+      const encoded = yield* Schema.encodeEffect(CodexSession.Session)(decoded)
       assert.deepStrictEqual(encoded, sampleSession)
     }))
 })
