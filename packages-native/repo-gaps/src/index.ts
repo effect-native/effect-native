@@ -246,7 +246,7 @@ export const analyze = (options: AnalyzeOptions) =>
     const allFilesToCommit: Array<string> = []
     for (const ruleSpecPath of ruleSpecPaths) {
       const committed = yield* analyzeRule(options, ruleSpecPath, openrouter, impl)
-      allFilesToCommit.push(...committed)
+      for (const f of committed) allFilesToCommit.push(f)
     }
 
     // Auto-commit all updated files across all rules
