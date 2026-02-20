@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from "vitest"
+import { describe, it, expect, beforeAll, afterEach } from "bun:test"
 import React from "react"
 import { setupHappyDom, render, cleanup } from "../src/index.js"
 

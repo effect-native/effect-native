@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, jest } from "bun:test"
 import { createEvent, fireEvent } from "../src/events.js"
 
 describe("fireEvent", () => {
@@ -15,7 +15,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, "Enter")
@@ -31,7 +31,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, { key: "a", ctrlKey: true })
@@ -47,7 +47,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, "a")
@@ -61,7 +61,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, "5")
@@ -72,7 +72,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, "c", { ctrl: true, shift: true })
@@ -88,7 +88,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keydown", handler)
 
       fireEvent.keyDown(button, "ArrowUp")
@@ -104,7 +104,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("keyup", handler)
 
       fireEvent.keyUp(button, "Enter")
@@ -121,8 +121,8 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const keydownHandler = vi.fn()
-      const keyupHandler = vi.fn()
+      const keydownHandler = jest.fn()
+      const keyupHandler = jest.fn()
       button.addEventListener("keydown", keydownHandler)
       button.addEventListener("keyup", keyupHandler)
 
@@ -152,7 +152,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("click", handler)
 
       fireEvent.click(button)
@@ -166,8 +166,8 @@ describe("fireEvent", () => {
       const input = document.createElement("input")
       container.appendChild(input)
 
-      const focusHandler = vi.fn()
-      const focusinHandler = vi.fn()
+      const focusHandler = jest.fn()
+      const focusinHandler = jest.fn()
       input.addEventListener("focus", focusHandler)
       input.addEventListener("focusin", focusinHandler)
 
@@ -185,8 +185,8 @@ describe("fireEvent", () => {
       container.appendChild(input)
       input.focus()
 
-      const blurHandler = vi.fn()
-      const focusoutHandler = vi.fn()
+      const blurHandler = jest.fn()
+      const focusoutHandler = jest.fn()
       input.addEventListener("blur", blurHandler)
       input.addEventListener("focusout", focusoutHandler)
 
@@ -202,8 +202,8 @@ describe("fireEvent", () => {
       const input = document.createElement("input")
       container.appendChild(input)
 
-      const inputHandler = vi.fn()
-      const changeHandler = vi.fn()
+      const inputHandler = jest.fn()
+      const changeHandler = jest.fn()
       input.addEventListener("input", inputHandler)
       input.addEventListener("change", changeHandler)
 
@@ -239,7 +239,7 @@ describe("fireEvent", () => {
       container.appendChild(input)
       input.focus()
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") handler()
       })
@@ -315,7 +315,7 @@ describe("fireEvent", () => {
       const button = document.createElement("button")
       container.appendChild(button)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       button.addEventListener("dblclick", handler)
 
       fireEvent.dblClick(button)
@@ -331,7 +331,7 @@ describe("fireEvent", () => {
       div.style.height = "100px"
       container.appendChild(div)
 
-      const handler = vi.fn()
+      const handler = jest.fn()
       div.addEventListener("scroll", handler)
 
       fireEvent.scroll(div, { target: { scrollTop: 50 } })

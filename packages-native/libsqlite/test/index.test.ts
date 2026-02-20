@@ -1,5 +1,5 @@
 import { getLibSqlitePathSync, pathToLibSqlite } from "@effect-native/libsqlite"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 
 describe("libsqlite root api", () => {
   it("exports a string path", () => {

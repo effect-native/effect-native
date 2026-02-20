@@ -1,11 +1,11 @@
-import { expect, it, vi } from "@effect/vitest"
+import { expect, it, jest } from "@effect-native/bun-test"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 
 it.effect("maps thrown error to PlatformNotSupportedError with friendly help", () =>
   Effect.gen(function*() {
-    vi.resetModules()
-    vi.doMock("../src/index", () => ({
+    jest.resetModules()
+    jest.doMock("../src/index", () => ({
       getLibSqlitePathSync: () => {
         throw new Error("Linux musl detected; v1 supports glibc only.")
       }

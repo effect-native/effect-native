@@ -1,6 +1,6 @@
 // @ts-nocheck - TODO: Fix type errors properly (tracked in .tasks/GOAL-release-opentui-dom-packages.md)
 import { Window } from "happy-dom"
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test"
 import {
   createEventRelay,
   type EventRelay,
@@ -23,7 +23,7 @@ function createKeyEvent(
     shift: false,
     option: false,
     meta: false,
-    preventDefault: vi.fn(),
+    preventDefault: jest.fn(),
     ...opts
   }
 }
@@ -79,7 +79,7 @@ describe("EventRelay", () => {
 
       relay.attach(renderer, document as unknown as Document, nodeMap)
 
-      const clickHandler = vi.fn()
+      const clickHandler = jest.fn()
       button.addEventListener("click", clickHandler)
 
       // Enter triggers click on button
@@ -95,7 +95,7 @@ describe("EventRelay", () => {
       relay.attach(renderer, document as unknown as Document, nodeMap)
       relay.detach()
 
-      const clickHandler = vi.fn()
+      const clickHandler = jest.fn()
       button.addEventListener("click", clickHandler)
 
       renderer.emit(createKeyEvent("enter"))
@@ -113,7 +113,7 @@ describe("EventRelay", () => {
       const button = document.getElementById("btn")!
       button.focus()
 
-      const clickHandler = vi.fn()
+      const clickHandler = jest.fn()
       button.addEventListener("click", clickHandler)
 
       renderer.emit(createKeyEvent("enter"))
@@ -125,7 +125,7 @@ describe("EventRelay", () => {
       const button = document.getElementById("btn")!
       button.focus()
 
-      const clickHandler = vi.fn()
+      const clickHandler = jest.fn()
       button.addEventListener("click", clickHandler)
 
       renderer.emit(createKeyEvent("space"))
@@ -148,7 +148,7 @@ describe("EventRelay", () => {
       const input = document.getElementById("input")!
       input.focus()
 
-      const keydownHandler = vi.fn()
+      const keydownHandler = jest.fn()
       input.addEventListener("keydown", keydownHandler)
 
       renderer.emit(createKeyEvent("a"))
@@ -163,7 +163,7 @@ describe("EventRelay", () => {
       const input = document.getElementById("input")!
       input.focus()
 
-      const keydownHandler = vi.fn()
+      const keydownHandler = jest.fn()
       input.addEventListener("keydown", keydownHandler)
 
       renderer.emit(createKeyEvent("up"))
@@ -177,7 +177,7 @@ describe("EventRelay", () => {
       const input = document.getElementById("input")!
       input.focus()
 
-      const keydownHandler = vi.fn()
+      const keydownHandler = jest.fn()
       input.addEventListener("keydown", keydownHandler)
 
       renderer.emit(createKeyEvent("a", { ctrl: true, shift: true }))
@@ -448,7 +448,7 @@ describe("EventRelay", () => {
         <button id="btn" accesskey="b">Click</button>
       `
       const btn = document.getElementById("btn")!
-      const clickHandler = vi.fn()
+      const clickHandler = jest.fn()
       btn.addEventListener("click", clickHandler)
 
       renderer.emit(createKeyEvent("b", { option: true }))
@@ -539,7 +539,7 @@ describe("EventRelay", () => {
       const input = document.getElementById("input")! as HTMLInputElement
       input.focus()
 
-      const inputHandler = vi.fn()
+      const inputHandler = jest.fn()
       input.addEventListener("input", inputHandler)
 
       renderer.emit(createKeyEvent("a"))
@@ -651,7 +651,7 @@ describe("EventRelay", () => {
       // Create mock scroll container
       const scrollContainer: ScrollContainer = {
         scrollTop: 0,
-        scrollTo: vi.fn(),
+        scrollTo: jest.fn(),
         viewport: { height: 10, width: 80 }
       }
 
@@ -681,7 +681,7 @@ describe("EventRelay", () => {
 
       const scrollContainer: ScrollContainer = {
         scrollTop: 15,
-        scrollTo: vi.fn(),
+        scrollTo: jest.fn(),
         viewport: { height: 10, width: 80 }
       }
 

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process"
-import { expect, it } from "vitest"
+import { expect, it } from "bun:test"
 import { getLibSqlitePathSync } from "../src/index"
 
 /**

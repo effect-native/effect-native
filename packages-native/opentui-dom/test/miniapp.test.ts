@@ -6,7 +6,7 @@
  */
 
 import { Window } from "happy-dom"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it } from "bun:test"
 import { createEventRelay, createNodeMap, type NodeMap } from "../src/index.js"
 
 // Mock TUI types for testing

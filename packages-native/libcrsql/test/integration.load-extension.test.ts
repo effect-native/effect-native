@@ -1,4 +1,4 @@
-import { describe, it } from "@effect/vitest"
+import { describe, it } from "@effect-native/bun-test"
 
 // Integration test is opt-in: set RUN_INTEGRATION=1 and install better-sqlite3
 const run = process.env.RUN_INTEGRATION === "1"

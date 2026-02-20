@@ -1,5 +1,5 @@
 import { getLibSqlitePath } from "@effect-native/libsqlite/effect"
-import { it } from "@effect/vitest"
+import { it } from "@effect-native/bun-test"
 import * as Effect from "effect/Effect"
 
 it.effect("getLibSqlitePath yields a string", () =>

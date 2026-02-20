@@ -1,10 +1,9 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, it, jest } from "@effect-native/bun-test"
 import { Effect } from "effect"
-import { vi } from "vitest"
 
 // Mock fs before importing the module under test
-vi.mock("node:fs", async () => {
-  const actual = await vi.importActual("node:fs")
+jest.mock("node:fs", async () => {
+  const actual = await jest.importActual("node:fs")
   return {
     ...actual,
     accessSync: () => {
@@ -20,7 +19,7 @@ describe("effect API missing binary", () => {
       const { ExtensionNotFoundError, getCrSqliteExtensionPath } = yield* Effect.promise(() =>
         import("../src/effect.js")
       )
-      vi.spyOn(platform, "detectPlatform").mockReturnValue("linux-x86_64")
+      jest.spyOn(platform, "detectPlatform").mockReturnValue("linux-x86_64")
       const error = yield* getCrSqliteExtensionPath().pipe(Effect.flip)
       expect(error).toBeInstanceOf(ExtensionNotFoundError)
     }))

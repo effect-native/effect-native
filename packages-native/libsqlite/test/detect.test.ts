@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, jest } from "bun:test"
 import { getLibSqlitePathSync } from "../src/index"
 
 const originalProcess = process
 
 describe("platform detection", () => {
   afterEach(() => {
-    vi.resetModules()
+    jest.resetModules()
     // restore the real process
     // @ts-expect-error override
     globalThis.process = originalProcess
@@ -14,7 +14,7 @@ describe("platform detection", () => {
   // These tests verify that the path-lookup returns the correct library path
   // for each supported platform. They use getLibSqlitePathSync with an explicit
   // platform argument, which bypasses process detection and directly returns the
-  // bundled library path. vi.stubGlobal("process") + vi.resetModules() is not
+  // bundled library path. jest.stubGlobal("process") + jest.resetModules() is not
   // reliable in vitest's ESM module runner for testing module-level constants.
   it("returns darwin-x86_64 path for darwin/x64 platform", () => {
     const p = getLibSqlitePathSync("darwin-x86_64")
@@ -41,7 +41,7 @@ describe("platform detection", () => {
         },
         configurable: true
       })
-      vi.resetModules()
+      jest.resetModules()
       let err: unknown
       try {
         await import("../src/index")

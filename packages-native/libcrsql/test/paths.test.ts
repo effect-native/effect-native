@@ -1,5 +1,5 @@
 import * as path from "node:path"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 
 import * as Paths from "../src/paths.js"
 

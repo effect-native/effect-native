@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import { buildRelativeLibraryPath, isSupportedPlatform, SUPPORTED_PLATFORMS } from "../src/platform.js"
 
 describe("platform helpers", () => {
