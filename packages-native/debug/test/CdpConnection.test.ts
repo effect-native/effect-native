@@ -1,13 +1,11 @@
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
-import type * as Socket from "effect/unstable/socket"
 import { describe, expect, it } from "@effect/vitest"
-import * as Chunk from "effect/Chunk"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
-import * as Option from "effect/Option"
 import * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import type * as Socket from "effect/unstable/socket/Socket"
 import * as ChildProcess from "node:child_process"
 import { constants as FsConstants } from "node:fs"
 import * as Fs from "node:fs/promises"
@@ -17,7 +15,7 @@ import * as Os from "node:os"
 import * as Path from "node:path"
 import { WebSocketServer } from "ws"
 import { cdpCommand, command as debugCommand, Debug, layerCdp, Transport as DebugTransport } from "../src/Debug.js"
-import type { Service as DebugService } from "../src/DebugModel.js"
+import type { Service as DebugService, Transport as DebugTransportType } from "../src/DebugModel.js"
 
 type CloseFn = () => Promise<void>
 
@@ -29,7 +27,7 @@ interface TestCdpServer {
 
 // TODO: refactor to use @effect/rpc
 const makeTestCdpServer: Effect.Effect<TestCdpServer, Error, Scope.Scope> = Effect.acquireRelease(
-  Effect.async<TestCdpServer, Error>((resume) => {
+  Effect.callback<TestCdpServer, Error>((resume) => {
     const wss = new WebSocketServer({ port: 0 })
     const seenIds: Array<number> = []
 
@@ -182,7 +180,7 @@ const findChromeExecutable: Effect.Effect<string, Error> = Effect.gen(function*(
   return yield* Effect.fail(new Error("Chrome executable not found; set CHROME_PATH to override"))
 })
 
-const acquireDebuggingPort: Effect.Effect<number, Error> = Effect.async((resume) => {
+const acquireDebuggingPort: Effect.Effect<number, Error> = Effect.callback((resume) => {
   const server = Net.createServer()
   const fail = (cause: unknown) => {
     server.close()
@@ -333,9 +331,9 @@ const makeChromeInspectorSession = Effect.acquireRelease(
             )
           )
         }
-        const result = yield* Effect.either(fetchChromeJson(port, "/json/list"))
-        if (result._tag === "Right") {
-          const value = result.right
+        const result = yield* Effect.result(fetchChromeJson(port, "/json/list"))
+        if (result._tag === "Success") {
+          const value = result.success
           lastTargetsSummary = Array.isArray(value) ? `targets=${value.length}` : "non-array"
           const pageTarget = findInspectablePage(value)
           if (pageTarget) {
@@ -343,13 +341,13 @@ const makeChromeInspectorSession = Effect.acquireRelease(
           }
           if (creationAttempts < creationLimit) {
             creationAttempts += 1
-            const creation = yield* Effect.either(
+            const creation = yield* Effect.result(
               fetchChromeJson(port, `/json/new?${encodeURIComponent("about:blank")}`, {
                 method: "PUT"
               })
             )
-            if (creation._tag === "Right") {
-              const createdTarget = parseChromeTarget(creation.right)
+            if (creation._tag === "Success") {
+              const createdTarget = parseChromeTarget(creation.success)
               if (createdTarget) {
                 createdTargetEndpoint = createdTarget.endpoint
                 return createdTarget
@@ -357,7 +355,7 @@ const makeChromeInspectorSession = Effect.acquireRelease(
             }
           }
         } else {
-          lastFailure = result.left
+          lastFailure = result.failure
         }
 
         yield* waitFor(waitDelayMs)
@@ -383,7 +381,7 @@ const makeChromeInspectorSession = Effect.acquireRelease(
     return { endpoint, targetType, chrome, userDataDir }
   }),
   ({ chrome, userDataDir }) =>
-    Effect.async<void, never>((resume) => {
+    Effect.callback<void, never>((resume) => {
       let completed = false
       const finish = () => {
         if (!completed) {
@@ -403,11 +401,11 @@ const makeChromeInspectorSession = Effect.acquireRelease(
         }
       }, 1_000)
     }).pipe(
-      Effect.zipRight(
+      Effect.andThen(
         Effect.tryPromise({
           try: () => Fs.rm(userDataDir, { recursive: true, force: true }),
           catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
-        }).pipe(Effect.catchAll(() => Effect.void))
+        }).pipe(Effect.ignore)
       )
     )
 ).pipe(Effect.map(({ endpoint, targetType }) => ({ endpoint, targetType })))
@@ -423,14 +421,14 @@ const makeNodeInspectorSession: Effect.Effect<string, Error, Scope.Scope> = Effe
 )
 
 const withDebugEnvironment = <A, E>(
-  effect: Effect.Effect<A, E, DebugService | Socket.WebSocketConstructor>
+  effect: Effect.Effect<A, E, DebugService | Socket.WebSocketConstructor | DebugTransportType>
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(layerCdp),
     Effect.provide(NodeSocket.layerWebSocketConstructor)
   )
 
-describe.sequential.skipIf(process.env.E2E !== "1")("Debug CDP connection", () => {
+describe.runIf(process.env.E2E === "1").sequential("Debug CDP connection", () => {
   it.effect("connects and fetches browser metadata", () =>
     withDebugEnvironment(
       Effect.scoped(
@@ -463,12 +461,12 @@ describe.sequential.skipIf(process.env.E2E !== "1")("Debug CDP connection", () =
             transport: DebugTransport.cdp()
           })
           const events = yield* debug.subscribe(session)
-          const collector = yield* Stream.take(events, 1).pipe(Stream.runCollect, Effect.forkScoped)
+          const collector = yield* Effect.forkScoped(Stream.take(events, 1).pipe(Stream.runCollect))
           yield* debug.sendCommand(session, RuntimeEnable)
-          yield* Effect.yieldNow()
-          const chunk = yield* Fiber.join(collector)
-          const head = Chunk.head(chunk)
-          expect(Option.map(head, (event) => event.method)).toEqual(Option.some("Runtime.consoleAPICalled"))
+          yield* Effect.yieldNow
+          const collected = yield* Fiber.join(collector)
+          const firstEvent = collected[0]
+          expect(firstEvent?.method).toBe("Runtime.consoleAPICalled")
         })
       )
     ).pipe(Effect.orDie))
