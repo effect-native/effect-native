@@ -1,4 +1,5 @@
 import * as OR from "@openrouter/sdk"
+import type { Scope } from "effect"
 import { Config, Data, Effect, Layer, ServiceMap, Stream } from "effect"
 
 /** Simple chat completion request (workaround for SDK response validation bug) */
@@ -24,47 +25,43 @@ export class OpenRouterError extends Data.TaggedError("OpenRouterError")<{
   cause?: unknown
 }> {}
 
-export class OpenRouterClientConfig
-  extends ServiceMap.Service<OpenRouterClientConfig, OR.SDKOptions>()("@effect-native/openrouter/OpenRouterClientConfig")
-{
-  static layer = (config: OR.SDKOptions) =>
-    Layer.succeed(OpenRouterClientConfig)(config)
+export class OpenRouterClientConfig extends ServiceMap.Service<OpenRouterClientConfig, OR.SDKOptions>()(
+  "@effect-native/openrouter/OpenRouterClientConfig"
+) {
+  static layer = (config: OR.SDKOptions) => Layer.succeed(OpenRouterClientConfig)(config)
 
   static Default = Layer.effect(
     OpenRouterClientConfig,
     Effect.gen(function*() {
       const apiKey = yield* Config.string("OPENROUTER_API_KEY")
       const serverURL = yield* Config.string("OPENROUTER_BASE_URL").pipe(
-        Config.withDefault("https://openrouter.ai/api/v1")
+        Config.withDefault(() => "https://openrouter.ai/api/v1")
       )
       return { apiKey, serverURL } as OR.SDKOptions
     })
   )
 }
 
+/** The shape returned by callModel, wrapping SDK ModelResult streams as Effects */
+interface CallModelOutput {
+  readonly result: ReturnType<OR.OpenRouter["callModel"]>
+  readonly reasoningStream: Effect.Effect<Stream.Stream<string, OpenRouterError>, OpenRouterError>
+  readonly newMessagesStream: Effect.Effect<Stream.Stream<unknown, OpenRouterError>, OpenRouterError>
+  readonly toolStream: Effect.Effect<Stream.Stream<unknown, OpenRouterError>, OpenRouterError>
+  readonly toolCalls: Effect.Effect<ReadonlyArray<unknown>, OpenRouterError>
+  readonly toolCallsStream: Effect.Effect<Stream.Stream<unknown, OpenRouterError>, OpenRouterError>
+  readonly response: Effect.Effect<unknown, OpenRouterError>
+  readonly fullResponsesStream: Effect.Effect<Stream.Stream<unknown, OpenRouterError>, OpenRouterError>
+  readonly text: Effect.Effect<string, OpenRouterError>
+  readonly textStream: Effect.Effect<Stream.Stream<string, OpenRouterError>, OpenRouterError>
+  readonly cancel: Effect.Effect<void, OpenRouterError>
+}
+
 interface OpenRouterService {
   readonly client: OR.OpenRouter
   readonly callModel: <const TTools extends ReadonlyArray<OR.Tool>>(
     request: OR.CallModelInput<TTools>
-  ) => Effect.Effect<{
-    readonly result: OR.CallModelResult<TTools>
-    readonly reasoningStream: Effect.Effect<Stream.Stream<string, OpenRouterError>, OpenRouterError>
-    readonly newMessagesStream: Effect.Effect<Stream.Stream<OR.CallModelResult.Message, OpenRouterError>, OpenRouterError>
-    readonly toolStream: Effect.Effect<Stream.Stream<OR.CallModelResult.ToolCall, OpenRouterError>, OpenRouterError>
-    readonly toolCalls: Effect.Effect<ReadonlyArray<OR.CallModelResult.ToolCall>, OpenRouterError>
-    readonly toolCallsStream: Effect.Effect<
-      Stream.Stream<OR.CallModelResult.ToolCall, OpenRouterError>,
-      OpenRouterError
-    >
-    readonly response: Effect.Effect<OR.CallModelResult.Response, OpenRouterError>
-    readonly fullResponsesStream: Effect.Effect<
-      Stream.Stream<OR.CallModelResult.Response, OpenRouterError>,
-      OpenRouterError
-    >
-    readonly text: Effect.Effect<string, OpenRouterError>
-    readonly textStream: Effect.Effect<Stream.Stream<string, OpenRouterError>, OpenRouterError>
-    readonly cancel: Effect.Effect<void, OpenRouterError>
-  }, OpenRouterError>
+  ) => Effect.Effect<CallModelOutput, OpenRouterError, Scope.Scope>
   readonly chat: (request: ChatRequest) => Effect.Effect<ChatResponse, OpenRouterError>
 }
 
@@ -212,7 +209,7 @@ export class OpenRouter
           if (!response.ok) {
             const errorText = yield* Effect.tryPromise({
               try: () => response.text(),
-              catch: () => "Unknown error"
+              catch: () => new OpenRouterError({ message: "Failed to read error response body" })
             })
             return yield* new OpenRouterError({ message: `OpenRouter API error (${response.status}): ${errorText}` })
           }
