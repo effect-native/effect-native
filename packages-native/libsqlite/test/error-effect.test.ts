@@ -1,4 +1,5 @@
 import { expect, it, vi } from "@effect/vitest"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 
 it.effect("maps thrown error to PlatformNotSupportedError with friendly help", () =>
@@ -14,16 +15,13 @@ it.effect("maps thrown error to PlatformNotSupportedError with friendly help", (
     if (exit._tag !== "Failure") {
       throw new Error("expected failure")
     }
-    // @ts-expect-error private
-    expect(exit.cause._tag === "Fail").toBe(true)
-    // Safely inspect cause shape without type assertions
-    const cause = (exit as unknown as { cause?: unknown }).cause
-    if (typeof cause !== "object" || cause === null || !("_tag" in cause)) {
-      throw new Error("unexpected cause shape")
-    }
-    const tagged = cause as { _tag: string }
-    expect(tagged._tag).toBe("Fail")
-    const maybeError = (cause as any).error
+    // In v4 Effect, Cause is an object with a `reasons` array of Reason values.
+    // Each Reason has _tag "Fail" | "Die" | "Interrupt". The cause itself has no _tag.
+    const failReasons = exit.cause.reasons.filter(Cause.isFailReason)
+    expect(failReasons.length).toBe(1)
+    const failReason = failReasons[0]
+    expect(failReason._tag).toBe("Fail")
+    const maybeError = failReason.error
     if (typeof maybeError !== "object" || maybeError === null || !("_tag" in maybeError)) {
       throw new Error("unexpected error shape")
     }
