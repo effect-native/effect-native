@@ -9,7 +9,7 @@
   "access": "public",
   "baseBranch": "v4",
   "updateInternalDependencies": "patch",
-  "ignore": ["scratchpad", "@effect-native/name-checker"],
+  "ignore": ["scratchpad"],
   "snapshot": {
     "useCalculatedVersion": false,
     "prereleaseTemplate": "{tag}-{commit}"

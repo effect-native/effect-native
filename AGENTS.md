@@ -11,19 +11,21 @@ This repo has two task management systems. Read the right one for your work:
 **Use this for:** Ongoing development, goals Tom wants accomplished, research, experiments, and implementation work.
 
 Read `.tasks/AGENTS.md` when:
+
 - Starting a new session and looking for what to work on
 - Tom gives you a GOAL to accomplish
 - You need to track progress on multi-step work
 - Doing research, experiments, or implementation
 - Following the RGRTDD (Red-Green-Refactor TDD) workflow
 
-**Key concepts:** GOAL-*.md files, task categories (research/experiment/spec/impl/cleanup), status tracking with basis.
+**Key concepts:** GOAL-\*.md files, task categories (research/experiment/spec/impl/cleanup), status tracking with basis.
 
 ### `.specs/AGENTS.md` - Formal Spec-Driven Features
 
 **Use this for:** Formal feature development that requires the full 5-phase spec workflow.
 
 Read `.specs/AGENTS.md` when:
+
 - Building a new feature that needs formal requirements documentation
 - The work requires explicit user approval gates between phases
 - Creating `.specs/[feature-name]/` directories with instructions.md, requirements.md, design.md, plan.md
@@ -228,10 +230,10 @@ This is the `effect-native/effect-native` repository - a standalone Effect-based
 
 ```bash
 # Standard PR creation
-gh pr create --base main
+gh pr create --base v4
 
 # Or with explicit repo (equivalent)
-gh pr create --repo effect-native/effect-native --base main
+gh pr create --repo effect-native/effect-native --base v4
 ```
 
-**Note:** Always use `main` as the base branch for PRs in this repository.
+**Note:** Always use `v4` as the base branch for PRs in this repository.
