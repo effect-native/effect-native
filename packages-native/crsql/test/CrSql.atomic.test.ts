@@ -1,9 +1,9 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import { SqlClient } from "effect/unstable/sql"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
@@ -18,7 +18,7 @@ const createTodosCrr = Effect.gen(function*() {
 })
 
 layer(DbMem)((it) => {
-  it.scoped("Default service yields site id (inspired by scratchpad)", () =>
+  it.effect("Default service yields site id (inspired by scratchpad)", () =>
     Effect.gen(function*() {
       // Use the default service wired with Node Sqlite layer
       const layers = CrSql.CrSql.Default.pipe(
@@ -29,7 +29,7 @@ layer(DbMem)((it) => {
       assert.match(siteId, /^[0-9A-F]{32}$/i)
     }))
 
-  it.scoped("crsql_sha missing before load; present after fromSqliteClient", () =>
+  it.effect("crsql_sha missing before load; present after fromSqliteClient", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
 
@@ -45,7 +45,7 @@ layer(DbMem)((it) => {
       const siteId = yield* crsql.getSiteIdHex
       assert.strictEqual(siteId.length, 32)
     }))
-  it.scoped("crsql_as_crr + insert succeeds under loaded extension", () =>
+  it.effect("crsql_as_crr + insert succeeds under loaded extension", () =>
     Effect.gen(function*() {
       // Ensure CR-SQLite is loaded via the product code (no duplication).
       // Calling the service loader initializes the extension on this connection.
@@ -59,7 +59,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(rows[0]?.n, 1)
     }))
 
-  it.scoped("pullChanges returns inserted columns (content, completed)", () =>
+  it.effect("pullChanges returns inserted columns (content, completed)", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       yield* CrSql.fromSqliteClient()
@@ -79,7 +79,7 @@ layer(DbMem)((it) => {
       assert.ok(forPk.some((c) => c.cid === "completed" && c.val === 0))
     }))
 
-  it.scoped("db version increments; since-cursor filters earlier changes", () =>
+  it.effect("db version increments; since-cursor filters earlier changes", () =>
     Effect.gen(function*() {
       // Ensure extension is loaded via product API
       const sql = yield* SqlClient.SqlClient
@@ -101,7 +101,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(byPk1.length, 0)
     }))
 
-  it.scoped("finalize does not fail", () =>
+  it.effect("finalize does not fail", () =>
     Effect.gen(function*() {
       const crsql = yield* CrSql.fromSqliteClient()
       // Should be safe and idempotent

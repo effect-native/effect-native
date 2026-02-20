@@ -10,7 +10,7 @@ import * as Schema from "effect/Schema"
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
-  it.scoped("fromSqliteClient: accepts loadedExtensionInfo effect", () =>
+  it.effect("fromSqliteClient: accepts loadedExtensionInfo effect", () =>
     Effect.gen(function*() {
       // Ensure the CR-SQLite extension is actually loaded on this connection.
       // This fulfills the contract that callers providing loadedExtensionInfo
@@ -44,7 +44,7 @@ layer(DbMem)((it) => {
       assert.match(siteId, /^[0-9A-F]{32}$/i)
     }))
 
-  it.scoped("ExtInfoLoaded decodeUnknown succeeds with encoded shape", () =>
+  it.effect("ExtInfoLoaded decodeUnknown succeeds with encoded shape", () =>
     Effect.gen(function*() {
       const encoded = { path: null as string | null, loadedAt: new Date() }
 
@@ -55,7 +55,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(roundTripped.loadedAt.getTime(), encoded.loadedAt.getTime())
     }))
 
-  it.scoped("ExtInfoLoaded decodeUnknown fails for invalid shape", () =>
+  it.effect("ExtInfoLoaded decodeUnknown fails for invalid shape", () =>
     Effect.gen(function*() {
       const bad = { path: 123 as unknown, loadedAt: new Date() }
       const res = yield* Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded)(bad).pipe(Effect.either)

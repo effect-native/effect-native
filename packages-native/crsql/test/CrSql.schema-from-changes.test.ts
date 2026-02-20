@@ -1,10 +1,10 @@
 import { CrSql } from "@effect-native/crsql"
-import { Reactivity } from "effect/unstable/reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
+import { Reactivity } from "effect/unstable/reactivity"
+import { SqlClient } from "effect/unstable/sql"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 // TDD style: red test first for a feature we wish existed.
@@ -16,7 +16,7 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // tests remain red/skipped until the feature is fully validated and stabilized.
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
-  it.scoped.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED): can recreate schema for exported changes and apply them", () =>
+  it.effect.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED): can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {

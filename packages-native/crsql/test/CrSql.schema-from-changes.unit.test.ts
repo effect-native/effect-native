@@ -1,8 +1,8 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, it } from "@effect/vitest"
 import { Effect } from "effect"
+import { SqlClient } from "effect/unstable/sql"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
 // TDD style: focused unit tests to narrow behavior
@@ -11,7 +11,7 @@ import { ensureCrSqlLoaded } from "./_helpers.js"
 // The __experimental__schemaFromChanges feature is implemented but these unit
 // tests remain red/skipped until the feature is fully validated and stabilized.
 
-it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
+it.effect.skip("schemaFromChanges: infers columns for todos", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -31,7 +31,7 @@ it.scoped.skip("schemaFromChanges: infers columns for todos", () =>
     assert.ok(schema.includes("SELECT crsql_as_crr('todos')"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped.skip("schemaFromChanges: includes multiple tables present in changes", () =>
+it.effect.skip("schemaFromChanges: includes multiple tables present in changes", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -56,7 +56,7 @@ it.scoped.skip("schemaFromChanges: includes multiple tables present in changes",
     assert.ok(schema.includes("SELECT crsql_as_crr('b')"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
+it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -83,7 +83,7 @@ it.scoped.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/R
     assert.ok(schema.includes("b BLOB"))
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped.skip("schemaFromChanges: conflicting types for same column fails", () =>
+it.effect.skip("schemaFromChanges: conflicting types for same column fails", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -105,7 +105,7 @@ it.scoped.skip("schemaFromChanges: conflicting types for same column fails", () 
     assert.isTrue(either._tag === "Left")
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
+it.effect.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -132,7 +132,7 @@ it.scoped.skip("schemaFromChanges: deterministic column order (id first, others 
     assert.ok(iAlpha < iMid && iMid < iZeta)
   }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.scoped.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
+it.effect.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient

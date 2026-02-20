@@ -1,10 +1,10 @@
 import { CrSql } from "@effect-native/crsql"
-import { Reactivity } from "effect/unstable/reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import { Reactivity } from "effect/unstable/reactivity"
+import { SqlClient } from "effect/unstable/sql"
 import * as os from "node:os"
 import * as path from "node:path"
 import { ensureCrSqlLoaded } from "./_helpers.js"
@@ -12,7 +12,7 @@ import { ensureCrSqlLoaded } from "./_helpers.js"
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
-  it.scoped("automigrate: initial apply creates CRR and tracks changes", () =>
+  it.effect("automigrate: initial apply creates CRR and tracks changes", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
@@ -37,7 +37,7 @@ layer(DbMem)((it) => {
       assert.ok(changes.some((c) => c.cid === "qty" && c.val === 2))
     }))
 
-  it.scoped("automigrate: add column and capture new column changes", () =>
+  it.effect("automigrate: add column and capture new column changes", () =>
     Effect.gen(function*() {
       const uri = path.join(os.tmpdir(), `am-${Date.now()}-${Math.random().toString(16).slice(2)}.sqlite`)
       // Stage 1 on connection A
@@ -94,7 +94,7 @@ layer(DbMem)((it) => {
       assert.ok(!changes2.some((c) => c.pk.toUpperCase().endsWith(stage1.pk1)))
     }))
 
-  it.scoped("automigrate call is parameterized; injection cannot break out", () =>
+  it.effect("automigrate call is parameterized; injection cannot break out", () =>
     Effect.gen(function*() {
       yield* ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient

@@ -1,12 +1,12 @@
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
+import { SqlClient } from "effect/unstable/sql"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
-  it.scoped("parameterized values prevent SQL injection (text)", () =>
+  it.effect("parameterized values prevent SQL injection (text)", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       yield* sql`CREATE TABLE safe (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)`
@@ -24,7 +24,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(row.name, injected)
     }))
 
-  it.scoped("parameterized values prevent SQL injection (numeric string)", () =>
+  it.effect("parameterized values prevent SQL injection (numeric string)", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       yield* sql`CREATE TABLE nums (val INTEGER NOT NULL)`
@@ -39,7 +39,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(row.val, injectedNumber)
     }))
 
-  it.scoped("parameterized values inside functions are safe (unhex)", () =>
+  it.effect("parameterized values inside functions are safe (unhex)", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       yield* sql`CREATE TABLE safe_blob (id BLOB PRIMARY KEY, note TEXT NOT NULL)`

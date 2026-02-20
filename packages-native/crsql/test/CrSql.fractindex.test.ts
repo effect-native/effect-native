@@ -1,13 +1,13 @@
 import { CrSql } from "@effect-native/crsql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
+import { SqlClient } from "effect/unstable/sql"
 
 const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
-  it.scoped("fractAsOrdered creates fractindex view", () =>
+  it.effect("fractAsOrdered creates fractindex view", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient()
@@ -21,7 +21,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(exists.n, 1)
     }))
 
-  it.scoped("fractAsOrderedWith (grouped) creates fractindex view", () =>
+  it.effect("fractAsOrderedWith (grouped) creates fractindex view", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient()
@@ -34,7 +34,7 @@ layer(DbMem)((it) => {
       assert.strictEqual(exists.n, 1)
     }))
 
-  it.scoped("append and prepend maintain stable ordering", () =>
+  it.effect("append and prepend maintain stable ordering", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient()
@@ -57,7 +57,7 @@ layer(DbMem)((it) => {
       assert.deepEqual(rows2.map((r) => r.id), ["A", "C", "E"]) // append placed E at end
     }))
 
-  it.scoped("insert between neighbors using fractKeyBetween", () =>
+  it.effect("insert between neighbors using fractKeyBetween", () =>
     Effect.gen(function*() {
       const sql = yield* SqlClient.SqlClient
       const crsql = yield* CrSql.fromSqliteClient()

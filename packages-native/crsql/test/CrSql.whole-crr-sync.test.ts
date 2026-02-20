@@ -1,9 +1,9 @@
 import { CrSql } from "@effect-native/crsql"
-import { Reactivity } from "effect/unstable/reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import { Reactivity } from "effect/unstable/reactivity"
 
 function maxVersionAndSeq(
   changes: ReadonlyArray<{
@@ -20,7 +20,7 @@ function maxVersionAndSeq(
 }
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
-  it.scoped("Whole CRR Sync via crsql_changes + crsql_tracked_peers: first sync A→B and cursor update", () =>
+  it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: first sync A→B and cursor update", () =>
     Effect.gen(function*() {
       const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -74,7 +74,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       }).pipe(Effect.provide(layerB))
     }))
 
-  it.scoped("Whole CRR Sync via crsql_changes + crsql_tracked_peers: incremental sync A→B using tracked cursor", () =>
+  it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: incremental sync A→B using tracked cursor", () =>
     Effect.gen(function*() {
       const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -141,7 +141,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       )
     }))
 
-  it.scoped("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
+  it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
     Effect.gen(function*() {
       // Use one in-memory connection per replica and reuse it across steps
       const clientA = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })

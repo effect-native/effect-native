@@ -1,9 +1,9 @@
 import * as CrSql from "@effect-native/crsql/CrSql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import { SqlClient } from "effect/unstable/sql"
 import * as TestHelpers from "./_helpers.js"
 
 const layers = Layer.mergeAll(
@@ -13,7 +13,7 @@ const layers = Layer.mergeAll(
 )
 
 layer(layers)((it) => {
-  it.scoped("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
+  it.effect("core: sha/site_id/db_version/next_db_version/rows_impacted", () =>
     Effect.gen(function*() {
       yield* TestHelpers.ensureCrSqlLoaded
       const crsql = yield* CrSql.CrSql
@@ -49,7 +49,7 @@ layer(layers)((it) => {
       assert.strictEqual(BigInt(vnext1), BigInt(v1) + 1n)
     }))
 
-  it.scoped("crsql_changes virtual table accessible", () =>
+  it.effect("crsql_changes virtual table accessible", () =>
     Effect.gen(function*() {
       yield* TestHelpers.ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
@@ -58,7 +58,7 @@ layer(layers)((it) => {
       assert.ok(rows[0]?.n >= 0)
     }))
 
-  it.scoped("as_crr => tracked; as_table => tracking stops", () =>
+  it.effect("as_crr => tracked; as_table => tracking stops", () =>
     Effect.gen(function*() {
       yield* TestHelpers.ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient
@@ -91,7 +91,7 @@ layer(layers)((it) => {
       assert.strictEqual(delta.length, 0)
     }))
 
-  it.scoped("begin_alter/commit_alter: add column and capture thereafter", () =>
+  it.effect("begin_alter/commit_alter: add column and capture thereafter", () =>
     Effect.gen(function*() {
       yield* TestHelpers.ensureCrSqlLoaded
       const sql = yield* SqlClient.SqlClient

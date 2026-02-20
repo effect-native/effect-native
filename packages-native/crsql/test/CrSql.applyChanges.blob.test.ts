@@ -1,12 +1,12 @@
 import { CrSql } from "@effect-native/crsql"
-import { Reactivity } from "effect/unstable/reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
+import { Reactivity } from "effect/unstable/reactivity"
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
-  it.scoped("applyChanges decodes BLOB values: applies blob change rows (pk and val) losslessly", () =>
+  it.effect("applyChanges decodes BLOB values: applies blob change rows (pk and val) losslessly", () =>
     Effect.gen(function*() {
       // Stage 1: Produce a change with BLOB PK and BLOB value
       const source = yield* Effect.gen(function*() {

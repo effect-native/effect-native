@@ -1,14 +1,14 @@
 import { CrSql } from "@effect-native/crsql"
-import { Reactivity } from "effect/unstable/reactivity"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
+import { Reactivity } from "effect/unstable/reactivity"
+import { SqlClient } from "effect/unstable/sql"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
 layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
-  it.scoped("applyChanges: exports from DB1 apply into DB2", () =>
+  it.effect("applyChanges: exports from DB1 apply into DB2", () =>
     Effect.gen(function*() {
       // Single provided connections per DB to keep :memory: state
       const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -52,7 +52,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       }).pipe(Effect.provide(Db2))
     }))
 
-  it.scoped("tracked peers: set/get works across DBs", () =>
+  it.effect("tracked peers: set/get works across DBs", () =>
     Effect.gen(function*() {
       const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
       const Db2 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
@@ -103,7 +103,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       assert.deepEqual(tracked, { version: info2.v2, seq: 0 })
     }))
 
-  it.scoped("fromSqliteClient: explicit sql handles multiple instances", () =>
+  it.effect("fromSqliteClient: explicit sql handles multiple instances", () =>
     Effect.gen(function*() {
       const db1 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
       const db2 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
