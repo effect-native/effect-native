@@ -68,20 +68,18 @@ export const looksLikeFlag = (arg: string): boolean => arg.startsWith("-") || ar
 export const TitleWord = Schema.String.pipe(
   Schema.check(
     Schema.makeFilter(
-      (s: string) => looksLikeFlag(s) ? false : undefined,
-      {
-        message: (input: unknown) =>
-          `"${String(input)}" looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>`
-      }
+      (s: string) =>
+        looksLikeFlag(s)
+          ? `"${s}" looks like a flag. This tool doesn't accept flags yet.\nUsage: note <title words...>`
+          : undefined
     )
   ),
   Schema.check(
     Schema.makeFilter(
-      (s: string) => looksLikeFilename(s) ? false : undefined,
-      {
-        message: (input: unknown) =>
-          `"${String(input)}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`
-      }
+      (s: string) =>
+        looksLikeFilename(s)
+          ? `"${s}" looks like a filename. This tool creates filenames automatically.\nUsage: note <title words...>`
+          : undefined
     )
   )
 )
