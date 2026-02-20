@@ -5,7 +5,7 @@
     { "path": "tsconfig.src.json" }
   ],
   "compilerOptions": {
-    "types": ["node"],
+    "types": ["node", "bun"],
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "test",
     "outDir": "build/test"

@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "include": ["test/**/*.test.ts", "test/**/*.test.tsx"],
   "compilerOptions": {
-    "outDir": "build/test",
+    "types": ["node", "bun"],
     "rootDir": "test",
+    "noEmit": true,
     "jsx": "react-jsx"
   },
   "references": [

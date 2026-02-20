@@ -5,7 +5,7 @@
     { "path": "tsconfig.src.json" }
   ],
   "compilerOptions": {
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "bun"],
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "src",
     "outDir": "build/test"

@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "include": ["test/**/*.test.ts"],
   "compilerOptions": {
-    "outDir": "build/test",
-    "rootDir": "test"
+    "types": ["node", "bun"],
+    "rootDir": "test",
+    "noEmit": true
   },
   "references": [
     { "path": "tsconfig.src.json" }

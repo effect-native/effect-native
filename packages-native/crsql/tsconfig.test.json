@@ -9,7 +9,7 @@
     "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
     "rootDir": "test",
     "noEmit": true,
-    "types": ["node", "vitest"],
+    "types": ["node", "bun"],
     "paths": {
       "@effect-native/libcrsql": ["../libcrsql/src/index.ts"],
       "@effect-native/libcrsql/*": ["../libcrsql/src/*.ts"]

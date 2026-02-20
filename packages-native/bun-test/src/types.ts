@@ -80,6 +80,7 @@ export namespace BunTest {
 
   /** Complete test methods interface including Effect utilities. */
   export interface Methods<R = never> {
+    (name: string, fn: () => void | Promise<void>, timeout?: number): void
     readonly effect: BunTest.Tester<TestServices | R>
     readonly flakyTest: <A, E, R2>(
       self: Effect.Effect<A, E, R2>,
