@@ -18,7 +18,7 @@
  * )
  * ```
  */
-import * as Schema from "effect/Schema"
+import * as Data from "effect/Data"
 
 /**
  * Error indicating that the `unhex()` function is not available in SQLite.
@@ -30,11 +30,9 @@ import * as Schema from "effect/Schema"
  * @since 0.1.0
  * @category Errors
  */
-export class UnhexUnavailable extends Schema.TaggedError<UnhexUnavailable>(
-  "@effect-native/crsql/UnhexUnavailable"
-)("UnhexUnavailable", {
-  cause: Schema.optional(Schema.Defect)
-}) {}
+export class UnhexUnavailable extends Data.TaggedError("UnhexUnavailable")<{
+  cause?: unknown
+}> {}
 
 /**
  * Error indicating that the CR-SQLite extension is not loaded or available.
@@ -47,8 +45,6 @@ export class UnhexUnavailable extends Schema.TaggedError<UnhexUnavailable>(
  * @since 0.1.0
  * @category Errors
  */
-export class CrSqliteExtensionMissing extends Schema.TaggedError<CrSqliteExtensionMissing>(
-  "@effect-native/crsql/CrSqliteExtensionMissing"
-)("CrSqliteExtensionMissing", {
-  cause: Schema.optional(Schema.Defect)
-}) {}
+export class CrSqliteExtensionMissing extends Data.TaggedError("CrSqliteExtensionMissing")<{
+  cause?: unknown
+}> {}

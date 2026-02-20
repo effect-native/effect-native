@@ -36,10 +36,10 @@
     "coverage": "vitest --coverage"
   },
   "peerDependencies": {
-    "effect": "^3.19.0"
+    "effect": "^4.0.0-beta.0"
   },
   "devDependencies": {
-    "effect": "latest",
-    "@effect/vitest": "latest"
+    "effect": "beta",
+    "@effect/vitest": "beta"
   }
 }

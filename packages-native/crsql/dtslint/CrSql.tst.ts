@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type * as SqlClient from "@effect/sql/SqlClient"
+import type { SqlClient } from "effect/unstable/sql"
 import type { Context, Effect, Scope } from "effect"
 import { describe, expect, it } from "tstyche"
 import { fromSqliteClient } from "../src/CrSql.js"

@@ -6,12 +6,11 @@
  *
  * @since 0.0.1
  */
-import { Command, HelpDoc, Span } from "@effect/cli"
-import * as CliConfig from "@effect/cli/CliConfig"
-import { NodeContext } from "@effect/platform-node"
+import { NodeServices } from "@effect/platform-node"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import { Command } from "effect/unstable/cli"
 import packageJson from "../package.json" with { type: "json" }
 
 /**
@@ -19,33 +18,6 @@ import packageJson from "../package.json" with { type: "json" }
  * @since 0.0.1
  */
 export const version = packageJson.version as string
-
-const tightFeedbackDoc = HelpDoc.sequence(
-  HelpDoc.p("tight feedback loops keep optimism in check"),
-  HelpDoc.enumeration([
-    HelpDoc.p("daily: plan with the customer -> release something tiny"),
-    HelpDoc.p("hourly: pair -> TDD -> refactor -> CI"),
-    HelpDoc.p("each change: red -> green -> refactor following the simple design rules")
-  ])
-)
-
-const guardrailsDoc = HelpDoc.p(
-  "Guardrails: 5-min build, sustainable pace, collective ownership"
-)
-
-const sliceDoc = HelpDoc.p(
-  "Slice time very thinly so every slice includes discovery, design, implementation, and checks"
-)
-
-const activitiesDoc = HelpDoc.sequence(
-  HelpDoc.p("uXP activities repeat every slice:"),
-  HelpDoc.enumeration([
-    HelpDoc.p("figure out what to do"),
-    HelpDoc.p("figure out the structure that will let us do it"),
-    HelpDoc.p("implement the features"),
-    HelpDoc.p("make sure they work as expected")
-  ])
-)
 
 const doctorCommand = Command.make("doctor", {}, () =>
   Console.log(
@@ -56,7 +28,7 @@ const doctorCommand = Command.make("doctor", {}, () =>
     ].join("\n")
   )).pipe(
     Command.withDescription(
-      HelpDoc.p("Verify tooling: Effect, pnpm, Nix, and native deps stay in sync")
+      "Verify tooling: Effect, pnpm, Nix, and native deps stay in sync"
     )
   )
 
@@ -66,13 +38,26 @@ const doctorCommand = Command.make("doctor", {}, () =>
  */
 export const effectNativeCommand = Command.make("effect-native").pipe(
   Command.withDescription(
-    HelpDoc.blocks([
-      HelpDoc.p("Effect Native CLI for ultra extreme programmers"),
-      tightFeedbackDoc,
-      guardrailsDoc,
-      sliceDoc,
-      activitiesDoc
-    ])
+    [
+      `effect-native ${version}`,
+      "",
+      "Effect Native CLI for ultra extreme programmers",
+      "",
+      "tight feedback loops keep optimism in check:",
+      "  - daily: plan with the customer -> release something tiny",
+      "  - hourly: pair -> TDD -> refactor -> CI",
+      "  - each change: red -> green -> refactor following the simple design rules",
+      "",
+      "Guardrails: 5-min build, sustainable pace, collective ownership",
+      "",
+      "Slice time very thinly so every slice includes discovery, design, implementation, and checks",
+      "",
+      "uXP activities repeat every slice:",
+      "  - figure out what to do",
+      "  - figure out the structure that will let us do it",
+      "  - implement the features",
+      "  - make sure they work as expected"
+    ].join("\n")
   ),
   Command.withSubcommands([
     doctorCommand
@@ -80,32 +65,26 @@ export const effectNativeCommand = Command.make("effect-native").pipe(
 )
 
 /**
- * CLI configuration shared by the binary and tests.
- * @since 0.0.1
- */
-export const CliLayer = CliConfig.layer({
-  showBuiltIns: false
-})
-
-/**
  * Baseline layer stack required by the CLI.
  * @since 0.0.1
  */
-export const MainLayer = Layer.mergeAll(
-  CliLayer,
-  NodeContext.layer
+export const MainLayer = Layer.merge(
+  NodeServices.layer,
+  Layer.empty
 )
 
 /**
- * Fully-configured CLI application ready to interpret `process.argv`.
+ * CLI configuration layer (kept for backwards compatibility; no-op in effect v4).
  * @since 0.0.1
  */
-export const cli = Command.run(effectNativeCommand, {
-  name: "effect-native",
-  version,
-  summary: Span.text("tight feedback loops for ultra extreme programmers"),
-  footer: HelpDoc.p("Conclusions are based on evidence. When tests go green, refactor and re-evaluate design.")
-})
+export const CliLayer = Layer.empty
+
+/**
+ * Fully-configured CLI application ready to interpret explicit args.
+ * Uses `Command.runWith` so callers can supply args directly (for tests, etc.).
+ * @since 0.0.1
+ */
+export const cli = Command.runWith(effectNativeCommand, { version })
 
 /**
  * Convenience helper for executing the CLI with the default layer stack.

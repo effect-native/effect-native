@@ -5,9 +5,9 @@
  * @since 0.0.0
  */
 
-import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
+import * as ServiceMap from "effect/ServiceMap"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
@@ -58,7 +58,7 @@ export const Transport = {
  * @category Transport
  * @since 0.0.0
  */
-export const CurrentTransport = Context.GenericTag<Transport>("@effect-native/debug/CurrentTransport")
+export const CurrentTransport = ServiceMap.Service<Transport>("@effect-native/debug/CurrentTransport")
 
 /**
  * Command envelope describing a debugger request.
@@ -72,7 +72,7 @@ export interface Command<A, I = unknown> {
   readonly params?: I | undefined
   readonly sessionId?: string | undefined
   readonly targetId?: string | undefined
-  readonly response: Schema.Schema<A>
+  readonly response: Schema.Schema<A> & { readonly "DecodingServices": never }
 }
 
 /**
@@ -250,4 +250,4 @@ export interface Service {
  * @category Service
  * @since 0.0.0
  */
-export const Debug = Context.GenericTag<Service>("@effect-native/debug/Debug")
+export const Debug = ServiceMap.Service<Service>("@effect-native/debug/Debug")

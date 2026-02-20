@@ -36,7 +36,7 @@ import * as S from "effect/Schema"
  * @since 0.1.0
  * @category Schema
  */
-export const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
+export const HexString = S.String.check(S.isPattern(/^([0-9a-fA-F]{2})+$/))
 
 /**
  * Site ID as a 32-character hex string (16 bytes).
@@ -44,7 +44,7 @@ export const HexString = S.String.pipe(S.pattern(/^([0-9a-fA-F]{2})+$/))
  * @since 0.1.0
  * @category Schema
  */
-export const SiteIdHex = S.String.pipe(S.pattern(/^[0-9a-fA-F]{32}$/))
+export const SiteIdHex = S.String.check(S.isPattern(/^[0-9a-fA-F]{32}$/))
 
 /**
  * @since 0.1.0
@@ -71,10 +71,9 @@ export type SiteIdHex = typeof SiteIdHex.Type
  * @since 0.1.0
  * @category Schema
  */
-export const VersionString = S.String.pipe(
-  S.pattern(/^[0-9]+$/),
-  S.annotations({ identifier: "BigIntString", description: "bigint encoded as a base-10 string" })
-)
+export const VersionString = S.String.check(
+  S.isPattern(/^[0-9]+$/)
+).annotate({ identifier: "BigIntString", description: "bigint encoded as a base-10 string" })
 
 /**
  * @since 0.1.0
@@ -94,7 +93,7 @@ export type VersionString = typeof VersionString.Type
  * @since 0.1.0
  * @category Schema
  */
-export const SqlValueType = S.Literal("null", "text", "integer", "real", "blob")
+export const SqlValueType = S.Literals(["null", "text", "integer", "real", "blob"])
 /**
  * Type alias for SQLite column value types.
  *
@@ -113,7 +112,7 @@ export type SqlValueType = typeof SqlValueType.Type
  * @since 0.1.0
  * @category Schema
  */
-export const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
+export const Identifier = S.String.check(S.isPattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
 
 /**
  * Pre-serialized crsql_changes row for transport (IO boundary shape).
@@ -134,52 +133,30 @@ export const Identifier = S.String.pipe(S.pattern(/^[A-Za-z_][A-Za-z0-9_]*$/))
  * @category Schema
  */
 export const ChangeRowSerialized = S.Struct({
-  table: Identifier.pipe(
-    S.annotations({ description: "CRR table name (SQL identifier)" })
-  ),
-  pk: HexString.pipe(
-    S.annotations({ description: "Primary key as hex-encoded BLOB" })
-  ),
-  cid: Identifier.pipe(
-    S.annotations({ description: "Column id/name (SQL identifier)" })
-  ),
-  val: S.Union(S.Null, S.String, S.Number).pipe(
-    S.annotations({
-      description:
-        "Value serialized from SQL: null | string | number. If val_type=blob, this is a hex string; if integer/real, a number; if text, a string"
-    })
-  ),
-  val_type: SqlValueType.pipe(
-    S.annotations({ description: "SQLite typeof(val): null | text | integer | real | blob" })
-  ),
-  col_version: VersionString.pipe(
-    S.annotations({ description: "Column version (bigint) as base-10 string" })
-  ),
-  db_version: VersionString.pipe(
-    S.annotations({ description: "Database version (bigint) as base-10 string" })
-  ),
-  site_id: SiteIdHex.pipe(
-    S.annotations({ description: "Site id as 32‑char hex (16 bytes)" })
-  ),
-  cl: S.NonNegativeInt.pipe(
-    S.annotations({
-      description: "Causal length: the causal depth at the origin when this change was produced.\n" +
-        "Represents how many prior changes were causally visible; useful for debugging\n" +
-        "and advanced conflict policies. Most clients do not need to act on this field."
-    })
-  ),
-  seq: S.NonNegativeInt.pipe(
-    S.annotations({
-      description: "Sequence number: within-version ordering for rows that share the same db_version.\n" +
-        "Together, (db_version, seq) provides a deterministic total order for pull/apply."
-    })
-  )
-}).pipe(
-  S.annotations({
-    identifier: "ChangeRowSerialized",
-    description: "CR-SQLite change row as serialized by SQL (hex strings, bigint values as strings)"
+  table: Identifier.annotate({ description: "CRR table name (SQL identifier)" }),
+  pk: HexString.annotate({ description: "Primary key as hex-encoded BLOB" }),
+  cid: Identifier.annotate({ description: "Column id/name (SQL identifier)" }),
+  val: S.Union([S.Null, S.String, S.Number]).annotate({
+    description:
+      "Value serialized from SQL: null | string | number. If val_type=blob, this is a hex string; if integer/real, a number; if text, a string"
+  }),
+  val_type: SqlValueType.annotate({ description: "SQLite typeof(val): null | text | integer | real | blob" }),
+  col_version: VersionString.annotate({ description: "Column version (bigint) as base-10 string" }),
+  db_version: VersionString.annotate({ description: "Database version (bigint) as base-10 string" }),
+  site_id: SiteIdHex.annotate({ description: "Site id as 32‑char hex (16 bytes)" }),
+  cl: S.Int.check(S.isGreaterThanOrEqualTo(0)).annotate({
+    description: "Causal length: the causal depth at the origin when this change was produced.\n" +
+      "Represents how many prior changes were causally visible; useful for debugging\n" +
+      "and advanced conflict policies. Most clients do not need to act on this field."
+  }),
+  seq: S.Int.check(S.isGreaterThanOrEqualTo(0)).annotate({
+    description: "Sequence number: within-version ordering for rows that share the same db_version.\n" +
+      "Together, (db_version, seq) provides a deterministic total order for pull/apply."
   })
-)
+}).annotate({
+  identifier: "ChangeRowSerialized",
+  description: "CR-SQLite change row as serialized by SQL (hex strings, bigint values as strings)"
+})
 
 /**
  * @since 0.1.0
@@ -222,7 +199,7 @@ export const isChangeRowSerializedQuick = (it: unknown): it is ChangeRowSerializ
  * @since 0.1.0
  * @category Schema
  */
-export const ChangeArray = S.Tuple(
+export const ChangeArray = S.Tuple([
   // table
   Identifier,
   // pk (hex-encoded BLOB)
@@ -230,7 +207,7 @@ export const ChangeArray = S.Tuple(
   // cid (column name)
   Identifier,
   // val (serialized via SQL rules)
-  S.Union(S.Null, S.String, S.Number),
+  S.Union([S.Null, S.String, S.Number]),
   // val_type (typeof(val))
   SqlValueType,
   // col_version (bigint as base-10 string)
@@ -240,16 +217,14 @@ export const ChangeArray = S.Tuple(
   // site_id (hex-encoded BLOB)
   SiteIdHex,
   // cl (causal length)
-  S.NonNegativeInt,
+  S.Int.check(S.isGreaterThanOrEqualTo(0)),
   // seq (within-version ordering)
-  S.NonNegativeInt
-).pipe(
-  S.annotations({
-    identifier: "ChangeArray",
-    description:
-      "CR-SQLite change row as a positional tuple [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]"
-  })
-)
+  S.Int.check(S.isGreaterThanOrEqualTo(0))
+]).annotate({
+  identifier: "ChangeArray",
+  description:
+    "CR-SQLite change row as a positional tuple [table, pk, cid, val, val_type, col_version, db_version, site_id, cl, seq]"
+})
 /**
  * @since 0.1.0
  * @category Models
@@ -290,7 +265,7 @@ export const toChangeArray = (
  * @since 0.1.0
  * @category Schema
  */
-export const ChangesObjects = S.Array(ChangeRowSerialized).annotations({
+export const ChangesObjects = S.Array(ChangeRowSerialized).annotate({
   identifier: "ChangesObjects",
   description: "Array of object-shaped CR-SQLite change rows"
 })
@@ -305,7 +280,7 @@ export type ChangesObjects = typeof ChangesObjects.Type
  * @since 0.1.0
  * @category Schema
  */
-export const ChangesArray = S.Array(ChangeArray).annotations({
+export const ChangesArray = S.Array(ChangeArray).annotate({
   identifier: "ChangesArray",
   description: "Array of tuple-shaped CR-SQLite change rows"
 })
@@ -322,7 +297,7 @@ export type ChangesArray = typeof ChangesArray.Type
  * @since 0.1.0
  * @category Schema
  */
-export const Changes = S.Union(ChangesObjects, ChangesArray).annotations({
+export const Changes = S.Union([ChangesObjects, ChangesArray]).annotate({
   identifier: "Changes",
   description: "Changes encoded as either objects or tuples"
 })
@@ -347,7 +322,7 @@ export type Changes = typeof Changes.Type
 export const TrackedPeerSerialized = S.Struct({
   site_id: SiteIdHex,
   version: VersionString,
-  seq: S.NonNegativeInt
+  seq: S.Int.check(S.isGreaterThanOrEqualTo(0))
 })
 
 /**
@@ -367,11 +342,11 @@ export type TrackedPeerSerialized = typeof TrackedPeerSerialized.Type
  * @category Schema
  */
 export const ExtInfo = S.Struct({
-  sha: S.String.annotations({ description: "Git commit SHA of the cr-sqlite extension" }),
+  sha: S.String.annotate({ description: "Git commit SHA of the cr-sqlite extension" }),
   siteId: SiteIdHex,
-  path: S.NullOr(S.String).annotations({ description: "Filesystem path to the loaded extension, if any" }),
-  loadedAt: S.DateTimeUtcFromDate.annotations({ description: "Timestamp when the extension was loaded" })
-}).annotations({ description: "Info about the cr-sqlite extension" })
+  path: S.NullOr(S.String).annotate({ description: "Filesystem path to the loaded extension, if any" }),
+  loadedAt: S.DateTimeUtcFromDate.annotate({ description: "Timestamp when the extension was loaded" })
+}).annotate({ description: "Info about the cr-sqlite extension" })
 
 /**
  * @since 0.1.0
@@ -389,7 +364,7 @@ export type ExtInfo = typeof ExtInfo.Type
  * @since 0.1.0
  * @category Schema
  */
-export const ExtInfoSql = ExtInfo.pick("sha", "siteId").annotations({
+export const ExtInfoSql = ExtInfo.mapFields(({ sha, siteId }) => ({ sha, siteId })).annotate({
   description: "Info from querying the cr-sqlite extension"
 })
 
@@ -409,7 +384,7 @@ export type ExtInfoSql = typeof ExtInfoSql.Type
  * @since 0.1.0
  * @category Schema
  */
-export const ExtInfoLoaded = ExtInfo.pick("path", "loadedAt").annotations({
+export const ExtInfoLoaded = ExtInfo.mapFields(({ path, loadedAt }) => ({ path, loadedAt })).annotate({
   description: "Info about loading the cr-sqlite extension"
 })
 

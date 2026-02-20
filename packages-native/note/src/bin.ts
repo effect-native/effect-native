@@ -6,13 +6,14 @@
  * @since 0.1.0
  */
 
-import { Args, Command } from "@effect/cli"
-import { FileSystem, Path } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { Argument, Command } from "effect/unstable/cli"
+import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import * as Console from "effect/Console"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
+import * as FileSystem from "effect/FileSystem"
 import * as Match from "effect/Match"
+import * as Path from "effect/Path"
 
 import { makeContent, makeFilename } from "./Note.js"
 import { TitleInput } from "./Validate.js"
@@ -93,9 +94,9 @@ const handleNoteError = (error: NoteError): Effect.Effect<never> =>
     Effect.andThen(Effect.sync(() => process.exit(1)))
   )
 
-const titleArgs = Args.text({ name: "title" }).pipe(
-  Args.atLeast(1),
-  Args.withSchema(TitleInput)
+const titleArgs = Argument.string("title").pipe(
+  Argument.atLeast(1),
+  Argument.withSchema(TitleInput)
 )
 
 const noteCommand = Command.make(
@@ -149,15 +150,14 @@ const noteCommand = Command.make(
  * @since 0.1.0
  */
 export const run = (args: ReadonlyArray<string>) =>
-  Command.run(noteCommand, {
-    name: "note",
+  Command.runWith(noteCommand, {
     version: "0.1.0"
   })(args)
 
 // Run if executed directly (not when imported as module for testing)
 if (process.argv[1]?.includes("bin")) {
   run(process.argv).pipe(
-    Effect.provide(NodeContext.layer),
+    Effect.provide(NodeServices.layer),
     NodeRuntime.runMain({ disableErrorReporting: true })
   )
 }

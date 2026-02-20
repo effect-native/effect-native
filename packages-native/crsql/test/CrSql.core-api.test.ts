@@ -1,6 +1,6 @@
 import * as CrSql from "@effect-native/crsql/CrSql"
 import * as NodeSqlite from "@effect/sql-sqlite-node"
-import * as SqlClient from "@effect/sql/SqlClient"
+import { SqlClient } from "effect/unstable/sql"
 import { assert, layer } from "@effect/vitest"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"

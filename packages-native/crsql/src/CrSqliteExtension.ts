@@ -13,10 +13,12 @@
  *
  * @since 0.1.0
  */
-import * as SqlClient from "@effect/sql/SqlClient"
+import { SqlClient } from "effect/unstable/sql"
 import * as Config from "effect/Config"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as ServiceMap from "effect/ServiceMap"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
 import * as SqliteClient from "./SqliteClient.js"
@@ -50,9 +52,9 @@ export const sqlExtInfo = Effect.gen(function*() {
   if (info == null) {
     return yield* Effect.fail("No rows returned from crsql_sha() / crsql_site_id()")
   }
-  return CrSqlSchema.ExtInfoSql.make(info)
+  return CrSqlSchema.ExtInfoSql.makeUnsafe(info)
 }).pipe(
-  Effect.catchAll((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))),
+  Effect["catch"]((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.sqlExtInfo")
 )
 
@@ -72,9 +74,9 @@ export const sqlExtInfo = Effect.gen(function*() {
 export const loadLibCrSql = Effect.gen(function*() {
   const path = yield* LibCrSqlPath
   yield* SqliteClient.loadExtension(path)
-  return CrSqlSchema.ExtInfo.make({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
+  return CrSqlSchema.ExtInfo.makeUnsafe({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
 }).pipe(
-  Effect.catchAll((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
+  Effect["catch"]((cause) => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing({ cause }))),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.loadLibCrSql")
 )
 
@@ -88,7 +90,9 @@ export const loadLibCrSql = Effect.gen(function*() {
  * @since 0.1.0
  * @category Services
  */
-export class ExtInfoLoaded extends Effect.Service<ExtInfoLoaded>()(
+export class ExtInfoLoaded extends ServiceMap.Service<ExtInfoLoaded>()(
   "@effect-native/crsql/CrSqliteExtension.ExtInfoLoaded",
-  { effect: loadLibCrSql }
-) {}
+  { make: loadLibCrSql }
+) {
+  static Default = Layer.effect(ExtInfoLoaded, ExtInfoLoaded.make)
+}
