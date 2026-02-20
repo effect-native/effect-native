@@ -14,7 +14,7 @@
  */
 import { SqlClient, SqlError } from "effect/unstable/sql"
 import { Effect } from "effect"
-import * as Context from "effect/Context"
+import * as ServiceMap from "effect/ServiceMap"
 import * as Data from "effect/Data"
 import * as Layer from "effect/Layer"
 
@@ -37,7 +37,7 @@ export interface SqliteClient extends SqlClient.SqlClient {
  *
  * @since 0.1.0
  */
-export const SqliteClient = Context.GenericTag<SqliteClient>(
+export const SqliteClient = ServiceMap.Service<SqliteClient>(
   "@effect-native/crsql/SqliteClient"
 )
 
