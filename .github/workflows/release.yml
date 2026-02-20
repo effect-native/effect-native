@@ -1,7 +1,7 @@
 name: Release
 on:
   push:
-    branches: [effect-native/main]
+    branches: [effect-native/main, v4]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
