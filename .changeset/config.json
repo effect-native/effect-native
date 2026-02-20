@@ -7,9 +7,9 @@
   "commit": false,
   "linked": [],
   "access": "public",
-  "baseBranch": "effect-native/main",
+  "baseBranch": "v4",
   "updateInternalDependencies": "patch",
-  "ignore": ["scratchpad"],
+  "ignore": ["scratchpad", "@effect-native/name-checker"],
   "snapshot": {
     "useCalculatedVersion": false,
     "prereleaseTemplate": "{tag}-{commit}"
