@@ -69,8 +69,10 @@ export const loadConfig = (): NameCheckConfig => {
     const toml = fs.readFileSync(configPath, "utf-8")
     // Bun has built-in TOML support via Bun.TOML or we can use a simple parser
     // Since we're in bun, use Bun.TOML if available, otherwise parse manually
-    if (typeof Bun !== "undefined" && Bun.TOML) {
-      const parsed = Bun.TOML.parse(toml) as Partial<NameCheckConfig>
+    // Access Bun via globalThis to keep this file type-safe in non-Bun environments
+    const bun = (globalThis as any).Bun
+    if (bun && bun.TOML) {
+      const parsed = bun.TOML.parse(toml) as Partial<NameCheckConfig>
       _config = {
         ai: { ...DEFAULT_CONFIG.ai, ...parsed.ai },
         defaults: { ...DEFAULT_CONFIG.defaults, ...parsed.defaults }
