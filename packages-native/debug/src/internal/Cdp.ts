@@ -5,7 +5,6 @@
  * @internal
  * @since 0.0.0
  */
-import { Socket as SocketNS } from "effect/unstable/socket"
 import * as Deferred from "effect/Deferred"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
@@ -15,6 +14,7 @@ import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import { Socket as SocketNS } from "effect/unstable/socket"
 import * as Debug from "../DebugModel.js"
 
 interface RawMessage {
@@ -110,13 +110,13 @@ const handleIncoming = (state: SessionState, chunk: string | Uint8Array): Effect
       }
       if (message.error !== undefined) {
         yield* Effect.fail(
-            new Debug.DebugCommandError({
-              transport: state.transport,
-              endpoint: state.endpoint,
-              command: pending.command.command,
-              detail: message.error
-            })
-          ).pipe(Deferred.into(pending.deferred))
+          new Debug.DebugCommandError({
+            transport: state.transport,
+            endpoint: state.endpoint,
+            command: pending.command.command,
+            detail: message.error
+          })
+        ).pipe(Deferred.into(pending.deferred))
         return
       }
       const decoded = yield* Schema.decodeUnknownEffect(pending.command.response)(message.result).pipe(

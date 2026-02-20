@@ -251,7 +251,9 @@ export interface DOMAdapter {
  * })
  * ```
  */
-export class DOMAdapterService extends ServiceMap.Service<DOMAdapterService, DOMAdapter>()("@effect-native/opentui-dom/DOMAdapterService") {}
+export class DOMAdapterService
+  extends ServiceMap.Service<DOMAdapterService, DOMAdapter>()("@effect-native/opentui-dom/DOMAdapterService")
+{}
 
 // --- Helper: Resolve ElementRef to Element ---
 

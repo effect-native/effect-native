@@ -7,9 +7,9 @@
 
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
-import * as ServiceMap from "effect/ServiceMap"
 import type * as Schema from "effect/Schema"
 import type * as Scope from "effect/Scope"
+import * as ServiceMap from "effect/ServiceMap"
 import type * as Stream from "effect/Stream"
 
 /**

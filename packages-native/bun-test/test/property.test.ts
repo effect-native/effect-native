@@ -1,7 +1,7 @@
 import { describe, expect } from "bun:test"
 import * as Effect from "effect/Effect"
-import * as fc from "effect/testing/FastCheck"
 import * as Schema from "effect/Schema"
+import * as fc from "effect/testing/FastCheck"
 import * as BunTest from "../src/index.js"
 
 describe("Property-based testing", () => {

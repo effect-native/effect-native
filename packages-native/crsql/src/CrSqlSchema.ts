@@ -384,7 +384,7 @@ export type ExtInfoSql = typeof ExtInfoSql.Type
  * @since 0.1.0
  * @category Schema
  */
-export const ExtInfoLoaded = ExtInfo.mapFields(({ path, loadedAt }) => ({ path, loadedAt })).annotate({
+export const ExtInfoLoaded = ExtInfo.mapFields(({ loadedAt, path }) => ({ path, loadedAt })).annotate({
   description: "Info about loading the cr-sqlite extension"
 })
 

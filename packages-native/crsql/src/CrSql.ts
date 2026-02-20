@@ -30,12 +30,12 @@
 // NOTE: avoid static import of libcrsql here to keep docgen example compilation
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
-import { SqlClient, SqlError, Statement } from "effect/unstable/sql"
 import * as ConfigProvider from "effect/ConfigProvider"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import * as ServiceMap from "effect/ServiceMap"
+import { SqlClient, SqlError, Statement } from "effect/unstable/sql"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"

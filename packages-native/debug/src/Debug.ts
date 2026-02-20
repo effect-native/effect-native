@@ -4,8 +4,8 @@
  * @category Debug
  * @since 0.0.0
  */
-import type { Socket as SocketNS } from "effect/unstable/socket"
 import type * as Layer from "effect/Layer"
+import type { Socket as SocketNS } from "effect/unstable/socket"
 import type { Service, Transport } from "./DebugModel.js"
 import { layer } from "./internal/Cdp.js"
 

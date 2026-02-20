@@ -8,9 +8,8 @@
  *
  * @since 1.0.0
  */
-import { Command, Flag } from "effect/unstable/cli"
-import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime"
+import * as NodeServices from "@effect/platform-node/NodeServices"
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import * as Console from "effect/Console"
 import * as Effect from "effect/Effect"
@@ -18,6 +17,7 @@ import * as Layer from "effect/Layer"
 import * as Ref from "effect/Ref"
 import * as Schema from "effect/Schema"
 import * as Stream from "effect/Stream"
+import { Command, Flag } from "effect/unstable/cli"
 
 import * as Debug from "../Debug.js"
 

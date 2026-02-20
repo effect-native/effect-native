@@ -6,7 +6,6 @@
  * @since 0.1.0
  */
 
-import { Argument, Command } from "effect/unstable/cli"
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import * as Console from "effect/Console"
 import * as Data from "effect/Data"
@@ -14,6 +13,7 @@ import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
 import * as Match from "effect/Match"
 import * as Path from "effect/Path"
+import { Argument, Command } from "effect/unstable/cli"
 
 import { makeContent, makeFilename } from "./Note.js"
 import { TitleInput } from "./Validate.js"
