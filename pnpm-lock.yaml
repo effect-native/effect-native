@@ -401,8 +401,8 @@ importers:
         version: 4.0.0-beta.6
     devDependencies:
       '@effect/vitest':
-        specifier: latest
-        version: 0.27.0(effect@4.0.0-beta.6)(vitest@3.2.4)
+        specifier: beta
+        version: 4.0.0-beta.6(effect@4.0.0-beta.6)(vitest@3.2.4)
     publishDirectory: dist
 
   packages-native/ssh-keep: {}
@@ -7634,7 +7634,7 @@ snapshots:
   '@effect/vitest@4.0.0-beta.6(effect@4.0.0-beta.6)(vitest@3.2.4)':
     dependencies:
       effect: 4.0.0-beta.6
-      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@22.19.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@25.0.3)(@vitest/browser@3.2.4)(happy-dom@20.0.11)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2)
 
   '@effect/wa-sqlite@0.1.2': {}
 
