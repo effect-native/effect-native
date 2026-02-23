@@ -1,4 +1,6 @@
 {
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "extends": ["./scripts/oxlint/oxlintrc.json"],
   "ignorePatterns": [
     "**/dist",
     "**/build",
@@ -8,12 +10,8 @@
     "refs/**",
     ".cache/**"
   ],
-  "plugins": ["typescript", "import", "oxc", "unicorn"],
-  "categories": {
-    "correctness": "error",
-    "suspicious": "error",
-    "perf": "error"
-  },
+  "plugins": ["typescript", "import", "eslint", "unicorn", "node"],
+  "jsPlugins": ["./scripts/oxlint/index.mjs"],
   "rules": {
     "eslint/no-console": "warn",
     "eslint/no-await-in-loop": "off",
@@ -42,19 +40,30 @@
     "typescript/no-empty-object-type": "off",
     "typescript/no-unsafe-function-type": "off",
     "typescript/no-wrapper-object-types": "off",
+    "typescript/consistent-generic-constructors": "off",
     "unicorn/no-array-push-spread": "error",
     "unicorn/consistent-function-scoping": "off",
-    "unicorn/no-array-sort": "off"
+    "unicorn/no-array-sort": "off",
+    "effect/no-import-from-barrel-package": "off",
+    "effect/no-js-extension-imports": "off",
+    "effect/no-opaque-instance-fields": "off",
+    "import/no-namespace": "off"
   },
   "overrides": [{
     "files": ["**/{test,dtslint,examples,benchmark,scripts,scratchpad,poc,test-fixtures}/**"],
     "rules": {
       "eslint/no-console": "off",
       "eslint/no-unused-vars": "off",
-      "typescript/no-unused-vars": "off"
+      "typescript/no-unused-vars": "off",
+      "eslint/no-var": "off"
     }
   }, {
     "files": ["**/cli.ts", "**/cli.js", "**/bin/**"],
+    "rules": {
+      "eslint/no-console": "off"
+    }
+  }, {
+    "files": ["**/debug/test-script.js", "**/examples-bun/**/*.ts"],
     "rules": {
       "eslint/no-console": "off"
     }

@@ -15,6 +15,8 @@ permissions: {}
 jobs:
   types:
     name: Types
+    permissions:
+      contents: read
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
@@ -26,8 +28,41 @@ jobs:
       - run: bun run check
       - run: bun run test-types --target '>=5.4'
 
+  types-tsgo:
+    name: Types (tsgo)
+    permissions:
+      contents: read
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - run: bun run check:tsgo
+
   lint:
     name: Lint
+    permissions:
+      contents: read
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - run: bun run lint
+      - run: bun run codegen
+      - name: Check for codegen changes
+        run: git diff --exit-code
+
+  circular:
+    name: Circular
+    permissions:
+      contents: read
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
@@ -37,13 +72,104 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - run: bun run circular
-      - run: bun run lint
-      - run: bun run codegen
-      - name: Check for codegen changes
-        run: git diff --exit-code
+
+  build:
+    name: Build
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - name: Set stripInternal for publish checks
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const path = 'tsconfig.base.json'
+
+          const config = JSON.parse(fs.readFileSync(path, 'utf8'))
+          config.compilerOptions ??= {}
+          config.compilerOptions.stripInternal = true
+
+          fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
+          NODE
+      - name: Build
+        run: bun run build
+
+  bundle:
+    name: Bundle
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - name: Clone base ref
+        uses: actions/checkout@v4
+        with:
+          path: base
+          ref: ${{ github.event.pull_request.base.ref }}
+      - name: Set stripInternal for publish checks
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs')
+
+          const configs = ['tsconfig.base.json', 'base/tsconfig.base.json']
+
+          for (const path of configs) {
+            const config = JSON.parse(fs.readFileSync(path, 'utf8'))
+            config.compilerOptions ??= {}
+            config.compilerOptions.stripInternal = true
+            fs.writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
+          }
+          NODE
+      - name: Build current branch
+        run: bun run build
+      - name: Install base dependencies
+        working-directory: base
+        run: bun install --frozen-lockfile
+      - name: Build base branch
+        working-directory: base
+        run: bun run build
+      - name: Compare bundle size
+        run: bun run bundle-stats -- --base-dir base
+      - name: Upload stats artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats
+          path: stats.txt
+
+
+  docgen:
+    name: Documentation Generation
+    permissions:
+      contents: read
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - name: Generate documentation
+        run: bun run docgen
 
   test:
     name: Test
+    permissions:
+      contents: read
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
@@ -57,6 +183,8 @@ jobs:
 
   verify-subpaths:
     name: Verify Subpaths
+    permissions:
+      contents: read
     runs-on: self-hosted
     timeout-minutes: 10
     steps:

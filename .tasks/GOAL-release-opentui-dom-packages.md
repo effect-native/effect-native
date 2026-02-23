@@ -1,8 +1,8 @@
 ---
 title: Release opentui-dom and opentui-dom-testing-library
-status: triage
+status: in_progress
 done_when: |
-  - pnpm ok passes with no errors
+  - bun run ok passes with no errors
   - Both packages build successfully with build-utils pack-v3
   - All tests pass
   - Packages are unprivated and published to npm
@@ -85,15 +85,15 @@ Both packages are marked `private: true` to prevent accidental publication.
 - [ ] Check peer dependencies are correct
 - [ ] Verify exports are correct
 - [ ] Ensure JSDoc documentation is complete
-- [ ] Run `pnpm ok` to verify all checks pass
+- [ ] Run `bun run ok` to verify all checks pass
 
 ## To Publish
 
 When ready to publish:
 
 1. Remove `"private": true` from both package.json files
-2. Ensure `pnpm ok` passes
-3. Create changeset with `pnpm changeset`
+2. Ensure `bun run ok` passes
+3. Create changeset with `bunx changeset`
 4. Follow normal release process
 
 ## Related

@@ -1,9 +1,16 @@
 ---
 title: Adopt Effect v4 repo-wide infra and tooling
-status: pending
+status: in_progress
 done_when: |
-  nix develop --command pnpm ok  # exits 0
-  all subtasks below marked complete
+  all subtasks below are marked complete and reproducible checks pass in a clean tree:
+  - bun run lint
+  - bun run check
+  - bun run check:tsgo
+  - bun run build:tsgo
+  - bun run test
+  - bun run test-types --target current
+  - bun run docgen
+  - bun run verify-subpaths
 basis: |
   Created from comparison of effect-smol (upstream Effect v4) vs effect-native/v4.
   See /Users/tom/Developer/work/.research/effect-v4/ for research docs.
@@ -31,25 +38,25 @@ separately in `.tasks/impl/v4-beta-*.md`).
 
 ### Tasks
 
-- [ ] **1a. Add dprint as standalone formatter**
-  - Add `dprint.json` at root matching upstream settings:
-    ASI (no semicolons), double quotes, no trailing commas, 120 line width, 2-space indent, forced arrow parens
-  - Add `dprint` devDependency
-  - Update `lint` / `lint-fix` scripts to use `dprint check` / `dprint fmt`
+- [x] **1a. Add dprint as standalone formatter**
+- Add `dprint.json` at root matching upstream settings:
+  ASI (no semicolons), double quotes, no trailing commas, 120 line width, 2-space indent, forced arrow parens
+- Add `dprint` devDependency
+- Update `lint` / `lint-fix` scripts to use `dprint check` / `dprint fmt`
 
-- [ ] **1b. Add oxlint as linter**
+- [x] **1b. Add oxlint as linter**
   - Add `oxlint` devDependency
   - Add `.oxlintrc.json` extending upstream patterns
   - We don't have `@effect/oxc` (that's a workspace package in effect-smol), so use the
     standard oxlint rules and add the barrel-import rule if available, or skip it
 
-- [ ] **1c. Remove ESLint + Prettier**
+- [x] **1c. Remove ESLint + Prettier**
   - Remove `eslint`, all `@typescript-eslint/*`, `eslint-plugin-*`, `@eslint/*`, `@effect/eslint-plugin` devDependencies
   - Remove `eslint.config.mjs`
   - Remove `prettier`, `.prettierrc.json`, `.prettierignore`
   - Update `lint`/`lint-fix` scripts: `oxlint && dprint check` / `oxlint --fix && dprint fmt`
 
-- [ ] **1d. Run dprint fmt across codebase and commit**
+  - [x] **1d. Run dprint fmt across codebase and commit**
   - One-time bulk format to establish the new baseline
 
 ---
@@ -80,9 +87,9 @@ separately in `.tasks/impl/v4-beta-*.md`).
     works in IDE, not at build/check time
   - Decide: adopt `ts-patch` + `tspc` or keep plain `tsc`
 
-- [ ] **2d. Evaluate `tsgo` (native TS compiler) support**
+- [x] **2d. Evaluate `tsgo` (native TS compiler) support**
   - Upstream has `build:tsgo` and `check:tsgo` scripts using `@typescript/native-preview`
-  - Low priority, but consider adding as an optional fast path
+  - Added `check:tsgo`, `build:tsgo`, and PR typecheck job in CI
 
 ---
 
@@ -188,11 +195,11 @@ JSDoc Analysis/Docgen/Circular jobs, release.yml with changesets, snapshot.yml
 
 ### Tasks
 
-- [ ] **7a. Add Build job to CI**
+- [x] **7a. Add Build job to CI**
   - Upstream runs `pnpm build` in CI on PRs (with `stripInternal: true` via sed)
   - We don't currently build in CI
 
-- [ ] **7b. Add circular dependency check to CI**
+- [x] **7b. Add circular dependency check to CI**
   - We have `pnpm circular` locally; upstream runs it as a separate CI job
   - Add to check.yml
 
