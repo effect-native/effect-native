@@ -77,6 +77,9 @@ jobs:
       - name: Publish packages with OIDC
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
+          unset NODE_AUTH_TOKEN
+          unset NPM_CONFIG_USERCONFIG
+          export NPM_CONFIG_PROVENANCE=true
           if [ "$GITHUB_REF_NAME" = "v4" ]; then
             bun run changeset-publish-beta
           else
