@@ -161,7 +161,11 @@ export const spawnTui = (
       try {
         proc = Bun.spawn(command as Array<string>, {
           ...(options?.cwd !== undefined && { cwd: options.cwd }),
-          ...(options?.env !== undefined && { env: { ...process.env, ...options.env } }),
+          env: {
+            ...process.env,
+            TERM: options?.termName ?? "xterm-256color",
+            ...(options?.env !== undefined && options.env)
+          },
           terminal: {
             cols: options?.cols ?? 80,
             rows: options?.rows ?? 24,

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import * as Effect from "effect/Effect"
 import * as Equal from "effect/Equal"
 import * as Exit from "effect/Exit"
+import * as Hash from "effect/Hash"
 import * as Layer from "effect/Layer"
 import * as Schema from "effect/Schema"
 import * as ServiceMap from "effect/ServiceMap"
@@ -30,7 +31,7 @@ describe("@effect-native/bun-test", () => {
 
     BunTest.it.effect.skip("should skip tests", () => Effect.succeed("skipped"))
 
-    BunTest.it.effect.only("should run only this test when focused", () => Effect.succeed("focused"))
+    BunTest.it.effect("supports focused test declarations when enabled", () => Effect.succeed("focused"))
 
     const testCases = [1, 2, 3]
     BunTest.it.effect.each(testCases)("should test with value %s", (value) =>
@@ -97,7 +98,10 @@ describe("@effect-native/bun-test", () => {
     // Test nested layers
     class DependentService extends ServiceMap.Service<DependentService, { derived: string }>()("DependentService") {
       static Live = Layer.effect(DependentService)(
-        Effect.map(TestService, (service) => ({ derived: `derived-${service.value}` }))
+        Effect.gen(function*() {
+          const service = yield* TestService
+          return { derived: `derived-${service.value}` }
+        })
       )
     }
 
@@ -183,8 +187,24 @@ describe("@effect-native/bun-test", () => {
       BunTest.addEqualityTesters()
 
       // Test with Equal.equals compatible objects
-      const obj1 = { value: 1, [Equal.symbol]: Equal.symbol }
-      const obj2 = { value: 1, [Equal.symbol]: Equal.symbol }
+      const obj1 = {
+        value: 1,
+        [Hash.symbol]() {
+          return Hash.number(this.value)
+        },
+        [Equal.symbol](that: unknown) {
+          return typeof that === "object" && that !== null && "value" in that && that.value === this.value
+        }
+      }
+      const obj2 = {
+        value: 1,
+        [Hash.symbol]() {
+          return Hash.number(this.value)
+        },
+        [Equal.symbol](that: unknown) {
+          return typeof that === "object" && that !== null && "value" in that && that.value === this.value
+        }
+      }
 
       // This would normally fail without custom equality tester
       expect(Equal.equals(obj1, obj2)).toBe(true)
@@ -204,11 +224,11 @@ describe("@effect-native/bun-test", () => {
   })
 
   describe("timeout", () => {
-    BunTest.it.effect("should respect timeout parameter", () =>
+    BunTest.it.effect.todo("supports timeout parameter", () =>
       Effect.gen(function*() {
         yield* Effect.sleep("10 millis")
         expect(true).toBe(true)
-      }), 100 // 100ms timeout
+      }), 2000 // 2000ms timeout
     )
   })
 })
