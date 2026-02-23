@@ -74,12 +74,52 @@ jobs:
           fi
           npm config get registry
 
+      - name: OIDC exchange probe
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from urllib.error import HTTPError
+
+          id_token_url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=npm:registry.npmjs.org"
+          id_token_req = urllib.request.Request(
+              id_token_url,
+              headers={"Authorization": f"Bearer {os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}"},
+          )
+          with urllib.request.urlopen(id_token_req) as response:
+              oidc_token = json.load(response)["value"]
+
+          packages = [
+              "effect-native",
+              "@effect-native/debug",
+              "@effect-native/patterns",
+              "@effect-native/schemas",
+          ]
+
+          for package in packages:
+              exchange_url = "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/" + urllib.parse.quote(package, safe="")
+              exchange_req = urllib.request.Request(exchange_url, headers={"Authorization": f"Bearer {oidc_token}"})
+              try:
+                  with urllib.request.urlopen(exchange_req) as exchange_response:
+                      body = exchange_response.read().decode("utf-8")
+                      parsed = json.loads(body) if body else {}
+                      has_token = bool(parsed.get("token"))
+                      print(f"{package}: {exchange_response.status} token={has_token}")
+              except HTTPError as error:
+                  payload = error.read().decode("utf-8", errors="replace").replace("\n", " ")
+                  print(f"{package}: {error.code} {payload[:200]}")
+          PY
+
       - name: Publish packages with OIDC
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
           unset NODE_AUTH_TOKEN
           unset NPM_CONFIG_USERCONFIG
           export NPM_CONFIG_PROVENANCE=true
+          export NPM_CONFIG_LOGLEVEL=verbose
           if [ "$GITHUB_REF_NAME" = "v4" ]; then
             bun run changeset-publish-beta
           else
