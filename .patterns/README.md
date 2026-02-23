@@ -2,7 +2,7 @@
 
 ## 🎯 PURPOSE
 
-This directory provides reusable solutions and best practices for Effect TypeScript development, ensuring consistency and quality across the Effect library codebase.
+This directory provides reusable solutions and best practices for Effect TypeScript development, ensuring consistency and quality across the Effect Native codebase.
 
 ## 📚 AVAILABLE PATTERNS
 
@@ -18,7 +18,7 @@ This directory provides reusable solutions and best practices for Effect TypeScr
 
 ### Testing Patterns
 
-- **[testing-patterns.md](./testing-patterns.md)** - Testing strategies with @effect/vitest and TestClock
+- **[testing-patterns.md](./testing-patterns.md)** - Testing strategies with @effect-native/bun-test and TestClock
 
 ### Architecture Patterns
 
@@ -55,9 +55,9 @@ This directory provides reusable solutions and best practices for Effect TypeScr
 ### Mandatory Patterns (ALWAYS USE)
 
 - __return yield_ for errors_*: Makes termination explicit in generators
-- **Immediate linting**: `pnpm lint --fix` after editing TypeScript files
-- **JSDoc compilation validation**: `pnpm docgen` must pass
-- **Effect testing patterns**: Use @effect/vitest with `it.effect`
+- **Immediate linting**: `bun run lint-fix` after editing TypeScript files
+- **JSDoc compilation validation**: `bun run docgen` must pass
+- **Effect testing patterns**: Use @effect-native/bun-test with `it.effect`
 - **TestClock for time**: Use TestClock for any time-dependent operations
 
 ## 📈 PATTERN QUALITY METRICS

@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["test"],
+  "references": [
+    { "path": "tsconfig.src.json" },
+    { "path": "../libcrsql/tsconfig.src.json" },
+    { "path": "../libsqlite/tsconfig.src.json" }
+  ],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo/test.tsbuildinfo",
+    "noEmit": true,
+    "types": ["node", "bun"],
+    "paths": {
+      "@effect-native/libcrsql": ["../libcrsql/src/index.ts"],
+      "@effect-native/libcrsql/*": ["../libcrsql/src/*.ts"],
+      "@effect-native/libsqlite": ["../libsqlite/src/index.ts"],
+      "@effect-native/libsqlite/*": ["../libsqlite/src/*.ts"]
+    }
+  }
+}

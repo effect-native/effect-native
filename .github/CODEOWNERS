@@ -49,6 +49,6 @@
 
 /packages/vitest/ @mikearnaldi
 
-/packages-native/bun-test/ @subtlegradient
-/packages-native/libcrsql/ @subtlegradient
-/packages-native/libsqlite/ @subtlegradient
+/packages/bun-test/ @subtlegradient
+/packages/libcrsql/ @subtlegradient
+/packages/libsqlite/ @subtlegradient

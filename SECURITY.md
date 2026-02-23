@@ -41,8 +41,8 @@ Please provide:
 When using @effect-native packages:
 
 1. **Keep dependencies updated**: Regularly update packages
-2. **Review dependencies**: Audit your dependencies with `pnpm audit`
-3. **Use lock files**: Commit pnpm-lock.yaml to ensure reproducible builds
+2. **Review dependencies**: Audit your dependencies with `bun audit`
+3. **Use lock files**: Commit `bun.lock` to ensure reproducible builds
 4. **Verify package sources**: Ensure packages come from the `@effect-native/*` npm namespace
 
 ## Vulnerability Disclosure

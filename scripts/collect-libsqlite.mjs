@@ -25,7 +25,7 @@ function buildWithNix() {
 
 function copyOut() {
   const sys = platformDir()
-  const outDir = path.join("packages-native", "libsqlite", "lib", sys)
+  const outDir = path.join("packages", "libsqlite", "lib", sys)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
   const files = readdirSync(path.join("result", "lib"))
   const dylib = files.find((f) => f.startsWith("libsqlite3") && f.endsWith(".dylib"))

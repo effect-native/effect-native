@@ -24,14 +24,11 @@ See [the Effect Native Project Board](https://github.com/orgs/effect-native/proj
 
 ## Development
 
-This project uses Nix for reproducible builds. All commands should be run within the Nix development shell:
+`v4` is bun-first. Run commands directly with Bun on your host machine:
 
 ```bash
-# Enter the development shell
-nix develop
-
 # Install dependencies
-bun install
+bun install --frozen-lockfile
 
 # Run all checks
 bun run ok
@@ -41,6 +38,13 @@ bun run test
 
 # Build all packages
 bun run build
+```
+
+Use Nix as an optional convenience when you want CI-like isolation:
+
+```bash
+nix develop --command bun install --frozen-lockfile
+nix develop --command bun run ok
 ```
 
 ## License

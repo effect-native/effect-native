@@ -4,7 +4,7 @@
     "**/build",
     "**/docs",
     "**/.tsbuildinfo",
-    "packages-native/**/CHANGELOG.md",
+    "packages/**/CHANGELOG.md",
     "refs/**",
     ".cache/**"
   ],

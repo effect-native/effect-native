@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Install dependencies
-        uses: effect-native/effect-native/.github/actions/setup@6dbea705cc0cbb0aad92e60785a8179bd8555434
+        uses: ./.github/actions/setup
 
       - name: Setup Node for npm Registry
         uses: actions/setup-node@v4
@@ -30,7 +30,6 @@ jobs:
           node-version: "23.7.0"
           registry-url: "https://registry.npmjs.org"
           scope: "@effect-native"
-          cache: pnpm
 
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest
@@ -39,8 +38,8 @@ jobs:
         id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
         with:
-          version: pnpm changeset-version
-          publish: pnpm changeset-publish
+          version: bun run changeset-version
+          publish: ${{ github.ref_name == 'v4' && 'bun run codemod && bun run build && bun run test && changeset publish --tag beta --provenance && bun scripts/postpublish-dist-tags.mjs' || 'bun run changeset-publish' }}
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

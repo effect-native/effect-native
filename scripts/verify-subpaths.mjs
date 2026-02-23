@@ -3,8 +3,8 @@
 import { spawn } from "node:child_process"
 
 const pkgs = [
-  "packages-native/libcrsql",
-  "packages-native/libsqlite"
+  "packages/libcrsql",
+  "packages/libsqlite"
 ]
 
 function run(cmd, args, cwd) {
@@ -17,7 +17,7 @@ function run(cmd, args, cwd) {
 async function main() {
   for (const dir of pkgs) {
     // Build first (idempotent)
-    await run("pnpm", ["build"], dir)
+    await run("bun", ["run", "build"], dir)
 
     // Verify from package root
     await run("node", ["scripts/verify-exports.mjs"], dir)

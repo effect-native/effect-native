@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 
 function main() {
-  const pkgPath = path.join(process.cwd(), "packages-native", "libsqlite", "package.json")
+  const pkgPath = path.join(process.cwd(), "packages", "libsqlite", "package.json")
   const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
   const name = pkg.name
   const version = pkg.version
@@ -24,12 +24,12 @@ function main() {
     execSync(`npm dist-tag add ${name}@${v} ${tag}`, { stdio: "inherit" })
   }
 
-  const current = npmInfo("latest")
+  const current = npmInfo("beta")
   if (current !== version) {
-    console.log(`Setting dist-tag 'latest' to ${name}@${version} (was: ${current || "unset"})`)
-    setTag("latest", version)
+    console.log(`Setting dist-tag 'beta' to ${name}@${version} (was: ${current || "unset"})`)
+    setTag("beta", version)
   } else {
-    console.log(`'latest' already points to ${name}@${version}`)
+    console.log(`'beta' already points to ${name}@${version}; leaving dist-tags unchanged.`)
   }
 }
 

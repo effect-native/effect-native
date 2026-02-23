@@ -2,24 +2,23 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "scratchpad",
-    "packages-native/*"
+    "packages/*"
   ],
   "scripts": {
     "ok": "bun run test; TEST=$?; bun run lint; TEST=$(($TEST+$?)); bun run check; TEST=$(($TEST+$?)); bun run circular; TEST=$(($TEST+$?)); bun run codegen; TEST=$(($TEST+$?)); bun run test-types --target current; TEST=$(($TEST+$?)); bun run codemod; TEST=$(($TEST+$?)); bun run build; TEST=$(($TEST+$?)); bun scripts/verify-subpaths.mjs; TEST=$(($TEST+$?)); exit $TEST;",
     "verify-subpaths": "bun scripts/verify-subpaths.mjs",
     "clean": "bun scripts/clean.mjs",
-    "codegen": "bun --filter './packages-native/*' run codegen",
-    "codemod": "bun scripts/codemod.mjs",
-    "build": "bun --filter './packages-native/*' run build",
-    "circular": "depcruise --config .dependency-cruiser.cjs \"packages-native/*/src/**/*.{ts,tsx}\" --output-type err --validate",
-    "test": "bun --filter './packages-native/*' test",
-    "coverage": "bun --filter './packages-native/*' test --coverage",
+    "codegen": "bun run --filter './packages/*' codegen",
+    "codemod": "bun scripts/codemod.mjs && dprint fmt",
+    "build": "bun run --filter './packages/*' build",
+    "circular": "depcruise --config .dependency-cruiser.cjs \"packages/*/src/**/*.{ts,tsx}\" --output-type err --validate",
+    "test": "bun --filter './packages/*' test",
+    "coverage": "bun --filter './packages/*' test --coverage",
     "check": "npx tsc -b tsconfig.json",
-    "check-recursive": "bun --filter './packages-native/*' exec tsc -b tsconfig.json",
+    "check-recursive": "bun --filter './packages/*' exec tsc -b tsconfig.json",
     "lint": "oxlint && dprint check",
     "lint-fix": "oxlint --fix && dprint fmt",
-    "docgen": "bun --filter './packages-native/*' run docgen && bun scripts/docs.mjs",
+    "docgen": "bun --filter './packages/*' run docgen && bun scripts/docs.mjs",
     "test-types": "tstyche",
     "changeset-version": "changeset version && bun scripts/force-libsqlite-embedded.mjs",
     "changeset-publish": "bun run codemod && bun run build && bun run test && changeset publish --provenance && bun scripts/postpublish-dist-tags.mjs"

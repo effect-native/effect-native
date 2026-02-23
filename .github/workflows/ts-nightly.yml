@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - name: Run type tests
-        run: pnpm test-types --target next
+        run: bun run test-types --target next
       - name: Notify on failed run
         uses: actions/github-script@v7
         if: failure()

@@ -2,14 +2,14 @@ import * as Fs from "node:fs"
 import * as Path from "node:path"
 
 function packages() {
-  const packagesInNative = Fs.existsSync("packages-native")
-    ? Fs.readdirSync("packages-native").map((dir) => ({
+  const workspacePackages = Fs.existsSync("packages")
+    ? Fs.readdirSync("packages").map((dir) => ({
       name: dir,
-      basePath: Path.join("packages-native", dir)
+      basePath: Path.join("packages", dir)
     }))
     : []
 
-  return packagesInNative.filter(
+  return workspacePackages.filter(
     (pkg) =>
       Fs.existsSync(Path.join(pkg.basePath, "package.json")) &&
       Fs.existsSync(Path.join(pkg.basePath, "docs/modules"))

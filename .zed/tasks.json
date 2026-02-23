@@ -49,21 +49,21 @@
   },
   {
     "label": "codex",
-    "command": "nix develop -c codex",
+    "command": "codex",
     "reveal_target": "dock",
     "allow_concurrent_runs": true,
     "use_new_terminal": true
   },
   {
     "label": "claude continue",
-    "command": "nix develop -c claude --continue",
+    "command": "claude --continue",
     "reveal_target": "dock",
     "allow_concurrent_runs": true,
     "use_new_terminal": true
   },
   {
-    "label": "pnpm ok",
-    "command": "pnpm ok",
+    "label": "bun ok",
+    "command": "bun run ok",
     "reveal_target": "center",
     "allow_concurrent_runs": false
   }

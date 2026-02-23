@@ -19,9 +19,9 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - name: Run codemods
-        run: pnpm codemod
+        run: bun run codemod
       - name: Build package
-        run: pnpm build
+        run: bun run build
       - name: Create snapshot
         id: snapshot
-        run: pnpx pkg-pr-new@0.0.28 publish --pnpm --comment=off ./packages-native/*
+        run: bunx pkg-pr-new@0.0.28 publish --comment=off ./packages/*

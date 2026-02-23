@@ -11,25 +11,25 @@ const targets = [
     id: "darwin-aarch64",
     build: ["nix", "build", "nixpkgs#sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.dylib$/,
-    dest: "packages-native/libsqlite/lib/darwin-aarch64/libsqlite3.dylib"
+    dest: "packages/libsqlite/lib/darwin-aarch64/libsqlite3.dylib"
   },
   {
     id: "darwin-x86_64",
     build: ["nix", "build", "nixpkgs#legacyPackages.x86_64-darwin.sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.dylib$/,
-    dest: "packages-native/libsqlite/lib/darwin-x86_64/libsqlite3.dylib"
+    dest: "packages/libsqlite/lib/darwin-x86_64/libsqlite3.dylib"
   },
   {
     id: "linux-x86_64",
     build: ["nix", "build", "nixpkgs#pkgsCross.gnu64.sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.so(\.|$)/,
-    dest: "packages-native/libsqlite/lib/linux-x86_64/libsqlite3.so"
+    dest: "packages/libsqlite/lib/linux-x86_64/libsqlite3.so"
   },
   {
     id: "linux-aarch64",
     build: ["nix", "build", "nixpkgs#pkgsCross.aarch64-multiplatform.sqlite.out", "--print-out-paths"],
     srcGlob: /libsqlite3.*\.so(\.|$)/,
-    dest: "packages-native/libsqlite/lib/linux-aarch64/libsqlite3.so"
+    dest: "packages/libsqlite/lib/linux-aarch64/libsqlite3.so"
   }
 ]
 

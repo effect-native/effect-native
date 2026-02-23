@@ -6,8 +6,8 @@ import { readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
 const root = process.cwd()
-const pkgPath = path.join(root, "packages-native", "libsqlite", "package.json")
-const metaPath = path.join(root, "packages-native", "libsqlite", "lib", "metadata.json")
+const pkgPath = path.join(root, "packages", "libsqlite", "package.json")
+const metaPath = path.join(root, "packages", "libsqlite", "lib", "metadata.json")
 
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
 const meta = JSON.parse(readFileSync(metaPath, "utf8"))
@@ -21,6 +21,8 @@ const [maj, min, patch] = sqlite.split(".").map((x) => Number(x))
 if (![maj, min, patch].every((n) => Number.isInteger(n))) {
   throw new Error(`Invalid sqliteVersion parsed from metadata: ${sqlite}`)
 }
+
+const releaseMajor = 4
 
 // Determine whether the local package is already on the same sqlite patch train.
 // Train is encoded as: major.minor.(sqlitePatch*100 + wrapperPatch)
@@ -43,11 +45,11 @@ try {
   process.exit(1)
 }
 const localTrain = Number.isInteger(vPatch) ? Math.floor(vPatch / 100) : -1
-const sameTrain = vMaj === maj && vMin === min && localTrain === patch
+const sameTrain = vMaj === releaseMajor && vMin === min && localTrain === patch
 
 if (sameTrain) {
   // Already on the correct sqlite train; do not bump version.
-  console.log(`${pkg.name} already on sqlite ${maj}.${min}.${patch} train; leaving version unchanged (${pkg.version}).`)
+  console.log(`${pkg.name} already on v${releaseMajor} sqlite ${maj}.${min}.${patch} train; leaving version unchanged (${pkg.version}).`)
   process.exit(0)
 }
 
@@ -56,7 +58,7 @@ let next = 1
 try {
   const out = execSync(`npm view ${pkg.name} versions --json`, { encoding: "utf8" }).trim()
   const published = (JSON.parse(out) || []).filter((v) => typeof v === "string")
-  const re = new RegExp(`^${maj}\\.${min}\\.(\\d+)$`)
+  const re = new RegExp(`^${releaseMajor}\\.${min}\\.(\\d+)$`)
   const train = []
   for (const v of published) {
     const m = v.match(re)
@@ -75,7 +77,7 @@ try {
   process.exit(1)
 }
 
-const target = `${maj}.${min}.${patch * 100 + next}`
+const target = `${releaseMajor}.${min}.${patch * 100 + next}`
 console.log(`Setting ${pkg.name} version to ${target} (was ${pkg.version})`)
 pkg.version = target
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n")

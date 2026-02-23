@@ -8,7 +8,7 @@ Comprehensive JSDoc documentation patterns used throughout the Effect library, e
 
 ### Documentation Standards
 
-- **MANDATORY**: All JSDoc examples must compile via `pnpm docgen`
+- **MANDATORY**: All JSDoc examples must compile via `bun run docgen`
 - **ZERO TOLERANCE**: Even pre-existing docgen errors must be fixed
 - **FORBIDDEN**: Removing examples to fix compilation - always fix type issues properly
 - **MANDATORY**: Use proper Effect patterns in all examples
@@ -578,7 +578,7 @@ export const TypeId = ...
 - [ ] Brief, clear description of functionality
 - [ ] At least one practical, working example
 - [ ] Proper imports using correct module paths
-- [ ] Examples compile with `pnpm docgen`
+- [ ] Examples compile with `bun run docgen`
 - [ ] No `any` types or type assertions
 - [ ] Appropriate @category annotation
 - [ ] @since version annotation

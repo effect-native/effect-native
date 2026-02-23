@@ -3,7 +3,7 @@ import * as Glob from "glob"
 import * as Jscodeshift from "jscodeshift/src/Runner.js"
 import * as Path from "node:path"
 
-const pattern = `packages-native/*/src/**/*.ts`
+const pattern = `packages/*/src/**/*.ts`
 
 const paths = Glob.globSync(pattern, {
   ignore: ["**/internal/**"]

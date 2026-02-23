@@ -22,10 +22,10 @@ Changes to original Effect packages that should be contributed back upstream.
 - Follow Effect's original contribution guidelines
 - Include tests for new functionality
 - Update documentation with JSDoc comments
-- Add changeset: `pnpm changeset`
+- Add changeset: `bunx changeset`
 - Reference upstream issues when applicable
 
-### 2. Fork-Specific Contributions (packages-native/)
+### 2. Fork-Specific Contributions (packages/)
 
 New packages or features specific to the effect-native ecosystem.
 
@@ -33,7 +33,7 @@ New packages or features specific to the effect-native ecosystem.
 
 1. Work from `effect-native/main` branch
 2. Create feature branch: `git checkout -b native/description`
-3. Work in `packages-native/` directory
+3. Work in `packages/` directory
 4. Regular commits (sign-off optional but recommended)
 5. Push to fork: `git push origin native/description`
 6. Create PR to `effect-native/effect`
@@ -114,7 +114,7 @@ Signed-off-by: Jane Doe <jane@example.com>
 ### Testing Requirements
 
 - Unit tests for all new functionality
-- Use Vitest for testing
+- Use `@effect-native/bun-test` for testing
 - Property-based tests with FastCheck where appropriate
 - Test files in `test/` directory
 
@@ -161,27 +161,27 @@ export const greet = (name: string): Effect.Effect<string> => Effect.succeed(`He
 
 4. Install dependencies:
    ```bash
-   pnpm install
+   bun install --frozen-lockfile
    ```
 
 5. Build packages:
    ```bash
-   pnpm build
+   bun run build
    ```
 
 6. Run tests:
    ```bash
-   pnpm test
+   bun run test
    ```
 
 ## Pre-submission Checklist
 
-- [ ] Tests pass: `pnpm test`
-- [ ] TypeScript compiles: `pnpm check`
-- [ ] Linting passes: `pnpm lint`
-- [ ] No circular dependencies: `pnpm circular`
-- [ ] Documentation generates: `pnpm docgen`
-- [ ] Changeset created (if needed): `pnpm changeset`
+- [ ] Tests pass: `bun run test`
+- [ ] TypeScript compiles: `bun run check`
+- [ ] Linting passes: `bun run lint`
+- [ ] No circular dependencies: `bun run circular`
+- [ ] Documentation generates: `bun run docgen`
+- [ ] Changeset created (if needed): `bunx changeset`
 - [ ] Commits signed (for upstream): `git commit -s`
 
 ## Legal

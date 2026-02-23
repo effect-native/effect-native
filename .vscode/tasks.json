@@ -4,7 +4,7 @@
     {
       "label": "Watch",
       "type": "shell",
-      "command": "pnpm check -w",
+      "command": "bun run check --watch",
       "options": {
         "cwd": "${workspaceRoot}"
       },

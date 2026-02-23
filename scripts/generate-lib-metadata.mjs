@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
 const ROOT = process.cwd()
-const PKG_LIB = path.join(ROOT, "packages-native", "libsqlite", "lib")
+const PKG_LIB = path.join(ROOT, "packages", "libsqlite", "lib")
 
 function sha256(file) {
   const h = createHash("sha256")

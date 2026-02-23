@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - run: pnpm docgen
+      - run: bun run docgen
       - name: Build pages Jekyll
         if: github.repository_owner == 'effect-native' && github.event_name == 'push' && github.ref == 'refs/heads/effect-native/main'
         uses: actions/jekyll-build-pages@v1

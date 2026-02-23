@@ -1,0 +1,61 @@
+{
+  "name": "@effect-native/libsqlite",
+  "version": "4.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Universal, version-pinned libsqlite3 that Just Works — prebuilt for common platforms with per-platform paths.",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages/libsqlite"
+  },
+  "bugs": {
+    "url": "https://github.com/effect-native/effect-native/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./paths": "./src/paths.ts",
+    "./effect": "./src/effect.ts",
+    "./internal/*": null
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/libsqlite: skip codegen'",
+    "build": "bun run build-esm && bun run build-annotate && bun run build-cjs && build-utils pack-v3 && node ../../scripts/copy-lib-to-dist.mjs",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "bun test",
+    "coverage": "bun test --coverage",
+    "prepublishOnly": "bun run build && node scripts/verify-exports.mjs"
+  },
+  "peerDependencies": {
+    "effect": "^4.0.0-beta.0"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@effect-native/bun-test": "workspace:*"
+  },
+  "files": [
+    "build",
+    "dist",
+    "src",
+    "lib",
+    "scripts/verify-exports.mjs",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}

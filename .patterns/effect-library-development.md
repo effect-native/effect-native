@@ -266,7 +266,7 @@ const AppLayer = UserServiceLive.pipe(
 
 ```bash
 # After editing any TypeScript file
-pnpm lint --fix packages/effect/src/ModifiedFile.ts
+bun run lint-fix
 
 # This ensures:
 # - Consistent code formatting
@@ -280,19 +280,19 @@ Run comprehensive validation after implementation:
 
 ```bash
 # 1. Lint all modified files
-pnpm lint --fix packages/effect/src/*.ts
+bun run lint-fix
 
 # 2. Validate JSDoc examples compile
-pnpm docgen
+bun run docgen
 
 # 3. Check types
-pnpm check
+bun run check
 
 # 4. Run tests
-pnpm test packages/effect/test/ModifiedTest.ts
+bun run test
 
 # 5. Build project
-pnpm build
+bun run build
 ```
 
 ### Progressive Implementation Pattern

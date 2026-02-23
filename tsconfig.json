@@ -2,19 +2,19 @@
   "extends": "./tsconfig.base.json",
   "include": [],
   "references": [
-    { "path": "packages-native/bun-test" },
-    { "path": "packages-native/crsql" },
-    { "path": "packages-native/debug" },
-    { "path": "packages-native/effect-native" },
-    { "path": "packages-native/examples-tui-testing-library" },
-    { "path": "packages-native/fetch-hooks" },
-    { "path": "packages-native/libcrsql" },
-    { "path": "packages-native/libsqlite" },
-    { "path": "packages-native/note" },
-    { "path": "packages-native/opentui-dom" },
-    { "path": "packages-native/opentui-dom-testing-library" },
-    { "path": "packages-native/patterns" },
-    { "path": "packages-native/schemas" },
-    { "path": "packages-native/tui-testing-library" }
+    { "path": "packages/bun-test" },
+    { "path": "packages/crsql" },
+    { "path": "packages/debug" },
+    { "path": "packages/effect-native" },
+    { "path": "packages/examples-tui-testing-library" },
+    { "path": "packages/fetch-hooks" },
+    { "path": "packages/libcrsql" },
+    { "path": "packages/libsqlite" },
+    { "path": "packages/note" },
+    { "path": "packages/opentui-dom" },
+    { "path": "packages/opentui-dom-testing-library" },
+    { "path": "packages/patterns" },
+    { "path": "packages/schemas" },
+    { "path": "packages/tui-testing-library" }
   ]
 }

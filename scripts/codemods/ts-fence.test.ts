@@ -1,5 +1,5 @@
 // You can run this test suite with the following command:
-// npx vitest scripts/codemods/ts-fence.test.ts --config scripts/codemods/vitest.config.ts
+// bun test scripts/codemods/ts-fence.test.ts
 import type * as cs from "jscodeshift"
 import * as TestUtils from "jscodeshift/src/testUtils"
 import transformer from "./ts-fence.js"

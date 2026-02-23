@@ -45,7 +45,7 @@ The documentation in `.patterns/*.md` is normative. Before writing or reviewing 
 - Never introduce `try`/`catch` inside `Effect.gen`; model control flow with Effect primitives.
 - Always terminate failing or interrupting branches with `return yield* ...`.
 - Resolve type problems instead of masking them with assertions; when TypeScript types disagree, fix the types.
-- After editing TypeScript, run `nix develop --command pnpm lint --fix` to enforce immediate linting.
+- After editing TypeScript, run `bun run lint-fix` to enforce immediate linting.
 
 ### Error Handling (`.patterns/error-handling.md`)
 
@@ -61,15 +61,15 @@ The documentation in `.patterns/*.md` is normative. Before writing or reviewing 
 
 ### Documentation (`.patterns/jsdoc-documentation.md`)
 
-- Maintain complete, compilable JSDoc examples; run `nix develop --command pnpm docgen` after documentation changes.
+- Maintain complete, compilable JSDoc examples; run `bun run docgen` after documentation changes.
 - Prefer multiple realistic examples over deleting content when fixing docgen failures.
 - Use canonical import forms (`import { Schema } from "effect/schema"`, etc.) and forbid unsafe type assertions in docs.
 
 ### Testing (`.patterns/testing-patterns.md`)
 
-- Use `@effect/vitest` with `it.effect` and `assert.*` for Effectful tests; use plain vitest only for pure functions.
+- Use `@effect-native/bun-test` with `it.effect` and `expect(...)` for Effectful tests; use the same runner for pure-function tests.
 - Replace wall-clock waits with `TestClock` for time-sensitive behavior.
-- Never rely on `Effect.runSync` or `expect` inside Effect-based tests.
+- Never rely on `Effect.runSync` inside Effect-based tests.
 
 ### Platform Integration (`.patterns/platform-integration.md`)
 
@@ -92,7 +92,7 @@ Failing fast makes defects visible early, prevents silent regressions, and align
 - When changing tests or infrastructure:
   - Provide concrete file paths and code references for the behavior being asserted, referencing the relevant `.patterns/*.md` guidance.
   - If a failure requires an environment change, document the exact steps to reproduce and remediate (e.g., reinstall `better-sqlite3` for the current Node version).
-- All changes must keep `pnpm ok` green unless a failing test is intentionally introduced as part of a RED phase in a TDD cycle (and is clearly marked as such in the PR).
+- All changes must keep `bun run ok` green unless a failing test is intentionally introduced as part of a RED phase in a TDD cycle (and is clearly marked as such in the PR).
 
 ## Examples of Disallowed Patterns
 
@@ -158,41 +158,37 @@ This project uses the latest Effect `^3.17.11` which supports modern error handl
 
 ## Tooling & Nix Development Environment
 
-This project uses Nix for dependency management and reproducible builds. All development commands must be run within the Nix development shell:
+`v4` is bun-first. Use host Bun by default, and use Nix as an optional convenience when you want a CI-like shell.
 
-- **Command Prefix**: Always prefix package manager and build commands with `nix develop --command` or run `nix develop` first to enter the shell:
+- **Default commands**:
 
   ```bash
-  # ✅ Preferred
-  nix develop --command pnpm install
-  nix develop --command pnpm lint --fix
-  nix develop --command pnpm docgen
-  nix develop --command pnpm ok
-  nix develop --command pnpm test
-
-  # ✅ Alternative (enter shell first)
-  nix develop
-  pnpm install
-  pnpm lint --fix
-  pnpm docgen
-  pnpm ok
-  pnpm test
+  bun install --frozen-lockfile
+  bun run lint-fix
+  bun run docgen
+  bun run ok
+  bun run test
   ```
 
-- **Rationale**: The Nix shell ensures consistent Node.js versions, native dependencies, and build tools across all environments, preventing "works on my machine" issues.
+- **Optional Nix wrappers**:
 
-- **CI Alignment**: This matches the CI environment which also runs commands within the Nix development shell.
+  ```bash
+  nix develop --command bun install --frozen-lockfile
+  nix develop --command bun run ok
+  ```
+
+- **Rationale**: Bun keeps local development fast; Nix remains available for reproducibility and environment troubleshooting.
 
 ### Native Modules (better-sqlite3) ABI Mismatch
 
 - Symptom: Errors like "was compiled against a different Node.js version" or mismatched `NODE_MODULE_VERSION` (e.g., 131 vs 137) when running tests that use `better-sqlite3`.
-- Cause: Running install/build/test outside the Nix shell compiles native addons against the wrong Node version/ABI.
-- Resolution: Always run installs and tests inside the Nix dev shell. When in doubt, clean and rebuild inside `nix develop`:
-  - `nix develop --command pnpm -w install`
-  - `nix develop --command pnpm -w rebuild better-sqlite3`
-  - Then re-run tests: `nix develop --command pnpm test`
+- Cause: Native addons were built against a different runtime ABI than the one executing tests.
+- Resolution: Rebuild inside a consistent shell (Nix is the recommended fallback):
+  - `nix develop --command bun install --frozen-lockfile`
+  - `nix develop --command bun --filter '*' rebuild better-sqlite3`
+  - Then re-run tests: `nix develop --command bun run test`
 
-In practice: relying on `nix develop` 100% of the time avoids ABI mismatches and “everything just works.”
+In practice: if host Bun and ABI versions stay aligned, local runs work; use Nix when you need reproducibility or ABI recovery.
 
 ## Reference Codebases
 
@@ -212,7 +208,7 @@ When you need examples or patterns for how to use Effect:
    - How to use specific Effect APIs correctly
    - Common patterns and best practices
    - Module structure and organization conventions
-   - Testing approaches with `@effect/vitest`
+   - Testing approaches with `@effect-native/bun-test`
 
 **Why these submodules exist:** Agents can search these codebases to find real-world examples of Effect patterns instead of guessing or relying on potentially outdated training data. When unsure how to implement something with Effect, search the refs first.
 

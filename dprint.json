@@ -16,7 +16,7 @@
     "**/build",
     "**/docs",
     "**/coverage",
-    "packages-native/**/CHANGELOG.md",
+    "packages/**/CHANGELOG.md",
     "refs/**",
     ".cache/**",
     "node_modules/**"

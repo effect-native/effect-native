@@ -1,79 +1,88 @@
 #!/usr/bin/env bash
-# for use in the hosted OpenAI Codex environment as both the setup and maintenance scripts
 # setup.sh — idempotent setup + maintenance for this repo
 # Usage: scripts/setup.sh (from repo root)
-# Optional: DEV_SHELL=".#ci" to pick a specific devShell
+# Optional: USE_NIX=1 scripts/setup.sh
+# Optional: DEV_SHELL=".#ci" USE_NIX=1 scripts/setup.sh
 
 set -euo pipefail
 
 DEV_SHELL="${DEV_SHELL:-.}"
+USE_NIX="${USE_NIX:-0}"
 
-need_nix() {
-  ! command -v nix >/dev/null 2>&1
-}
+run_steps() {
+  export CI=1
 
-install_nix_if_needed() {
-  if need_nix; then
-    echo "[setup] Nix not found; installing..."
-    curl -fsSL https://install.determinate.systems/nix \
-    | sh -s -- install linux --init none --no-confirm \
-      --extra-conf "sandbox = false" \
-      --extra-conf "experimental-features = nix-command flakes"
-  else
-    echo "[setup] Nix already installed; skipping install"
+  echo "[setup] bun install --frozen-lockfile"
+  bun install --frozen-lockfile
+
+  set +e
+  echo "[setup] bun run build"
+  bun run build
+  build_exit=$?
+
+  echo "[setup] bun run codegen"
+  bun run codegen
+  codegen_exit=$?
+  set -e
+
+  if [ "$build_exit" -ne 0 ]; then
+    echo "WARN: bun run build failed (exit $build_exit)"
+  fi
+  if [ "$codegen_exit" -ne 0 ]; then
+    echo "WARN: bun run codegen failed (exit $codegen_exit)"
   fi
 }
 
-ensure_nix_env() {
-  # Ensure PATH contains Nix; source profile scripts if present
-  export PATH="/nix/var/nix/profiles/default/bin:${PATH:-}"
-  local daemon="/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
-  local single="/nix/var/nix/profiles/default/etc/profile.d/nix.sh"
-  [ -r "$daemon" ] && . "$daemon"
-  [ -r "$single" ] && . "$single"
-}
+run_inside_nix() {
+  if ! command -v nix >/dev/null 2>&1; then
+    echo "[setup] Nix is not installed."
+    echo "Install Bun and run scripts/setup.sh, or install Nix and rerun with USE_NIX=1."
+    exit 1
+  fi
 
-run_inside_dev_shell() {
-  # Use bash (not sh) to avoid completion-related errors in shell hooks
   nix develop -L "$DEV_SHELL" --accept-flake-config \
     --extra-experimental-features "nix-command flakes" \
     -c bash -lc '
       set -euo pipefail
-      export CI=1  # Force Vitest to run in CI mode (disable watch / interactive UI)
-      corepack enable || true
-      pnpm --version || true
+      export CI=1
 
-      echo "[setup] pnpm install"
-      pnpm install --reporter=append-only --no-color
+      echo "[setup] bun install --frozen-lockfile"
+      bun install --frozen-lockfile
 
-      # allow build/codegen to fail without aborting tests
       set +e
-      echo "[setup] pnpm build"
-      pnpm build
+      echo "[setup] bun run build"
+      bun run build
       build_exit=$?
 
-      echo "[setup] pnpm codegen"
-      pnpm codegen
+      echo "[setup] bun run codegen"
+      bun run codegen
       codegen_exit=$?
       set -e
 
       if [ "$build_exit" -ne 0 ]; then
-        echo "WARN: pnpm build failed (exit $build_exit)"
+        echo "WARN: bun run build failed (exit $build_exit)"
       fi
       if [ "$codegen_exit" -ne 0 ]; then
-        echo "WARN: pnpm codegen failed (exit $codegen_exit)"
+        echo "WARN: bun run codegen failed (exit $codegen_exit)"
       fi
-
-      # echo "[setup] pnpm test"
-      # pnpm test
     '
 }
 
 main() {
-  install_nix_if_needed
-  ensure_nix_env
-  nix --version
-  run_inside_dev_shell
+  if [ "$USE_NIX" = "1" ]; then
+    echo "[setup] Running inside Nix dev shell ($DEV_SHELL)"
+    run_inside_nix
+    exit 0
+  fi
+
+  if ! command -v bun >/dev/null 2>&1; then
+    echo "[setup] Bun is required for default setup."
+    echo "Install Bun and rerun scripts/setup.sh, or use USE_NIX=1 scripts/setup.sh."
+    exit 1
+  fi
+
+  echo "[setup] Running with host Bun (Nix optional)"
+  run_steps
 }
 
 main "$@"

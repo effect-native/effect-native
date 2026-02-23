@@ -15,7 +15,7 @@ License: MIT
 This fork (effect-native/effect) contains:
 
 1. All original Effect packages maintained in sync with upstream
-2. Additional packages in packages-native/ created by effect-native contributors
+2. Additional packages in packages/ created by effect-native contributors
 3. Modifications to support the fork workflow
 
 Fork repository: https://github.com/effect-native/effect
@@ -36,12 +36,12 @@ excellent foundation.
 ## Packages
 
 - packages/: Original Effect packages (synced with upstream)
-- packages-native/: Fork-specific packages under @effect-native namespace
+- packages/: Fork-specific packages under @effect-native namespace
 
 ## Important Notes
 
 1. The name "Effect" and associated branding remain property of Effectful Technologies Inc
-2. Packages in packages-native/ are not affiliated with or endorsed by Effectful Technologies Inc
+2. Packages in packages/ are not affiliated with or endorsed by Effectful Technologies Inc
 3. All contributions to packages/ are intended to be contributed back upstream when appropriate
 4. The @effect-native npm namespace is maintained separately from @effect
 
@@ -50,7 +50,7 @@ Effect project, see FORK-WORKFLOW.md
 
 ## Additional Acknowledgments
 
-Some packages in packages-native/ were inspired by or include code derived from:
+Some packages in packages/ were inspired by or include code derived from:
 
 - opentui (https://github.com/sst/opentui) - MIT License, Copyright (c) 2025 opentui
 - opencode (https://github.com/sst/opencode) - MIT License, Copyright (c) 2025 opencode
