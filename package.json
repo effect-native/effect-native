@@ -21,6 +21,7 @@
     "docgen": "bun --filter './packages/*' run docgen && bun scripts/docs.mjs",
     "test-types": "tstyche",
     "changeset-version": "changeset version && bun scripts/force-libsqlite-embedded.mjs",
+    "changeset-publish-beta": "bun run codemod && bun run build && bun run test && changeset publish --tag beta --provenance && bun scripts/postpublish-dist-tags.mjs",
     "changeset-publish": "bun run codemod && bun run build && bun run test && changeset publish --provenance && bun scripts/postpublish-dist-tags.mjs"
   },
   "overrides": {

@@ -39,7 +39,7 @@ jobs:
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
         with:
           version: bun run changeset-version
-          publish: ${{ github.ref_name == 'v4' && 'bun run codemod && bun run build && bun run test && changeset publish --tag beta --provenance && bun scripts/postpublish-dist-tags.mjs' || 'bun run changeset-publish' }}
+          publish: ${{ github.ref_name == 'v4' && 'bun run changeset-publish-beta' || 'bun run changeset-publish' }}
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
