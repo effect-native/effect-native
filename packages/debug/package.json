@@ -1,6 +1,7 @@
 {
   "name": "@effect-native/debug",
   "version": "4.0.0",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "description": "JS runtime debugger protocol abstraction",

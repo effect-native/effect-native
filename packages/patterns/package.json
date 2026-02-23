@@ -1,6 +1,7 @@
 {
   "name": "@effect-native/patterns",
   "version": "4.0.0",
+  "private": true,
   "type": "module",
   "license": "MIT",
   "description": "Worked examples showing Effect module patterns (TypeId, dual, Equal.symbol, Hash.symbol).",
