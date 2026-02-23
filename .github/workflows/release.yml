@@ -32,6 +32,11 @@ jobs:
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest
 
+      - name: Verify npm version supports trusted publishing
+        run: |
+          npm --version
+          node -e "const v=process.versions.npm.split('.').map(Number); const ok=v[0] > 11 || (v[0] === 11 && v[1] >= 5); if (!ok) { console.error('npm version too old for reliable OIDC trusted publishing: ' + process.versions.npm); process.exit(1); }"
+
       - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
