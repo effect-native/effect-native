@@ -101,7 +101,12 @@ jobs:
 
           for package in packages:
               exchange_url = "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/" + urllib.parse.quote(package, safe="")
-              exchange_req = urllib.request.Request(exchange_url, headers={"Authorization": f"Bearer {oidc_token}"})
+              exchange_req = urllib.request.Request(
+                  exchange_url,
+                  data=b"",
+                  method="POST",
+                  headers={"Authorization": f"Bearer {oidc_token}"},
+              )
               try:
                   with urllib.request.urlopen(exchange_req) as exchange_response:
                       body = exchange_response.read().decode("utf-8")
