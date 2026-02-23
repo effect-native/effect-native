@@ -28,6 +28,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "23.7.0"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@effect-native"
 
       - name: Upgrade npm for OIDC support
         run: npm install -g npm@latest
@@ -38,13 +40,42 @@ jobs:
           echo "npm ${NPM_VERSION}"
           node -e "const raw=process.argv[1]; const v=raw.split('.').map(Number); const ok=v[0] > 11 || (v[0] === 11 && v[1] >= 5); if (!ok) { console.error('npm version too old for reliable OIDC trusted publishing: ' + raw); process.exit(1); }" "$NPM_VERSION"
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
         with:
           version: bun run changeset-version
-          publish: ${{ github.ref_name == 'v4' && 'bun run changeset-publish-beta' || 'bun run changeset-publish' }}
-          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: OIDC preflight - scrub npm auth
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          echo "=== OIDC Preflight ==="
+          for npmrc in "$NPM_CONFIG_USERCONFIG" "$HOME/.npmrc" ".npmrc"; do
+            if [ -n "$npmrc" ] && [ -f "$npmrc" ]; then
+              echo "Cleaning $npmrc"
+              sed -i -E '/\/\/registry\.npmjs\.org\/:(_authToken|_auth)\s*=/d' "$npmrc"
+              sed -i -E '/^\s*(_authToken|_auth)\s*=/d' "$npmrc"
+              sed -i -E '/^\s*[Aa]lways-[Aa]uth\s*=/d' "$npmrc"
+            fi
+          done
+          npm ping
+          if npm whoami >/dev/null 2>&1; then
+            echo "Warning: npm whoami succeeded without OIDC token"
+          else
+            echo "Confirmed: npm whoami failed (expected for OIDC)"
+          fi
+          npm config get registry
+
+      - name: Publish packages with OIDC
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          if [ "$GITHUB_REF_NAME" = "v4" ]; then
+            bun run changeset-publish-beta
+          else
+            bun run changeset-publish
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ""
