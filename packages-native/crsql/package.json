@@ -39,6 +39,7 @@
     "@effect-native/bun-test": "workspace:*",
     "@effect-native/libcrsql": "workspace:^",
     "@effect/platform-node": "beta",
+    "@effect/sql-sqlite-bun": "beta",
     "effect": "beta"
   },
   "dependencies": {

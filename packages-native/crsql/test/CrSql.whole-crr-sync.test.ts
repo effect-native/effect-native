@@ -1,6 +1,6 @@
 import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 import { Reactivity } from "effect/unstable/reactivity"
@@ -20,22 +20,22 @@ function maxVersionAndSeq(
   return { version: maxVStr, seq: maxSeq }
 }
 
-layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
+layer(Layer.mergeAll(Reactivity.layer))((it) => {
   it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: first sync A→B and cursor update", () =>
     Effect.gen(function*() {
-      const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-      const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const layerA = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const layerB = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
       // Get B's site id first (used for exclude when pulling from A)
       const siteB = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* BunSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         return yield* crsql.getSiteIdHex
       }).pipe(Effect.provide(layerB))
 
       // A: init schema, insert, export changes excluding B
       const fromA = yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* BunSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
           id BLOB NOT NULL PRIMARY KEY,
@@ -53,7 +53,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
 
       // B: init schema, apply, verify, update cursor
       yield* Effect.gen(function*() {
-        const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+        const sql = yield* BunSqlite.SqliteClient.SqliteClient
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         yield* crsql.sql`CREATE TABLE items (
           id BLOB NOT NULL PRIMARY KEY,
@@ -77,8 +77,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
 
   it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: incremental sync A→B using tracked cursor", () =>
     Effect.gen(function*() {
-      const layerA = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-      const layerB = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const layerA = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const layerB = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
       // B's site id (exclude)
       const siteB = yield* Effect.provide(
@@ -119,7 +119,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
       // B: apply both sets on the SAME connection and verify
       yield* Effect.provide(
         Effect.gen(function*() {
-          const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+          const sql = yield* BunSqlite.SqliteClient.SqliteClient
           const crsql = yield* CrSql.fromSqliteClient({ sql })
           // init
           yield* crsql.automigrate`
@@ -145,8 +145,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
   it.effect("Whole CRR Sync via crsql_changes + crsql_tracked_peers: two-way sync A⇄B with exclusion prevents echo", () =>
     Effect.gen(function*() {
       // Use one in-memory connection per replica and reuse it across steps
-      const clientA = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
-      const clientB = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
+      const clientA = yield* BunSqlite.SqliteClient.make({ filename: ":memory:" })
+      const clientB = yield* BunSqlite.SqliteClient.make({ filename: ":memory:" })
 
       // Site ids and schema init
       const siteA = yield* Effect.gen(function*() {

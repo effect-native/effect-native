@@ -1,49 +1,29 @@
 name: Setup
-description: Perform standard setup and install dependencies using pnpm.
+description: Perform standard setup and install dependencies using bun.
 inputs:
   node-version:
     description: The version of Node.js to install
     required: true
     default: 23.7.0
+  bun-version:
+    description: The version of Bun to install
+    required: true
+    default: latest
 
 runs:
   using: composite
   steps:
-    - name: Detect pnpm
-      id: pnpm
-      shell: bash
-      run: |
-        if command -v pnpm >/dev/null 2>&1; then
-          echo "found=true" >> "$GITHUB_OUTPUT"
-          echo "version=$(pnpm --version)" >> "$GITHUB_OUTPUT"
-          echo "Using system pnpm $(pnpm --version)"
-        else
-          echo "found=false" >> "$GITHUB_OUTPUT"
-          echo "pnpm not found on PATH; will install"
-        fi
-    - name: Install pnpm (if missing)
-      if: steps.pnpm.outputs.found != 'true'
-      uses: pnpm/action-setup@v3
+    - name: Install bun
+      uses: oven-sh/setup-bun@v2
       with:
-        # Install into a job-scoped temp dir to avoid clashes on self-hosted
-        dest: ${{ runner.temp }}/setup-pnpm
+        bun-version: ${{ inputs.bun-version }}
     - name: Install node
       uses: actions/setup-node@v4
       with:
-        cache: pnpm
         node-version: ${{ inputs.node-version }}
     - name: Install dependencies
       shell: bash
       env:
         NODE_OPTIONS: "--max-old-space-size=4096"
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
-      run: |
-        set -euo pipefail
-        echo "🧩 pnpm install (shared store)"
-        if pnpm install --frozen-lockfile --prefer-offline --network-concurrency=32; then
-          echo "✅ Install succeeded with shared store"
-        else
-          echo "⚠️  Install failed; retrying with per-job store"
-          mkdir -p "$RUNNER_TEMP/pnpm-store"
-          pnpm install --frozen-lockfile --prefer-offline --store-dir="$RUNNER_TEMP/pnpm-store" --network-concurrency=32
-        fi
+      run: bun install --frozen-lockfile

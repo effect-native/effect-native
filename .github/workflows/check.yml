@@ -2,9 +2,9 @@ name: Check
 on:
   workflow_dispatch:
   pull_request:
-    branches: [effect-native/main]
+    branches: [effect-native/main, v4]
   push:
-    branches: [effect-native/main]
+    branches: [effect-native/main, v4]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,8 +23,8 @@ jobs:
           clean: false
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - run: pnpm check
-      - run: pnpm test-types --target '>=5.4'
+      - run: bun run check
+      - run: bun run test-types --target '>=5.4'
 
   lint:
     name: Lint
@@ -36,37 +36,24 @@ jobs:
           clean: false
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - run: pnpm circular
-      - run: pnpm lint
-      - run: pnpm codegen
+      - run: bun run circular
+      - run: bun run lint
+      - run: bun run codegen
       - name: Check for codegen changes
         run: git diff --exit-code
 
   test:
-    name: Test (${{ matrix.runtime }} ${{ matrix.shard }})
+    name: Test
     runs-on: self-hosted
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1/4, 2/4, 3/4, 4/4]
-        # runtime: [Node, Bun] # TODO: Re-enable bun test suite after https://github.com/oven-sh/bun/issues/4145 is resolved
-        runtime: [Node]
     steps:
       - uses: actions/checkout@v4
         with:
           clean: false
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - uses: oven-sh/setup-bun@v1
-        if: matrix.runtime == 'Bun'
       - name: Test
-        run: |
-          if [ "${{ matrix.runtime }}" == "Bun" ]; then
-            pnpm vitest --shard ${{ matrix.shard }}
-          else
-            pnpm test --shard ${{ matrix.shard }}
-          fi
+        run: bun run test
 
   verify-subpaths:
     name: Verify Subpaths
@@ -79,4 +66,4 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - name: Verify effect subpath builds
-        run: pnpm verify-subpaths
+        run: bun run verify-subpaths

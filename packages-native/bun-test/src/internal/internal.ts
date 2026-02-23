@@ -194,7 +194,7 @@ const makeTester = <R>(
  * @internal
  */
 export const effect = makeTester((effect: Effect.Effect<any, any, any>) =>
-  Effect.provide(effect, TestEnv) as Effect.Effect<any, any, never>
+  effect.pipe(Effect.scoped, Effect.provide(TestEnv)) as Effect.Effect<any, any, never>
 )
 
 /**
@@ -212,7 +212,7 @@ export const scoped = makeTester(
  *
  * @internal
  */
-export const live = makeTester((effect: Effect.Effect<any, any, any>) => effect as Effect.Effect<any, any, never>)
+export const live = makeTester((effect: Effect.Effect<any, any, any>) => Effect.scoped(effect) as Effect.Effect<any, any, never>)
 
 /**
  * Test runner for integration tests with resource management but without TestServices.
@@ -285,7 +285,11 @@ export const layer = <R, E>(
 
   const methods: any = {
     effect: makeTester((effect) =>
-      Effect.flatMap(contextEffect, (context) => effect.pipe(Effect.provide(context))) as any
+      Effect.flatMap(contextEffect, (context) =>
+        effect.pipe(
+          Effect.scoped,
+          Effect.provide(context)
+        )) as any
     ),
     scoped: makeTester((effect) =>
       Effect.flatMap(contextEffect, (context) =>
@@ -295,7 +299,11 @@ export const layer = <R, E>(
         )) as any
     ),
     live: makeTester((effect) =>
-      Effect.flatMap(contextEffect, (context) => effect.pipe(Effect.provide(context))) as any
+      Effect.flatMap(contextEffect, (context) =>
+        effect.pipe(
+          Effect.scoped,
+          Effect.provide(context)
+        )) as any
     ),
     scopedLive: makeTester((effect) =>
       Effect.flatMap(contextEffect, (context) =>
@@ -305,6 +313,7 @@ export const layer = <R, E>(
         )) as any
     ),
     flakyTest,
+    todo: (name: string) => B.test.todo(name, () => {}),
     layer: <R2, E2>(innerLayer: Layer.Layer<R2, E2, R>, innerOptions?: any) => {
       const combined = Layer.provideMerge(innerLayer, withTestEnv)
       return layer(combined, { ...options, ...innerOptions, memoMap })

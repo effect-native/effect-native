@@ -53,5 +53,10 @@
       "eslint/no-unused-vars": "off",
       "typescript/no-unused-vars": "off"
     }
+  }, {
+    "files": ["**/cli.ts", "**/cli.js", "**/bin/**"],
+    "rules": {
+      "eslint/no-console": "off"
+    }
   }]
 }

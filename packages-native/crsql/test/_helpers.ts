@@ -1,8 +1,8 @@
 import { CrSql } from "@effect-native/crsql/CrSql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 
-export const layerMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+export const layerMem = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 export const ensureCrSqlLoaded = CrSql.fromSqliteClient()
 

@@ -1,6 +1,6 @@
 import { layer } from "@effect-native/bun-test"
 import * as CrSql from "@effect-native/crsql/CrSql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 import { SqlClient } from "effect/unstable/sql"
@@ -9,7 +9,7 @@ import * as TestHelpers from "./_helpers.js"
 
 const layers = Layer.mergeAll(
   CrSql.CrSql.Default.pipe(
-    Layer.provideMerge(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))
+    Layer.provideMerge(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))
   )
 )
 

@@ -1,6 +1,6 @@
 import { it } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
 import * as assert from "node:assert"
@@ -30,7 +30,7 @@ it.effect.skip("schemaFromChanges: infers columns for todos", () =>
     assert.ok(schema.includes("content TEXT"))
     assert.ok(schema.includes("completed INTEGER"))
     assert.ok(schema.includes("SELECT crsql_as_crr('todos')"))
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: includes multiple tables present in changes", () =>
   Effect.gen(function*() {
@@ -55,7 +55,7 @@ it.effect.skip("schemaFromChanges: includes multiple tables present in changes",
     assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS b"))
     assert.ok(schema.includes("SELECT crsql_as_crr('a')"))
     assert.ok(schema.includes("SELECT crsql_as_crr('b')"))
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
   Effect.gen(function*() {
@@ -82,7 +82,7 @@ it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/R
     assert.ok(schema.includes("i INTEGER"))
     assert.ok(schema.includes("r REAL"))
     assert.ok(schema.includes("b BLOB"))
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: conflicting types for same column fails", () =>
   Effect.gen(function*() {
@@ -104,7 +104,7 @@ it.effect.skip("schemaFromChanges: conflicting types for same column fails", () 
     const changes = yield* crsql.pullChanges("0")
     const either = yield* crsql.__experimental__schemaFromChanges(changes).pipe(Effect.either)
     assert.ok(either._tag === "Left")
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
   Effect.gen(function*() {
@@ -131,7 +131,7 @@ it.effect.skip("schemaFromChanges: deterministic column order (id first, others 
     const iZeta = schema.indexOf(" zeta ")
     assert.ok(iAlpha > -1 && iMid > -1 && iZeta > -1)
     assert.ok(iAlpha < iMid && iMid < iZeta)
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
 it.effect.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
   Effect.gen(function*() {
@@ -154,4 +154,4 @@ it.effect.skip("schemaFromChanges: generated schema is idempotent under automigr
     yield* crsql.automigrate(schema)
     const res = yield* crsql.automigrate(schema).pipe(Effect.either)
     assert.ok(res._tag === "Right")
-  }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))

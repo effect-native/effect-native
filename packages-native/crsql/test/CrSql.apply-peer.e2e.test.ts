@@ -1,6 +1,6 @@
 import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import { Reactivity } from "effect/unstable/reactivity"
@@ -8,12 +8,12 @@ import { SqlClient } from "effect/unstable/sql"
 import * as assert from "node:assert"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
-layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
+layer(Layer.mergeAll(Reactivity.layer))((it) => {
   it.effect("applyChanges: exports from DB1 apply into DB2", () =>
     Effect.gen(function*() {
       // Single provided connections per DB to keep :memory: state
-      const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-      const Db2 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const Db1 = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const Db2 = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
       const pkA = "00112233445566778899AABBCCDDEEFF"
       const pkB = "FFEEDDCCBBAA99887766554433221100"
@@ -55,8 +55,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
 
   it.effect("tracked peers: set/get works across DBs", () =>
     Effect.gen(function*() {
-      const Db1 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
-      const Db2 = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const Db1 = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
+      const Db2 = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
       // Keep DB2 work on a single connection/layer provision
       const info2 = yield* Effect.gen(function*() {
@@ -106,8 +106,8 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
 
   it.effect("fromSqliteClient: explicit sql handles multiple instances", () =>
     Effect.gen(function*() {
-      const db1 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
-      const db2 = yield* NodeSqlite.SqliteClient.make({ filename: ":memory:" })
+      const db1 = yield* BunSqlite.SqliteClient.make({ filename: ":memory:" })
+      const db2 = yield* BunSqlite.SqliteClient.make({ filename: ":memory:" })
 
       const crsql1 = yield* CrSql.fromSqliteClient({ sql: db1 })
       const crsql2 = yield* CrSql.fromSqliteClient({ sql: db2 })

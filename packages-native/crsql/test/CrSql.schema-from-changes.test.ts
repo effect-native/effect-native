@@ -1,6 +1,6 @@
 import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect, Layer } from "effect"
 import * as Console from "effect/Console"
 import { Reactivity } from "effect/unstable/reactivity"
@@ -16,7 +16,7 @@ import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 // The __experimental__schemaFromChanges feature is implemented but these integration
 // tests remain red/skipped until the feature is fully validated and stabilized.
 
-layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
+layer(Layer.mergeAll(Reactivity.layer))((it) => {
   it.effect.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED): can recreate schema for exported changes and apply them", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
@@ -30,7 +30,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex(${pk2}), 'Beta', 1)`
         const crsql = yield* CrSql.fromSqliteClient({ sql })
         return yield* crsql.pullChanges("0")
-      }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+      }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
       assert.ok(exported.length > 0)
       // Sanity: contains todos/content and todos/completed deltas
@@ -43,7 +43,7 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
         const crsql = yield* CrSql.fromSqliteClient()
         // New API under test: derive a SQLite schema suitable for crsql_automigrate
         return yield* crsql.__experimental__schemaFromChanges(exported)
-      }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+      }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
       // The derived schema should target the todos table and enable CRR
       assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS todos"))
@@ -66,6 +66,6 @@ layer(Layer.mergeAll(Reactivity.layer, Layer.scope))((it) => {
           { content: "Alpha", completed: 0 },
           { content: "Beta", completed: 1 }
         ])
-      }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: ":memory:" })))
+      }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" })))
     }))
 })

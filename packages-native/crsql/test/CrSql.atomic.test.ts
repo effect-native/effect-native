@@ -1,12 +1,12 @@
 import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 import { SqlClient } from "effect/unstable/sql"
 import * as assert from "node:assert"
 
-const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+const DbMem = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 const createTodosCrr = Effect.gen(function*() {
   const sql = yield* SqlClient.SqlClient
@@ -23,9 +23,12 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       // Use the default service wired with Node Sqlite layer
       const layers = CrSql.CrSql.Default.pipe(
-        Layer.provideMerge(NodeSqlite.SqliteClient.layer({ filename: ":memory:" }))
+        Layer.provideMerge(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))
       )
-      const siteId = yield* CrSql.CrSql.getSiteIdHex.pipe(Effect.provide(layers))
+      const siteId = yield* Effect.gen(function*() {
+        const crsql = yield* CrSql.CrSql
+        return yield* crsql.getSiteIdHex
+      }).pipe(Effect.provide(layers))
       assert.strictEqual(siteId.length, 32)
       assert.match(siteId, /^[0-9A-F]{32}$/i)
     }))

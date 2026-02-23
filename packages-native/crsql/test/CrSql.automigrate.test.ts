@@ -1,6 +1,6 @@
 import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import * as Layer from "effect/Layer"
 import { Reactivity } from "effect/unstable/reactivity"
@@ -10,7 +10,7 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
-const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+const DbMem = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
   it.effect("automigrate: initial apply creates CRR and tracks changes", () =>
@@ -72,10 +72,10 @@ layer(DbMem)((it) => {
           SELECT crsql_as_crr('items2');
         `
         return { v1, pk1 }
-      }).pipe(Effect.provide(NodeSqlite.SqliteClient.layer({ filename: uri })))
+      }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: uri })))
 
       // Stage 2 on connection B (fresh handle to the same shared-memory DB)
-      const layers = CrSql.layerFromSqliteClient({ sql: NodeSqlite.SqliteClient.make({ filename: uri }) }).pipe(
+      const layers = CrSql.layerFromSqliteClient({ sql: BunSqlite.SqliteClient.make({ filename: uri }) }).pipe(
         Layer.provideMerge(Reactivity.layer)
       )
       const delta = yield* Effect.gen(function*() {
@@ -111,8 +111,8 @@ layer(DbMem)((it) => {
       // and does not execute as separate SQL.
       const payload = "'); DROP TABLE victim; --"
 
-      const result = yield* crsql.automigrate(payload).pipe(Effect.either)
-      assert.ok(result._tag === "Left") // invalid migration payload causes a failure
+      const result = yield* crsql.automigrate(payload).pipe(Effect.result)
+      assert.ok(result._tag === "Failure") // invalid migration payload causes a failure
 
       const [exists] = yield* sql<{ n: number }>`
         SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'victim'

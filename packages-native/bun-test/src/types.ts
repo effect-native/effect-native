@@ -97,5 +97,6 @@ export namespace BunTest {
       (name: string, f: (it: BunTest.Methods<R | R2>) => void): void
     }
     readonly prop: BunTest.Tester<R>["prop"]
+    readonly todo: (name: string) => void
   }
 }

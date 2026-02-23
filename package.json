@@ -15,7 +15,7 @@
     "circular": "depcruise --config .dependency-cruiser.cjs \"packages-native/*/src/**/*.{ts,tsx}\" --output-type err --validate",
     "test": "bun --filter './packages-native/*' test",
     "coverage": "bun --filter './packages-native/*' test --coverage",
-    "check": "tsc -b tsconfig.json",
+    "check": "npx tsc -b tsconfig.json",
     "check-recursive": "bun --filter './packages-native/*' exec tsc -b tsconfig.json",
     "lint": "oxlint && dprint check",
     "lint-fix": "oxlint --fix && dprint fmt",

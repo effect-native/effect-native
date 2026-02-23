@@ -2,13 +2,12 @@ import { layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
 import * as CrSqliteExtension from "@effect-native/crsql/CrSqliteExtension"
 import * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
-import * as NodeSqlite from "@effect/sql-sqlite-node"
+import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
-import * as DateTime from "effect/DateTime"
 import * as Schema from "effect/Schema"
 import * as assert from "node:assert"
 
-const DbMem = NodeSqlite.SqliteClient.layer({ filename: ":memory:" })
+const DbMem = BunSqlite.SqliteClient.layer({ filename: ":memory:" })
 
 layer(DbMem)((it) => {
   it.effect("fromSqliteClient: accepts loadedExtensionInfo effect", () =>
@@ -24,13 +23,13 @@ layer(DbMem)((it) => {
       // merge both into the ExtInfoLoaded service.
 
       const info = Effect.succeed({
-        loadedAt: yield* DateTime.now,
+        loadedAt: new Date(),
         path: null
-      }).pipe(Effect.flatMap(Schema.validate(CrSqlSchema.ExtInfoLoaded)))
+      }).pipe(Effect.flatMap(Schema.decodeUnknownEffect(CrSqlSchema.ExtInfoLoaded)))
 
       yield* info
 
-      const sql = yield* NodeSqlite.SqliteClient.SqliteClient
+      const sql = yield* BunSqlite.SqliteClient.SqliteClient
       const crsql = yield* CrSql.fromSqliteClient({
         sql,
         loadedExtensionInfo: info
@@ -49,8 +48,8 @@ layer(DbMem)((it) => {
     Effect.gen(function*() {
       const encoded = { path: null as string | null, loadedAt: new Date() }
 
-      const typed = yield* Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded)(encoded)
-      const roundTripped = yield* Schema.encode(CrSqlSchema.ExtInfoLoaded)(typed)
+      const typed = yield* Schema.decodeUnknownEffect(CrSqlSchema.ExtInfoLoaded)(encoded)
+      const roundTripped = yield* Schema.encodeEffect(CrSqlSchema.ExtInfoLoaded)(typed)
       assert.strictEqual(roundTripped.path, null)
       assert.ok(roundTripped.loadedAt instanceof Date)
       assert.strictEqual(roundTripped.loadedAt.getTime(), encoded.loadedAt.getTime())
@@ -59,7 +58,7 @@ layer(DbMem)((it) => {
   it.effect("ExtInfoLoaded decodeUnknown fails for invalid shape", () =>
     Effect.gen(function*() {
       const bad = { path: 123 as unknown, loadedAt: new Date() }
-      const res = yield* Schema.decodeUnknown(CrSqlSchema.ExtInfoLoaded)(bad).pipe(Effect.either)
-      assert.strictEqual(res._tag, "Left")
+      const res = yield* Schema.decodeUnknownEffect(CrSqlSchema.ExtInfoLoaded)(bad).pipe(Effect.result)
+      assert.strictEqual(res._tag, "Failure")
     }))
 })

@@ -3,6 +3,18 @@
   "include": [],
   "references": [
     { "path": "packages-native/bun-test" },
-    { "path": "packages-native/patterns" }
+    { "path": "packages-native/crsql" },
+    { "path": "packages-native/debug" },
+    { "path": "packages-native/effect-native" },
+    { "path": "packages-native/examples-tui-testing-library" },
+    { "path": "packages-native/fetch-hooks" },
+    { "path": "packages-native/libcrsql" },
+    { "path": "packages-native/libsqlite" },
+    { "path": "packages-native/note" },
+    { "path": "packages-native/opentui-dom" },
+    { "path": "packages-native/opentui-dom-testing-library" },
+    { "path": "packages-native/patterns" },
+    { "path": "packages-native/schemas" },
+    { "path": "packages-native/tui-testing-library" }
   ]
 }
