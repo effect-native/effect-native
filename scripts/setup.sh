@@ -9,11 +9,22 @@ set -euo pipefail
 DEV_SHELL="${DEV_SHELL:-.}"
 USE_NIX="${USE_NIX:-0}"
 
+install_dependencies() {
+  echo "[setup] bun install --frozen-lockfile"
+  if bun install --frozen-lockfile; then
+    return 0
+  fi
+
+  echo "WARN: bun install --frozen-lockfile failed; retrying with bun install."
+  echo "[setup] bun install"
+  bun install
+  echo "WARN: bun.lock may have changed. Commit the lockfile if the update is intentional."
+}
+
 run_steps() {
   export CI=1
 
-  echo "[setup] bun install --frozen-lockfile"
-  bun install --frozen-lockfile
+  install_dependencies
 
   set +e
   echo "[setup] bun run build"
@@ -44,27 +55,7 @@ run_inside_nix() {
     --extra-experimental-features "nix-command flakes" \
     -c bash -lc '
       set -euo pipefail
-      export CI=1
-
-      echo "[setup] bun install --frozen-lockfile"
-      bun install --frozen-lockfile
-
-      set +e
-      echo "[setup] bun run build"
-      bun run build
-      build_exit=$?
-
-      echo "[setup] bun run codegen"
-      bun run codegen
-      codegen_exit=$?
-      set -e
-
-      if [ "$build_exit" -ne 0 ]; then
-        echo "WARN: bun run build failed (exit $build_exit)"
-      fi
-      if [ "$codegen_exit" -ne 0 ]; then
-        echo "WARN: bun run codegen failed (exit $codegen_exit)"
-      fi
+      USE_NIX=0 bash scripts/setup.sh
     '
 }
 
