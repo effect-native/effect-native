@@ -1,9 +1,13 @@
 ---
 title: "graph-db/040: SQLite dialect (expand-only ensure)"
-status: pending
-done_when: bun --filter @effect-native/graph-db test test/sqlite-dialect.ensure.test.ts
+status: complete
+done_when: cd packages/graph-db && bun test test/sqlite-dialect.ensure.test.ts
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/030-service-and-layer.md
 artifacts:
@@ -43,4 +47,3 @@ Implement SQLite dialect planning and expand-only ensure behavior.
 
 1. Use in-memory SQLite tests.
 2. Run `bun --filter @effect-native/graph-db test test/sqlite-dialect.ensure.test.ts`.
-

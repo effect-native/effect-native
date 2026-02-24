@@ -1,9 +1,13 @@
 ---
 title: "graph-db/050: CR-SQLite mode planning rules"
-status: pending
-done_when: bun --filter @effect-native/graph-db test test/sqlite-dialect.crr-plan.test.ts
+status: complete
+done_when: cd packages/graph-db && bun test test/sqlite-dialect.crr-plan.test.ts
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/040-sqlite-dialect.md
 artifacts:
@@ -40,4 +44,3 @@ Add CRR mode constraints to emitted schema plans with typed error surfaces.
 
 1. Add plan-focused tests that inspect emitted SQL statements.
 2. Run `bun --filter @effect-native/graph-db test test/sqlite-dialect.crr-plan.test.ts`.
-

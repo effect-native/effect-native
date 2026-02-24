@@ -1,9 +1,13 @@
 ---
 title: "graph-db/060: Node repository"
-status: pending
-done_when: bun --filter @effect-native/graph-db test test/node-repo.roundtrip.test.ts
+status: complete
+done_when: cd packages/graph-db && bun test test/node-repo.roundtrip.test.ts
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/040-sqlite-dialect.md
 artifacts:
@@ -39,4 +43,3 @@ Implement node repository with schema-driven encode/decode and typed failures.
 1. Add roundtrip tests over in-memory SQLite.
 2. Add malformed-row test asserting typed failure.
 3. Run `bun --filter @effect-native/graph-db test test/node-repo.roundtrip.test.ts`.
-

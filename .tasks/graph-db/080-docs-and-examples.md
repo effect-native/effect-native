@@ -1,11 +1,15 @@
 ---
 title: "graph-db/080: README and examples"
-status: pending
+status: complete
 done_when: |
   see packages/graph-db/README.md
   verify: contains compile-ready usage examples for spec/layer/ensure/CRR mode
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/070-repos-edges.md
 artifacts:
@@ -38,4 +42,3 @@ Document package setup, layer wiring, ensure execution, and CRR configuration.
 
 1. Run `bun --filter @effect-native/graph-db run check`.
 2. Verify example import paths and API names match implemented code.
-

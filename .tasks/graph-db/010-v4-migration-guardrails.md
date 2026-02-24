@@ -1,11 +1,15 @@
 ---
 title: "graph-db/010: v4 migration guardrails docs"
-status: pending
+status: complete
 done_when: |
   see packages/graph-db/docs/v4-notes.md
   verify: contains Effect v4 do/don't guidance and service/layer/error/yield examples
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/000-bootstrap.md
 artifacts:
@@ -34,4 +38,3 @@ Document Effect v4 migration constraints and copy/paste-safe patterns for this p
 
 1. Inspect `packages/graph-db/docs/v4-notes.md`.
 2. Validate examples reference current imports and naming used by implementation.
-

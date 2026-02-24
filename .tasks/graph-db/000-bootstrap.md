@@ -1,9 +1,13 @@
 ---
 title: "graph-db/000: Bootstrap package"
-status: pending
-done_when: bun --filter @effect-native/graph-db test
+status: complete
+done_when: cd packages/graph-db && bun test
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by: []
 artifacts:
   - path: packages/graph-db/package.json
@@ -40,4 +44,3 @@ Create the `@effect-native/graph-db` package scaffold with build/test wiring and
 
 1. Run `bun --filter @effect-native/graph-db test`.
 2. Run `bun --filter @effect-native/graph-db run check`.
-

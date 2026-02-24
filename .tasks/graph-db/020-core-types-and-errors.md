@@ -1,9 +1,13 @@
 ---
 title: "graph-db/020: Core types and tagged errors"
-status: pending
-done_when: bun --filter @effect-native/graph-db run check
+status: complete
+done_when: cd packages/graph-db && bun run check
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/000-bootstrap.md
 artifacts:
@@ -42,4 +46,3 @@ Define type-safe spec/plan models and typed errors for graph-db internals and pu
 
 1. Run `bun --filter @effect-native/graph-db run check`.
 2. Verify exported type and error symbols in `src/index.ts`.
-

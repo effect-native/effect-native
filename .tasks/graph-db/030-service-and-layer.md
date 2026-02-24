@@ -1,9 +1,13 @@
 ---
 title: "graph-db/030: GraphDb service and layer"
-status: pending
-done_when: bun --filter @effect-native/graph-db test test/service-and-layer.test.ts
+status: complete
+done_when: cd packages/graph-db && bun test test/service-and-layer.test.ts
 basis: |
-  Pending implementation.
+  Implemented and verified in this branch.
+  Proof commands run:
+  - bun run check (packages/graph-db)
+  - bun test (packages/graph-db)
+  - bun run lint-fix (workspace root)
 blocked_by:
   - .tasks/graph-db/020-core-types-and-errors.md
 artifacts:
@@ -37,4 +41,3 @@ Implement `makeGraphDb(spec)` returning `{ GraphDb, layer }` with explicit depen
 
 1. Add a test using a stub `SqlClient` that records `withTransaction` calls.
 2. Run `bun --filter @effect-native/graph-db test test/service-and-layer.test.ts`.
-
