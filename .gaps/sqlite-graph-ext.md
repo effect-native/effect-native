@@ -1,8 +1,8 @@
 # Gaps Snapshot: .ok/sqlite-graph-ext.ok.md
 
-Captured: 2026-02-24 20:59:51 UTC
-Branch: HEAD
-HEAD: cc81076f3
+Captured: 2026-02-24 21:14:21 UTC
+Branch: feat/sqlite-graph-ext-accelerator
+HEAD: b5db311ea
 Bun: 1.3.9
 Node: v24.3.0
 System: darwin x64
@@ -24,7 +24,8 @@ System: darwin x64
 - Demo imports and loads extension lifecycle using Bun embedding behavior (`setCustomSQLite`, `loadExtension`).
 - Workspace root now references both new packages in `tsconfig.json`.
 - `zig` binary is not present in the current environment (`zig_missing`), and extension artifacts are still absent from `packages/sqlite-graph-ext/lib/*`.
-- `idset_each`, `graph_*`, `ranked_diff`, and real traversal/ranking primitives are still stubs/placeholders.
+- `idset_each` now emits a deterministic iterable payload (`id\tord` lines) from the canonical set.
+- `graph_*`, `ranked_diff`, and real traversal/ranking primitives are still stubs/placeholders.
 - Cross-platform shared objects/dlls are not yet emitted.
 
 ## Non-gated notes
