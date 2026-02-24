@@ -5,14 +5,7 @@ import { Data, Effect } from "effect"
 
 import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
 import { getGraphExtPathSync } from "@effect-native/sqlite-graph-ext" with { type: "macro" }
-import {
-  createGraphExtClient,
-  type GraphExtClient,
-  type GraphExtDecodeError,
-  type GraphExtQueryError,
-  idsetFromValues,
-  idsetIntersect
-} from "@effect-native/sqlite-graph-ext/client"
+import * as SqliteGraph from "@effect-native/sqlite-graph-ext/client"
 
 const embeddedLibSqlitePath = getLibSqlitePathSync()
 const embeddedGraphExtPath = getGraphExtPathSync()
@@ -39,7 +32,12 @@ class ScenarioError extends Data.TaggedError("ScenarioError")<{
   readonly cause: unknown
 }> {}
 
-type DemoError = ArtifactError | QueryError | GraphExtDecodeError | GraphExtQueryError | ScenarioError
+type DemoError =
+  | ArtifactError
+  | QueryError
+  | SqliteGraph.GraphExtDecodeError
+  | SqliteGraph.GraphExtQueryError
+  | ScenarioError
 
 interface DemoRuntime {
   readonly db: Database
@@ -51,15 +49,12 @@ type SqlEffect = <T>(sql: string, run: () => T) => Effect.Effect<T, QueryError>
 
 interface ScenarioContext {
   readonly db: Database
-  readonly graph: GraphExtClient
+  readonly graph: SqliteGraph.GraphExtClient
   readonly sql: SqlEffect
   readonly statementCount: { value: number }
 }
 
-const resolveEmbeddedArtifact = (
-  artifactPath: string,
-  artifact: ArtifactName
-): Effect.Effect<string, ArtifactError> => {
+const resolveEmbeddedArtifact = (artifactPath: string, artifact: ArtifactName) => {
   if (Bun.embeddedFiles.length === 0) {
     return Effect.succeed(artifactPath)
   }
@@ -75,7 +70,7 @@ const resolveEmbeddedArtifact = (
   })
 }
 
-const configureCustomSqlite = (artifactPath: string): Effect.Effect<void, ArtifactError> =>
+const configureCustomSqlite = (artifactPath: string) =>
   Effect.try({
     try: () => {
       Database.setCustomSQLite(artifactPath)
@@ -83,7 +78,7 @@ const configureCustomSqlite = (artifactPath: string): Effect.Effect<void, Artifa
     catch: (cause) => new ArtifactError({ artifact: "libsqlite", phase: "configure", path: artifactPath, cause })
   })
 
-const acquireRuntime: Effect.Effect<DemoRuntime, DemoError> = Effect.gen(function*() {
+const acquireRuntime = Effect.gen(function*() {
   const resolvedLibSqlitePath = yield* resolveEmbeddedArtifact(embeddedLibSqlitePath, "libsqlite")
   yield* configureCustomSqlite(resolvedLibSqlitePath)
 
@@ -106,7 +101,10 @@ const acquireRuntime: Effect.Effect<DemoRuntime, DemoError> = Effect.gen(functio
       })
   })
 
-  const graph = createGraphExtClient(db)
+  // Goal: get a typed API for graph operations immediately after extension load.
+  // Obstacle: raw SQL calls plus manual payload parsing are repetitive and easy to drift.
+  // Why this resolves it: createGraphExtClient encapsulates SQL shape + decode contracts once.
+  const graph = SqliteGraph.createGraphExtClient(db)
   const version = yield* graph.version
 
   return {
@@ -116,23 +114,23 @@ const acquireRuntime: Effect.Effect<DemoRuntime, DemoError> = Effect.gen(functio
   }
 })
 
-const releaseRuntime = (runtime: DemoRuntime): Effect.Effect<void> =>
+const releaseRuntime = (runtime: DemoRuntime) =>
   Effect.sync(() => {
     runtime.db.close()
   })
 
-const withRuntime = <A>(use: (runtime: DemoRuntime) => Effect.Effect<A, DemoError>): Effect.Effect<A, DemoError> =>
+const withRuntime = <A>(use: (runtime: DemoRuntime) => Effect.Effect<A, DemoError>) =>
   Effect.acquireUseRelease(acquireRuntime, use, releaseRuntime)
 
-const createScenarioContext = (runtime: DemoRuntime): ScenarioContext => {
+const createScenarioContext = (runtime: DemoRuntime) => {
   const statementCount = { value: 0 }
-  const graph = createGraphExtClient(runtime.db, {
+  const graph = SqliteGraph.createGraphExtClient(runtime.db, {
     onStatement: () => {
       statementCount.value += 1
     }
   })
 
-  const sql: SqlEffect = <T>(sqlLabel: string, run: () => T) =>
+  const sql = <T>(sqlLabel: string, run: () => T) =>
     Effect.try({
       try: () => {
         statementCount.value += 1
@@ -169,51 +167,45 @@ const runScenario = <R>(
     console.log(`elapsedMs=${elapsedMs}`)
   })
 
-const seedSocialGraph = (context: ScenarioContext): Effect.Effect<void, QueryError> =>
+const seedSocialGraph = (context: ScenarioContext) =>
   Effect.gen(function*() {
     yield* context.sql("DROP TABLE IF EXISTS social_edges", () => {
-      context.db.exec("DROP TABLE IF EXISTS social_edges")
+      context.db.run("DROP TABLE IF EXISTS social_edges")
     })
 
     yield* context.sql("CREATE TABLE social_edges + indexes", () => {
-      context.db.exec(
+      context.db.run(
         "CREATE TABLE social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX social_edges_dst_type ON social_edges(dst, edge_type)"
       )
     })
 
     yield* context.sql("INSERT social graph fixtures", () => {
-      context.db.exec(
+      context.db.run(
         "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
       )
     })
   })
 
-const seedFeedRankings = (context: ScenarioContext): Effect.Effect<void, QueryError> =>
+const seedFeedRankings = (context: ScenarioContext) =>
   Effect.gen(function*() {
     yield* context.sql("DROP TABLE IF EXISTS creator_feed_rankings", () => {
-      context.db.exec("DROP TABLE IF EXISTS creator_feed_rankings")
+      context.db.run("DROP TABLE IF EXISTS creator_feed_rankings")
     })
 
     yield* context.sql("CREATE TABLE creator_feed_rankings", () => {
-      context.db.exec(
+      context.db.run(
         "CREATE TABLE creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
       )
     })
 
     yield* context.sql("INSERT creator feed snapshots", () => {
-      context.db.exec(
+      context.db.run(
         "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
       )
     })
   })
 
-interface NaiveRecommendationResult {
-  readonly rows: ReadonlyArray<{ readonly candidate: string; readonly supportCount: number }>
-  readonly sqlCharacters: number
-  readonly placeholderCount: number
-}
-
-const countPlaceholders = (sql: string): number => {
+const countPlaceholders = (sql: string) => {
   let count = 0
   for (const char of sql) {
     if (char === "?") count += 1
@@ -221,7 +213,7 @@ const countPlaceholders = (sql: string): number => {
   return count
 }
 
-const buildPlaceholders = (count: number): string => Array.from({ length: count }, () => "?").join(", ")
+const buildPlaceholders = (count: number) => Array.from({ length: count }, () => "?").join(", ")
 
 const runNaiveTwoHopWithoutExtension = (
   context: ScenarioContext,
@@ -232,7 +224,7 @@ const runNaiveTwoHopWithoutExtension = (
     readonly seedIds: ReadonlyArray<string>
     readonly excludeIds: ReadonlyArray<string>
   }
-): Effect.Effect<NaiveRecommendationResult, QueryError> =>
+) =>
   Effect.gen(function*() {
     const seedPlaceholders = buildPlaceholders(input.seedIds.length)
     const excludePlaceholders = buildPlaceholders(input.excludeIds.length)
@@ -285,10 +277,13 @@ const runNaiveTwoHopWithoutExtension = (
     }
   })
 
-const recommendationDxScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
+const recommendationDxScenario = (context: ScenarioContext) =>
   Effect.gen(function*() {
     yield* seedSocialGraph(context)
 
+    // Goal: produce social recommendations from a seed cohort in one readable step.
+    // Obstacle: the baseline needs a long CTE pipeline and brittle placeholder bookkeeping.
+    // Why this resolves it: recommendByTwoHop composes the hard parts with deterministic idset semantics.
     const extension = yield* context.graph.recommendByTwoHop({
       edgeTable: "social_edges",
       hop1EdgeType: "follows",
@@ -345,18 +340,28 @@ const recommendationDxScenario = (context: ScenarioContext): Effect.Effect<Reado
     ]
   })
 
-const cohortLensScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
+const cohortLensScenario = (context: ScenarioContext) =>
   Effect.gen(function*() {
     yield* seedSocialGraph(context)
 
-    const cohortSet = idsetFromValues(["ava", "ben", "eli"])
+    // Goal: represent a dynamic cohort as a safe SQL expression.
+    // Obstacle: hand-building IN clauses is noisy and quote/ordering sensitive.
+    // Why this resolves it: idsetFromValues builds deterministic, parameterized idset expressions.
+    const cohortSet = SqliteGraph.idsetFromValues(["ava", "ben", "eli"])
+
+    // Goal: inspect each account's outbound neighborhood as a grouped set.
+    // Obstacle: status quo requires custom SQL aggregation plus custom payload decoding in app code.
+    // Why this resolves it: graphOutIdset returns typed grouped rows through one client call.
     const outbound = yield* context.graph.graphOutIdset({
       edgeTable: "social_edges",
       edgeType: "follows",
       srcSet: cohortSet
     })
 
-    const spotlightSet = idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
+    const spotlightSet = SqliteGraph.idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
+    // Goal: view inbound supporters for spotlight accounts.
+    // Obstacle: reverse traversal normally duplicates query shape and parsing logic.
+    // Why this resolves it: graphInIdset mirrors the outbound API with typed decoded output.
     const inbound = yield* context.graph.graphInIdset({
       edgeTable: "social_edges",
       edgeType: "follows",
@@ -364,10 +369,17 @@ const cohortLensScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArr
     })
 
     const outboundMap = new Map(outbound.map((row) => [row.src, row.dstSet]))
-    const overlapSet = idsetIntersect(
-      idsetFromValues(outboundMap.get("ava") ?? []),
-      idsetFromValues(outboundMap.get("ben") ?? [])
+    // Goal: compute overlap between two neighborhoods without writing ad-hoc SQL joins.
+    // Obstacle: without set combinators this becomes extra SQL and higher cognitive load.
+    // Why this resolves it: idsetIntersect composes set logic declaratively in TypeScript.
+    const overlapSet = SqliteGraph.idsetIntersect(
+      SqliteGraph.idsetFromValues(outboundMap.get("ava") ?? []),
+      SqliteGraph.idsetFromValues(outboundMap.get("ben") ?? [])
     )
+
+    // Goal: materialize overlap members in stable order for display.
+    // Obstacle: naive decoding gives inconsistent ordering and ad-hoc parsing code.
+    // Why this resolves it: idsetEach provides deterministic rows with ord metadata.
     const overlap = yield* context.graph.idsetEach(overlapSet)
 
     const outboundRows = outbound.map((row) => ({
@@ -396,10 +408,13 @@ const cohortLensScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArr
     ]
   })
 
-const creatorMomentumScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
+const creatorMomentumScenario = (context: ScenarioContext) =>
   Effect.gen(function*() {
     yield* seedFeedRankings(context)
 
+    // Goal: explain momentum between two ranking snapshots.
+    // Obstacle: status quo diff logic requires multiple joins and null-handling edge cases.
+    // Why this resolves it: rankedDiff emits typed enter/exit/move rows directly.
     const rows = yield* context.graph.rankedDiff({
       oldSerpId: "morning",
       newSerpId: "evening",

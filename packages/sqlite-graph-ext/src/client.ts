@@ -27,7 +27,7 @@ import {
 export type SqlBinding = string | number | bigint | Uint8Array | null
 
 export interface SqliteStatementLike {
-  get(...bindings: ReadonlyArray<SqlBinding>): unknown
+  get(...bindings: Array<unknown>): unknown
 }
 
 export interface SqliteDatabaseLike {
@@ -148,16 +148,16 @@ export interface GraphExtClient {
   ) => Effect.Effect<TwoHopRecommendationResult, GraphExtClientError>
 }
 
-const uniqueSorted = (values: ReadonlyArray<string>): ReadonlyArray<string> =>
+const uniqueSorted = (values: ReadonlyArray<string>) =>
   Array.from(new Set(values.filter((value) => value.length > 0))).sort((a, b) => a.localeCompare(b))
 
-const readColumn = (row: unknown, column: string): unknown => {
+const readColumn = (row: unknown, column: string) => {
   if (row == null || typeof row !== "object") return ""
   const value = Reflect.get(row, column)
   return value ?? ""
 }
 
-const decodeTextValue = (value: unknown): string => {
+const decodeTextValue = (value: unknown) => {
   if (typeof value === "string") return value
   if (value instanceof Uint8Array) return new TextDecoder().decode(value)
   return String(value)
@@ -177,7 +177,7 @@ export const createGraphExtClient = (
     sql: string,
     bindings: ReadonlyArray<SqlBinding>,
     decode: (payload: unknown) => Effect.Effect<ReadonlyArray<A>, unknown>
-  ): Effect.Effect<ReadonlyArray<A>, GraphExtClientError> =>
+  ) =>
     Effect.gen(function*() {
       const payload = yield* Effect.try({
         try: () => {
@@ -197,7 +197,7 @@ export const createGraphExtClient = (
     operation: GraphExtOperation,
     sql: string,
     bindings: ReadonlyArray<SqlBinding>
-  ): Effect.Effect<string, GraphExtClientError> =>
+  ) =>
     Effect.gen(function*() {
       const value = yield* Effect.try({
         try: () => {
@@ -213,10 +213,10 @@ export const createGraphExtClient = (
 
   const version = runTextQuery("graph_ext_version", "SELECT graph_ext_version() AS payload", [])
 
-  const idsetHash = (set: IdSetExpression): Effect.Effect<string, GraphExtClientError> =>
+  const idsetHash = (set: IdSetExpression) =>
     runTextQuery("idset_hash", `SELECT idset_hash(${set.expression}) AS payload`, set.bindings)
 
-  const idsetEach = (set: IdSetExpression): Effect.Effect<ReadonlyArray<IdsetEachRow>, GraphExtClientError> =>
+  const idsetEach = (set: IdSetExpression) =>
     runPayloadQuery(
       "idset_each",
       `SELECT idset_each(${set.expression}) AS payload`,
@@ -224,9 +224,7 @@ export const createGraphExtClient = (
       decodeIdsetEachPayload
     )
 
-  const graphOutMany = (
-    input: GraphOutManyInput
-  ): Effect.Effect<ReadonlyArray<GraphOutManyRow>, GraphExtClientError> => {
+  const graphOutMany = (input: GraphOutManyInput) => {
     const whereSql = input.whereSql ?? ""
     return runPayloadQuery(
       "graph_out_many",
@@ -236,7 +234,7 @@ export const createGraphExtClient = (
     )
   }
 
-  const graphInMany = (input: GraphInManyInput): Effect.Effect<ReadonlyArray<GraphInManyRow>, GraphExtClientError> => {
+  const graphInMany = (input: GraphInManyInput) => {
     const whereSql = input.whereSql ?? ""
     return runPayloadQuery(
       "graph_in_many",
@@ -246,9 +244,7 @@ export const createGraphExtClient = (
     )
   }
 
-  const graphOutIdset = (
-    input: GraphOutIdsetInput
-  ): Effect.Effect<ReadonlyArray<GraphOutIdsetRow>, GraphExtClientError> =>
+  const graphOutIdset = (input: GraphOutIdsetInput) =>
     runPayloadQuery(
       "graph_out_idset",
       `SELECT graph_out_idset(?, ?, ${input.srcSet.expression}) AS payload`,
@@ -256,9 +252,7 @@ export const createGraphExtClient = (
       decodeGraphOutIdsetPayload
     )
 
-  const graphInIdset = (
-    input: GraphInIdsetInput
-  ): Effect.Effect<ReadonlyArray<GraphInIdsetRow>, GraphExtClientError> =>
+  const graphInIdset = (input: GraphInIdsetInput) =>
     runPayloadQuery(
       "graph_in_idset",
       `SELECT graph_in_idset(?, ?, ${input.dstSet.expression}) AS payload`,
@@ -266,9 +260,7 @@ export const createGraphExtClient = (
       decodeGraphInIdsetPayload
     )
 
-  const graphTwoHopCounts = (
-    input: TwoHopCountInput
-  ): Effect.Effect<ReadonlyArray<TwoHopCountRow>, GraphExtClientError> =>
+  const graphTwoHopCounts = (input: TwoHopCountInput) =>
     runPayloadQuery(
       "graph_two_hop_counts",
       `SELECT graph_two_hop_counts(?, ?, ?, ${input.startSet.expression}) AS payload`,
@@ -276,7 +268,7 @@ export const createGraphExtClient = (
       decodeTwoHopCountPayload
     )
 
-  const rankedDiff = (input: RankedDiffInput): Effect.Effect<ReadonlyArray<RankedDiffRow>, GraphExtClientError> =>
+  const rankedDiff = (input: RankedDiffInput) =>
     runPayloadQuery(
       "ranked_diff",
       "SELECT ranked_diff(?, ?, ?) AS payload",
@@ -284,9 +276,7 @@ export const createGraphExtClient = (
       decodeRankedDiffPayload
     )
 
-  const recommendByTwoHop = (
-    input: TwoHopRecommendationInput
-  ): Effect.Effect<TwoHopRecommendationResult, GraphExtClientError> =>
+  const recommendByTwoHop = (input: TwoHopRecommendationInput) =>
     Effect.gen(function*() {
       const seedSet = idsetFromValues(input.seedIds)
       if (seedSet.bindings.length === 0) {

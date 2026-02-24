@@ -4,18 +4,18 @@
  * @since 0.1.0
  */
 
-import type { Effect } from "effect"
+import { Effect } from "effect"
 import * as Schema from "effect/Schema"
 import * as SchemaGetter from "effect/SchemaGetter"
 
-const payloadToText = (payload: unknown): string => {
+const payloadToText = (payload: unknown) => {
   if (payload == null) return ""
   if (typeof payload === "string") return payload
   if (payload instanceof Uint8Array) return new TextDecoder().decode(payload)
   return String(payload)
 }
 
-const parseTsvRows = (payload: unknown): ReadonlyArray<ReadonlyArray<string>> => {
+const parseTsvRows = (payload: unknown) => {
   const text = payloadToText(payload)
   if (text.length === 0) return []
   return text
@@ -24,9 +24,7 @@ const parseTsvRows = (payload: unknown): ReadonlyArray<ReadonlyArray<string>> =>
     .map((line) => line.split("\t"))
 }
 
-const parseGroupedSetRows = (
-  payload: unknown
-): ReadonlyArray<{ readonly key: string; readonly members: ReadonlyArray<string> }> => {
+const parseGroupedSetRows = (payload: unknown) => {
   const text = payloadToText(payload)
   if (text.length === 0) return []
 
@@ -64,7 +62,7 @@ const parseGroupedSetRows = (
 const NullableNumberFromTextSchema = Schema.Union([Schema.Literal(""), Schema.NumberFromString]).pipe(
   Schema.decodeTo(Schema.NullOr(Schema.Number), {
     decode: SchemaGetter.transform((value) => (value === "" ? null : value)),
-    encode: SchemaGetter.transform((value) => (value == null ? "" : String(value)))
+    encode: SchemaGetter.transform((value) => (value == null ? "" : value))
   })
 )
 
@@ -201,27 +199,57 @@ export const RankedDiffRowSchema = Schema.Tuple([
 
 export type RankedDiffRow = Schema.Schema.Type<typeof RankedDiffRowSchema>
 
-const decodeTsvPayload =
-  <A>(rowSchema: Schema.Schema<A>) => (payload: unknown): Effect.Effect<ReadonlyArray<A>, unknown> =>
-    Schema.decodeUnknownEffect(Schema.Array(rowSchema))(parseTsvRows(payload))
+const decodeIdsetEachRows = Schema.decodeUnknownSync(Schema.Array(IdsetEachRowSchema))
+const decodeGraphOutManyRows = Schema.decodeUnknownSync(Schema.Array(GraphOutManyRowSchema))
+const decodeGraphInManyRows = Schema.decodeUnknownSync(Schema.Array(GraphInManyRowSchema))
+const decodeTwoHopCountRows = Schema.decodeUnknownSync(Schema.Array(TwoHopCountRowSchema))
+const decodeRankedDiffRows = Schema.decodeUnknownSync(Schema.Array(RankedDiffRowSchema))
+const decodeGraphOutIdsetRows = Schema.decodeUnknownSync(Schema.Array(GraphOutIdsetRowSchema))
+const decodeGraphInIdsetRows = Schema.decodeUnknownSync(Schema.Array(GraphInIdsetRowSchema))
 
-export const decodeIdsetEachPayload = decodeTsvPayload(IdsetEachRowSchema)
+export const decodeIdsetEachPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeIdsetEachRows(parseTsvRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeGraphOutManyPayload = decodeTsvPayload(GraphOutManyRowSchema)
+export const decodeGraphOutManyPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeGraphOutManyRows(parseTsvRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeGraphInManyPayload = decodeTsvPayload(GraphInManyRowSchema)
+export const decodeGraphInManyPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeGraphInManyRows(parseTsvRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeTwoHopCountPayload = decodeTsvPayload(TwoHopCountRowSchema)
+export const decodeTwoHopCountPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeTwoHopCountRows(parseTsvRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeRankedDiffPayload = decodeTsvPayload(RankedDiffRowSchema)
+export const decodeRankedDiffPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeRankedDiffRows(parseTsvRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeGraphOutIdsetPayload = (payload: unknown): Effect.Effect<ReadonlyArray<GraphOutIdsetRow>, unknown> =>
-  Schema.decodeUnknownEffect(Schema.Array(GraphOutIdsetRowSchema))(parseGroupedSetRows(payload))
+export const decodeGraphOutIdsetPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeGraphOutIdsetRows(parseGroupedSetRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const decodeGraphInIdsetPayload = (payload: unknown): Effect.Effect<ReadonlyArray<GraphInIdsetRow>, unknown> =>
-  Schema.decodeUnknownEffect(Schema.Array(GraphInIdsetRowSchema))(parseGroupedSetRows(payload))
+export const decodeGraphInIdsetPayload = (payload: unknown) =>
+  Effect.try({
+    try: () => decodeGraphInIdsetRows(parseGroupedSetRows(payload)),
+    catch: (cause) => cause
+  })
 
-export const payloadPreview = (payload: unknown): string => {
+export const payloadPreview = (payload: unknown) => {
   const text = payloadToText(payload)
   if (text.length <= 240) return text
   return `${text.slice(0, 240)}...`
