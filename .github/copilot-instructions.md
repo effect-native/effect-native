@@ -7,7 +7,7 @@ Follow this file first. Use additional discovery only when these instructions ar
 - Branch model: `main` stays Effect v3, `v4` is the long-lived Effect v4 beta branch.
 - Package manager: Bun.
 - Test runner guidance: `@effect-native/bun-test`.
-- Workspace focus: `packages-native/*`.
+- Workspace focus: `packages/*`.
 
 ## Command Baseline
 
@@ -67,7 +67,9 @@ For smaller changes, run package-targeted tests first, then finish with root val
 - Keep operational docs bun-first.
 - Keep Nix optional in docs, except maintainer scripts that are explicitly Nix-based.
 - Do not introduce `pnpm` in operational scripts, CI commands, or normative guidance on `v4`.
-- Leave `.tasks/` and `.specs/` historical content untouched unless explicitly requested.
+- Treat `.ok/` as evergreen definitions of "ok / done / healthy".
+- Treat `.tasks/` as ephemeral work orders (safe to delete and regenerate).
+- Treat `.specs/` as evergreen feature specs; do not edit unless explicitly requested.
 
 ## Native Dependency Recovery
 

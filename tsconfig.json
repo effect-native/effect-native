@@ -15,6 +15,7 @@
     { "path": "packages/opentui-dom-testing-library" },
     { "path": "packages/patterns" },
     { "path": "packages/schemas" },
+    { "path": "packages/ssh-keep" },
     { "path": "packages/tui-testing-library" }
   ]
 }

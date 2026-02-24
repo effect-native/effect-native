@@ -31,7 +31,7 @@ See SPEC.md for full specification.`)
 }
 
 // Parse arguments
-const sessionFlagIndex = args.findIndex((a) => a === "-s" || a === "--session")
+const sessionFlagIndex = args.findIndex((a: string) => a === "-s" || a === "--session")
 let sessionName: string | undefined
 if (sessionFlagIndex !== -1) {
   sessionName = args[sessionFlagIndex + 1]

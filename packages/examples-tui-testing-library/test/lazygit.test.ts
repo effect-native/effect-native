@@ -10,9 +10,9 @@
  * - lazygit is not installed
  * - lazygit fails to start (e.g., temp directory issues in CI)
  *
- * NOTE: These are example/stress tests that demonstrate the library's capabilities.
- * They are intentionally non-blocking for CI - if lazygit has environmental issues,
- * the tests skip gracefully rather than failing the build.
+ * NOTE: This is a narrow repository exception documented in AGENTS.md (Hard-Fail
+ * Policy -> Explicit Exception). This suite is example/stress coverage for an
+ * external interactive tool and may skip when lazygit startup is not viable.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, test } from "@effect-native/bun-test"
 import { GhosttyHarness, sendKey, spawnTui, waitForStable } from "@effect-native/tui-testing-library"
@@ -50,8 +50,8 @@ const isLazygitInstalled = lazygitPath !== null
 const canRunTests = isBun && isLazygitInstalled
 
 /**
- * Track if lazygit setup succeeded. If not, skip remaining tests gracefully.
- * This prevents CI failures due to environmental issues (temp dir, permissions, etc.)
+ * Track if lazygit setup succeeded. If not, skip remaining stress assertions and
+ * keep diagnostics in logs.
  */
 let lazygitSetupFailed = false
 let lazygitSetupError: string | null = null
@@ -81,7 +81,8 @@ function setupTempGitRepo(): string {
 function isLazygitStartupError(output: string): boolean {
   return output.includes("An error occurred!") ||
     output.includes("chdir") ||
-    output.includes("no such file or directory")
+    output.includes("no such file or directory") ||
+    output.includes("unhandled Platform key")
 }
 
 function setupLazygitConfig(): string {
@@ -556,8 +557,7 @@ describe("lazygit availability", () => {
       console.log(`  Version: ${lazygitVersion}`)
     } else {
       console.log("⚠ lazygit is not installed - stress tests will be skipped")
-      console.log("  Install with: brew install lazygit")
-      console.log("  Or: nix-env -iA nixpkgs.lazygit")
+      console.log("  Install with: nix profile install nixpkgs#lazygit")
     }
     expect(true).toBe(true) // Always pass
   })

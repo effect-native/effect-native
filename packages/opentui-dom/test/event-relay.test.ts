@@ -1,4 +1,4 @@
-// @ts-nocheck - TODO: Fix type errors properly (tracked in .tasks/GOAL-release-opentui-dom-packages.md)
+// @ts-nocheck - TODO: Fix type errors properly
 import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test"
 import { Window } from "happy-dom"
 import {

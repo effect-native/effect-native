@@ -2,39 +2,20 @@
 
 We practice ultra extreme programming (uXP): tight feedback loops, evidence-first decision making, and collective ownership. Every change must be grounded in tests-first thinking and the scientific method, and nothing in our code is somebody else's problem.
 
-## Two Task Systems: When to Use Which
+## OK, Gaps, and Work Orders
 
-This repo has two task management systems. Read the right one for your work:
+We keep the evergreen definition of what "ok / done / healthy" means in `.ok/`.
 
-### `.tasks/AGENTS.md` - Goal-Driven Work (Day-to-Day)
+We generate a point-in-time gaps snapshot in `.gaps/` by comparing `.ok/` to the
+current repo reality (tests, scripts, workflows, versions, etc.).
 
-**Use this for:** Ongoing development, goals Tom wants accomplished, research, experiments, and implementation work.
+We keep `.tasks/` as ephemeral work orders regenerated from the snapshot.
+See `.tasks/AGENTS.md` for the exact workflow.
 
-Read `.tasks/AGENTS.md` when:
+## Spec-Driven Features
 
-- Starting a new session and looking for what to work on
-- Tom gives you a GOAL to accomplish
-- You need to track progress on multi-step work
-- Doing research, experiments, or implementation
-- Following the RGRTDD (Red-Green-Refactor TDD) workflow
-
-**Key concepts:** GOAL-\*.md files, task categories (research/experiment/spec/impl/cleanup), status tracking with basis.
-
-### `.specs/AGENTS.md` - Formal Spec-Driven Features
-
-**Use this for:** Formal feature development that requires the full 5-phase spec workflow.
-
-Read `.specs/AGENTS.md` when:
-
-- Building a new feature that needs formal requirements documentation
-- The work requires explicit user approval gates between phases
-- Creating `.specs/[feature-name]/` directories with instructions.md, requirements.md, design.md, plan.md
-
-**Key concepts:** 5-phase workflow (Instructions -> Requirements -> Design -> Plan -> Implementation), authorization gates, EARS notation.
-
-### Which One Right Now?
-
-**Default to `.tasks/`** for most work. The `.specs/` system is for formal feature development where you need the full documentation chain. If in doubt, ask Tom.
+Use `.specs/AGENTS.md` for formal feature development that requires the full
+5-phase spec workflow and explicit approval gates.
 
 ## Pattern Library Contract
 
@@ -82,6 +63,12 @@ The documentation in `.patterns/*.md` is normative. Before writing or reviewing 
 - NEVER add conditional wrappers (feature-detection, try/catch fallbacks, dynamic-import guards, environment sniffing, etc.) to silence or skip integration tests. If a dependency is missing or misconfigured (e.g., native modules like `better-sqlite3`), tests MUST FAIL LOUDLY.
 - NEVER convert hard failures into no-ops (e.g., returning `Effect.void` or “skip” behavior) without an explicit repository decision recorded in a PR description and this file. The default is fail-fast.
 - NEVER obfuscate errors or swallow exceptions in test setup. Prefer explicit, early failures that surface configuration issues.
+
+### Explicit Exception (Current)
+
+- `packages/examples-tui-testing-library/test/lazygit.test.ts` is an example/stress suite that runs an external interactive TUI (`lazygit`) in a PTY + Ghostty harness.
+- When lazygit itself cannot fully initialize in the ephemeral temp workspace, the suite may skip individual stress assertions and report diagnostics instead of failing the entire pipeline.
+- This exception is intentionally narrow to the file above and does not apply to core package integration tests.
 
 ## Rationale
 

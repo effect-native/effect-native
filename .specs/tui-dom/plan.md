@@ -4,16 +4,16 @@ This plan outlines the extraction and implementation of the `@effect-native/open
 
 ## Phase 1: Core Bridge Extraction
 
-- [ ] **DOM Adapter**: Implement `HappyDOMAdapter` to abstract DOM operations. (Ref: `.tasks/impl/dom-adapter.md`)
-- [ ] **Style Bridge**: Port Tailwind mapper and style extraction logic. (Ref: `.tasks/impl/style-bridge.md`)
-- [ ] **Theme Map**: Port color mapping logic. (Ref: `.tasks/impl/theme-map.md`)
-- [ ] **Node Map**: Port WeakMap logic for DOM<->TUI linking. (Ref: `.tasks/impl/core-bridge.md`)
-- [ ] **Event Relay**: Port input handling and focus management. (Ref: `.tasks/impl/event-relay.md`)
-- [ ] **Core Bridge**: Assemble the `DOMToTUIBridge` class. (Ref: `.tasks/impl/core-bridge.md`)
+- [ ] **DOM Adapter**: Implement `HappyDOMAdapter` to abstract DOM operations. (Ref: `packages/opentui-dom/src/DOMAdapter.ts`, `packages/opentui-dom/src/TestAdapter.ts`)
+- [ ] **Style Bridge**: Port Tailwind mapper and style extraction logic. (Ref: `packages/opentui-dom/src/bridge/style-bridge.ts`, `packages/opentui-dom/src/bridge/tailwind-mapper.ts`)
+- [ ] **Theme Map**: Port color mapping logic. (Ref: `packages/opentui-dom/src/bridge/theme-map.ts`)
+- [ ] **Node Map**: Port WeakMap logic for DOM<->TUI linking. (Ref: `packages/opentui-dom/src/bridge/node-map.ts`)
+- [ ] **Event Relay**: Port input handling and focus management. (Ref: `packages/opentui-dom/src/bridge/event-relay.ts`)
+- [ ] **Core Bridge**: Assemble the `DOMToTUIBridge` class. (Ref: `packages/opentui-dom/src/bridge/dom-to-tui-bridge.ts`)
 
 ## Phase 2: Package Assembly
 
-- [ ] Create `packages-native/opentui-dom/package.json`.
+- [ ] Create `packages/opentui-dom/package.json`.
 - [ ] Export main entry point.
 - [ ] Verify build.
 
