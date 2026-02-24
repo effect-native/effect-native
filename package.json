@@ -5,13 +5,15 @@
     "packages/*"
   ],
   "scripts": {
-    "ok": "bun run test; TEST=$?; bun run lint; TEST=$(($TEST+$?)); bun run check; TEST=$(($TEST+$?)); bun run circular; TEST=$(($TEST+$?)); bun run codegen; TEST=$(($TEST+$?)); bun run test-types --target current; TEST=$(($TEST+$?)); bun run codemod; TEST=$(($TEST+$?)); bun run build; TEST=$(($TEST+$?)); bun scripts/verify-subpaths.mjs; TEST=$(($TEST+$?)); exit $TEST;",
+    "ok": "node scripts/ok.mjs",
     "check:tsgo": "tsgo -b tsconfig.json",
     "verify-subpaths": "bun scripts/verify-subpaths.mjs",
+    "verify-pack-assets": "node scripts/verify-pack-assets.mjs",
     "clean": "bun scripts/clean.mjs",
     "codegen": "bun run --filter './packages/*' codegen",
     "codemod": "bun scripts/codemod.mjs && dprint fmt",
     "build": "bun run --filter './packages/*' build",
+    "build:strip-internal": "node scripts/build-with-strip-internal.mjs",
     "build:tsgo": "tsgo -b tsconfig.json && bun run build",
     "bundle-stats": "bun scripts/bundle-stats.mjs",
     "circular": "depcruise --config .dependency-cruiser.cjs \"packages/*/src/**/*.{ts,tsx}\" --output-type err --validate",
