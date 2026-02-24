@@ -1,4 +1,4 @@
-import { GraphDialect, GraphDialectSqlite, GraphInvariantError, makeGraphDb, nodeDef } from "@effect-native/graph-db"
+import * as GraphDb from "@effect-native/graph-db"
 import * as BunSqlite from "@effect/sql-sqlite-bun"
 import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
@@ -30,7 +30,7 @@ const Snapshot = Schema.Struct({
   locator: Schema.String
 })
 
-const researcherNode = nodeDef({
+const researcherNode = GraphDb.nodeDef({
   kind: "researcher",
   schema: Researcher,
   columns: [
@@ -41,7 +41,7 @@ const researcherNode = nodeDef({
   indexes: [{ name: "node_researcher_name_idx", columns: ["name"] }]
 })
 
-const paperNodeV1 = nodeDef({
+const paperNodeV1 = GraphDb.nodeDef({
   kind: "paper",
   schema: PaperV1,
   columns: [
@@ -52,7 +52,7 @@ const paperNodeV1 = nodeDef({
   indexes: [{ name: "node_paper_year_idx", columns: ["year"] }]
 })
 
-const paperNodeV2 = nodeDef({
+const paperNodeV2 = GraphDb.nodeDef({
   kind: "paper",
   schema: PaperV2,
   columns: [
@@ -64,7 +64,7 @@ const paperNodeV2 = nodeDef({
   indexes: [{ name: "node_paper_year_idx", columns: ["year"] }]
 })
 
-const snapshotNode = nodeDef({
+const snapshotNode = GraphDb.nodeDef({
   kind: "snapshot",
   schema: Snapshot,
   columns: [
@@ -74,12 +74,12 @@ const snapshotNode = nodeDef({
   ]
 })
 
-const graphV1 = makeGraphDb({
+const graphV1 = GraphDb.makeGraphDb({
   name: "demo-v1",
   nodes: [researcherNode, paperNodeV1, snapshotNode]
 })
 
-const graphV2 = makeGraphDb({
+const graphV2 = GraphDb.makeGraphDb({
   name: "demo-v2",
   nodes: [researcherNode, paperNodeV2, snapshotNode]
 })
@@ -88,7 +88,7 @@ const extractInvariantContext = (cause: Cause.Cause<unknown>): string | null => 
   const failReasons = cause.reasons.filter(Cause.isFailReason)
 
   for (const reason of failReasons) {
-    if (reason.error instanceof GraphInvariantError) {
+    if (reason.error instanceof GraphDb.GraphInvariantError) {
       return reason.error.context ?? null
     }
   }
@@ -109,7 +109,7 @@ export interface DemoReport {
 const program = Effect.gen(function*() {
   const dbV1 = yield* graphV1.GraphDb
   const dbV2 = yield* graphV2.GraphDb
-  const dialect = yield* GraphDialect
+  const dialect = yield* GraphDb.GraphDialect
 
   yield* dbV1.ensure
 
@@ -172,7 +172,7 @@ const program = Effect.gen(function*() {
 
   const upgradedPaperRaw = yield* dbV2.node.get("paper", "p:effect-graph")
   if (upgradedPaperRaw === null) {
-    return yield* new GraphInvariantError({
+    return yield* new GraphDb.GraphInvariantError({
       context: "demo.paper",
       detail: "Expected upgraded paper to exist"
     })
@@ -206,6 +206,6 @@ const program = Effect.gen(function*() {
 export const runGraphDbDemo = program.pipe(
   Effect.provide(graphV1.layer),
   Effect.provide(graphV2.layer),
-  Effect.provide(GraphDialectSqlite.layer()),
+  Effect.provide(GraphDb.GraphDialectSqlite.layer()),
   Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))
 )
