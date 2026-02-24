@@ -2,7 +2,7 @@
 
 Captured: 2026-02-24 21:35:14 UTC
 Branch: feat/sqlite-graph-ext-accelerator
-HEAD: HEAD
+HEAD: d61a6ffc9
 Bun: 1.3.9
 Node: v24.3.0
 System: darwin x64
