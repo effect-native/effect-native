@@ -5,16 +5,15 @@ Console-first Bun + Effect v4 demo for social graph exploration with `@effect-na
 ## What it demonstrates
 
 - Loading custom `libsqlite` in Bun and loading the extension via `sqlite3_graph_ext_init`
-- Parsing text payload contracts from graph/idset functions
-- A non-trivial recommendation pipeline built from extension primitives
+- Using the typed TypeScript client (`createGraphExtClient`) instead of hand-rolled SQL + payload parsing in app code
+- Effect Schema v4 decoding inside the package for payload contracts
 
 ## Scenarios
 
-1. `two-hop recommendation pipeline`
-   - seeds a social follow graph
-   - expands first-hop neighborhoods with `graph_out_many`
-   - ranks second-hop candidates with `graph_two_hop_counts`
-   - filters candidates with `idset_diff`, stabilizes order with `idset_each`, and fingerprints with `idset_hash`
+1. `recommendation DX comparison`
+   - runs one high-level extension call (`graph.recommendByTwoHop`)
+   - runs an equivalent raw CTE query without the extension abstraction
+   - prints why the extension path is smaller, safer, and easier to reason about
 
 2. `cohort neighborhood lens`
    - aggregates outbound follow sets with `graph_out_idset`

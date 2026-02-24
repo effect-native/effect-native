@@ -1,10 +1,18 @@
 /* eslint-disable no-console */
 
 import { Database } from "bun:sqlite"
-import { Data, Effect, Layer, Ref, ServiceMap } from "effect"
+import { Data, Effect } from "effect"
 
 import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
 import { getGraphExtPathSync } from "@effect-native/sqlite-graph-ext" with { type: "macro" }
+import {
+  createGraphExtClient,
+  type GraphExtClient,
+  type GraphExtDecodeError,
+  type GraphExtQueryError,
+  idsetFromValues,
+  idsetIntersect
+} from "@effect-native/sqlite-graph-ext/client"
 
 const embeddedLibSqlitePath = getLibSqlitePathSync()
 const embeddedGraphExtPath = getGraphExtPathSync()
@@ -13,13 +21,6 @@ const graphExtInitSymbol = "sqlite3_graph_ext_init"
 type ArtifactName = "libsqlite" | "graph-extension"
 
 type ArtifactPhase = "resolve" | "configure" | "open" | "load-extension"
-
-type SqlBinding = string | number | bigint | Uint8Array | null
-
-type IdSetExpression = {
-  readonly expression: string
-  readonly bindings: ReadonlyArray<string>
-}
 
 class ArtifactError extends Data.TaggedError("ArtifactError")<{
   readonly artifact: ArtifactName
@@ -33,25 +34,27 @@ class QueryError extends Data.TaggedError("QueryError")<{
   readonly cause: unknown
 }> {}
 
-interface DatabaseService {
-  readonly db: Database
-}
+class ScenarioError extends Data.TaggedError("ScenarioError")<{
+  readonly scenario: string
+  readonly cause: unknown
+}> {}
 
-interface GraphExtensionService {
+type DemoError = ArtifactError | QueryError | GraphExtDecodeError | GraphExtQueryError | ScenarioError
+
+interface DemoRuntime {
+  readonly db: Database
   readonly extensionPath: string
-  readonly initSymbol: string
   readonly version: string
 }
 
-interface ProfilingService {
-  readonly statementCount: Ref.Ref<number>
-}
+type SqlEffect = <T>(sql: string, run: () => T) => Effect.Effect<T, QueryError>
 
-const DatabaseService = ServiceMap.Service<DatabaseService>("@effect-native/sqlite-graph-ext-demo/Database")
-const GraphExtensionService = ServiceMap.Service<GraphExtensionService>(
-  "@effect-native/sqlite-graph-ext-demo/GraphExtension"
-)
-const ProfilingService = ServiceMap.Service<ProfilingService>("@effect-native/sqlite-graph-ext-demo/Profiling")
+interface ScenarioContext {
+  readonly db: Database
+  readonly graph: GraphExtClient
+  readonly sql: SqlEffect
+  readonly statementCount: { value: number }
+}
 
 const resolveEmbeddedArtifact = (
   artifactPath: string,
@@ -72,421 +75,313 @@ const resolveEmbeddedArtifact = (
   })
 }
 
-const runStatement = <T>(
-  sql: string,
-  run: () => T,
-  statementCounter?: Ref.Ref<number>
-): Effect.Effect<T, QueryError> =>
-  Effect.gen(function*() {
-    if (statementCounter != null) {
-      yield* Ref.update(statementCounter, (n) => n + 1)
-    }
-
-    return yield* Effect.try({
-      try: run,
-      catch: (cause) => new QueryError({ sql, cause })
-    })
-  })
-
-const configureCustomSqlite = (artifactPath: string): Effect.Effect<string, ArtifactError> =>
+const configureCustomSqlite = (artifactPath: string): Effect.Effect<void, ArtifactError> =>
   Effect.try({
     try: () => {
       Database.setCustomSQLite(artifactPath)
-      return artifactPath
     },
     catch: (cause) => new ArtifactError({ artifact: "libsqlite", phase: "configure", path: artifactPath, cause })
   })
 
-const DatabaseLayer = Layer.effect(
-  DatabaseService,
-  Effect.acquireRelease(
-    Effect.gen(function*() {
-      const db = yield* Effect.try({
-        try: () => new Database(":memory:"),
-        catch: (cause) =>
-          new ArtifactError({ artifact: "libsqlite", phase: "open", path: embeddedLibSqlitePath, cause })
+const acquireRuntime: Effect.Effect<DemoRuntime, DemoError> = Effect.gen(function*() {
+  const resolvedLibSqlitePath = yield* resolveEmbeddedArtifact(embeddedLibSqlitePath, "libsqlite")
+  yield* configureCustomSqlite(resolvedLibSqlitePath)
+
+  const db = yield* Effect.try({
+    try: () => new Database(":memory:"),
+    catch: (cause) => new ArtifactError({ artifact: "libsqlite", phase: "open", path: resolvedLibSqlitePath, cause })
+  })
+
+  const extensionPath = yield* resolveEmbeddedArtifact(embeddedGraphExtPath, "graph-extension")
+  const extensionLoadPath = extensionPath.replace(/\.(?:dylib|so|dll)$/i, "")
+
+  yield* Effect.try({
+    try: () => db.loadExtension(extensionLoadPath, graphExtInitSymbol),
+    catch: (cause) =>
+      new ArtifactError({
+        artifact: "graph-extension",
+        phase: "load-extension",
+        path: extensionPath,
+        cause
       })
-      return { db }
-    }),
-    ({ db }) => Effect.sync(() => db.close())
-  )
-)
+  })
 
-const GraphExtensionLayer = Layer.effect(
-  GraphExtensionService,
-  Effect.gen(function*() {
-    const { db } = yield* DatabaseService
-    const extensionPath = yield* resolveEmbeddedArtifact(embeddedGraphExtPath, "graph-extension")
-    const extensionLoadPath = extensionPath.replace(/\.(?:dylib|so|dll)$/i, "")
+  const graph = createGraphExtClient(db)
+  const version = yield* graph.version
 
-    yield* Effect.try({
-      try: () => db.loadExtension(extensionLoadPath, graphExtInitSymbol),
-      catch: (cause) =>
-        new ArtifactError({
-          artifact: "graph-extension",
-          phase: "load-extension",
-          path: extensionPath,
-          cause
-        })
+  return {
+    db,
+    extensionPath,
+    version
+  }
+})
+
+const releaseRuntime = (runtime: DemoRuntime): Effect.Effect<void> =>
+  Effect.sync(() => {
+    runtime.db.close()
+  })
+
+const withRuntime = <A>(use: (runtime: DemoRuntime) => Effect.Effect<A, DemoError>): Effect.Effect<A, DemoError> =>
+  Effect.acquireUseRelease(acquireRuntime, use, releaseRuntime)
+
+const createScenarioContext = (runtime: DemoRuntime): ScenarioContext => {
+  const statementCount = { value: 0 }
+  const graph = createGraphExtClient(runtime.db, {
+    onStatement: () => {
+      statementCount.value += 1
+    }
+  })
+
+  const sql: SqlEffect = <T>(sqlLabel: string, run: () => T) =>
+    Effect.try({
+      try: () => {
+        statementCount.value += 1
+        return run()
+      },
+      catch: (cause) => new QueryError({ sql: sqlLabel, cause })
     })
 
-    const extensionVersionValue = yield* runStatement(
-      "SELECT graph_ext_version() AS version",
-      () => {
-        const row = db.query("SELECT graph_ext_version() AS version").get()
-        return readColumn(row, "version")
-      }
-    )
-
-    const extensionVersion = typeof extensionVersionValue === "string" ? extensionVersionValue : "unknown"
-
-    console.log("Loaded graph extension:", extensionPath)
-    console.log("Init symbol:", graphExtInitSymbol)
-    console.log("Graph extension version:", extensionVersion)
-
-    return { extensionPath, initSymbol: graphExtInitSymbol, version: extensionVersion }
-  })
-).pipe(Layer.provide(DatabaseLayer))
-
-const ProfilingLayer = Layer.effect(
-  ProfilingService,
-  Effect.gen(function*() {
-    return { statementCount: yield* Ref.make(0) }
-  })
-)
-
-const DemoLayer = Layer.mergeAll(DatabaseLayer, GraphExtensionLayer, ProfilingLayer)
-
-const decodeBlobValue = (value: unknown): string => {
-  if (value == null) return ""
-  if (typeof value === "string") return value
-  if (value instanceof Uint8Array) return new TextDecoder().decode(value)
-  return String(value)
-}
-
-const parseTsvRows = (value: unknown): ReadonlyArray<ReadonlyArray<string>> => {
-  const text = decodeBlobValue(value)
-  if (text.length === 0) return []
-  return text
-    .split("\n")
-    .filter((line) => line.length > 0)
-    .map((line) => line.split("\t"))
-}
-
-const parseIdsetEachRows = (value: unknown): ReadonlyArray<{ readonly id: string; readonly ord: number }> =>
-  parseTsvRows(value).flatMap((columns) => {
-    const id = columns[0] ?? ""
-    const ordText = columns[1] ?? ""
-    const ord = Number(ordText)
-    if (id.length === 0 || !Number.isFinite(ord)) {
-      return []
-    }
-    return [{ id, ord }]
-  })
-
-const parseGroupedIdsetPayload = (
-  value: unknown
-): ReadonlyArray<{ readonly key: string; readonly members: ReadonlyArray<string> }> => {
-  const text = decodeBlobValue(value)
-  if (text.length === 0) return []
-
-  const lines = text.split("\n").filter((line) => line.length > 0)
-  const groups: Array<{ key: string; members: Array<string> }> = []
-
-  let currentKey: string | null = null
-  let currentMembers: Array<string> = []
-
-  for (const line of lines) {
-    const tabIndex = line.indexOf("\t")
-    if (tabIndex >= 0) {
-      if (currentKey != null) {
-        groups.push({ key: currentKey, members: currentMembers })
-      }
-
-      currentKey = line.slice(0, tabIndex)
-      const firstMember = line.slice(tabIndex + 1)
-      currentMembers = firstMember.length > 0 ? [firstMember] : []
-      continue
-    }
-
-    if (currentKey != null) {
-      currentMembers.push(line)
-    }
+  return {
+    db: runtime.db,
+    graph,
+    sql,
+    statementCount
   }
-
-  if (currentKey != null) {
-    groups.push({ key: currentKey, members: currentMembers })
-  }
-
-  return groups
 }
-
-const uniqueSorted = (values: ReadonlyArray<string>): ReadonlyArray<string> =>
-  Array.from(new Set(values.filter((value) => value.length > 0))).sort((a, b) => a.localeCompare(b))
-
-const readColumn = (row: unknown, columnName: string): unknown => {
-  if (row == null || typeof row !== "object") return ""
-  const value = Reflect.get(row, columnName)
-  return value ?? ""
-}
-
-const runPayloadStatement = (
-  db: Database,
-  profiler: ProfilingService,
-  sqlLabel: string,
-  sql: string,
-  bindings: ReadonlyArray<SqlBinding>,
-  columnName = "payload"
-): Effect.Effect<unknown, QueryError> =>
-  runStatement(
-    sqlLabel,
-    () => {
-      const row = db.query(sql).get(...Array.from(bindings))
-      return readColumn(row, columnName)
-    },
-    profiler.statementCount
-  )
-
-const buildIdSetExpression = (values: ReadonlyArray<string>): IdSetExpression => {
-  let expression = "idset_empty()"
-  const bindings: Array<string> = []
-
-  for (const value of uniqueSorted(values)) {
-    expression = `idset_add(${expression}, ?)`
-    bindings.push(value)
-  }
-
-  return { expression, bindings }
-}
-
-const seedSocialGraph = (db: Database, profiler: ProfilingService): Effect.Effect<void, QueryError> =>
-  Effect.gen(function*() {
-    yield* runStatement(
-      "CREATE TABLE social_edges + indexes",
-      () => {
-        db.exec(
-          "CREATE TABLE IF NOT EXISTS social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX IF NOT EXISTS social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX IF NOT EXISTS social_edges_dst_type ON social_edges(dst, edge_type)"
-        )
-      },
-      profiler.statementCount
-    )
-
-    yield* runStatement(
-      "INSERT social graph fixtures",
-      () => {
-        db.exec(
-          "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
-        )
-      },
-      profiler.statementCount
-    )
-  })
-
-const seedFeedRankingSnapshots = (db: Database, profiler: ProfilingService): Effect.Effect<void, QueryError> =>
-  Effect.gen(function*() {
-    yield* runStatement(
-      "CREATE TABLE creator_feed_rankings",
-      () => {
-        db.exec(
-          "CREATE TABLE IF NOT EXISTS creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
-        )
-      },
-      profiler.statementCount
-    )
-
-    yield* runStatement(
-      "INSERT creator feed snapshots",
-      () => {
-        db.exec(
-          "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
-        )
-      },
-      profiler.statementCount
-    )
-  })
 
 const runScenario = <R>(
+  runtime: DemoRuntime,
   name: string,
-  run: (db: Database, profiler: ProfilingService) => Effect.Effect<ReadonlyArray<R>, QueryError>
+  run: (context: ScenarioContext) => Effect.Effect<ReadonlyArray<R>, DemoError>
 ) =>
   Effect.gen(function*() {
-    const { db } = yield* DatabaseService
-    const profiler = yield* ProfilingService
-
+    const context = createScenarioContext(runtime)
     const started = yield* Effect.sync(() => performance.now())
-    const rows = yield* run(db, profiler)
-    const statementCount = yield* Ref.get(profiler.statementCount)
-    const elapsedMs = Math.round((yield* Effect.sync(() => performance.now())) - started)
 
+    const rows = yield* run(context).pipe(
+      Effect.mapError((cause) => new ScenarioError({ scenario: name, cause }))
+    )
+
+    const elapsedMs = Math.round((yield* Effect.sync(() => performance.now())) - started)
     console.log(`\n=== ${name} ===`)
     console.log(rows)
-    console.log(`statementCount=${statementCount}`)
+    console.log(`statementCount=${context.statementCount.value}`)
     console.log(`elapsedMs=${elapsedMs}`)
   })
 
-const twoHopRecommendationScenario = (db: Database, profiler: ProfilingService) =>
+const seedSocialGraph = (context: ScenarioContext): Effect.Effect<void, QueryError> =>
   Effect.gen(function*() {
-    yield* seedSocialGraph(db, profiler)
-
-    const seekers = ["ava", "ben"]
-    const seekersSet = buildIdSetExpression(seekers)
-
-    const firstHopPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT graph_out_many(...) AS payload",
-      `SELECT graph_out_many('social_edges', 'follows', ${seekersSet.expression}, 'deleted_at IS NULL AND dst NOT LIKE ''bot-%''') AS payload`,
-      seekersSet.bindings
-    )
-
-    const firstHopEdges = parseTsvRows(firstHopPayload).flatMap((columns) => {
-      const src = columns[0] ?? ""
-      const dst = columns[1] ?? ""
-      if (src.length === 0 || dst.length === 0) return []
-      return [{ src, dst }]
+    yield* context.sql("DROP TABLE IF EXISTS social_edges", () => {
+      context.db.exec("DROP TABLE IF EXISTS social_edges")
     })
 
-    const firstHopTargets = uniqueSorted(firstHopEdges.map((edge) => edge.dst))
-    const firstHopSet = buildIdSetExpression(firstHopTargets)
-
-    const secondHopPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT graph_two_hop_counts(...) AS payload",
-      `SELECT graph_two_hop_counts('social_edges', 'follows', 'follows', ${firstHopSet.expression}) AS payload`,
-      firstHopSet.bindings
-    )
-
-    const secondHopRows = parseTsvRows(secondHopPayload).flatMap((columns) => {
-      const dst = columns[0] ?? ""
-      const supportText = columns[1] ?? ""
-      const supportCount = Number(supportText)
-      if (dst.length === 0 || !Number.isFinite(supportCount)) return []
-      return [{ dst, supportCount }]
+    yield* context.sql("CREATE TABLE social_edges + indexes", () => {
+      context.db.exec(
+        "CREATE TABLE social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX social_edges_dst_type ON social_edges(dst, edge_type)"
+      )
     })
 
-    const candidateSet = buildIdSetExpression(secondHopRows.map((row) => row.dst))
-    const excludedSet = buildIdSetExpression([
-      ...seekers,
-      ...firstHopTargets,
-      "bot-promo",
-      "bot-zed",
-      "hal",
-      "spam-target"
-    ])
-
-    const recommendationSetExpression = `idset_diff(${candidateSet.expression}, ${excludedSet.expression})`
-    const recommendationBindings = [...candidateSet.bindings, ...excludedSet.bindings]
-
-    const recommendationHashPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT idset_hash(...) AS payload",
-      `SELECT idset_hash(${recommendationSetExpression}) AS payload`,
-      recommendationBindings
-    )
-
-    console.log(`recommendationSetHash=${decodeBlobValue(recommendationHashPayload)}`)
-
-    const deterministicPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT idset_each(...) AS payload",
-      `SELECT idset_each(${recommendationSetExpression}) AS payload`,
-      recommendationBindings
-    )
-
-    const inboundPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT graph_in_many(...) AS payload",
-      `SELECT graph_in_many('social_edges', 'follows', ${recommendationSetExpression}, 'deleted_at IS NULL') AS payload`,
-      recommendationBindings
-    )
-
-    const supportByCandidate = new Map(secondHopRows.map((row) => [row.dst, row.supportCount]))
-    const connectorsByCandidate = new Map<string, Array<string>>()
-
-    for (const columns of parseTsvRows(inboundPayload)) {
-      const candidate = columns[0] ?? ""
-      const connector = columns[1] ?? ""
-      if (candidate.length === 0 || connector.length === 0) continue
-
-      const current = connectorsByCandidate.get(candidate) ?? []
-      current.push(connector)
-      connectorsByCandidate.set(candidate, current)
-    }
-
-    const sortedRecommendations = parseIdsetEachRows(deterministicPayload)
-      .map(({ id, ord }) => {
-        const connectors = uniqueSorted(connectorsByCandidate.get(id) ?? [])
-
-        return {
-          deterministic_ord: ord,
-          candidate: id,
-          support_count: supportByCandidate.get(id) ?? 0,
-          via: connectors.join(", ")
-        }
-      })
-      .sort((a, b) => b.support_count - a.support_count || a.candidate.localeCompare(b.candidate))
-
-    return sortedRecommendations.map((row, index) => ({
-      rank: index + 1,
-      ...row
-    }))
+    yield* context.sql("INSERT social graph fixtures", () => {
+      context.db.exec(
+        "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
+      )
+    })
   })
 
-const cohortLensScenario = (db: Database, profiler: ProfilingService) =>
+const seedFeedRankings = (context: ScenarioContext): Effect.Effect<void, QueryError> =>
   Effect.gen(function*() {
-    yield* seedSocialGraph(db, profiler)
+    yield* context.sql("DROP TABLE IF EXISTS creator_feed_rankings", () => {
+      context.db.exec("DROP TABLE IF EXISTS creator_feed_rankings")
+    })
 
-    const cohortSet = buildIdSetExpression(["ava", "ben", "eli"])
-    const outboundPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT graph_out_idset(...) AS payload",
-      `SELECT graph_out_idset('social_edges', 'follows', ${cohortSet.expression}) AS payload`,
-      cohortSet.bindings
-    )
+    yield* context.sql("CREATE TABLE creator_feed_rankings", () => {
+      context.db.exec(
+        "CREATE TABLE creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
+      )
+    })
 
-    const spotlightSet = buildIdSetExpression(["finn", "gia", "kai", "mia", "nia", "omar"])
-    const inboundPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT graph_in_idset(...) AS payload",
-      `SELECT graph_in_idset('social_edges', 'follows', ${spotlightSet.expression}) AS payload`,
-      spotlightSet.bindings
-    )
+    yield* context.sql("INSERT creator feed snapshots", () => {
+      context.db.exec(
+        "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
+      )
+    })
+  })
 
-    const outboundGroups = parseGroupedIdsetPayload(outboundPayload)
-    const inboundGroups = parseGroupedIdsetPayload(inboundPayload)
-    const outboundMap = new Map(outboundGroups.map((group) => [group.key, group.members]))
+interface NaiveRecommendationResult {
+  readonly rows: ReadonlyArray<{ readonly candidate: string; readonly supportCount: number }>
+  readonly sqlCharacters: number
+  readonly placeholderCount: number
+}
 
-    const avaSet = buildIdSetExpression(outboundMap.get("ava") ?? [])
-    const benSet = buildIdSetExpression(outboundMap.get("ben") ?? [])
+const countPlaceholders = (sql: string): number => {
+  let count = 0
+  for (const char of sql) {
+    if (char === "?") count += 1
+  }
+  return count
+}
 
-    const overlapPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT idset_each(idset_intersect(...)) AS payload",
-      `SELECT idset_each(idset_intersect(${avaSet.expression}, ${benSet.expression})) AS payload`,
-      [...avaSet.bindings, ...benSet.bindings]
-    )
+const buildPlaceholders = (count: number): string => Array.from({ length: count }, () => "?").join(", ")
 
-    const overlapMembers = parseIdsetEachRows(overlapPayload).map((row) => row.id)
+const runNaiveTwoHopWithoutExtension = (
+  context: ScenarioContext,
+  input: {
+    readonly edgeTable: string
+    readonly hop1EdgeType: string
+    readonly hop2EdgeType: string
+    readonly seedIds: ReadonlyArray<string>
+    readonly excludeIds: ReadonlyArray<string>
+  }
+): Effect.Effect<NaiveRecommendationResult, QueryError> =>
+  Effect.gen(function*() {
+    const seedPlaceholders = buildPlaceholders(input.seedIds.length)
+    const excludePlaceholders = buildPlaceholders(input.excludeIds.length)
 
-    const outboundRows = outboundGroups.map((group) => ({
-      lens: "outbound-neighborhood",
-      account: group.key,
-      member_count: group.members.length,
-      members: group.members.join(", ")
+    const sql = [
+      "WITH first_hop AS (",
+      `  SELECT DISTINCT e1.dst AS mid FROM ${input.edgeTable} e1`,
+      `  WHERE e1.edge_type = ? AND e1.deleted_at IS NULL AND e1.src IN (${seedPlaceholders}) AND e1.dst NOT LIKE 'bot-%'`,
+      "),",
+      "second_hop AS (",
+      `  SELECT e2.dst AS candidate, COUNT(DISTINCT e2.src) AS support_count FROM ${input.edgeTable} e2`,
+      "  JOIN first_hop fh ON fh.mid = e2.src",
+      "  WHERE e2.edge_type = ? AND e2.deleted_at IS NULL",
+      "  GROUP BY e2.dst",
+      "),",
+      "filtered AS (",
+      "  SELECT candidate, support_count FROM second_hop",
+      "  WHERE candidate NOT IN (SELECT mid FROM first_hop)",
+      `    AND candidate NOT IN (${seedPlaceholders})`,
+      `    AND candidate NOT IN (${excludePlaceholders})`,
+      ")",
+      "SELECT candidate, support_count FROM filtered ORDER BY support_count DESC, candidate ASC"
+    ].join("\n")
+
+    const rows = yield* context.sql("raw CTE recommendation pipeline", () => {
+      const bindings = [
+        input.hop1EdgeType,
+        ...input.seedIds,
+        input.hop2EdgeType,
+        ...input.seedIds,
+        ...input.excludeIds
+      ] as const
+
+      return context.db.query(sql).all(...bindings)
+    })
+
+    const normalized = rows.flatMap((row) => {
+      if (row == null || typeof row !== "object") return []
+      const candidate = Reflect.get(row, "candidate")
+      const supportCount = Reflect.get(row, "support_count")
+      if (typeof candidate !== "string") return []
+      if (typeof supportCount !== "number" || !Number.isFinite(supportCount)) return []
+      return [{ candidate, supportCount }]
+    })
+
+    return {
+      rows: normalized,
+      sqlCharacters: sql.length,
+      placeholderCount: countPlaceholders(sql)
+    }
+  })
+
+const recommendationDxScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
+  Effect.gen(function*() {
+    yield* seedSocialGraph(context)
+
+    const extension = yield* context.graph.recommendByTwoHop({
+      edgeTable: "social_edges",
+      hop1EdgeType: "follows",
+      hop2EdgeType: "follows",
+      seedIds: ["ava", "ben"],
+      excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
+    })
+
+    const baseline = yield* runNaiveTwoHopWithoutExtension(context, {
+      edgeTable: "social_edges",
+      hop1EdgeType: "follows",
+      hop2EdgeType: "follows",
+      seedIds: ["ava", "ben"],
+      excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
+    })
+
+    const extensionRows = extension.rows.map((row) => ({
+      section: "with-extension-row",
+      ...row
     }))
 
-    const inboundRows = inboundGroups.map((group) => ({
+    const baselineRows = baseline.rows.map((row, index) => ({
+      section: "without-extension-row",
+      rank: index + 1,
+      candidate: row.candidate,
+      supportCount: row.supportCount
+    }))
+
+    const extensionCandidates = extension.rows.map((row) => row.candidate).join(", ")
+    const baselineCandidates = baseline.rows.map((row) => row.candidate).join(", ")
+
+    return [
+      {
+        section: "with-extension-summary",
+        one_api_call: "graph.recommendByTwoHop(...)",
+        recommendation_set_hash: extension.recommendationSetHash
+      },
+      ...extensionRows,
+      {
+        section: "without-extension-summary",
+        sql_characters: baseline.sqlCharacters,
+        placeholders: baseline.placeholderCount,
+        manual_cte: "first_hop + second_hop + filtered"
+      },
+      ...baselineRows,
+      {
+        section: "opinionated-verdict",
+        why_awesome: "extension API gives typed rows, deterministic idset semantics, and less room for SQL footguns",
+        why_raw_sql_hurts: "raw CTE orchestration pushes graph logic + placeholder bookkeeping into app code",
+        extension_candidates: extensionCandidates,
+        raw_sql_candidates: baselineCandidates,
+        point: "when raw SQL drift sneaks in, you can ship the wrong ranking without realizing it"
+      }
+    ]
+  })
+
+const cohortLensScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
+  Effect.gen(function*() {
+    yield* seedSocialGraph(context)
+
+    const cohortSet = idsetFromValues(["ava", "ben", "eli"])
+    const outbound = yield* context.graph.graphOutIdset({
+      edgeTable: "social_edges",
+      edgeType: "follows",
+      srcSet: cohortSet
+    })
+
+    const spotlightSet = idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
+    const inbound = yield* context.graph.graphInIdset({
+      edgeTable: "social_edges",
+      edgeType: "follows",
+      dstSet: spotlightSet
+    })
+
+    const outboundMap = new Map(outbound.map((row) => [row.src, row.dstSet]))
+    const overlapSet = idsetIntersect(
+      idsetFromValues(outboundMap.get("ava") ?? []),
+      idsetFromValues(outboundMap.get("ben") ?? [])
+    )
+    const overlap = yield* context.graph.idsetEach(overlapSet)
+
+    const outboundRows = outbound.map((row) => ({
+      lens: "outbound-neighborhood",
+      account: row.src,
+      member_count: row.dstSet.length,
+      members: row.dstSet.join(", ")
+    }))
+
+    const inboundRows = inbound.map((row) => ({
       lens: "inbound-support",
-      account: group.key,
-      member_count: group.members.length,
-      members: group.members.join(", ")
+      account: row.dst,
+      member_count: row.srcSet.length,
+      members: row.srcSet.join(", ")
     }))
 
     return [
@@ -494,62 +389,43 @@ const cohortLensScenario = (db: Database, profiler: ProfilingService) =>
       {
         lens: "overlap",
         account: "ava+ben",
-        member_count: overlapMembers.length,
-        members: overlapMembers.join(", ")
+        member_count: overlap.length,
+        members: overlap.map((row) => row.id).join(", ")
       },
       ...inboundRows
     ]
   })
 
-const parseNullableInt = (value: string): number | null => {
-  if (value.length === 0) return null
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-const creatorMomentumScenario = (db: Database, profiler: ProfilingService) =>
+const creatorMomentumScenario = (context: ScenarioContext): Effect.Effect<ReadonlyArray<unknown>, DemoError> =>
   Effect.gen(function*() {
-    yield* seedFeedRankingSnapshots(db, profiler)
+    yield* seedFeedRankings(context)
 
-    const diffPayload = yield* runPayloadStatement(
-      db,
-      profiler,
-      "SELECT ranked_diff(...) AS payload",
-      "SELECT ranked_diff('morning', 'evening', 'creator_feed_rankings') AS payload",
-      []
-    )
-
-    return parseTsvRows(diffPayload).flatMap((columns) => {
-      const item = columns[0] ?? ""
-      const oldRank = parseNullableInt(columns[1] ?? "")
-      const newRank = parseNullableInt(columns[2] ?? "")
-      const deltaRank = parseNullableInt(columns[3] ?? "")
-      const status = columns[4] ?? ""
-      if (item.length === 0) return []
-
-      return [{
-        creator: item,
-        old_rank: oldRank,
-        new_rank: newRank,
-        delta_rank: deltaRank,
-        status
-      }]
+    const rows = yield* context.graph.rankedDiff({
+      oldSerpId: "morning",
+      newSerpId: "evening",
+      table: "creator_feed_rankings"
     })
+
+    return rows.map((row) => ({
+      creator: row.item,
+      old_rank: row.oldRank,
+      new_rank: row.newRank,
+      delta_rank: row.deltaRank,
+      status: row.status
+    }))
   })
 
-const runDemoScenario = <R>(
-  name: string,
-  scenario: (db: Database, profiler: ProfilingService) => Effect.Effect<ReadonlyArray<R>, QueryError>
-) => runScenario(name, scenario).pipe(Effect.provide(DemoLayer))
+const program = withRuntime((runtime) =>
+  Effect.gen(function*() {
+    console.log("Loaded graph extension:", runtime.extensionPath)
+    console.log("Init symbol:", graphExtInitSymbol)
+    console.log("Graph extension version:", runtime.version)
 
-const program = Effect.gen(function*() {
-  const resolvedLibSqlitePath = yield* resolveEmbeddedArtifact(embeddedLibSqlitePath, "libsqlite")
-  yield* configureCustomSqlite(resolvedLibSqlitePath)
-
-  yield* runDemoScenario("two-hop recommendation pipeline", twoHopRecommendationScenario)
-  yield* runDemoScenario("cohort neighborhood lens", cohortLensScenario)
-  yield* runDemoScenario("creator momentum with ranked_diff", creatorMomentumScenario)
-})
+    yield* runScenario(runtime, "recommendation DX comparison", recommendationDxScenario)
+    yield* runScenario(runtime, "cohort neighborhood lens", cohortLensScenario)
+    yield* runScenario(runtime, "creator momentum with ranked_diff", creatorMomentumScenario)
+  })
+)
 
 Effect.runPromise(program).catch((cause) => {
   console.error(cause)

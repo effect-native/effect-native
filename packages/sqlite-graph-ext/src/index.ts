@@ -8,6 +8,56 @@ import { darwin_aarch64, darwin_x86_64, linux_aarch64, linux_x86_64, win_i686, w
 import { detectPlatform, isSupportedPlatform, type Platform, SUPPORTED_PLATFORMS } from "./platform.js"
 import { GRAPH_EXT_VERSION } from "./version.js"
 
+export {
+  createGraphExtClient,
+  GraphExtDecodeError,
+  GraphExtQueryError,
+  idsetDiff,
+  idsetEmpty,
+  idsetFromValues,
+  idsetIntersect,
+  idsetUnion
+} from "./client.js"
+export type {
+  GraphExtClient,
+  GraphExtClientError,
+  GraphInIdsetInput,
+  GraphInManyInput,
+  GraphOutIdsetInput,
+  GraphOutManyInput,
+  IdSetExpression,
+  RankedDiffInput,
+  TwoHopCountInput,
+  TwoHopRecommendationInput,
+  TwoHopRecommendationResult,
+  TwoHopRecommendationRow
+} from "./client.js"
+export {
+  decodeGraphInIdsetPayload,
+  decodeGraphInManyPayload,
+  decodeGraphOutIdsetPayload,
+  decodeGraphOutManyPayload,
+  decodeIdsetEachPayload,
+  decodeRankedDiffPayload,
+  decodeTwoHopCountPayload,
+  GraphInIdsetRowSchema,
+  GraphInManyRowSchema,
+  GraphOutIdsetRowSchema,
+  GraphOutManyRowSchema,
+  IdsetEachRowSchema,
+  RankedDiffRowSchema,
+  TwoHopCountRowSchema
+} from "./schema.js"
+export type {
+  GraphInIdsetRow,
+  GraphInManyRow,
+  GraphOutIdsetRow,
+  GraphOutManyRow,
+  IdsetEachRow,
+  RankedDiffRow,
+  TwoHopCountRow
+} from "./schema.js"
+
 const runtimePaths: Record<Platform, string> = {
   "darwin-aarch64": darwin_aarch64,
   "darwin-x86_64": darwin_x86_64,

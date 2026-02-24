@@ -8,8 +8,12 @@ SQLite loadable extension for graph and set-based graph operations.
 
 ## Current foundation status
 
-This package starts with a stable TypeScript API surface for platform-aware path resolution and
-Zig extension entrypoint scaffolding.
+This package ships:
+
+- platform-aware native artifact resolution
+- a typed Effect client (`createGraphExtClient`) for calling extension functions
+- Effect Schema v4 payload codecs for deterministic text payload contracts
+- Zig extension entrypoint scaffolding
 
 | Item                  | Status                                                 |
 | --------------------- | ------------------------------------------------------ |
@@ -18,6 +22,8 @@ Zig extension entrypoint scaffolding.
 | idset ops             | implemented                                            |
 | traversal ops         | implemented (deterministic table-shaped text payloads) |
 | ranked and diff ops   | implemented                                            |
+| TS typed client       | implemented                                            |
+| Effect Schema codecs  | implemented                                            |
 | demo                  | tracked in sibling package                             |
 
 ## Supported platforms
@@ -48,10 +54,20 @@ bun run build
 This runs:
 
 - `zig build -Doptimize=ReleaseSafe`
-- Copy the compiled extension from `zig-out/lib` into `lib/<platform>/sqlite3_graph_ext.*`
+- Copy the compiled extension from `zig-out/lib` or `zig-out/bin` into `lib/<platform>/sqlite3_graph_ext.*`
 
 The build script is intended to be run in a dev shell that includes `zig`.
 `flake.nix` includes `zig` in the default `devShell` for that workflow.
+
+## Zig unit tests
+
+```bash
+bun run test-zig
+```
+
+`src/extension.zig` includes native Zig unit tests for parser, identifier safety,
+SQL literal/in-clause builders, and payload text helpers. The test script links
+against the bundled `@effect-native/libsqlite` artifact for the current platform.
 
 ## Function output contract
 
@@ -64,3 +80,9 @@ Traversal and idset expansion functions return deterministic UTF-8 text payloads
 - `graph_in_idset(...)` -> `"dst\tsrc_set\n..."`
 
 For every empty input set, these APIs return an empty string.
+
+## TypeScript API highlights
+
+- `createGraphExtClient(db)` returns typed Effect methods for extension operations
+- `idsetFromValues`, `idsetIntersect`, `idsetDiff`, `idsetUnion` build composable SQL expressions
+- payload decoders use Effect Schema v4 so app code does not hand-roll TSV parsing

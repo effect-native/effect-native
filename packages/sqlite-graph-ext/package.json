@@ -19,6 +19,9 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./schema": "./src/schema.ts",
+    "./idset": "./src/idset.ts",
     "./paths": "./src/paths.ts",
     "./platform": "./src/platform.ts",
     "./version": "./src/version.ts",
@@ -27,7 +30,8 @@
   "scripts": {
     "codegen": "echo '@effect-native/sqlite-graph-ext: skip codegen'",
     "build": "bun run build-zig",
-    "build-zig": "zig build -Doptimize=ReleaseSafe && bun ./scripts/copy-graph-ext-artifacts.mjs"
+    "build-zig": "zig build -Doptimize=ReleaseSafe && bun ./scripts/copy-graph-ext-artifacts.mjs",
+    "test-zig": "bun ./scripts/zig-test-with-libsqlite.mjs"
   },
   "peerDependencies": {
     "effect": "^4.0.0-beta.0"

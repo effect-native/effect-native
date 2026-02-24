@@ -1878,3 +1878,100 @@ export fn sqlite3_graph_ext_init(db: ?*c.sqlite3, pzErrMsg: ?*anyopaque, pApi: ?
 
   return c.SQLITE_OK;
 }
+
+test "parseSet sorts and deduplicates ids" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  var parsed = try parseSet(allocator, "z\na\nz\nm\na\n");
+  defer parsed.deinit();
+
+  try std.testing.expectEqual(@as(usize, 3), parsed.items.len);
+  try std.testing.expectEqualStrings("a", parsed.items[0]);
+  try std.testing.expectEqualStrings("m", parsed.items[1]);
+  try std.testing.expectEqualStrings("z", parsed.items[2]);
+}
+
+test "parseSet ignores empty lines" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  var parsed = try parseSet(allocator, "\n\na\n\n");
+  defer parsed.deinit();
+
+  try std.testing.expectEqual(@as(usize, 1), parsed.items.len);
+  try std.testing.expectEqualStrings("a", parsed.items[0]);
+}
+
+test "containsId checks membership from parsed set" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  var parsed = try parseSet(allocator, "k\na\nd");
+  defer parsed.deinit();
+
+  try std.testing.expect(containsId(&parsed, "a"));
+  try std.testing.expect(containsId(&parsed, "d"));
+  try std.testing.expect(!containsId(&parsed, "x"));
+}
+
+test "isSafeIdentifier accepts alphanumeric underscore and dot" {
+  try std.testing.expect(isSafeIdentifier("edge_table"));
+  try std.testing.expect(isSafeIdentifier("main.edge_table_v2"));
+  try std.testing.expect(!isSafeIdentifier(""));
+  try std.testing.expect(!isSafeIdentifier("edge-table"));
+  try std.testing.expect(!isSafeIdentifier("edge table"));
+  try std.testing.expect(!isSafeIdentifier("edge;drop"));
+}
+
+test "appendSqlLiteral escapes single quotes" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  var output = ByteList.init(allocator);
+  defer output.deinit();
+
+  try appendSqlLiteral(&output, "o'neil");
+  try std.testing.expectEqualStrings("'o''neil'", output.items);
+}
+
+test "buildInClauseFromSet emits quoted list" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  const values = [_][]const u8{ "alpha", "o'neil" };
+  const clause = try buildInClauseFromSet(allocator, values[0..]);
+  try std.testing.expectEqualStrings("'alpha','o''neil'", clause);
+}
+
+test "buildInClauseFromSet emits empty sentinel" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  const values = [_][]const u8{};
+  const clause = try buildInClauseFromSet(allocator, values[0..]);
+  try std.testing.expectEqualStrings("''", clause);
+}
+
+test "appendSetText joins entries with newline" {
+  var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+  defer arena.deinit();
+  const allocator = arena.allocator();
+
+  var output = ByteList.init(allocator);
+  defer output.deinit();
+
+  const values = [_][]const u8{ "a", "b", "c" };
+  try appendSetText(&output, values[0..]);
+  try std.testing.expectEqualStrings("a\nb\nc", output.items);
+}
+
+test "graph extension version constant is not empty" {
+  try std.testing.expect(GRAPH_EXT_VERSION.len > 0);
+}
