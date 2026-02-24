@@ -93,8 +93,7 @@ const initializeDb = Effect.gen(function*() {
     }))
   }
 
-  const [versionRow] = extensionRows
-  // @ts-expect-error dynamic SQLite row shape.
+  const [versionRow] = extensionRows as Array<{ version: string }>
   console.log("Graph extension version:", versionRow.version)
   return db
 })
