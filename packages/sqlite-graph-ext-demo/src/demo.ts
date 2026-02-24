@@ -167,43 +167,41 @@ const runScenario = <R>(
     console.log(`elapsedMs=${elapsedMs}`)
   })
 
-const seedSocialGraph = (context: ScenarioContext) =>
-  Effect.gen(function*() {
-    yield* context.sql("DROP TABLE IF EXISTS social_edges", () => {
-      context.db.run("DROP TABLE IF EXISTS social_edges")
-    })
-
-    yield* context.sql("CREATE TABLE social_edges + indexes", () => {
-      context.db.run(
-        "CREATE TABLE social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX social_edges_dst_type ON social_edges(dst, edge_type)"
-      )
-    })
-
-    yield* context.sql("INSERT social graph fixtures", () => {
-      context.db.run(
-        "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
-      )
-    })
+const seedSocialGraph = Effect.fn(function*(context: ScenarioContext) {
+  yield* context.sql("DROP TABLE IF EXISTS social_edges", () => {
+    context.db.run("DROP TABLE IF EXISTS social_edges")
   })
 
-const seedFeedRankings = (context: ScenarioContext) =>
-  Effect.gen(function*() {
-    yield* context.sql("DROP TABLE IF EXISTS creator_feed_rankings", () => {
-      context.db.run("DROP TABLE IF EXISTS creator_feed_rankings")
-    })
-
-    yield* context.sql("CREATE TABLE creator_feed_rankings", () => {
-      context.db.run(
-        "CREATE TABLE creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
-      )
-    })
-
-    yield* context.sql("INSERT creator feed snapshots", () => {
-      context.db.run(
-        "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
-      )
-    })
+  yield* context.sql("CREATE TABLE social_edges + indexes", () => {
+    context.db.run(
+      "CREATE TABLE social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX social_edges_dst_type ON social_edges(dst, edge_type)"
+    )
   })
+
+  yield* context.sql("INSERT social graph fixtures", () => {
+    context.db.run(
+      "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
+    )
+  })
+})
+
+const seedFeedRankings = Effect.fn(function*(context: ScenarioContext) {
+  yield* context.sql("DROP TABLE IF EXISTS creator_feed_rankings", () => {
+    context.db.run("DROP TABLE IF EXISTS creator_feed_rankings")
+  })
+
+  yield* context.sql("CREATE TABLE creator_feed_rankings", () => {
+    context.db.run(
+      "CREATE TABLE creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
+    )
+  })
+
+  yield* context.sql("INSERT creator feed snapshots", () => {
+    context.db.run(
+      "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
+    )
+  })
+})
 
 const countPlaceholders = (sql: string) => {
   let count = 0
@@ -215,220 +213,213 @@ const countPlaceholders = (sql: string) => {
 
 const buildPlaceholders = (count: number) => Array.from({ length: count }, () => "?").join(", ")
 
-const runNaiveTwoHopWithoutExtension = (
-  context: ScenarioContext,
-  input: {
-    readonly edgeTable: string
-    readonly hop1EdgeType: string
-    readonly hop2EdgeType: string
-    readonly seedIds: ReadonlyArray<string>
-    readonly excludeIds: ReadonlyArray<string>
+const runNaiveTwoHopWithoutExtension = Effect.fn(function*(context: ScenarioContext, input: {
+  readonly edgeTable: string
+  readonly hop1EdgeType: string
+  readonly hop2EdgeType: string
+  readonly seedIds: ReadonlyArray<string>
+  readonly excludeIds: ReadonlyArray<string>
+}) {
+  const seedPlaceholders = buildPlaceholders(input.seedIds.length)
+  const excludePlaceholders = buildPlaceholders(input.excludeIds.length)
+
+  const sql = [
+    "WITH first_hop AS (",
+    `  SELECT DISTINCT e1.dst AS mid FROM ${input.edgeTable} e1`,
+    `  WHERE e1.edge_type = ? AND e1.deleted_at IS NULL AND e1.src IN (${seedPlaceholders}) AND e1.dst NOT LIKE 'bot-%'`,
+    "),",
+    "second_hop AS (",
+    `  SELECT e2.dst AS candidate, COUNT(DISTINCT e2.src) AS support_count FROM ${input.edgeTable} e2`,
+    "  JOIN first_hop fh ON fh.mid = e2.src",
+    "  WHERE e2.edge_type = ? AND e2.deleted_at IS NULL",
+    "  GROUP BY e2.dst",
+    "),",
+    "filtered AS (",
+    "  SELECT candidate, support_count FROM second_hop",
+    "  WHERE candidate NOT IN (SELECT mid FROM first_hop)",
+    `    AND candidate NOT IN (${seedPlaceholders})`,
+    `    AND candidate NOT IN (${excludePlaceholders})`,
+    ")",
+    "SELECT candidate, support_count FROM filtered ORDER BY support_count DESC, candidate ASC"
+  ].join("\n")
+
+  const rows = yield* context.sql("raw CTE recommendation pipeline", () => {
+    const bindings = [
+      input.hop1EdgeType,
+      ...input.seedIds,
+      input.hop2EdgeType,
+      ...input.seedIds,
+      ...input.excludeIds
+    ] as const
+
+    return context.db.query(sql).all(...bindings)
+  })
+
+  const normalized = rows.flatMap((row) => {
+    if (row == null || typeof row !== "object") return []
+    const candidate = Reflect.get(row, "candidate")
+    const supportCount = Reflect.get(row, "support_count")
+    if (typeof candidate !== "string") return []
+    if (typeof supportCount !== "number" || !Number.isFinite(supportCount)) return []
+    return [{ candidate, supportCount }]
+  })
+
+  return {
+    rows: normalized,
+    sqlCharacters: sql.length,
+    placeholderCount: countPlaceholders(sql)
   }
-) =>
-  Effect.gen(function*() {
-    const seedPlaceholders = buildPlaceholders(input.seedIds.length)
-    const excludePlaceholders = buildPlaceholders(input.excludeIds.length)
+})
 
-    const sql = [
-      "WITH first_hop AS (",
-      `  SELECT DISTINCT e1.dst AS mid FROM ${input.edgeTable} e1`,
-      `  WHERE e1.edge_type = ? AND e1.deleted_at IS NULL AND e1.src IN (${seedPlaceholders}) AND e1.dst NOT LIKE 'bot-%'`,
-      "),",
-      "second_hop AS (",
-      `  SELECT e2.dst AS candidate, COUNT(DISTINCT e2.src) AS support_count FROM ${input.edgeTable} e2`,
-      "  JOIN first_hop fh ON fh.mid = e2.src",
-      "  WHERE e2.edge_type = ? AND e2.deleted_at IS NULL",
-      "  GROUP BY e2.dst",
-      "),",
-      "filtered AS (",
-      "  SELECT candidate, support_count FROM second_hop",
-      "  WHERE candidate NOT IN (SELECT mid FROM first_hop)",
-      `    AND candidate NOT IN (${seedPlaceholders})`,
-      `    AND candidate NOT IN (${excludePlaceholders})`,
-      ")",
-      "SELECT candidate, support_count FROM filtered ORDER BY support_count DESC, candidate ASC"
-    ].join("\n")
+const recommendationDxScenario = Effect.fn(function*(context: ScenarioContext) {
+  yield* seedSocialGraph(context)
 
-    const rows = yield* context.sql("raw CTE recommendation pipeline", () => {
-      const bindings = [
-        input.hop1EdgeType,
-        ...input.seedIds,
-        input.hop2EdgeType,
-        ...input.seedIds,
-        ...input.excludeIds
-      ] as const
+  // Goal: produce social recommendations from a seed cohort in one readable step.
+  // Obstacle: the baseline needs a long CTE pipeline and brittle placeholder bookkeeping.
+  // Why this resolves it: recommendByTwoHop composes the hard parts with deterministic idset semantics.
+  const extension = yield* context.graph.recommendByTwoHop({
+    edgeTable: "social_edges",
+    hop1EdgeType: "follows",
+    hop2EdgeType: "follows",
+    seedIds: ["ava", "ben"],
+    excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
+  })
 
-      return context.db.query(sql).all(...bindings)
-    })
+  const baseline = yield* runNaiveTwoHopWithoutExtension(context, {
+    edgeTable: "social_edges",
+    hop1EdgeType: "follows",
+    hop2EdgeType: "follows",
+    seedIds: ["ava", "ben"],
+    excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
+  })
 
-    const normalized = rows.flatMap((row) => {
-      if (row == null || typeof row !== "object") return []
-      const candidate = Reflect.get(row, "candidate")
-      const supportCount = Reflect.get(row, "support_count")
-      if (typeof candidate !== "string") return []
-      if (typeof supportCount !== "number" || !Number.isFinite(supportCount)) return []
-      return [{ candidate, supportCount }]
-    })
+  const extensionRows = extension.rows.map((row) => ({
+    section: "with-extension-row",
+    ...row
+  }))
 
-    return {
-      rows: normalized,
-      sqlCharacters: sql.length,
-      placeholderCount: countPlaceholders(sql)
+  const baselineRows = baseline.rows.map((row, index) => ({
+    section: "without-extension-row",
+    rank: index + 1,
+    candidate: row.candidate,
+    supportCount: row.supportCount
+  }))
+
+  const extensionCandidates = extension.rows.map((row) => row.candidate).join(", ")
+  const baselineCandidates = baseline.rows.map((row) => row.candidate).join(", ")
+
+  return [
+    {
+      section: "with-extension-summary",
+      one_api_call: "graph.recommendByTwoHop(...)",
+      recommendation_set_hash: extension.recommendationSetHash
+    },
+    ...extensionRows,
+    {
+      section: "without-extension-summary",
+      sql_characters: baseline.sqlCharacters,
+      placeholders: baseline.placeholderCount,
+      manual_cte: "first_hop + second_hop + filtered"
+    },
+    ...baselineRows,
+    {
+      section: "opinionated-verdict",
+      why_awesome: "extension API gives typed rows, deterministic idset semantics, and less room for SQL footguns",
+      why_raw_sql_hurts: "raw CTE orchestration pushes graph logic + placeholder bookkeeping into app code",
+      extension_candidates: extensionCandidates,
+      raw_sql_candidates: baselineCandidates,
+      point: "when raw SQL drift sneaks in, you can ship the wrong ranking without realizing it"
     }
+  ]
+})
+
+const cohortLensScenario = Effect.fn(function*(context: ScenarioContext) {
+  yield* seedSocialGraph(context)
+
+  // Goal: represent a dynamic cohort as a safe SQL expression.
+  // Obstacle: hand-building IN clauses is noisy and quote/ordering sensitive.
+  // Why this resolves it: idsetFromValues builds deterministic, parameterized idset expressions.
+  const cohortSet = SqliteGraph.idsetFromValues(["ava", "ben", "eli"])
+
+  // Goal: inspect each account's outbound neighborhood as a grouped set.
+  // Obstacle: status quo requires custom SQL aggregation plus custom payload decoding in app code.
+  // Why this resolves it: graphOutIdset returns typed grouped rows through one client call.
+  const outbound = yield* context.graph.graphOutIdset({
+    edgeTable: "social_edges",
+    edgeType: "follows",
+    srcSet: cohortSet
   })
 
-const recommendationDxScenario = (context: ScenarioContext) =>
-  Effect.gen(function*() {
-    yield* seedSocialGraph(context)
-
-    // Goal: produce social recommendations from a seed cohort in one readable step.
-    // Obstacle: the baseline needs a long CTE pipeline and brittle placeholder bookkeeping.
-    // Why this resolves it: recommendByTwoHop composes the hard parts with deterministic idset semantics.
-    const extension = yield* context.graph.recommendByTwoHop({
-      edgeTable: "social_edges",
-      hop1EdgeType: "follows",
-      hop2EdgeType: "follows",
-      seedIds: ["ava", "ben"],
-      excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
-    })
-
-    const baseline = yield* runNaiveTwoHopWithoutExtension(context, {
-      edgeTable: "social_edges",
-      hop1EdgeType: "follows",
-      hop2EdgeType: "follows",
-      seedIds: ["ava", "ben"],
-      excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
-    })
-
-    const extensionRows = extension.rows.map((row) => ({
-      section: "with-extension-row",
-      ...row
-    }))
-
-    const baselineRows = baseline.rows.map((row, index) => ({
-      section: "without-extension-row",
-      rank: index + 1,
-      candidate: row.candidate,
-      supportCount: row.supportCount
-    }))
-
-    const extensionCandidates = extension.rows.map((row) => row.candidate).join(", ")
-    const baselineCandidates = baseline.rows.map((row) => row.candidate).join(", ")
-
-    return [
-      {
-        section: "with-extension-summary",
-        one_api_call: "graph.recommendByTwoHop(...)",
-        recommendation_set_hash: extension.recommendationSetHash
-      },
-      ...extensionRows,
-      {
-        section: "without-extension-summary",
-        sql_characters: baseline.sqlCharacters,
-        placeholders: baseline.placeholderCount,
-        manual_cte: "first_hop + second_hop + filtered"
-      },
-      ...baselineRows,
-      {
-        section: "opinionated-verdict",
-        why_awesome: "extension API gives typed rows, deterministic idset semantics, and less room for SQL footguns",
-        why_raw_sql_hurts: "raw CTE orchestration pushes graph logic + placeholder bookkeeping into app code",
-        extension_candidates: extensionCandidates,
-        raw_sql_candidates: baselineCandidates,
-        point: "when raw SQL drift sneaks in, you can ship the wrong ranking without realizing it"
-      }
-    ]
+  const spotlightSet = SqliteGraph.idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
+  // Goal: view inbound supporters for spotlight accounts.
+  // Obstacle: reverse traversal normally duplicates query shape and parsing logic.
+  // Why this resolves it: graphInIdset mirrors the outbound API with typed decoded output.
+  const inbound = yield* context.graph.graphInIdset({
+    edgeTable: "social_edges",
+    edgeType: "follows",
+    dstSet: spotlightSet
   })
 
-const cohortLensScenario = (context: ScenarioContext) =>
-  Effect.gen(function*() {
-    yield* seedSocialGraph(context)
+  const outboundMap = new Map(outbound.map((row) => [row.src, row.dstSet]))
+  // Goal: compute overlap between two neighborhoods without writing ad-hoc SQL joins.
+  // Obstacle: without set combinators this becomes extra SQL and higher cognitive load.
+  // Why this resolves it: idsetIntersect composes set logic declaratively in TypeScript.
+  const overlapSet = SqliteGraph.idsetIntersect(
+    SqliteGraph.idsetFromValues(outboundMap.get("ava") ?? []),
+    SqliteGraph.idsetFromValues(outboundMap.get("ben") ?? [])
+  )
 
-    // Goal: represent a dynamic cohort as a safe SQL expression.
-    // Obstacle: hand-building IN clauses is noisy and quote/ordering sensitive.
-    // Why this resolves it: idsetFromValues builds deterministic, parameterized idset expressions.
-    const cohortSet = SqliteGraph.idsetFromValues(["ava", "ben", "eli"])
+  // Goal: materialize overlap members in stable order for display.
+  // Obstacle: naive decoding gives inconsistent ordering and ad-hoc parsing code.
+  // Why this resolves it: idsetEach provides deterministic rows with ord metadata.
+  const overlap = yield* context.graph.idsetEach(overlapSet)
 
-    // Goal: inspect each account's outbound neighborhood as a grouped set.
-    // Obstacle: status quo requires custom SQL aggregation plus custom payload decoding in app code.
-    // Why this resolves it: graphOutIdset returns typed grouped rows through one client call.
-    const outbound = yield* context.graph.graphOutIdset({
-      edgeTable: "social_edges",
-      edgeType: "follows",
-      srcSet: cohortSet
-    })
+  const outboundRows = outbound.map((row) => ({
+    lens: "outbound-neighborhood",
+    account: row.src,
+    member_count: row.dstSet.length,
+    members: row.dstSet.join(", ")
+  }))
 
-    const spotlightSet = SqliteGraph.idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
-    // Goal: view inbound supporters for spotlight accounts.
-    // Obstacle: reverse traversal normally duplicates query shape and parsing logic.
-    // Why this resolves it: graphInIdset mirrors the outbound API with typed decoded output.
-    const inbound = yield* context.graph.graphInIdset({
-      edgeTable: "social_edges",
-      edgeType: "follows",
-      dstSet: spotlightSet
-    })
+  const inboundRows = inbound.map((row) => ({
+    lens: "inbound-support",
+    account: row.dst,
+    member_count: row.srcSet.length,
+    members: row.srcSet.join(", ")
+  }))
 
-    const outboundMap = new Map(outbound.map((row) => [row.src, row.dstSet]))
-    // Goal: compute overlap between two neighborhoods without writing ad-hoc SQL joins.
-    // Obstacle: without set combinators this becomes extra SQL and higher cognitive load.
-    // Why this resolves it: idsetIntersect composes set logic declaratively in TypeScript.
-    const overlapSet = SqliteGraph.idsetIntersect(
-      SqliteGraph.idsetFromValues(outboundMap.get("ava") ?? []),
-      SqliteGraph.idsetFromValues(outboundMap.get("ben") ?? [])
-    )
+  return [
+    ...outboundRows,
+    {
+      lens: "overlap",
+      account: "ava+ben",
+      member_count: overlap.length,
+      members: overlap.map((row) => row.id).join(", ")
+    },
+    ...inboundRows
+  ]
+})
 
-    // Goal: materialize overlap members in stable order for display.
-    // Obstacle: naive decoding gives inconsistent ordering and ad-hoc parsing code.
-    // Why this resolves it: idsetEach provides deterministic rows with ord metadata.
-    const overlap = yield* context.graph.idsetEach(overlapSet)
+const creatorMomentumScenario = Effect.fn(function*(context: ScenarioContext) {
+  yield* seedFeedRankings(context)
 
-    const outboundRows = outbound.map((row) => ({
-      lens: "outbound-neighborhood",
-      account: row.src,
-      member_count: row.dstSet.length,
-      members: row.dstSet.join(", ")
-    }))
-
-    const inboundRows = inbound.map((row) => ({
-      lens: "inbound-support",
-      account: row.dst,
-      member_count: row.srcSet.length,
-      members: row.srcSet.join(", ")
-    }))
-
-    return [
-      ...outboundRows,
-      {
-        lens: "overlap",
-        account: "ava+ben",
-        member_count: overlap.length,
-        members: overlap.map((row) => row.id).join(", ")
-      },
-      ...inboundRows
-    ]
+  // Goal: explain momentum between two ranking snapshots.
+  // Obstacle: status quo diff logic requires multiple joins and null-handling edge cases.
+  // Why this resolves it: rankedDiff emits typed enter/exit/move rows directly.
+  const rows = yield* context.graph.rankedDiff({
+    oldSerpId: "morning",
+    newSerpId: "evening",
+    table: "creator_feed_rankings"
   })
 
-const creatorMomentumScenario = (context: ScenarioContext) =>
-  Effect.gen(function*() {
-    yield* seedFeedRankings(context)
-
-    // Goal: explain momentum between two ranking snapshots.
-    // Obstacle: status quo diff logic requires multiple joins and null-handling edge cases.
-    // Why this resolves it: rankedDiff emits typed enter/exit/move rows directly.
-    const rows = yield* context.graph.rankedDiff({
-      oldSerpId: "morning",
-      newSerpId: "evening",
-      table: "creator_feed_rankings"
-    })
-
-    return rows.map((row) => ({
-      creator: row.item,
-      old_rank: row.oldRank,
-      new_rank: row.newRank,
-      delta_rank: row.deltaRank,
-      status: row.status
-    }))
-  })
+  return rows.map((row) => ({
+    creator: row.item,
+    old_rank: row.oldRank,
+    new_rank: row.newRank,
+    delta_rank: row.deltaRank,
+    status: row.status
+  }))
+})
 
 const program = withRuntime((runtime) =>
   Effect.gen(function*() {
