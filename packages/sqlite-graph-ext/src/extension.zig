@@ -401,9 +401,49 @@ export fn idset_hash(context: ?*c.sqlite3_context, argc: c_int, argv: [*]?*c.sql
 }
 
 export fn idset_each(context: ?*c.sqlite3_context, argc: c_int, argv: [*]?*c.sqlite3_value) callconv(.C) void {
-  _ = argc
-  _ = argv
-  contextResultError(context, "idset_each is not implemented yet")
+  if (argc != 1) {
+    emitError(context, "idset_each expects (idset)")
+    return
+  }
+
+  var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator)
+  defer arena.deinit()
+  const allocator = arena.allocator()
+
+  const set = parseSet(allocator, valueBlob(argv[0])) catch {
+    emitError(context, "idset_each failed to parse set")
+    return
+  }
+
+  var output = std.ArrayList(u8).init(allocator)
+  for (set.items, 0..) |id, ord| {
+    if (ord > 0) {
+      output.append('\n') catch {
+        emitError(context, "idset_each failed")
+        return
+      }
+    }
+
+    const ordText = std.fmt.allocPrint(allocator, "{d}", .{ord + 1}) catch {
+      emitError(context, "idset_each failed")
+      return
+    }
+
+    output.appendSlice(id) catch {
+      emitError(context, "idset_each failed")
+      return
+    }
+    output.append('\t') catch {
+      emitError(context, "idset_each failed")
+      return
+    }
+    output.appendSlice(ordText) catch {
+      emitError(context, "idset_each failed")
+      return
+    }
+  }
+
+  c.sqlite3_result_blob(context, output.items.ptr, @intCast(c_int, output.items.len), c.SQLITE_TRANSIENT)
 }
 
 export fn graph_out_many(context: ?*c.sqlite3_context, argc: c_int, argv: [*]?*c.sqlite3_value) callconv(.C) void {
