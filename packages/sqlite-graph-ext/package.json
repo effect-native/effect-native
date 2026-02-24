@@ -1,7 +1,7 @@
 {
-  "name": "@effect-native/sqlite-graph-ext",
+  "name": "@effect-native/sqlite-graph",
   "version": "4.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "license": "MIT",
   "description": "SQLite loadable extension for graph-centric bitmap set operations and traversal primitives",
@@ -29,7 +29,7 @@
     "./internal/*": null
   },
   "scripts": {
-    "codegen": "echo '@effect-native/sqlite-graph-ext: skip codegen'",
+    "codegen": "echo '@effect-native/sqlite-graph: skip codegen'",
     "build": "bun run build-zig",
     "build-zig": "zig build -Doptimize=ReleaseSafe && bun ./scripts/copy-graph-ext-artifacts.mjs",
     "test-zig": "bun ./scripts/zig-test-with-libsqlite.mjs"

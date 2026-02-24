@@ -1,4 +1,4 @@
-# @effect-native/sqlite-graph-ext
+# @effect-native/sqlite-graph
 
 SQLite loadable extension for graph and set-based graph operations.
 
@@ -84,6 +84,6 @@ For every empty input set, these APIs return an empty string.
 ## TypeScript API highlights
 
 - `createGraphExtClient(db)` returns typed Effect methods for extension operations
-- `@effect-native/sqlite-graph-ext/bun` exposes `makeBunGraphRuntime` and `withBunGraphRuntime` to bootstrap Bun sqlite + extension loading
+- `@effect-native/sqlite-graph/bun` exposes `makeBunGraphRuntime` and `withBunGraphRuntime` to bootstrap Bun sqlite + extension loading
 - `idsetFromValues`, `idsetIntersect`, `idsetDiff`, `idsetUnion` build composable SQL expressions
 - payload decoders use Effect Schema v4 so app code does not hand-roll TSV parsing

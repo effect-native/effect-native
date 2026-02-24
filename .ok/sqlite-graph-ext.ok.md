@@ -91,7 +91,7 @@ node -e "const fs=require('fs');const p=require('./package.json'); const ws=Arra
 
 ```bash
 test -f packages/sqlite-graph-ext/package.json
-node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/sqlite-graph-ext/package.json','utf8')); if(typeof p.name!=='string' || !p.name.includes('sqlite-graph-ext')) process.exit(1); if(!Array.isArray(p.workspaces) && !p.private) process.exit(1)"
+node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('packages/sqlite-graph-ext/package.json','utf8')); if(p.name!=='@effect-native/sqlite-graph') process.exit(1); if(p.private!==false) process.exit(1); if(!p.publishConfig || p.publishConfig.access!=='public') process.exit(1)"
 test -f packages/sqlite-graph-ext/README.md
 ```
 
@@ -113,7 +113,7 @@ rg -n "withBunGraphRuntime|graph_ext_version|statement|two-hop|ranked_diff|idset
 ### Gate 4B: Demo DX clarity contract
 
 ```bash
-rg -n "@effect-native/sqlite-graph-ext/bun|withBunGraphRuntime" packages/sqlite-graph-ext-demo/src/demo.ts
+rg -n "@effect-native/sqlite-graph/bun|withBunGraphRuntime" packages/sqlite-graph-ext-demo/src/demo.ts
 node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');const count=(re)=>((src.match(re)||[]).length);if(count(/\\bsetCustomSQLite\\s*\\(/g)!==0)process.exit(1);if(count(/\\bloadExtension\\s*\\(/g)!==0)process.exit(1)"
 rg -n "const recommendationInput =" packages/sqlite-graph-ext-demo/src/demo.ts
 rg -n "recommendByTwoHop\(recommendationInput\)|runNaiveTwoHopWithoutExtension\(context, recommendationInput\)" packages/sqlite-graph-ext-demo/src/demo.ts

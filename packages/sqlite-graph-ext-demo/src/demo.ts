@@ -3,9 +3,9 @@
 import { Data, Effect } from "effect"
 
 import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
-import { getGraphExtPathSync } from "@effect-native/sqlite-graph-ext" with { type: "macro" }
-import * as SqliteGraphBun from "@effect-native/sqlite-graph-ext/bun"
-import * as SqliteGraph from "@effect-native/sqlite-graph-ext/client"
+import { getGraphExtPathSync } from "@effect-native/sqlite-graph" with { type: "macro" }
+import * as SqliteGraphBun from "@effect-native/sqlite-graph/bun"
+import * as SqliteGraph from "@effect-native/sqlite-graph/client"
 
 const embeddedLibSqlitePath = getLibSqlitePathSync()
 const embeddedGraphExtPath = getGraphExtPathSync()

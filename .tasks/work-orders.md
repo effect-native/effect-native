@@ -13,5 +13,5 @@
    done_when
 
    ```bash
-   bun test ./packages/sqlite-graph-ext/test/client.decode-path.test.ts && bun test ./packages/sqlite-graph-ext/test/graph-extension.contract.test.ts && nix develop --command bun run --filter @effect-native/sqlite-graph-ext test-zig
+   bun test ./packages/sqlite-graph-ext/test/client.decode-path.test.ts && bun test ./packages/sqlite-graph-ext/test/graph-extension.contract.test.ts && nix develop --command bun run --filter @effect-native/sqlite-graph test-zig
    ```

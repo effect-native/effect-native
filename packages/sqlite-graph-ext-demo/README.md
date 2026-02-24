@@ -1,10 +1,10 @@
 # @effect-native/sqlite-graph-ext-demo
 
-Console-first Bun + Effect v4 demo for social graph exploration with `@effect-native/sqlite-graph-ext`.
+Console-first Bun + Effect v4 demo for social graph exploration with `@effect-native/sqlite-graph`.
 
 ## What it demonstrates
 
-- Using `@effect-native/sqlite-graph-ext/bun` (`withBunGraphRuntime`) to bootstrap `libsqlite` + extension loading in one place
+- Using `@effect-native/sqlite-graph/bun` (`withBunGraphRuntime`) to bootstrap `libsqlite` + extension loading in one place
 - Using the typed TypeScript client (`createGraphExtClient`) instead of hand-rolled SQL + payload parsing in app code
 - Effect Schema v4 decoding inside the package for payload contracts
 

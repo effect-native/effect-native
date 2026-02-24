@@ -223,7 +223,7 @@
       },
     },
     "packages/sqlite-graph-ext": {
-      "name": "@effect-native/sqlite-graph-ext",
+      "name": "@effect-native/sqlite-graph",
       "version": "4.0.0",
       "devDependencies": {
         "@effect-native/bun-test": "workspace:*",
@@ -241,7 +241,7 @@
       "dependencies": {
         "@effect-native/libcrsql": "workspace:*",
         "@effect-native/libsqlite": "workspace:*",
-        "@effect-native/sqlite-graph-ext": "workspace:*",
+        "@effect-native/sqlite-graph": "workspace:*",
         "effect": "beta",
       },
       "devDependencies": {
@@ -465,7 +465,7 @@
 
     "@effect-native/schemas": ["@effect-native/schemas@workspace:packages/schemas"],
 
-    "@effect-native/sqlite-graph-ext": ["@effect-native/sqlite-graph-ext@workspace:packages/sqlite-graph-ext"],
+    "@effect-native/sqlite-graph": ["@effect-native/sqlite-graph@workspace:packages/sqlite-graph-ext"],
 
     "@effect-native/sqlite-graph-ext-demo": ["@effect-native/sqlite-graph-ext-demo@workspace:packages/sqlite-graph-ext-demo"],
 
