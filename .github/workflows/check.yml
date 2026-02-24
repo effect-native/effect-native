@@ -135,9 +135,9 @@ jobs:
           NODE
       - name: Build current branch
         run: bun run build
-      - name: Install base dependencies
+      - name: Install base dependencies (tolerate base lock drift)
         working-directory: base
-        run: bun install --frozen-lockfile
+        run: bun install
       - name: Build base branch
         working-directory: base
         run: bun run build
