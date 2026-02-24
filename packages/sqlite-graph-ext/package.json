@@ -1,0 +1,51 @@
+{
+  "name": "@effect-native/sqlite-graph-ext",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "SQLite loadable extension for graph-centric bitmap set operations and traversal primitives",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "repository": {
+    "url": "https://github.com/effect-native/effect-native.git",
+    "directory": "packages/sqlite-graph-ext"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "directory": "dist",
+    "linkDirectory": false
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./paths": "./src/paths.ts",
+    "./platform": "./src/platform.ts",
+    "./version": "./src/version.ts",
+    "./internal/*": null
+  },
+  "scripts": {
+    "codegen": "echo '@effect-native/sqlite-graph-ext: skip codegen'",
+    "build": "echo '@effect-native/sqlite-graph-ext: Zig build placeholder (not run in CI yet)'
+  },
+  "peerDependencies": {
+    "effect": "^4.0.0-beta.0"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@effect-native/bun-test": "workspace:*"
+  },
+  "files": [
+    "build",
+    "dist",
+    "src",
+    "lib",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
+}
