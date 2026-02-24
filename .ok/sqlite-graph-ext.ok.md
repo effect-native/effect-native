@@ -1,4 +1,4 @@
-# SQLite Graph Accelerator + Effect v4 Demo (Evergreen Stateless)  
+# SQLite Graph Accelerator + Effect v4 Demo (Evergreen Stateless)
 
 Captured: 2026-02-24
 
@@ -28,15 +28,15 @@ Captured: 2026-02-24
 - `idset_count(idset BLOB) -> INT`
 - `idset_contains(idset BLOB, id TEXT|INT) -> INT`
 - `idset_hash(idset BLOB) -> TEXT`
-- `idset_each(idset BLOB) -> TABLE(id TEXT|INT, ord INT)`
-- `graph_out_many(edge_table TEXT, edge_type TEXT, src_set BLOB, where_sql TEXT|NULL) -> TABLE(src, dst)`
-- `graph_in_many(edge_table TEXT, edge_type TEXT, dst_set BLOB, where_sql TEXT|NULL) -> TABLE(dst, src)`
-- `graph_out_idset(edge_table TEXT, edge_type TEXT, src_set BLOB) -> TABLE(src, dst_set BLOB)`
-- `graph_in_idset(edge_table TEXT, edge_type TEXT, dst_set BLOB) -> TABLE(dst, src_set BLOB)`
-- `graph_two_hop_counts(edge_table TEXT, hop1_edge_type TEXT, hop2_edge_type TEXT, start_set BLOB) -> TABLE(dst, support_count INT)`
-- `ranked_diff(old_serp_id, new_serp_id, table TEXT) -> TABLE(item, old_rank, new_rank, delta_rank, status)`
+- `idset_each(idset BLOB) -> TEXT` payload encoded as row-per-line TSV (`id\tord`, including deterministic `ord`)
+- `graph_out_many(edge_table TEXT, edge_type TEXT, src_set BLOB, where_sql TEXT|NULL) -> TEXT` payload encoded as row-per-line TSV (`src\tdst`)
+- `graph_in_many(edge_table TEXT, edge_type TEXT, dst_set BLOB, where_sql TEXT|NULL) -> TEXT` payload encoded as row-per-line TSV (`dst\tsrc`)
+- `graph_out_idset(edge_table TEXT, edge_type TEXT, src_set BLOB) -> TEXT` payload encoded as row-per-line TSV (`src\tdst_set`)
+- `graph_in_idset(edge_table TEXT, edge_type TEXT, dst_set BLOB) -> TEXT` payload encoded as row-per-line TSV (`dst\tsrc_set`)
+- `graph_two_hop_counts(edge_table TEXT, hop1_edge_type TEXT, hop2_edge_type TEXT, start_set BLOB) -> TEXT` payload encoded as row-per-line TSV (`dst\tsupport_count INT`)
+- `ranked_diff(old_serp_id, new_serp_id, table TEXT) -> TEXT` payload encoded as row-per-line TSV (`item\told_rank\tnew_rank\tdelta_rank\tstatus`)
 - Optional:
-  - `graph_two_hop_supporters(...) -> TABLE(dst, supporters_set BLOB)`
+  - `graph_two_hop_supporters(...) -> TEXT` payload encoded as row-per-line TSV (`dst\tsupporters_set`)
   - `vec_knn`, `vec_knn_idset` when sqlite-vec is available.
 
 ## Effect v4 demo contract
@@ -57,13 +57,16 @@ Captured: 2026-02-24
 ## Performance gates
 
 ### P0
+
 - FoF-like ranking: ≤ 3 SQL statements for traversal+count stage plus ≤ 1 hydration statement per node kind.
 - No per-node SQL loops.
 
 ### P1
+
 - `idset_union/intersect/diff` must stream large sets safely and avoid pathological memory growth.
 
 ### P2
+
 - Stable deterministic output for the same input and stable `ord` ordering from `idset_each`.
 
 ## Gates and proof commands

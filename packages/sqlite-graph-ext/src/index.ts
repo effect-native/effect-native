@@ -4,16 +4,9 @@
  * @since 0.0.0
  */
 
-import {
-  darwin_aarch64,
-  darwin_x86_64,
-  linux_aarch64,
-  linux_x86_64,
-  win_i686,
-  win_x86_64
-} from "./paths.js"
+import { darwin_aarch64, darwin_x86_64, linux_aarch64, linux_x86_64, win_i686, win_x86_64 } from "./paths.js"
+import { detectPlatform, isSupportedPlatform, type Platform, SUPPORTED_PLATFORMS } from "./platform.js"
 import { GRAPH_EXT_VERSION } from "./version.js"
-import { detectPlatform, isSupportedPlatform, SUPPORTED_PLATFORMS, type Platform } from "./platform.js"
 
 const runtimePaths: Record<Platform, string> = {
   "darwin-aarch64": darwin_aarch64,
@@ -64,8 +57,8 @@ export const buildRelativeLibraryPath = (platform: Platform): string => {
     "darwin-x86_64": "lib/darwin-x86_64/sqlite3_graph_ext.dylib",
     "linux-aarch64": "lib/linux-aarch64/sqlite3_graph_ext.so",
     "linux-x86_64": "lib/linux-x86_64/sqlite3_graph_ext.so",
-  "win-x86_64": "lib/win-x86_64/sqlite3_graph_ext.dll",
-  "win-i686": "lib/win-i686/sqlite3_graph_ext.dll"
+    "win-x86_64": "lib/win-x86_64/sqlite3_graph_ext.dll",
+    "win-i686": "lib/win-i686/sqlite3_graph_ext.dll"
   }
   return map[platform]
 }

@@ -13,11 +13,13 @@ export const win_x86_64 = fileURLToPath(new URL("../lib/win-x86_64/sqlite3_graph
 export const win_i686 = fileURLToPath(new URL("../lib/win-i686/sqlite3_graph_ext.dll", import.meta.url))
 
 export type Paths = {
-  readonly [K in
-    | "darwin_aarch64"
-    | "darwin_x86_64"
-    | "linux_aarch64"
-    | "linux_x86_64"
-    | "win_x86_64"
-    | "win_i686"]: string
+  readonly [
+    K in
+      | "darwin_aarch64"
+      | "darwin_x86_64"
+      | "linux_aarch64"
+      | "linux_x86_64"
+      | "win_x86_64"
+      | "win_i686"
+  ]: string
 }

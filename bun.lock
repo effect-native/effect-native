@@ -222,6 +222,32 @@
         "effect": "^4.0.0-beta.0",
       },
     },
+    "packages/sqlite-graph-ext": {
+      "name": "@effect-native/sqlite-graph-ext",
+      "version": "4.0.0",
+      "devDependencies": {
+        "@effect-native/bun-test": "workspace:*",
+      },
+      "peerDependencies": {
+        "effect": "^4.0.0-beta.0",
+      },
+      "optionalPeers": [
+        "effect",
+      ],
+    },
+    "packages/sqlite-graph-ext-demo": {
+      "name": "@effect-native/sqlite-graph-ext-demo",
+      "version": "4.0.0",
+      "dependencies": {
+        "@effect-native/libcrsql": "workspace:*",
+        "@effect-native/libsqlite": "workspace:*",
+        "@effect-native/sqlite-graph-ext": "workspace:*",
+        "effect": "beta",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.9",
+      },
+    },
     "packages/ssh-keep": {
       "name": "ssh-keep",
       "version": "0.0.1-placeholder",
@@ -439,6 +465,10 @@
 
     "@effect-native/schemas": ["@effect-native/schemas@workspace:packages/schemas"],
 
+    "@effect-native/sqlite-graph-ext": ["@effect-native/sqlite-graph-ext@workspace:packages/sqlite-graph-ext"],
+
+    "@effect-native/sqlite-graph-ext-demo": ["@effect-native/sqlite-graph-ext-demo@workspace:packages/sqlite-graph-ext-demo"],
+
     "@effect-native/tui-testing-library": ["@effect-native/tui-testing-library@workspace:packages/tui-testing-library"],
 
     "@effect/build-utils": ["@effect/build-utils@0.8.9", "", { "dependencies": { "micromatch": "^4.0.8", "pkg-entry-points": "^1.1.1" }, "bin": { "build-utils": "main.js" } }, "sha512-wzunjr8pyNjghLueo5ePQD7vaM3qeO2H/jF57hNYbQM/rxfipBWYKukoqWyp04qGZ+V86FyOHb8zD5+PMZvH2A=="],
@@ -449,13 +479,13 @@
 
     "@effect/markdown-toc": ["@effect/markdown-toc@0.1.0", "", { "dependencies": { "concat-stream": "^1.5.2", "diacritics-map": "^0.1.0", "gray-matter": "^3.1.1", "lazy-cache": "^2.0.2", "list-item": "^1.1.1", "markdown-link": "^0.1.1", "minimist": "^1.2.0", "mixin-deep": "^1.1.3", "object.pick": "^1.2.0", "remarkable": "^1.7.1", "repeat-string": "^1.6.1", "strip-color": "^0.1.0" }, "bin": { "markdown-toc": "cli.js" } }, "sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A=="],
 
-    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.11", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.11", "mime": "^4.1.0", "undici": "^7.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.11", "ioredis": "^5.7.0" } }, "sha512-P31Lqw/GZnsqsaxQiWi9XJz6M8aANgLCYdSUwzx0Kx+yKVnVqYA7+eqZVZPi4jLq0oMGE3LnPhBSOYGtY/eSbw=="],
+    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.12", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.12", "mime": "^4.1.0", "undici": "^7.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.12", "ioredis": "^5.7.0" } }, "sha512-vWrGNYjTmlSYh829uISO0xAREzsmAXL4ZvEQF1gw8nmHlzz9YV6FYPNtXoM5ZgVji+X/zGsygQAxQLCIE5SGQw=="],
 
-    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.11", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.19.0" }, "peerDependencies": { "effect": "^4.0.0-beta.11" } }, "sha512-1GdT63U6CpqDO8R5R9vVVn4fcwcJiYJOcKE5Tr208CB9fxAU2VEmp2Qp5rLqllLiHF+50ZYYMDPgqCKtXl8J7w=="],
+    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.12", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.19.0" }, "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-GP6ebikFIVYhhzQE5AV+GGtt/hdpeGpp3YBqfg7MD/6rDdd9Z/k20U5Mpj0X3Izrb+eOmEm8kJ4Trjg3T0qbqw=="],
 
-    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.11", "", { "peerDependencies": { "effect": "^4.0.0-beta.11" } }, "sha512-d+QuUiCXa2pzc3rVRPNE1xnLA7RwFBd/5u9Bto3JTBL7tGuReb4bpRCHGTuIHV1rx1u6Fp+B1FMuUXXWqTVYeQ=="],
+    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.12", "", { "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-2YCwl/2bxReNjGVQRmXW7CnK3r77t8dxNEvkQBfR0S5Fh7yLV4OCSnybLxz6+TfoJIO7c9NsFC93YhKNtbIC2A=="],
 
-    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.11", "", { "dependencies": { "better-sqlite3": "^12.6.2" }, "peerDependencies": { "effect": "^4.0.0-beta.11" } }, "sha512-LUqC9H9apfo7aYVLiWT5/oDUiY5IJ82oLwqFt7WeOq3VT8hHNXR13dXrQtxr1Kr1xZkyHqrosWGnNIhcixpOZA=="],
+    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.12", "", { "dependencies": { "better-sqlite3": "^12.6.2" }, "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-cAbNeMTb4F3K1CKQXqduY/tdHP82gihrhi3LLNAj7ZKvfwkl3pUk5wCH4Vy/DC7XvY61t1jPKycPWVE8wmbWow=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 
@@ -837,7 +867,7 @@
 
     "dprint": ["dprint@0.51.1", "", { "optionalDependencies": { "@dprint/darwin-arm64": "0.51.1", "@dprint/darwin-x64": "0.51.1", "@dprint/linux-arm64-glibc": "0.51.1", "@dprint/linux-arm64-musl": "0.51.1", "@dprint/linux-loong64-glibc": "0.51.1", "@dprint/linux-loong64-musl": "0.51.1", "@dprint/linux-riscv64-glibc": "0.51.1", "@dprint/linux-x64-glibc": "0.51.1", "@dprint/linux-x64-musl": "0.51.1", "@dprint/win32-arm64": "0.51.1", "@dprint/win32-x64": "0.51.1" }, "bin": { "dprint": "bin.js" } }, "sha512-CEx+wYARxLAe9o7RCZ77GKae6DF7qjn5Rd98xbWdA3hB4PFBr+kHwLANmNHscNumBAIrCg5ZJj/Kz+OYbJ+GBA=="],
 
-    "effect": ["effect@4.0.0-beta.11", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-xBUzwvNPoc7bcNUKS1Z7n6Nd5IL9AB/iV64GS1L44qmUgjuPex2A9DAXGUJkolTb8e65G55JerAX9T0Ha5fmRA=="],
+    "effect": ["effect@4.0.0-beta.12", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-sD06m119HGZeKHfuRc1waI4F9F8KwZHkR/kKGxHtKySXdCtiJiB3fjQYiW36Tx8UofME1+KF5DrRRyuNZAzHzw=="],
 
     "effect-native": ["effect-native@workspace:packages/effect-native"],
 

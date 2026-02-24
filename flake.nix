@@ -36,9 +36,11 @@
             yq-go
             lazygit
             dprint
+            zig
             oxlint
           ];
+          shellHook = "export CPATH=${pkgs.sqlite.dev}/include:$CPATH";
         };
       });
-    };
+      };
 }
