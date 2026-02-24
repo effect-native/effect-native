@@ -1,8 +1,8 @@
 # Gaps Snapshot: .ok/sqlite-graph-ext.ok.md
 
-Captured: 2026-02-24 21:14:21 UTC
+Captured: 2026-02-24 21:35:14 UTC
 Branch: feat/sqlite-graph-ext-accelerator
-HEAD: b5db311ea
+HEAD: HEAD
 Bun: 1.3.9
 Node: v24.3.0
 System: darwin x64
@@ -25,7 +25,10 @@ System: darwin x64
 - Workspace root now references both new packages in `tsconfig.json`.
 - `zig` binary is not present in the current environment (`zig_missing`), and extension artifacts are still absent from `packages/sqlite-graph-ext/lib/*`.
 - `idset_each` now emits a deterministic iterable payload (`id\tord` lines) from the canonical set.
-- `graph_*`, `ranked_diff`, and real traversal/ranking primitives are still stubs/placeholders.
+- `graph_out_many`, `graph_in_many`, `graph_out_idset`, `graph_in_idset` are implemented as deterministic payload-returning functions (not true table-valued iterators).
+- `graph_two_hop_counts`, `graph_two_hop_supporters`, and `ranked_diff` are now implemented.
+- Demo scenarios now execute the ranking, SERP delta, and resolution query shapes.
+- `vec_knn` and `vec_knn_idset` remain placeholders.
 - Cross-platform shared objects/dlls are not yet emitted.
 
 ## Non-gated notes
@@ -35,9 +38,8 @@ System: darwin x64
 
 ## Prioritized work-order evidence
 
-1. Implement `idset_*` algebra + deterministic iterator primitives.
-1. Implement `idset_each` (iterator shape or compatibility shim).
-2. Implement traversal and ranking SQL primitives.
-3. Implement `ranked_diff`.
-4. Add optional/aux APIs and compile pipelines in `build.zig` for all supported platforms.
-5. Replace demo placeholder scenario SQL with real extension query shapes and per-scenario statement-count assertions.
+1. Convert payload-style traversal and iterator functions to table-valued semantics (`idset_each`, `graph_*`) or document API boundary explicitly.
+2. Add production-safe filtering support for traversal (`deleted_at` handling, safe where_sql governance).
+3. Build and verify platform artifacts in `packages/sqlite-graph-ext/lib/*` for all supported OS/arch targets.
+4. Add coverage for two-hop supporter support and ranked diff ordering/edge cases.
+5. Update README/API docs with exact API contracts for the implemented payload formats.
