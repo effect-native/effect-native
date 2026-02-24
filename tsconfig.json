@@ -9,6 +9,7 @@
     { "path": "packages/examples-tui-testing-library" },
     { "path": "packages/fetch-hooks" },
     { "path": "packages/graph-db" },
+    { "path": "packages/graph-db-demo" },
     { "path": "packages/libcrsql" },
     { "path": "packages/libsqlite" },
     { "path": "packages/note" },

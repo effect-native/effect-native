@@ -1,0 +1,23 @@
+{
+  "name": "@effect-native/graph-db-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Private incubator demos for @effect-native/graph-db",
+  "scripts": {
+    "codegen": "echo '@effect-native/graph-db-demo: nothing to codegen'",
+    "demo": "bun run src/demo.ts",
+    "check": "tsc -b tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@effect-native/graph-db": "workspace:*",
+    "@effect/sql-sqlite-bun": "beta",
+    "effect": "beta"
+  },
+  "devDependencies": {
+    "@effect-native/bun-test": "workspace:*",
+    "@types/bun": "latest",
+    "@types/node": "latest"
+  }
+}
