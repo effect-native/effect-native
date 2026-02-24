@@ -1,26 +1,15 @@
 /* eslint-disable no-console */
 
-import { Database } from "bun:sqlite"
 import { Data, Effect } from "effect"
 
 import { getLibSqlitePathSync } from "@effect-native/libsqlite" with { type: "macro" }
 import { getGraphExtPathSync } from "@effect-native/sqlite-graph-ext" with { type: "macro" }
+import * as SqliteGraphBun from "@effect-native/sqlite-graph-ext/bun"
 import * as SqliteGraph from "@effect-native/sqlite-graph-ext/client"
 
 const embeddedLibSqlitePath = getLibSqlitePathSync()
 const embeddedGraphExtPath = getGraphExtPathSync()
 const graphExtInitSymbol = "sqlite3_graph_ext_init"
-
-type ArtifactName = "libsqlite" | "graph-extension"
-
-type ArtifactPhase = "resolve" | "configure" | "open" | "load-extension"
-
-class ArtifactError extends Data.TaggedError("ArtifactError")<{
-  readonly artifact: ArtifactName
-  readonly phase: ArtifactPhase
-  readonly path: string
-  readonly cause: unknown
-}> {}
 
 class QueryError extends Data.TaggedError("QueryError")<{
   readonly sql: string
@@ -33,97 +22,90 @@ class ScenarioError extends Data.TaggedError("ScenarioError")<{
 }> {}
 
 type DemoError =
-  | ArtifactError
   | QueryError
   | SqliteGraph.GraphExtDecodeError
   | SqliteGraph.GraphExtQueryError
+  | SqliteGraphBun.BunGraphRuntimeError
   | ScenarioError
 
-interface DemoRuntime {
-  readonly db: Database
-  readonly extensionPath: string
-  readonly version: string
-}
+type DemoRuntime = SqliteGraphBun.BunGraphRuntime
 
 type SqlEffect = <T>(sql: string, run: () => T) => Effect.Effect<T, QueryError>
 
 interface ScenarioContext {
-  readonly db: Database
+  readonly db: DemoRuntime["db"]
   readonly graph: SqliteGraph.GraphExtClient
   readonly sql: SqlEffect
   readonly statementCount: { value: number }
 }
 
-const resolveEmbeddedArtifact = (artifactPath: string, artifact: ArtifactName) => {
-  if (Bun.embeddedFiles.length === 0) {
-    return Effect.succeed(artifactPath)
-  }
+const SOCIAL_EDGE_TABLE = "social_edges"
+const SOCIAL_EDGE_TYPE = "follows"
+const SOCIAL_SEED_IDS = ["ava", "ben"]
+const SOCIAL_EXCLUDE_IDS = ["bot-promo", "bot-zed", "hal", "spam-target"]
 
-  return Effect.tryPromise<string, ArtifactError>({
-    try: async () => {
-      const embeddedArtifact = Bun.file(artifactPath)
-      const exportedArtifactPath = `./.${embeddedArtifact.name}`
-      await Bun.write(exportedArtifactPath, embeddedArtifact)
-      return exportedArtifactPath
-    },
-    catch: (cause) => new ArtifactError({ artifact, phase: "resolve", path: artifactPath, cause })
+const COHORT_IDS = ["ava", "ben", "eli"]
+const SPOTLIGHT_IDS = ["finn", "gia", "kai", "mia", "nia", "omar"]
+
+const CREATOR_RANKINGS_TABLE = "creator_feed_rankings"
+
+const SOCIAL_EDGE_FIXTURES = [
+  ["ava", "bea"],
+  ["ava", "cam"],
+  ["ava", "dev"],
+  ["ava", "bot-zed"],
+  ["ben", "bea"],
+  ["ben", "cam"],
+  ["ben", "eli"],
+  ["bea", "finn"],
+  ["bea", "gia"],
+  ["bea", "hal"],
+  ["bea", "bot-promo"],
+  ["cam", "finn"],
+  ["cam", "ivy"],
+  ["cam", "hal"],
+  ["dev", "gia"],
+  ["dev", "kai"],
+  ["dev", "lio"],
+  ["eli", "finn"],
+  ["eli", "kai"],
+  ["eli", "mia"],
+  ["zoe", "finn"],
+  ["yan", "gia"],
+  ["uma", "kai"],
+  ["mia", "nia"],
+  ["kai", "nia"],
+  ["finn", "omar"],
+  ["gia", "omar"],
+  ["bot-promo", "spam-target"]
+] as const
+
+const FEED_RANKING_FIXTURES = [
+  ["morning", 1, "finn"],
+  ["morning", 2, "gia"],
+  ["morning", 3, "hal"],
+  ["morning", 4, "ivy"],
+  ["morning", 5, "kai"],
+  ["evening", 1, "gia"],
+  ["evening", 2, "finn"],
+  ["evening", 3, "mia"],
+  ["evening", 4, "kai"],
+  ["evening", 5, "nia"]
+] as const
+
+const withRuntime = <A>(use: (runtime: DemoRuntime) => Effect.Effect<A, DemoError>) =>
+  SqliteGraphBun.withBunGraphRuntime(use, {
+    libSqlitePath: embeddedLibSqlitePath,
+    graphExtensionPath: embeddedGraphExtPath,
+    initSymbol: graphExtInitSymbol
   })
-}
 
-const configureCustomSqlite = (artifactPath: string) =>
-  Effect.try({
-    try: () => {
-      Database.setCustomSQLite(artifactPath)
-    },
-    catch: (cause) => new ArtifactError({ artifact: "libsqlite", phase: "configure", path: artifactPath, cause })
-  })
-
-const acquireRuntime = Effect.gen(function*() {
-  const resolvedLibSqlitePath = yield* resolveEmbeddedArtifact(embeddedLibSqlitePath, "libsqlite")
-  yield* configureCustomSqlite(resolvedLibSqlitePath)
-
-  const db = yield* Effect.try({
-    try: () => new Database(":memory:"),
-    catch: (cause) => new ArtifactError({ artifact: "libsqlite", phase: "open", path: resolvedLibSqlitePath, cause })
-  })
-
-  const extensionPath = yield* resolveEmbeddedArtifact(embeddedGraphExtPath, "graph-extension")
-  const extensionLoadPath = extensionPath.replace(/\.(?:dylib|so|dll)$/i, "")
-
-  yield* Effect.try({
-    try: () => db.loadExtension(extensionLoadPath, graphExtInitSymbol),
-    catch: (cause) =>
-      new ArtifactError({
-        artifact: "graph-extension",
-        phase: "load-extension",
-        path: extensionPath,
-        cause
-      })
-  })
+const createScenarioContext = (runtime: DemoRuntime) => {
+  const statementCount = { value: 0 }
 
   // Goal: get a typed API for graph operations immediately after extension load.
   // Obstacle: raw SQL calls plus manual payload parsing are repetitive and easy to drift.
   // Why this resolves it: createGraphExtClient encapsulates SQL shape + decode contracts once.
-  const graph = SqliteGraph.createGraphExtClient(db)
-  const version = yield* graph.version
-
-  return {
-    db,
-    extensionPath,
-    version
-  }
-})
-
-const releaseRuntime = (runtime: DemoRuntime) =>
-  Effect.sync(() => {
-    runtime.db.close()
-  })
-
-const withRuntime = <A>(use: (runtime: DemoRuntime) => Effect.Effect<A, DemoError>) =>
-  Effect.acquireUseRelease(acquireRuntime, use, releaseRuntime)
-
-const createScenarioContext = (runtime: DemoRuntime) => {
-  const statementCount = { value: 0 }
   const graph = SqliteGraph.createGraphExtClient(runtime.db, {
     onStatement: () => {
       statementCount.value += 1
@@ -167,39 +149,60 @@ const runScenario = <R>(
     console.log(`elapsedMs=${elapsedMs}`)
   })
 
-const seedSocialGraph = Effect.fn(function*(context: ScenarioContext) {
-  yield* context.sql("DROP TABLE IF EXISTS social_edges", () => {
-    context.db.run("DROP TABLE IF EXISTS social_edges")
-  })
+const runSqlStatements = Effect.fn(function*(
+  context: ScenarioContext,
+  statements: ReadonlyArray<{
+    readonly label: string
+    readonly sql: string
+  }>
+) {
+  yield* Effect.forEach(statements, (statement) =>
+    context.sql(statement.label, () => {
+      context.db.run(statement.sql)
+    }))
+})
 
-  yield* context.sql("CREATE TABLE social_edges + indexes", () => {
-    context.db.run(
-      "CREATE TABLE social_edges(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER); CREATE INDEX social_edges_src_type ON social_edges(src, edge_type); CREATE INDEX social_edges_dst_type ON social_edges(dst, edge_type)"
-    )
-  })
+const seedSocialGraph = Effect.fn(function*(context: ScenarioContext) {
+  yield* runSqlStatements(context, [
+    { label: "DROP TABLE IF EXISTS social_edges", sql: `DROP TABLE IF EXISTS ${SOCIAL_EDGE_TABLE}` },
+    {
+      label: "CREATE TABLE social_edges",
+      sql:
+        `CREATE TABLE ${SOCIAL_EDGE_TABLE}(src TEXT NOT NULL, dst TEXT NOT NULL, edge_type TEXT NOT NULL, deleted_at INTEGER)`
+    },
+    {
+      label: "CREATE INDEX social_edges_src_type",
+      sql: `CREATE INDEX social_edges_src_type ON ${SOCIAL_EDGE_TABLE}(src, edge_type)`
+    },
+    {
+      label: "CREATE INDEX social_edges_dst_type",
+      sql: `CREATE INDEX social_edges_dst_type ON ${SOCIAL_EDGE_TABLE}(dst, edge_type)`
+    }
+  ])
 
   yield* context.sql("INSERT social graph fixtures", () => {
-    context.db.run(
-      "INSERT INTO social_edges(src, dst, edge_type, deleted_at) VALUES ('ava','bea','follows',NULL), ('ava','cam','follows',NULL), ('ava','dev','follows',NULL), ('ava','bot-zed','follows',NULL), ('ben','bea','follows',NULL), ('ben','cam','follows',NULL), ('ben','eli','follows',NULL), ('bea','finn','follows',NULL), ('bea','gia','follows',NULL), ('bea','hal','follows',NULL), ('bea','bot-promo','follows',NULL), ('cam','finn','follows',NULL), ('cam','ivy','follows',NULL), ('cam','hal','follows',NULL), ('dev','gia','follows',NULL), ('dev','kai','follows',NULL), ('dev','lio','follows',NULL), ('eli','finn','follows',NULL), ('eli','kai','follows',NULL), ('eli','mia','follows',NULL), ('zoe','finn','follows',NULL), ('yan','gia','follows',NULL), ('uma','kai','follows',NULL), ('mia','nia','follows',NULL), ('kai','nia','follows',NULL), ('finn','omar','follows',NULL), ('gia','omar','follows',NULL), ('bot-promo','spam-target','follows',NULL)"
-    )
+    const placeholders = SOCIAL_EDGE_FIXTURES.map(() => "(?, ?, ?, NULL)").join(", ")
+    const bindings = SOCIAL_EDGE_FIXTURES.flatMap(([src, dst]) => [src, dst, SOCIAL_EDGE_TYPE])
+    const insertSql = `INSERT INTO ${SOCIAL_EDGE_TABLE}(src, dst, edge_type, deleted_at) VALUES ${placeholders}`
+    context.db.query(insertSql).run(...bindings)
   })
 })
 
 const seedFeedRankings = Effect.fn(function*(context: ScenarioContext) {
-  yield* context.sql("DROP TABLE IF EXISTS creator_feed_rankings", () => {
-    context.db.run("DROP TABLE IF EXISTS creator_feed_rankings")
-  })
-
-  yield* context.sql("CREATE TABLE creator_feed_rankings", () => {
-    context.db.run(
-      "CREATE TABLE creator_feed_rankings(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)"
-    )
-  })
+  yield* runSqlStatements(context, [
+    { label: "DROP TABLE IF EXISTS creator_feed_rankings", sql: `DROP TABLE IF EXISTS ${CREATOR_RANKINGS_TABLE}` },
+    {
+      label: "CREATE TABLE creator_feed_rankings",
+      sql:
+        `CREATE TABLE ${CREATOR_RANKINGS_TABLE}(serp_id TEXT NOT NULL, rank INTEGER NOT NULL, url_or_entity_id TEXT NOT NULL)`
+    }
+  ])
 
   yield* context.sql("INSERT creator feed snapshots", () => {
-    context.db.run(
-      "INSERT INTO creator_feed_rankings(serp_id, rank, url_or_entity_id) VALUES ('morning',1,'finn'), ('morning',2,'gia'), ('morning',3,'hal'), ('morning',4,'ivy'), ('morning',5,'kai'), ('evening',1,'gia'), ('evening',2,'finn'), ('evening',3,'mia'), ('evening',4,'kai'), ('evening',5,'nia')"
-    )
+    const placeholders = FEED_RANKING_FIXTURES.map(() => "(?, ?, ?)").join(", ")
+    const bindings = FEED_RANKING_FIXTURES.flatMap(([serpId, rank, itemId]) => [serpId, rank, itemId])
+    const insertSql = `INSERT INTO ${CREATOR_RANKINGS_TABLE}(serp_id, rank, url_or_entity_id) VALUES ${placeholders}`
+    context.db.query(insertSql).run(...bindings)
   })
 })
 
@@ -213,6 +216,45 @@ const countPlaceholders = (sql: string) => {
 
 const buildPlaceholders = (count: number) => Array.from({ length: count }, () => "?").join(", ")
 
+const buildFirstHopSql = (edgeTable: string, seedPlaceholderCount: number) => {
+  const seedPlaceholders = buildPlaceholders(seedPlaceholderCount)
+  return [
+    "SELECT DISTINCT dst AS target",
+    `FROM ${edgeTable}`,
+    "WHERE edge_type = ?",
+    "  AND deleted_at IS NULL",
+    `  AND src IN (${seedPlaceholders})`,
+    "  AND dst NOT LIKE 'bot-%'",
+    "ORDER BY dst"
+  ].join("\n")
+}
+
+const buildSecondHopSql = (edgeTable: string, firstHopPlaceholderCount: number) => {
+  const firstHopPlaceholders = buildPlaceholders(firstHopPlaceholderCount)
+  return [
+    "SELECT e2.dst AS candidate, COUNT(DISTINCT e1.src) AS support_count",
+    `FROM ${edgeTable} e1`,
+    `JOIN ${edgeTable} e2 ON e2.src = e1.dst`,
+    "WHERE e1.edge_type = ?",
+    "  AND e2.edge_type = ?",
+    `  AND e1.src IN (${firstHopPlaceholders})`,
+    "GROUP BY e2.dst",
+    "ORDER BY e2.dst"
+  ].join("\n")
+}
+
+const buildInboundSql = (edgeTable: string, candidatePlaceholderCount: number) => {
+  const candidatePlaceholders = buildPlaceholders(candidatePlaceholderCount)
+  return [
+    "SELECT dst AS candidate, src AS connector",
+    `FROM ${edgeTable}`,
+    "WHERE edge_type = ?",
+    "  AND deleted_at IS NULL",
+    `  AND dst IN (${candidatePlaceholders})`,
+    "ORDER BY dst, src"
+  ].join("\n")
+}
+
 const runNaiveTwoHopWithoutExtension = Effect.fn(function*(context: ScenarioContext, input: {
   readonly edgeTable: string
   readonly hop1EdgeType: string
@@ -220,42 +262,34 @@ const runNaiveTwoHopWithoutExtension = Effect.fn(function*(context: ScenarioCont
   readonly seedIds: ReadonlyArray<string>
   readonly excludeIds: ReadonlyArray<string>
 }) {
-  const seedPlaceholders = buildPlaceholders(input.seedIds.length)
-  const excludePlaceholders = buildPlaceholders(input.excludeIds.length)
+  const firstHopSql = buildFirstHopSql(input.edgeTable, input.seedIds.length)
+  const firstHopRows = yield* context.sql(
+    "raw first-hop targets",
+    () => context.db.query(firstHopSql).all(input.hop1EdgeType, ...input.seedIds)
+  )
 
-  const sql = [
-    "WITH first_hop AS (",
-    `  SELECT DISTINCT e1.dst AS mid FROM ${input.edgeTable} e1`,
-    `  WHERE e1.edge_type = ? AND e1.deleted_at IS NULL AND e1.src IN (${seedPlaceholders}) AND e1.dst NOT LIKE 'bot-%'`,
-    "),",
-    "second_hop AS (",
-    `  SELECT e2.dst AS candidate, COUNT(DISTINCT e2.src) AS support_count FROM ${input.edgeTable} e2`,
-    "  JOIN first_hop fh ON fh.mid = e2.src",
-    "  WHERE e2.edge_type = ? AND e2.deleted_at IS NULL",
-    "  GROUP BY e2.dst",
-    "),",
-    "filtered AS (",
-    "  SELECT candidate, support_count FROM second_hop",
-    "  WHERE candidate NOT IN (SELECT mid FROM first_hop)",
-    `    AND candidate NOT IN (${seedPlaceholders})`,
-    `    AND candidate NOT IN (${excludePlaceholders})`,
-    ")",
-    "SELECT candidate, support_count FROM filtered ORDER BY support_count DESC, candidate ASC"
-  ].join("\n")
-
-  const rows = yield* context.sql("raw CTE recommendation pipeline", () => {
-    const bindings = [
-      input.hop1EdgeType,
-      ...input.seedIds,
-      input.hop2EdgeType,
-      ...input.seedIds,
-      ...input.excludeIds
-    ] as const
-
-    return context.db.query(sql).all(...bindings)
+  const firstHopTargets = firstHopRows.flatMap((row) => {
+    if (row == null || typeof row !== "object") return []
+    const target = Reflect.get(row, "target")
+    return typeof target === "string" ? [target] : []
   })
 
-  const normalized = rows.flatMap((row) => {
+  if (firstHopTargets.length === 0) {
+    return {
+      rows: [],
+      sqlCharacters: firstHopSql.length,
+      placeholderCount: countPlaceholders(firstHopSql),
+      statementCount: 1
+    }
+  }
+
+  const secondHopSql = buildSecondHopSql(input.edgeTable, firstHopTargets.length)
+  const secondHopRows = yield* context.sql(
+    "raw second-hop counts",
+    () => context.db.query(secondHopSql).all(input.hop1EdgeType, input.hop2EdgeType, ...firstHopTargets)
+  )
+
+  const secondHopCounts = secondHopRows.flatMap((row) => {
     if (row == null || typeof row !== "object") return []
     const candidate = Reflect.get(row, "candidate")
     const supportCount = Reflect.get(row, "support_count")
@@ -264,49 +298,123 @@ const runNaiveTwoHopWithoutExtension = Effect.fn(function*(context: ScenarioCont
     return [{ candidate, supportCount }]
   })
 
+  const excluded = new Set([...input.seedIds, ...firstHopTargets, ...input.excludeIds])
+  const candidateRows = secondHopCounts.filter((row) => !excluded.has(row.candidate))
+  const deterministicCandidates = Array.from(new Set(candidateRows.map((row) => row.candidate))).sort((a, b) =>
+    a.localeCompare(b)
+  )
+  const deterministicOrdByCandidate = new Map(deterministicCandidates.map((candidate, index) => [candidate, index + 1]))
+  const supportByCandidate = new Map(candidateRows.map((row) => [row.candidate, row.supportCount]))
+
+  let inboundSqlCharacters = 0
+  let inboundSqlPlaceholderCount = 0
+  let inboundStatementCount = 0
+  const connectorsByCandidate = new Map<string, Array<string>>()
+
+  if (deterministicCandidates.length > 0) {
+    const inboundSql = buildInboundSql(input.edgeTable, deterministicCandidates.length)
+    inboundSqlCharacters = inboundSql.length
+    inboundSqlPlaceholderCount = countPlaceholders(inboundSql)
+    inboundStatementCount = 1
+
+    const inboundRows = yield* context.sql(
+      "raw inbound connectors",
+      () => context.db.query(inboundSql).all(input.hop2EdgeType, ...deterministicCandidates)
+    )
+
+    for (const row of inboundRows) {
+      if (row == null || typeof row !== "object") continue
+      const candidate = Reflect.get(row, "candidate")
+      const connector = Reflect.get(row, "connector")
+      if (typeof candidate !== "string" || typeof connector !== "string") continue
+      const connectors = connectorsByCandidate.get(candidate) ?? []
+      connectors.push(connector)
+      connectorsByCandidate.set(candidate, connectors)
+    }
+  }
+
+  const rows = deterministicCandidates
+    .map((candidate) => {
+      const connectors = Array.from(new Set(connectorsByCandidate.get(candidate) ?? [])).sort((a, b) =>
+        a.localeCompare(b)
+      )
+      return {
+        candidate,
+        deterministicOrd: deterministicOrdByCandidate.get(candidate) ?? 0,
+        supportCount: supportByCandidate.get(candidate) ?? 0,
+        via: connectors.join(", ")
+      }
+    })
+    .sort((left, right) => {
+      if (left.supportCount !== right.supportCount) {
+        return right.supportCount - left.supportCount
+      }
+      return left.candidate.localeCompare(right.candidate)
+    })
+    .map((row, index) => ({ rank: index + 1, ...row }))
+
   return {
-    rows: normalized,
-    sqlCharacters: sql.length,
-    placeholderCount: countPlaceholders(sql)
+    rows,
+    sqlCharacters: firstHopSql.length + secondHopSql.length + inboundSqlCharacters,
+    placeholderCount: countPlaceholders(firstHopSql) + countPlaceholders(secondHopSql) + inboundSqlPlaceholderCount,
+    statementCount: 2 + inboundStatementCount
   }
 })
 
 const recommendationDxScenario = Effect.fn(function*(context: ScenarioContext) {
   yield* seedSocialGraph(context)
 
+  const recommendationInput = {
+    edgeTable: SOCIAL_EDGE_TABLE,
+    hop1EdgeType: SOCIAL_EDGE_TYPE,
+    hop2EdgeType: SOCIAL_EDGE_TYPE,
+    seedIds: SOCIAL_SEED_IDS,
+    excludeIds: SOCIAL_EXCLUDE_IDS
+  }
+
   // Goal: produce social recommendations from a seed cohort in one readable step.
   // Obstacle: the baseline needs a long CTE pipeline and brittle placeholder bookkeeping.
   // Why this resolves it: recommendByTwoHop composes the hard parts with deterministic idset semantics.
-  const extension = yield* context.graph.recommendByTwoHop({
-    edgeTable: "social_edges",
-    hop1EdgeType: "follows",
-    hop2EdgeType: "follows",
-    seedIds: ["ava", "ben"],
-    excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
-  })
+  const extension = yield* context.graph.recommendByTwoHop(recommendationInput)
 
-  const baseline = yield* runNaiveTwoHopWithoutExtension(context, {
-    edgeTable: "social_edges",
-    hop1EdgeType: "follows",
-    hop2EdgeType: "follows",
-    seedIds: ["ava", "ben"],
-    excludeIds: ["bot-promo", "bot-zed", "hal", "spam-target"]
-  })
+  const baseline = yield* runNaiveTwoHopWithoutExtension(context, recommendationInput)
 
   const extensionRows = extension.rows.map((row) => ({
     section: "with-extension-row",
     ...row
   }))
 
-  const baselineRows = baseline.rows.map((row, index) => ({
+  const baselineRows = baseline.rows.map((row) => ({
     section: "without-extension-row",
-    rank: index + 1,
-    candidate: row.candidate,
-    supportCount: row.supportCount
+    ...row
   }))
 
   const extensionCandidates = extension.rows.map((row) => row.candidate).join(", ")
   const baselineCandidates = baseline.rows.map((row) => row.candidate).join(", ")
+  const parityMismatch: Array<{
+    readonly index: number
+    readonly extension: SqliteGraph.TwoHopRecommendationRow
+    readonly baseline: SqliteGraph.TwoHopRecommendationRow | null
+  }> = []
+
+  for (const [index, row] of extension.rows.entries()) {
+    const baselineRow = baseline.rows[index]
+    if (baselineRow == null) {
+      parityMismatch.push({ index, extension: row, baseline: null })
+      continue
+    }
+    if (
+      row.rank !== baselineRow.rank ||
+      row.deterministicOrd !== baselineRow.deterministicOrd ||
+      row.candidate !== baselineRow.candidate ||
+      row.supportCount !== baselineRow.supportCount ||
+      row.via !== baselineRow.via
+    ) {
+      parityMismatch.push({ index, extension: row, baseline: baselineRow })
+    }
+  }
+  const parity = parityMismatch.length === 0 && extension.rows.length === baseline.rows.length
+  const parityIndicator = parity ? "PARITY_CONFIRMED" : "MISMATCH_DETECTED"
 
   return [
     {
@@ -319,16 +427,26 @@ const recommendationDxScenario = Effect.fn(function*(context: ScenarioContext) {
       section: "without-extension-summary",
       sql_characters: baseline.sqlCharacters,
       placeholders: baseline.placeholderCount,
-      manual_cte: "first_hop + second_hop + filtered"
+      sql_statements: baseline.statementCount,
+      raw_pipeline: "first_hop_targets + second_hop_counts + inbound_connectors"
     },
     ...baselineRows,
+    {
+      section: "parity-check",
+      indicator: parityIndicator,
+      baseline_row_count: baseline.rows.length,
+      extension_row_count: extension.rows.length,
+      mismatch_preview: parity ? "none" : JSON.stringify(parityMismatch[0])
+    },
     {
       section: "opinionated-verdict",
       why_awesome: "extension API gives typed rows, deterministic idset semantics, and less room for SQL footguns",
       why_raw_sql_hurts: "raw CTE orchestration pushes graph logic + placeholder bookkeeping into app code",
       extension_candidates: extensionCandidates,
       raw_sql_candidates: baselineCandidates,
-      point: "when raw SQL drift sneaks in, you can ship the wrong ranking without realizing it"
+      point: parity
+        ? "both implementations match, and the extension keeps that parity with cleaner call-site ergonomics"
+        : "baseline and extension diverged, so the mismatch is explicit instead of silently assumed"
     }
   ]
 })
@@ -339,24 +457,24 @@ const cohortLensScenario = Effect.fn(function*(context: ScenarioContext) {
   // Goal: represent a dynamic cohort as a safe SQL expression.
   // Obstacle: hand-building IN clauses is noisy and quote/ordering sensitive.
   // Why this resolves it: idsetFromValues builds deterministic, parameterized idset expressions.
-  const cohortSet = SqliteGraph.idsetFromValues(["ava", "ben", "eli"])
+  const cohortSet = SqliteGraph.idsetFromValues(COHORT_IDS)
 
   // Goal: inspect each account's outbound neighborhood as a grouped set.
   // Obstacle: status quo requires custom SQL aggregation plus custom payload decoding in app code.
   // Why this resolves it: graphOutIdset returns typed grouped rows through one client call.
   const outbound = yield* context.graph.graphOutIdset({
-    edgeTable: "social_edges",
-    edgeType: "follows",
+    edgeTable: SOCIAL_EDGE_TABLE,
+    edgeType: SOCIAL_EDGE_TYPE,
     srcSet: cohortSet
   })
 
-  const spotlightSet = SqliteGraph.idsetFromValues(["finn", "gia", "kai", "mia", "nia", "omar"])
+  const spotlightSet = SqliteGraph.idsetFromValues(SPOTLIGHT_IDS)
   // Goal: view inbound supporters for spotlight accounts.
   // Obstacle: reverse traversal normally duplicates query shape and parsing logic.
   // Why this resolves it: graphInIdset mirrors the outbound API with typed decoded output.
   const inbound = yield* context.graph.graphInIdset({
-    edgeTable: "social_edges",
-    edgeType: "follows",
+    edgeTable: SOCIAL_EDGE_TABLE,
+    edgeType: SOCIAL_EDGE_TYPE,
     dstSet: spotlightSet
   })
 
@@ -409,7 +527,7 @@ const creatorMomentumScenario = Effect.fn(function*(context: ScenarioContext) {
   const rows = yield* context.graph.rankedDiff({
     oldSerpId: "morning",
     newSerpId: "evening",
-    table: "creator_feed_rankings"
+    table: CREATOR_RANKINGS_TABLE
   })
 
   return rows.map((row) => ({
@@ -423,7 +541,7 @@ const creatorMomentumScenario = Effect.fn(function*(context: ScenarioContext) {
 
 const program = withRuntime((runtime) =>
   Effect.gen(function*() {
-    console.log("Loaded graph extension:", runtime.extensionPath)
+    console.log("Loaded graph extension:", runtime.graphExtensionPath)
     console.log("Init symbol:", graphExtInitSymbol)
     console.log("Graph extension version:", runtime.version)
 

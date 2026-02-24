@@ -22,6 +22,7 @@
     "./client": "./src/client.ts",
     "./schema": "./src/schema.ts",
     "./idset": "./src/idset.ts",
+    "./bun": "./src/bun.ts",
     "./paths": "./src/paths.ts",
     "./platform": "./src/platform.ts",
     "./version": "./src/version.ts",

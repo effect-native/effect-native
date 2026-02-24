@@ -52,7 +52,15 @@ Captured: 2026-02-24
   - elapsed milliseconds per scenario
 - Must load `libsqlite` from embedded artifact or on-disk fallback.
 - Must load extension with init symbol `sqlite3_graph_ext_init`.
-- Must use Effect v4 typed error models and layers for DB, extension loading, and profiling.
+- Must use Effect v4 typed error models and explicit runtime boundaries for DB, extension loading, and profiling.
+
+### Demo DX clarity contract
+
+- Bootstrap path is one obvious ritual: resolve artifacts, configure SQLite, open DB, and load extension in a single runtime acquisition flow (no duplicated inline bootstrap sequences).
+- DX comparison semantics stay fixed: one shared scenario input drives both extension and baseline runs, and output sections use explicit `with-extension-*` and `without-extension-*` labels.
+- Effect style is consistent: scenario functions use one idiom (`Effect.fn`) and orchestration uses `Effect.gen`; avoid mixed per-scenario styles.
+- Statement counting is centralized in one profiling surface (`onStatement` hook + SQL wrapper), not scattered manual increments.
+- Seed data is readable: avoid giant inline SQL walls and repeated fixture literals; prefer named constants/fixtures reused by scenarios.
 
 ## Performance gates
 
@@ -99,7 +107,22 @@ rg -n "sqlite3_graph_ext_init|graph_ext_version|idset_empty|graph_two_hop_counts
 
 ```bash
 test -f packages/sqlite-graph-ext-demo/src/demo.ts
-rg -n "setCustomSQLite|loadExtension|graph_ext_version|statement|two-hop|ranked_diff|idset_" packages/sqlite-graph-ext-demo/src/demo.ts
+rg -n "withBunGraphRuntime|graph_ext_version|statement|two-hop|ranked_diff|idset_|recommendByTwoHop" packages/sqlite-graph-ext-demo/src/demo.ts
+```
+
+### Gate 4B: Demo DX clarity contract
+
+```bash
+rg -n "@effect-native/sqlite-graph-ext/bun|withBunGraphRuntime" packages/sqlite-graph-ext-demo/src/demo.ts
+node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');const count=(re)=>((src.match(re)||[]).length);if(count(/\\bsetCustomSQLite\\s*\\(/g)!==0)process.exit(1);if(count(/\\bloadExtension\\s*\\(/g)!==0)process.exit(1)"
+rg -n "const recommendationInput =" packages/sqlite-graph-ext-demo/src/demo.ts
+rg -n "recommendByTwoHop\(recommendationInput\)|runNaiveTwoHopWithoutExtension\(context, recommendationInput\)" packages/sqlite-graph-ext-demo/src/demo.ts
+node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');if(!src.includes('with-extension-summary')||!src.includes('without-extension-summary')||!src.includes('parity-check'))process.exit(1)"
+node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');if(!src.includes('PARITY_CONFIRMED')||!src.includes('MISMATCH_DETECTED'))process.exit(1)"
+node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');const scenarioDefs=(src.match(/const\\s+\\w+Scenario\\s*=\\s*Effect\\.fn\\(/g)||[]).length;if(scenarioDefs<3)process.exit(1);if(/const\\s+\\w+Scenario\\s*=\\s*Effect\\.gen\\(/.test(src))process.exit(1)"
+node -e "const fs=require('fs');const src=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8');const hits=(src.match(/statementCount\\.value\\s*\\+=\\s*1/g)||[]).length;if(hits!==2)process.exit(1)"
+rg -n "SOCIAL_EDGE_TABLE|SOCIAL_EDGE_TYPE|SOCIAL_EDGE_FIXTURES|FEED_RANKING_FIXTURES" packages/sqlite-graph-ext-demo/src/demo.ts
+node -e "const fs=require('fs');const lines=fs.readFileSync('packages/sqlite-graph-ext-demo/src/demo.ts','utf8').split(/\\r?\\n/);const tooWideInsert=lines.some((line)=>line.includes('INSERT INTO')&&line.length>220);if(tooWideInsert)process.exit(1)"
 ```
 
 ### Gate 5: Cross-platform and optional feature hardening
