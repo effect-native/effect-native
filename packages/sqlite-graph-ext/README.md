@@ -15,7 +15,7 @@ Zig extension entrypoint scaffolding.
 | --- | --- |
 | init symbol | exported |
 | `graph_ext_version()` | exported |
-| idset ops | scaffold stub |
+| idset ops | partial scalar implementation |
 | traversal ops | scaffold stub |
 | demo | tracked in sibling package |
 
