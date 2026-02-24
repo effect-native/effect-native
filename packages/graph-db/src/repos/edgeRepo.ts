@@ -96,6 +96,22 @@ const decodePropsJson = (propsJson: string | null): Effect.Effect<unknown, Graph
   })
 }
 
+const encodePropsJson = (props: unknown | undefined): Effect.Effect<string | null, GraphInvariantError> => {
+  if (props === undefined) {
+    return Effect.succeed(null)
+  }
+
+  return Effect.try({
+    try: (): string | undefined => JSON.stringify(props),
+    catch: (cause) =>
+      new GraphInvariantError({
+        context: "edge.encode",
+        detail: "Unable to serialize edge props to JSON",
+        cause
+      })
+  }).pipe(Effect.map((encoded) => encoded ?? null))
+}
+
 const toEdge = (row: Schema.Schema.Type<typeof edgeRowSchema>): Effect.Effect<GraphEdge, GraphInvariantError> =>
   decodePropsJson(row.props_json).pipe(
     Effect.map((props) => ({
@@ -139,8 +155,7 @@ export const makeEdgeRepository = ({ spec, sql }: EdgeRepositoryOptions): EdgeRe
 
   const put: EdgeRepository["put"] = (edgeType, src, dst, props) =>
     Effect.gen(function*() {
-      const encodedProps = props === undefined ? null : JSON.stringify(props)
-      const propsJson = encodedProps === undefined ? null : encodedProps
+      const propsJson = yield* encodePropsJson(props)
       const id = deterministicEdgeId(edgeType, src, dst, propsJson)
 
       const insertEdge = SqlSchema.void({

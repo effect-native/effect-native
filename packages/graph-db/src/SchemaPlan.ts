@@ -35,6 +35,7 @@ export type IncompatibleReason =
   | "NotNullMismatch"
   | "PrimaryKeyMismatch"
   | "IndexShapeMismatch"
+  | "IndexNameCollision"
   | "UniqueIndexForbiddenInCrr"
 
 export interface SchemaIncompatible {

@@ -43,6 +43,7 @@ interface ExistingTableState {
   readonly exists: boolean
   readonly columns: ReadonlyMap<string, ExistingColumn>
   readonly indexes: ReadonlyMap<string, ExistingIndex>
+  readonly schemaIndexOwners: ReadonlyMap<string, string>
 }
 
 interface PragmaTableInfoRow {
@@ -61,6 +62,11 @@ interface PragmaIndexListRow {
 interface PragmaIndexInfoRow {
   readonly seqno: unknown
   readonly name: unknown
+}
+
+interface SqliteMasterIndexRow {
+  readonly name: unknown
+  readonly tbl_name: unknown
 }
 
 export interface GraphDialectSqliteOptions {
@@ -129,6 +135,27 @@ const readExistingState = (
   Effect.gen(function*() {
     const sql = yield* SqlClient.SqlClient
     const qualified = parseQualifiedTableName(table.name)
+    const schemaIndexOwnersQuery = `SELECT name, tbl_name FROM ${
+      quoteIdentifier(qualified.schema)
+    }.sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_autoindex%'`
+
+    const schemaIndexOwnersRows = yield* sql.unsafe<SqliteMasterIndexRow>(schemaIndexOwnersQuery).pipe(
+      Effect.mapError((cause) =>
+        dialectError("read-schema-indexes", table.name, "Failed to read sqlite_master index info", cause)
+      )
+    )
+
+    const schemaIndexOwners = new Map<string, string>()
+    for (const row of schemaIndexOwnersRows) {
+      const indexName = readString(isObject(row) ? row.name : undefined)
+      const ownerTable = readString(isObject(row) ? row.tbl_name : undefined)
+
+      if (indexName === null || ownerTable === null) {
+        continue
+      }
+
+      schemaIndexOwners.set(indexName, ownerTable)
+    }
 
     const existsQuery = `SELECT name FROM ${
       quoteIdentifier(qualified.schema)
@@ -144,7 +171,8 @@ const readExistingState = (
       return {
         exists: false,
         columns: new Map(),
-        indexes: new Map()
+        indexes: new Map(),
+        schemaIndexOwners
       }
     }
 
@@ -221,7 +249,8 @@ const readExistingState = (
     return {
       exists: true,
       columns,
-      indexes
+      indexes,
+      schemaIndexOwners
     }
   })
 
@@ -281,7 +310,8 @@ const arrayEquals = (left: ReadonlyArray<string>, right: ReadonlyArray<string>):
 
 const compareIndexes = (
   table: TableDef,
-  existingIndexes: ReadonlyMap<string, ExistingIndex>
+  existingIndexes: ReadonlyMap<string, ExistingIndex>,
+  schemaIndexOwners: ReadonlyMap<string, string>
 ): {
   readonly createIndexStatements: ReadonlyArray<string>
   readonly incompatible: ReadonlyArray<SchemaIncompatible>
@@ -289,6 +319,7 @@ const compareIndexes = (
   const createIndexStatements: Array<string> = []
   const incompatible: Array<SchemaIncompatible> = []
   const desiredIndexes = table.indexes ?? []
+  const qualified = parseQualifiedTableName(table.name)
 
   for (const index of desiredIndexes) {
     if (table.replication === "crr" && index.unique === true) {
@@ -302,6 +333,25 @@ const compareIndexes = (
 
     const existing = existingIndexes.get(index.name)
     if (!existing) {
+      const ownerTable = schemaIndexOwners.get(index.name)
+      if (ownerTable !== undefined && ownerTable !== qualified.table) {
+        incompatible.push({
+          tableName: table.name,
+          reason: "IndexNameCollision",
+          detail: `Index ${index.name} already exists on table ${ownerTable} in schema ${qualified.schema}`
+        })
+        continue
+      }
+
+      if (ownerTable === qualified.table) {
+        incompatible.push({
+          tableName: table.name,
+          reason: "IndexShapeMismatch",
+          detail: `Index ${index.name} exists on ${qualified.table} but could not be validated from PRAGMA index_list`
+        })
+        continue
+      }
+
       createIndexStatements.push(createIndexSql(table.name, index))
       continue
     }
@@ -354,7 +404,7 @@ const planTableWithDefaults = (
     const existing = yield* readExistingState(tableWithDefaults)
 
     if (!existing.exists) {
-      const indexEvaluation = compareIndexes(tableWithDefaults, new Map())
+      const indexEvaluation = compareIndexes(tableWithDefaults, new Map(), existing.schemaIndexOwners)
 
       return {
         table: tableWithDefaults,
@@ -364,7 +414,7 @@ const planTableWithDefaults = (
     }
 
     const columnEvaluation = compareColumns(tableWithDefaults, existing.columns)
-    const indexEvaluation = compareIndexes(tableWithDefaults, existing.indexes)
+    const indexEvaluation = compareIndexes(tableWithDefaults, existing.indexes, existing.schemaIndexOwners)
 
     const alterStatements = [...columnEvaluation.alterStatements]
     const wrappedAlterStatements = replication === "crr" && alterStatements.length > 0

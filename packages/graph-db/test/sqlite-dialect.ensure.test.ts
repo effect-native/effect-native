@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect-native/bun-test"
-import { GraphDialectSqlite, makeGraphDb, nodeDef } from "@effect-native/graph-db"
+import { GraphDialectSqlite, GraphEnsureError, makeGraphDb, nodeDef } from "@effect-native/graph-db"
 import * as BunSqlite from "@effect/sql-sqlite-bun"
+import * as Cause from "effect/Cause"
 import * as Effect from "effect/Effect"
 import * as Schema from "effect/Schema"
 import * as SqlClient from "effect/unstable/sql/SqlClient"
@@ -72,6 +73,66 @@ describe("SQLite GraphDialect ensure", () => {
       yield* program.pipe(
         Effect.provide(graphV1.layer),
         Effect.provide(graphV2.layer),
+        Effect.provide(GraphDialectSqlite.layer()),
+        Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))
+      )
+    }))
+
+  it.effect("fails when an index name is already used by a different table in the same schema", () =>
+    Effect.gen(function*() {
+      const userNode = nodeDef({
+        kind: "user",
+        schema: Schema.Struct({
+          id: Schema.String,
+          name: Schema.String
+        }),
+        columns: [
+          { name: "id", sqlType: "TEXT", primaryKey: true, notNull: true },
+          { name: "name", sqlType: "TEXT", notNull: true }
+        ],
+        indexes: [{ name: "name_idx", columns: ["name"] }]
+      })
+
+      const accountNode = nodeDef({
+        kind: "account",
+        schema: Schema.Struct({
+          id: Schema.String,
+          name: Schema.String
+        }),
+        columns: [
+          { name: "id", sqlType: "TEXT", primaryKey: true, notNull: true },
+          { name: "name", sqlType: "TEXT", notNull: true }
+        ],
+        indexes: [{ name: "name_idx", columns: ["name"] }]
+      })
+
+      const graph = makeGraphDb({
+        name: "index-collision",
+        nodes: [userNode, accountNode]
+      })
+
+      const program = Effect.gen(function*() {
+        const db = yield* graph.GraphDb
+        const exit = yield* Effect.exit(db.ensure)
+
+        expect(exit._tag).toBe("Failure")
+
+        if (exit._tag !== "Failure") {
+          return
+        }
+
+        const failReasons = exit.cause.reasons.filter(Cause.isFailReason)
+        const ensureError = failReasons
+          .map((reason) => reason.error)
+          .find((error): error is GraphEnsureError => error instanceof GraphEnsureError)
+
+        expect(ensureError).toBeDefined()
+        expect(ensureError?.reason).toBe("IncompatiblePlan")
+        expect(ensureError?.incompatible?.some((entry) => entry.detail.includes("already exists"))).toBe(true)
+      })
+
+      yield* program.pipe(
+        Effect.provide(graph.layer),
         Effect.provide(GraphDialectSqlite.layer()),
         Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))
       )
