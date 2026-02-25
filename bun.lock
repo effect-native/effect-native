@@ -163,7 +163,7 @@
     },
     "packages/libsqlite": {
       "name": "@effect-native/libsqlite",
-      "version": "4.0.0",
+      "version": "4.50.201",
       "devDependencies": {
         "@effect-native/bun-test": "workspace:*",
       },
@@ -250,7 +250,7 @@
     },
     "packages/sqlite-graph-ext": {
       "name": "@effect-native/sqlite-graph",
-      "version": "4.0.0",
+      "version": "4.0.1-beta.0",
       "devDependencies": {
         "@effect-native/bun-test": "workspace:*",
       },
@@ -263,7 +263,7 @@
     },
     "packages/sqlite-graph-ext-demo": {
       "name": "@effect-native/sqlite-graph-ext-demo",
-      "version": "4.0.0",
+      "version": "4.0.1-beta.0",
       "dependencies": {
         "@effect-native/libcrsql": "workspace:*",
         "@effect-native/libsqlite": "workspace:*",
@@ -509,13 +509,13 @@
 
     "@effect/markdown-toc": ["@effect/markdown-toc@0.1.0", "", { "dependencies": { "concat-stream": "^1.5.2", "diacritics-map": "^0.1.0", "gray-matter": "^3.1.1", "lazy-cache": "^2.0.2", "list-item": "^1.1.1", "markdown-link": "^0.1.1", "minimist": "^1.2.0", "mixin-deep": "^1.1.3", "object.pick": "^1.2.0", "remarkable": "^1.7.1", "repeat-string": "^1.6.1", "strip-color": "^0.1.0" }, "bin": { "markdown-toc": "cli.js" } }, "sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A=="],
 
-    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.12", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.12", "mime": "^4.1.0", "undici": "^7.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.12", "ioredis": "^5.7.0" } }, "sha512-vWrGNYjTmlSYh829uISO0xAREzsmAXL4ZvEQF1gw8nmHlzz9YV6FYPNtXoM5ZgVji+X/zGsygQAxQLCIE5SGQw=="],
+    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.14", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.14", "mime": "^4.1.0", "undici": "^7.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.14", "ioredis": "^5.7.0" } }, "sha512-q+3DIPsetQ+qTJC68KAEy7MnRn+Utx/Voj/DYW+neuxi48rreA6YmTdQYALoV5YZrLhSRYBd+TsJAgkFu1gxCg=="],
 
-    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.12", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.19.0" }, "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-GP6ebikFIVYhhzQE5AV+GGtt/hdpeGpp3YBqfg7MD/6rDdd9Z/k20U5Mpj0X3Izrb+eOmEm8kJ4Trjg3T0qbqw=="],
+    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.14", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.19.0" }, "peerDependencies": { "effect": "^4.0.0-beta.14" } }, "sha512-rkbflXMBJrugRvTzlqAyLbwGunqtrc9Xv9wY3YnpaxovgzGm1+l7FKZCkeBdtkc4wYkS79ygHVmsSUnOeSTf/Q=="],
 
-    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.12", "", { "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-2YCwl/2bxReNjGVQRmXW7CnK3r77t8dxNEvkQBfR0S5Fh7yLV4OCSnybLxz6+TfoJIO7c9NsFC93YhKNtbIC2A=="],
+    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.14", "", { "peerDependencies": { "effect": "^4.0.0-beta.14" } }, "sha512-Fb/ebGy9WN8dEVCsDMJeI8wWfIExjL33KMr3oE7apzNWsYtzwKMo9tS3bFqCHlxpjZkMvegcordWW+ZJEyYa5Q=="],
 
-    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.12", "", { "dependencies": { "better-sqlite3": "^12.6.2" }, "peerDependencies": { "effect": "^4.0.0-beta.12" } }, "sha512-cAbNeMTb4F3K1CKQXqduY/tdHP82gihrhi3LLNAj7ZKvfwkl3pUk5wCH4Vy/DC7XvY61t1jPKycPWVE8wmbWow=="],
+    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.14", "", { "dependencies": { "better-sqlite3": "^12.6.2" }, "peerDependencies": { "effect": "^4.0.0-beta.14" } }, "sha512-YeQ3zIHaFP6vvbyMoEVJG20Xcx7Pf1N5ygUua9KbOU5qaA1Iz5bsQYAaIhVRaoRY3SKvj9mYkBOwH+bYP7jY0A=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 
@@ -897,7 +897,7 @@
 
     "dprint": ["dprint@0.51.1", "", { "optionalDependencies": { "@dprint/darwin-arm64": "0.51.1", "@dprint/darwin-x64": "0.51.1", "@dprint/linux-arm64-glibc": "0.51.1", "@dprint/linux-arm64-musl": "0.51.1", "@dprint/linux-loong64-glibc": "0.51.1", "@dprint/linux-loong64-musl": "0.51.1", "@dprint/linux-riscv64-glibc": "0.51.1", "@dprint/linux-x64-glibc": "0.51.1", "@dprint/linux-x64-musl": "0.51.1", "@dprint/win32-arm64": "0.51.1", "@dprint/win32-x64": "0.51.1" }, "bin": { "dprint": "bin.js" } }, "sha512-CEx+wYARxLAe9o7RCZ77GKae6DF7qjn5Rd98xbWdA3hB4PFBr+kHwLANmNHscNumBAIrCg5ZJj/Kz+OYbJ+GBA=="],
 
-    "effect": ["effect@4.0.0-beta.12", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-sD06m119HGZeKHfuRc1waI4F9F8KwZHkR/kKGxHtKySXdCtiJiB3fjQYiW36Tx8UofME1+KF5DrRRyuNZAzHzw=="],
+    "effect": ["effect@4.0.0-beta.14", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.5.3", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.8", "multipasta": "^0.2.7", "toml": "^3.0.0", "uuid": "^13.0.0", "yaml": "^2.8.2" } }, "sha512-3er8DIukOoOpJc2qCRqejpzBGoUdG1t8pXcvA9blttSP9nxs7Ue6BkOLSQBaq3yIXWUXmL5GPELnDARP5oMbfQ=="],
 
     "effect-native": ["effect-native@workspace:packages/effect-native"],
 
