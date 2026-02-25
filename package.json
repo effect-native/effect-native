@@ -84,11 +84,18 @@
   },
   "pnpm": {
     "overrides": {
+      "@isaacs/brace-expansion@5.0.0": "5.0.1",
       "jws": "^4.0.1",
       "glob": "^11.0.3",
       "eslint-plugin-markdown": "^5.1.0",
       "@types/glob": "npm:@types/web@*",
       "@types/minimatch": "npm:@types/web@*",
+      "minimatch@10.1.1": "10.2.1",
+      "lodash@4.17.21": "4.17.23",
+      "undici@7.16.0": "7.18.2",
+      "ajv@6.12.6": "6.14.0",
+      "ajv@8.17.1": "8.18.0",
+      "diff@8.0.2": "8.0.3",
       "rimraf": "^6.0.1",
       "node-domexception": "npm:noop-package@*"
     },

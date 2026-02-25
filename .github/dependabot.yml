@@ -5,7 +5,27 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 8
+    rebase-strategy: auto
+    commit-message:
+      prefix: "chore"
+      include: scope
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:30"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 8
+    rebase-strategy: auto
+    commit-message:
+      prefix: "ci"
+      include: scope

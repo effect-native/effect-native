@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/examples-tui-testing-library",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Example usage of @effect-native/tui-testing-library demonstrating external consumer patterns",
