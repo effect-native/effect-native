@@ -108,7 +108,7 @@ fn parseSet(allocator: std.mem.Allocator, blob: []const u8) !Set {
 
 fn emitSet(context: ?*c.sqlite3_context, allocator: std.mem.Allocator, set: []const []const u8) void {
   if (set.len == 0) {
-    contextResultText(context, "");
+    contextResultBlob(context, "");
     return;
   }
 
@@ -124,7 +124,7 @@ fn emitSet(context: ?*c.sqlite3_context, allocator: std.mem.Allocator, set: []co
     };
   }
 
-  contextResultText(context, output.items);
+  contextResultBlob(context, output.items);
 }
 
 fn emitError(context: ?*c.sqlite3_context, message: []const u8) void {
@@ -487,6 +487,9 @@ export fn idset_hash(context: ?*c.sqlite3_context, argc: cInt, argv: [*c]?*c.sql
 
   var hasher = std.hash.Wyhash.init(0);
   for (set.items) |entry| {
+    var lengthPrefix: [8]u8 = undefined;
+    std.mem.writeInt(u64, &lengthPrefix, @intCast(entry.len), .little);
+    hasher.update(lengthPrefix[0..]);
     hasher.update(entry);
   }
   const digest = hasher.final();

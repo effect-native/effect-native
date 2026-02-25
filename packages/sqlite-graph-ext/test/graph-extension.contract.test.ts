@@ -99,6 +99,22 @@ describe("graph extension table-shaped contracts are text encoded", () => {
     expect(block).toContain("const ordText = std.fmt.allocPrint(allocator, \"{d}\", .{ord + 1})")
   })
 
+  it("keeps idset combinator outputs encoded as blobs", () => {
+    const emitSetStart = source.indexOf("fn emitSet(")
+    const emitSetEnd = source.indexOf("\nfn emitError", emitSetStart)
+    expect(emitSetStart).toBeGreaterThanOrEqual(0)
+    const emitSetBlock = source.slice(emitSetStart, emitSetEnd < 0 ? source.length : emitSetEnd)
+    expect(emitSetBlock).toContain("contextResultBlob(context")
+    expect(emitSetBlock).not.toContain("contextResultText(context")
+  })
+
+  it("distinguishes idset_hash values when ids differ only by boundaries", () => {
+    const block = functionBlock("idset_hash")
+    expect(block).toContain("var lengthPrefix: [8]u8 = undefined")
+    expect(block).toContain("std.mem.writeInt(u64, &lengthPrefix, @intCast(entry.len), .little)")
+    expect(block).toContain("hasher.update(lengthPrefix[0..])")
+  })
+
   it("preserves stable source/destination ordering for traversal outputs", () => {
     const outManyBlock = functionBlock("graph_out_many")
     const inManyBlock = functionBlock("graph_in_many")
