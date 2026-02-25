@@ -58,7 +58,7 @@ jobs:
           clean: false
       - name: Install dependencies
         uses: ./.github/actions/setup
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         if: matrix.runtime == 'Bun'
       - name: Test
         run: |
