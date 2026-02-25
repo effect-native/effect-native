@@ -12,7 +12,7 @@ inputs:
   zig-version:
     description: The version of Zig to install
     required: true
-    default: 0.14.1
+    default: 0.15.2
 
 runs:
   using: composite
