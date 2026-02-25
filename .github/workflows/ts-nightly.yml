@@ -22,7 +22,7 @@ jobs:
       - name: Run type tests
         run: pnpm test-types --target next
       - name: Notify on failed run
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: failure()
         with:
           script: |
