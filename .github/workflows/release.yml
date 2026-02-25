@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Install dependencies
-        uses: effect-native/effect-native/.github/actions/setup@6dbea705cc0cbb0aad92e60785a8179bd8555434
+        uses: effect-native/effect-native/.github/actions/setup@01e7dfb7608cc2e9e6b474a0a5abdd5fa6108ad6
 
       - name: Setup Node for npm Registry
         uses: actions/setup-node@v4
