@@ -16,9 +16,14 @@
     "@effect-native/patterns": "4.0.0",
     "@effect-native/schemas": "4.0.0",
     "ssh-keep": "0.0.1-placeholder",
-    "@effect-native/tui-testing-library": "4.0.0"
+    "@effect-native/tui-testing-library": "4.0.0",
+    "@effect-native/graph-db": "0.1.0",
+    "@effect-native/graph-db-demo": "0.0.0",
+    "@effect-native/sqlite-graph": "4.0.0",
+    "@effect-native/sqlite-graph-ext-demo": "4.0.0"
   },
   "changesets": [
-    "bun-test-beta-release"
+    "bun-test-beta-release",
+    "sqlite-graph-beta-release"
   ]
 }
