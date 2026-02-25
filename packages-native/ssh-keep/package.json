@@ -1,6 +1,6 @@
 {
   "name": "ssh-keep",
-  "version": "0.0.1-placeholder",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "SSH+tmux resilient entrypoint with session picker",

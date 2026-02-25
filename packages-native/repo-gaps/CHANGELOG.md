@@ -1,6 +1,6 @@
-# @effect-native/name-checker
+# @effect-native/repo-gaps
 
-## 0.2.0
+## 0.1.0
 
 ### Minor Changes
 
@@ -9,12 +9,4 @@
 ### Patch Changes
 
 - Updated dependencies []:
-  - @effect-native/fetch-hooks@0.2.0
   - @effect-native/openrouter@0.2.0
-
-## 0.1.1
-
-### Patch Changes
-
-- Updated dependencies [[`12dfc0f`](https://github.com/effect-native/effect-native/commit/12dfc0f3bb86b29ada7947fab807249fe5aa61ad)]:
-  - @effect-native/fetch-hooks@0.1.1

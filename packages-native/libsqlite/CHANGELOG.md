@@ -1,5 +1,11 @@
 # @effect-native/libsqlite
 
+## 3.51.0
+
+### Minor Changes
+
+- Security hardening update: replace vulnerable transitive dependencies in the workspace lockfile (`@isaacs/brace-expansion`, `minimatch`, `lodash`, `undici`, `ajv`, and `diff`) via pnpm overrides.
+
 ## 3.50.203
 
 ### Patch Changes

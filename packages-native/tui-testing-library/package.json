@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/tui-testing-library",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "description": "PTY-based testing utilities for TUI applications with Ghostty WASM emulator",

@@ -1,5 +1,11 @@
 # @effect-native/libcrsql Changelog
 
+## 0.17.0
+
+### Minor Changes
+
+- Security hardening update: replace vulnerable transitive dependencies in the workspace lockfile (`@isaacs/brace-expansion`, `minimatch`, `lodash`, `undici`, `ajv`, and `diff`) via pnpm overrides.
+
 ## 0.16.303
 
 ### Patch Changes

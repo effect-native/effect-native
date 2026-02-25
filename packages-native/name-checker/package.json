@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/name-checker",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "description": "Check domain and npm package name availability with AI suggestions",

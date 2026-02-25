@@ -1,6 +1,6 @@
 {
   "name": "@effect-native/repo-gaps",
-  "version": "0.0.1-placeholder",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "description": "AI-powered spec/implementation gap analysis via git hooks",
