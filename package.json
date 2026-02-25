@@ -74,7 +74,7 @@
     "jscodeshift": "^17.3.0",
     "madge": "^8.0.0",
     "playwright": "^1.55.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "rimraf": "^6.0.1",
     "tstyche": "^4.3.0",
     "tsx": "^4.21.0",
