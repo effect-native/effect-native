@@ -1,0 +1,22 @@
+{
+  "name": "@effect-native/sqlite-graph-ext-demo",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Minimal Bun + Effect v4 demo for sqlite-graph",
+  "homepage": "https://github.com/effect-native/effect-native",
+  "scripts": {
+    "build": "bun build --target=bun --compile --minify src/demo.ts --outfile dist/demo",
+    "run": "bun run src/demo.ts"
+  },
+  "dependencies": {
+    "effect": "beta",
+    "@effect-native/libcrsql": "workspace:*",
+    "@effect-native/libsqlite": "workspace:*",
+    "@effect-native/sqlite-graph": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.9"
+  }
+}

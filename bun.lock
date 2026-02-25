@@ -248,6 +248,32 @@
         "effect": "^4.0.0-beta.0",
       },
     },
+    "packages/sqlite-graph-ext": {
+      "name": "@effect-native/sqlite-graph",
+      "version": "4.0.0",
+      "devDependencies": {
+        "@effect-native/bun-test": "workspace:*",
+      },
+      "peerDependencies": {
+        "effect": "^4.0.0-beta.0",
+      },
+      "optionalPeers": [
+        "effect",
+      ],
+    },
+    "packages/sqlite-graph-ext-demo": {
+      "name": "@effect-native/sqlite-graph-ext-demo",
+      "version": "4.0.0",
+      "dependencies": {
+        "@effect-native/libcrsql": "workspace:*",
+        "@effect-native/libsqlite": "workspace:*",
+        "@effect-native/sqlite-graph": "workspace:*",
+        "effect": "beta",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.9",
+      },
+    },
     "packages/ssh-keep": {
       "name": "ssh-keep",
       "version": "0.0.1-placeholder",
@@ -468,6 +494,10 @@
     "@effect-native/patterns": ["@effect-native/patterns@workspace:packages/patterns"],
 
     "@effect-native/schemas": ["@effect-native/schemas@workspace:packages/schemas"],
+
+    "@effect-native/sqlite-graph": ["@effect-native/sqlite-graph@workspace:packages/sqlite-graph-ext"],
+
+    "@effect-native/sqlite-graph-ext-demo": ["@effect-native/sqlite-graph-ext-demo@workspace:packages/sqlite-graph-ext-demo"],
 
     "@effect-native/tui-testing-library": ["@effect-native/tui-testing-library@workspace:packages/tui-testing-library"],
 
