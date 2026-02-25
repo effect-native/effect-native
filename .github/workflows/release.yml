@@ -123,10 +123,52 @@ jobs:
       - name: Publish packages with OIDC
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
+          PUBLISH_LOG="$RUNNER_TEMP/changeset-publish.log"
+          ORIGINAL_NODE_AUTH_TOKEN="${NODE_AUTH_TOKEN:-}"
+          ORIGINAL_NPM_CONFIG_USERCONFIG="${NPM_CONFIG_USERCONFIG:-}"
+
           unset NODE_AUTH_TOKEN
           unset NPM_CONFIG_USERCONFIG
           export NPM_CONFIG_PROVENANCE=true
           export NPM_CONFIG_LOGLEVEL=verbose
+
+          set +e
+          if [ "$GITHUB_REF_NAME" = "v4" ]; then
+            bun run changeset-publish-beta 2>&1 | tee "$PUBLISH_LOG"
+            PUBLISH_EXIT=${PIPESTATUS[0]}
+          else
+            bun run changeset-publish 2>&1 | tee "$PUBLISH_LOG"
+            PUBLISH_EXIT=${PIPESTATUS[0]}
+          fi
+
+          if [ "$PUBLISH_EXIT" -eq 0 ]; then
+            exit 0
+          fi
+
+          if ! grep -q "OIDC token exchange error - package not found" "$PUBLISH_LOG"; then
+            exit "$PUBLISH_EXIT"
+          fi
+
+          if [ -z "$ORIGINAL_NODE_AUTH_TOKEN" ]; then
+            echo "Trusted publishing failed for an unpublished package and no npm token is available for bootstrap publish."
+            exit "$PUBLISH_EXIT"
+          fi
+
+          echo "OIDC bootstrap fallback: retrying publish with npm token auth for unpublished package."
+
+          export NODE_AUTH_TOKEN="$ORIGINAL_NODE_AUTH_TOKEN"
+          if [ -z "$ORIGINAL_NPM_CONFIG_USERCONFIG" ]; then
+            export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc"
+          else
+            export NPM_CONFIG_USERCONFIG="$ORIGINAL_NPM_CONFIG_USERCONFIG"
+          fi
+
+          cat > "$NPM_CONFIG_USERCONFIG" <<'EOF'
+          //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          always-auth=true
+          EOF
+
+          set -e
           if [ "$GITHUB_REF_NAME" = "v4" ]; then
             bun run changeset-publish-beta
           else
