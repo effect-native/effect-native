@@ -165,6 +165,7 @@ export function createEventRelay(options: EventRelayOptions = {}): EventRelay {
   let _scrollDomContainer: Element | null = null
   let scrollTuiContainer: ScrollContainer | null = null
 
+  // eslint-disable-next-line no-console -- debug logging is opt-in and scoped to relay diagnostics
   const log = debug ? console.log.bind(console, "[EventRelay]") : () => {}
 
   /**

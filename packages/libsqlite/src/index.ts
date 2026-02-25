@@ -51,6 +51,7 @@ function detect(): Platform {
   const a = process.arch
   const logDebug = (message: string) => {
     if (process.env.EFFECT_NATIVE_LIBSQLITE_DEBUG) {
+      // eslint-disable-next-line no-console -- debug output is gated by EFFECT_NATIVE_LIBSQLITE_DEBUG
       console.warn(`[libsqlite] ${message}`)
     }
   }

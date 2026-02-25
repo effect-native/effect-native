@@ -370,6 +370,7 @@ export function createStyleBridge(options: StyleBridgeOptions = {}): StyleBridge
     ...cssVarOverrides
   }
 
+  // eslint-disable-next-line no-console -- debug logging is opt-in and scoped to style diagnostics
   const log = debug ? console.log.bind(console, "[StyleBridge]") : () => {}
 
   return {

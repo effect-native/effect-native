@@ -95,6 +95,7 @@ export function render(ui: ReactElement, options: RenderOptions = {}): RenderRes
     },
 
     debug: (element = container) => {
+      // eslint-disable-next-line no-console -- explicit debug helper for test authors
       console.log(element.outerHTML)
     },
 

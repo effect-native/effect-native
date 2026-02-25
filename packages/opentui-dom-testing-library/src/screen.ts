@@ -51,6 +51,7 @@ function getScreen() {
       queries.findAllByLabelText(body, text, opts),
     // Utilities
     debug: (element?: HTMLElement) => {
+      // eslint-disable-next-line no-console -- explicit debug helper for test authors
       console.log((element ?? body).outerHTML)
     }
   }

@@ -232,6 +232,7 @@ export function enableDevFetchCache(options?: CacheOptions): void {
   globalThis.fetch = cachedFetch as typeof globalThis.fetch
 
   // biome-ignore lint/suspicious/noConsole: Banner display is intentional for dev tooling
+  // eslint-disable-next-line no-console -- one-time dev banner is intentional
   console.info(CACHE_ENABLED_BANNER)
 }
 

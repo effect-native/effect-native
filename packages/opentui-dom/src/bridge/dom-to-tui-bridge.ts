@@ -101,6 +101,7 @@ export function createDOMToTUIBridge(options: DOMToTUIBridgeOptions): DOMToTUIBr
 
   let observer: MutationObserver | null = null
 
+  // eslint-disable-next-line no-console -- debug logging is opt-in and scoped to bridge diagnostics
   const log = debug ? console.log.bind(console, "[DOMToTUIBridge]") : () => {}
 
   /**
