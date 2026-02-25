@@ -9,6 +9,10 @@ inputs:
     description: The version of Bun to install
     required: true
     default: latest
+  zig-version:
+    description: The version of Zig to install
+    required: true
+    default: 0.14.1
 
 runs:
   using: composite
@@ -21,6 +25,10 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
+    - name: Install zig
+      uses: mlugg/setup-zig@v2
+      with:
+        version: ${{ inputs.zig-version }}
     - name: Install dependencies
       shell: bash
       env:
