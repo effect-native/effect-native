@@ -13,7 +13,7 @@
   "publishConfig": {
     "access": "public",
     "provenance": true,
-    "directory": "dist",
+    "directory": ".",
     "linkDirectory": false
   },
   "exports": {
