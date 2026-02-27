@@ -179,25 +179,22 @@ In practice: if host Bun and ABI versions stay aligned, local runs work; use Nix
 
 ## Reference Codebases
 
-The `refs/` directory contains git submodules of the upstream Effect-TS implementations:
+Use the shared reference checkout at `~/Work/refs`, with `effect-smol` as the default reference:
 
-- **refs/effect/** - The full Effect-TS monorepo (`Effect-TS/effect`). This is the canonical source for Effect patterns, APIs, and implementation examples. Use this when you need to understand how Effect itself implements features or when looking for production-grade patterns.
-
-- **refs/effect-smol/** - A streamlined Effect-TS variant (`Effect-TS/effect-smol`) with reduced scope and simplified patterns. Useful for seeing cleaner, more focused examples.
+- **~/Work/refs/effect-smol/** - A streamlined Effect-TS variant (`Effect-TS/effect-smol`) with reduced scope and simplified patterns. Useful for seeing cleaner, more focused examples.
 
 ### Using References
 
 When you need examples or patterns for how to use Effect:
 
-1. **Search refs/effect/** for comprehensive, production implementations
-2. **Search refs/effect-smol/** for simplified, clearer examples
-3. Look at existing code in the reference projects to understand:
+1. **Search ~/Work/refs/effect-smol/** for simplified, clearer examples
+2. Look at existing code in the reference projects to understand:
    - How to use specific Effect APIs correctly
    - Common patterns and best practices
    - Module structure and organization conventions
    - Testing approaches with `@effect-native/bun-test`
 
-**Why these submodules exist:** Agents can search these codebases to find real-world examples of Effect patterns instead of guessing or relying on potentially outdated training data. When unsure how to implement something with Effect, search the refs first.
+**Why these references exist:** Agents can search these codebases to find real-world examples of Effect patterns instead of guessing or relying on potentially outdated training data. When unsure how to implement something with Effect, search `~/Work/refs/effect-smol` first.
 
 ## Git and GitHub Workflow
 
