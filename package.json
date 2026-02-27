@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "ok": "node scripts/ok.mjs",
+    "nix:ok": "nix develop --command bun run ok",
     "check:tsgo": "tsgo -b tsconfig.json",
     "verify-subpaths": "bun scripts/verify-subpaths.mjs",
     "verify-pack-assets": "node scripts/verify-pack-assets.mjs",
