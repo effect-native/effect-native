@@ -29,7 +29,6 @@
       devShells = forAllSystems (pkgs: system: {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            bun
             deno
             nodejs_24
             python3
