@@ -22,5 +22,6 @@ packages/*/file:*
 .codex/.codex/
 
 .cache/
-packages/sqlite-graph-ext/.zig-cache
+.zig-cache/
+zig-out/
 .tmp/
