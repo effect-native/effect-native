@@ -14,9 +14,12 @@ import * as FileSystem from "effect/FileSystem"
 import * as Match from "effect/Match"
 import * as Path from "effect/Path"
 import { Argument, Command } from "effect/unstable/cli"
+import packageJson from "../package.json" with { type: "json" }
 
 import { makeContent, makeFilename } from "./Note.js"
 import { TitleInput } from "./Validate.js"
+
+const version = String(packageJson.version)
 
 /**
  * CLI-specific errors with user-friendly messages.
@@ -151,7 +154,7 @@ const noteCommand = Command.make(
  */
 export const run = (args: ReadonlyArray<string>) =>
   Command.runWith(noteCommand, {
-    version: "0.1.0"
+    version
   })(args)
 
 // Run if executed directly (not when imported as module for testing)
