@@ -40,7 +40,7 @@
     "coverage": "bun test --coverage"
   },
   "dependencies": {
-    "@effect-native/schemas": "workspace:*",
+    "@effect-native/schemas": "workspace:^",
     "@effect/platform-node": "beta",
     "effect": "beta"
   },

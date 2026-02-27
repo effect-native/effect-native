@@ -1,7 +1,6 @@
 {
   "name": "@effect-native/schemas",
   "version": "4.0.0",
-  "private": true,
   "type": "module",
   "license": "MIT",
   "description": "Reusable Effect Schema definitions for common data types.",
