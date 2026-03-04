@@ -24,6 +24,8 @@
   },
   "changesets": [
     "bun-test-beta-release",
+    "fix-note-betas",
+    "release-schemas-fix",
     "sqlite-graph-beta-release"
   ]
 }
