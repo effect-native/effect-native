@@ -30,8 +30,9 @@
   },
   "scripts": {
     "codegen": "echo '@effect-native/sqlite-graph: skip codegen'",
-    "build": "bun run build-zig",
+    "build": "bun run rebuild-all",
     "build-zig": "zig build -Doptimize=ReleaseSafe && bun ./scripts/copy-graph-ext-artifacts.mjs",
+    "rebuild-all": "bun ./scripts/rebuild-all.mjs",
     "test-zig": "bun ./scripts/zig-test-with-libsqlite.mjs"
   },
   "peerDependencies": {
