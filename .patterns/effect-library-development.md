@@ -1,8 +1,8 @@
-# Effect Library Development Patterns
+# Effect Native Development Patterns
 
 ## 🎯 OVERVIEW
 
-Fundamental patterns for developing high-quality, type-safe code within the Effect library ecosystem. These patterns ensure consistency, reliability, and maintainability across the codebase.
+Fundamental patterns for developing high-quality, type-safe code in this Effect v4 monorepo. These patterns ensure consistency, reliability, and maintainability across the codebase.
 
 ## 🚨 CRITICAL FORBIDDEN PATTERNS
 
@@ -114,6 +114,31 @@ const processData = (input: string) =>
   })
 ```
 
+### Effect.gen vs Effect.fn vs Effect.fnUntraced
+
+Choose the constructor that matches the job:
+
+- Use `Effect.gen` for one-off inline composition.
+- Use `Effect.fn("name")` for reusable public effectful functions.
+- Use `Effect.fnUntraced` only for internal or hot-path helpers where tracing overhead matters.
+
+```typescript
+import { Effect } from "effect"
+
+const loadUser = Effect.fn("loadUser")(function*(userId: string) {
+  return yield* fetchUser(userId)
+})
+
+const program = Effect.gen(function*() {
+  const user = yield* loadUser("123")
+  return user
+})
+
+const internalDecode = Effect.fnUntraced(function*(bytes: Uint8Array) {
+  return yield* decodeMessage(bytes)
+})
+```
+
 ### Error Handling with Data.TaggedError
 
 Create structured, typed errors using `Data.TaggedError`:
@@ -205,57 +230,36 @@ const queryUser = (id: string) =>
 Build applications using layered architecture:
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 
-// Define service interfaces
-class DatabaseService extends Context.Tag("DatabaseService")<
-  DatabaseService,
-  {
-    readonly query: (sql: string) => Effect.Effect<unknown[], DatabaseError, never>
-  }
->() {}
-
-class UserService extends Context.Tag("UserService")<
-  UserService,
-  {
-    readonly getUser: (id: string) => Effect.Effect<User, UserError, never>
-  }
->() {}
-
-// Implement services as layers
-const DatabaseServiceLive = Layer.succeed(
-  DatabaseService,
-  DatabaseService.of({
-    query: (sql) =>
+class DatabaseService extends ServiceMap.Service<DatabaseService>()("example/DatabaseService", {
+  effect: Effect.succeed({
+    query: (sql: string): Effect.Effect<ReadonlyArray<unknown>, DatabaseError> =>
       Effect.tryPromise({
         try: () => database.execute(sql),
         catch: (error) => new DatabaseError({ cause: error })
       })
   })
-)
+}) {}
 
-const UserServiceLive = Layer.effect(
-  UserService,
-  Effect.gen(function*() {
+class UserService extends ServiceMap.Service<UserService>()("example/UserService", {
+  effect: Effect.gen(function*() {
     const db = yield* DatabaseService
 
     return UserService.of({
-      getUser: (id) =>
-        Effect.gen(function*() {
-          const rows = yield* db.query(`SELECT * FROM users WHERE id = '${id}'`)
-          if (rows.length === 0) {
-            return yield* Effect.fail(new UserError({ message: "User not found" }))
-          }
-          return rows[0] as User
-        })
+      getUser: Effect.fn("UserService.getUser")(function*(id: string) {
+        const rows = yield* db.query(`SELECT * FROM users WHERE id = '${id}'`)
+        const row = rows[0]
+        if (!row) {
+          return yield* new UserError({ message: "User not found" })
+        }
+        return row
+      })
     })
   })
-)
+}) {}
 
-// Compose layers
-const AppLayer = UserServiceLive.pipe(
-  Layer.provide(DatabaseServiceLive)
-)
+const AppLayer = UserService.Default.pipe(Layer.provide(DatabaseService.Default))
 ```
 
 ## 🔧 DEVELOPMENT WORKFLOW PATTERNS
@@ -392,46 +396,45 @@ export const map: <A, B>(instance: Instance<A>, f: (a: A) => B) => Effect.Effect
 Structure tests to validate all aspects of functionality:
 
 ```typescript
-import { assert, describe, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import { Duration, Effect, TestClock } from "effect"
 import * as ModuleName from "../src/ModuleName.js"
 
 describe("ModuleName", () => {
   describe("constructors", () => {
-    it.effect("create should initialize with config", () =>
+    it.effect("create initializes with config", () =>
       Effect.gen(function*() {
         const config = { value: 42 }
         const instance = yield* ModuleName.create(config)
 
-        assert.deepStrictEqual(instance.config, config)
+        expect(instance.config).toEqual(config)
       }))
   })
 
   describe("combinators", () => {
-    it.effect("map should transform instance", () =>
+    it.effect("map transforms instance", () =>
       Effect.gen(function*() {
         const instance = yield* ModuleName.create({ value: 10 })
         const transformed = yield* ModuleName.map(instance, (x) => x * 2)
 
-        assert.strictEqual(transformed.config.value, 20)
+        expect(transformed.config.value).toBe(20)
       }))
   })
 
   describe("time-dependent operations", () => {
-    it.effect("should handle delays properly", () =>
+    it.effect("delayed operations complete after virtual time advances", () =>
       Effect.gen(function*() {
         const fiber = yield* Effect.fork(
           ModuleName.delayedOperation(Duration.seconds(5))
         )
 
-        // Use TestClock to advance time
-        yield* TestClock.advance(Duration.seconds(5))
+        yield* TestClock.adjust(Duration.seconds(5))
 
         const result = yield* Effect.join(fiber)
-        assert.strictEqual(result, "completed")
+        expect(result).toBe("completed")
       }))
   })
 })
 ```
 
-This comprehensive set of patterns ensures consistent, high-quality development across the Effect library while maintaining type safety and functional programming principles.
+These patterns keep development in this repo consistent with Effect v4 and the existing package design.

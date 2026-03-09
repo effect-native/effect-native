@@ -1,14 +1,14 @@
-# Effect Library Development Patterns
+# Effect Native Development Patterns
 
 ## 🎯 PURPOSE
 
-This directory provides reusable solutions and best practices for Effect TypeScript development, ensuring consistency and quality across the Effect Native codebase.
+This directory provides the normative development patterns for this repository's Effect v4 monorepo.
 
 ## 📚 AVAILABLE PATTERNS
 
 ### Core Development Patterns
 
-- **[effect-library-development.md](./effect-library-development.md)** - Fundamental patterns for Effect library development
+- **[effect-library-development.md](./effect-library-development.md)** - Fundamental patterns for Effect Native package development
 - **[module-organization.md](./module-organization.md)** - Module structure, exports, and naming conventions
 - **[error-handling.md](./error-handling.md)** - Structured error management with Effect
 
@@ -72,7 +72,7 @@ This directory provides reusable solutions and best practices for Effect TypeScr
 ### Accuracy
 
 - [ ] All examples compile and run correctly
-- [ ] Patterns follow current Effect library conventions
+- [ ] Patterns follow current Effect v4 conventions used in this repo
 - [ ] No deprecated or anti-pattern usage
 - [ ] Proper error handling demonstrated
 
@@ -87,7 +87,7 @@ This directory provides reusable solutions and best practices for Effect TypeScr
 
 ### Regular Updates
 
-- **API Changes**: Update patterns when Effect library APIs evolve
+- **API Changes**: Update patterns when Effect v4 APIs or local package conventions evolve
 - **New Patterns**: Add patterns for newly identified common use cases
 - **Deprecation**: Mark outdated patterns and provide migration paths
 - **Examples**: Keep examples current with latest library versions
@@ -121,4 +121,4 @@ This directory provides reusable solutions and best practices for Effect TypeScr
 - Integration examples showing pattern composition
 - Anti-pattern identification and alternatives
 
-This patterns directory serves as the authoritative guide for Effect library development, ensuring consistent, high-quality implementations across the entire codebase.
+This patterns directory serves as the authoritative guide for development in this repo, ensuring consistent, high-quality implementations across the codebase.

@@ -1,8 +1,8 @@
-# Error Handling Patterns - Effect Library
+# Error Handling Patterns - Effect Native
 
 ## 🎯 OVERVIEW
 
-Comprehensive error handling patterns used throughout the Effect library, emphasizing structured errors, type safety, and proper Effect composition.
+Comprehensive error handling patterns used throughout this repo, emphasizing structured errors, type safety, and proper Effect v4 composition.
 
 ## 🚨 CRITICAL FORBIDDEN PATTERNS
 
@@ -93,6 +93,28 @@ class SystemError extends Data.TaggedError("SystemError")<{
 }
 ```
 
+### Data.Error and Schema.TaggedErrorClass
+
+Use the lightest error type that matches the boundary:
+
+```typescript
+import { Data, Schema } from "effect"
+
+class InternalFailure extends Data.Error<{
+  cause?: unknown
+  message: string
+}> {}
+
+class HttpDecodeError extends Schema.TaggedErrorClass<HttpDecodeError>()("HttpDecodeError", {
+  path: Schema.String,
+  message: Schema.String
+}) {}
+```
+
+- Use `Data.TaggedError` when you need `_tag`-based discrimination with `Effect.catchTag`.
+- Use `Data.Error` for simple non-discriminated internal failures.
+- Use `Schema.TaggedErrorClass` or `Schema.ErrorClass` at serialization boundaries such as CLI, HTTP, persistence, or cross-process messaging.
+
 ### Error Reason Classification
 
 Standardized error reasons for consistency:
@@ -126,38 +148,23 @@ export type HttpErrorReason =
 export type ValidationErrorReason = "InvalidFormat" | "OutOfRange" | "Required" | "TooLong" | "TooShort"
 ```
 
-### Error Hierarchies
+### Error Composition with Union Types
 
 ```typescript
-// Base error class
-abstract class BaseError extends Data.TaggedError<string>()(
-  class {
-    abstract readonly _tag: string
-    abstract readonly message: string
-  }
-) {}
-
-// Specific error implementations
-class ParseError extends BaseError<"ParseError">()<{
+class ParseError extends Data.TaggedError("ParseError")<{
   input: string
   position: number
-}> {
-  readonly _tag = "ParseError"
-  get message() {
-    return `Parse error at position ${this.position}: ${this.input}`
-  }
-}
+}> {}
 
-class ConfigError extends BaseError<"ConfigError">()<{
+class ConfigError extends Data.TaggedError("ConfigError")<{
   key: string
   expectedType: string
-}> {
-  readonly _tag = "ConfigError"
-  get message() {
-    return `Configuration error for key '${this.key}': expected ${this.expectedType}`
-  }
-}
+}> {}
+
+type AppError = ParseError | ConfigError
 ```
+
+Prefer composing errors with flat union types instead of inheritance trees. Union errors fit Effect's error channel, `catchTag`, and schema-driven serialization more cleanly.
 
 ## 🔄 ERROR CREATION PATTERNS
 
@@ -248,21 +255,22 @@ const readFile = (path: string) =>
 
 ## 🔍 ERROR HANDLING COMBINATORS
 
-### Effect.catchAll Pattern
+### Effect.catch Pattern
 
 Handle all errors uniformly:
 
 ```typescript
 const robustOperation = (input: string) =>
   riskyOperation(input).pipe(
-    Effect.catchAll((error) => {
-      // Log error for debugging
-      Console.error(`Operation failed: ${error}`),
-        // Provide fallback or re-throw
-        Effect.succeed("fallback value")
-    })
+    Effect.catch((error) =>
+      Console.error(`Operation failed: ${error}`).pipe(
+        Effect.andThen(Effect.succeed("fallback value"))
+      )
+    )
   )
 ```
+
+In v4, prefer `Effect.catch` for catch-all recovery and reserve `Effect.catchTag` / `Effect.catchTags` for discriminated recovery.
 
 ### Effect.catchTag Pattern
 
@@ -288,6 +296,14 @@ const handleSpecificErrors = (input: string) =>
   )
 ```
 
+`Effect.catchTag` also accepts multiple tags when the recovery path is shared:
+
+```typescript
+const recovered = operation(input).pipe(
+  Effect.catchTag(["ValidationError", "ConfigError"], () => Effect.succeed("default value"))
+)
+```
+
 ### Effect.catchSome Pattern
 
 Selectively handle certain errors:
@@ -310,26 +326,23 @@ const handleRecoverableErrors = (input: string) =>
 ### Using Effect.exit for Testing
 
 ```typescript
-import { assert, describe, it } from "@effect/vitest"
+import { describe, expect, it } from "@effect-native/bun-test"
 import { Effect, Exit } from "effect"
 
 describe("error handling", () => {
-  it.effect("should fail with specific error", () =>
+  it.effect("invalid input fails with a validation error", () =>
     Effect.gen(function*() {
       const result = yield* Effect.exit(
         operation("invalid input")
       )
 
-      if (result._tag === "Failure") {
-        assert.isTrue(ValidationError.isValidationError(result.cause))
-        const error = result.cause as ValidationError
-        assert.strictEqual(error.field, "input")
-      } else {
-        assert.fail("Expected operation to fail")
+      expect(Exit.isFailure(result)).toBe(true)
+      if (Exit.isFailure(result)) {
+        expect(result.cause._tag).toBe("ValidationError")
       }
     }))
 
-  it.effect("should handle errors with catchTag", () =>
+  it.effect("catchTag recovers tagged failures", () =>
     Effect.gen(function*() {
       let errorHandled = false
 
@@ -340,8 +353,8 @@ describe("error handling", () => {
         })
       )
 
-      assert.strictEqual(result, "handled")
-      assert.isTrue(errorHandled)
+      expect(result).toBe("handled")
+      expect(errorHandled).toBe(true)
     }))
 })
 ```
@@ -349,7 +362,7 @@ describe("error handling", () => {
 ### Testing Error Transformations
 
 ```typescript
-it.effect("should transform errors correctly", () =>
+it.effect("mapError transforms failures into the target error type", () =>
   Effect.gen(function*() {
     const result = yield* Effect.exit(
       Effect.fail("string error").pipe(

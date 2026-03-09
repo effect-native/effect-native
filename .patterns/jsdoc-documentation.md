@@ -1,8 +1,8 @@
-# JSDoc Documentation Patterns - Effect Library
+# JSDoc Documentation Patterns - Effect Native
 
 ## 🎯 OVERVIEW
 
-Comprehensive JSDoc documentation patterns used throughout the Effect library, ensuring consistent, practical, and compilable examples for all APIs.
+Comprehensive JSDoc documentation patterns used throughout this repo, ensuring consistent, practical, and compilable examples for all APIs.
 
 ## 🚨 CRITICAL REQUIREMENTS
 
@@ -98,7 +98,7 @@ export const functionName = <A>(param: A): ModuleName<A> =>
 
 ## 🔧 IMPORT PATTERN STANDARDS
 
-### Core Effect Library Imports
+### Core Effect v4 Imports
 
 ````typescript
 /**
@@ -121,9 +121,8 @@ export const functionName = <A>(param: A): ModuleName<A> =>
 /**
  * @example
  * ```ts
- * // ✅ CORRECT - Use lowercase 'schema'
- * import { Schema } from "effect/schema"
- * import { Effect } from "effect"
+ * // ✅ CORRECT - Use the canonical v4 import from "effect"
+ * import { Effect, Schema } from "effect"
  *
  * const PersonSchema = Schema.Struct({
  *   name: Schema.String,
@@ -147,8 +146,7 @@ export const functionName = <A>(param: A): ModuleName<A> =>
 /**
  * @example
  * ```ts
- * import { Effect } from "effect"
- * import { Schema } from "effect/schema"
+ * import { Effect, Schema } from "effect"
  * import { NodeHttpServer } from "@effect/platform-node"
  *
  * const server = Effect.gen(function* () {
@@ -422,7 +420,7 @@ export const TypeId = ...
  * import { Array } from "effect"
  *
  * // Note: This is an advanced function for specific performance use cases
- * // Most users should use simpler alternatives like:
+ * // Most users can use simpler alternatives like:
  * const simpleSort = Array.sort(Order.number)
  * const simpleFilter = Array.filter(x => x > 0)
  *
@@ -449,9 +447,8 @@ export const TypeId = ...
  *
  * @example
  * ```ts
- * import { Effect, Schedule, Layer, Console } from "effect"
- * import { HttpClient } from "@effect/platform"
- * import { Schema } from "effect/schema"
+ * import { Console, Effect, Layer, Schedule, Schema } from "effect"
+ * import { HttpClient } from "effect/unstable/http"
  *
  * const UserSchema = Schema.Struct({
  *   id: Schema.Number,
@@ -478,10 +475,7 @@ export const TypeId = ...
  *
  * // Usage with proper layer provision
  * const program = fetchUserWithRetry(123).pipe(
- *   Effect.provide(Layer.mergeAll(
- *     HttpClient.layer,
- *     Console.layer
- *   ))
+ *   Effect.provide(HttpClient.layer)
  * )
  * ```
  *
@@ -499,7 +493,8 @@ export const TypeId = ...
 /**
  * @example
  * ```ts
- * import { Schema } from "@effect/schema"      // Wrong package
+ * import { Schema } from "@effect/schema"      // Wrong package for v4 docs
+ * import { Schema } from "effect/schema"       // Outdated path for this repo
  * import { Schema } from "effect/Schema"       // Wrong casing
  * ```
  */
@@ -536,8 +531,7 @@ export const TypeId = ...
 /**
  * @example
  * ```ts
- * import { Schema } from "effect/schema"
- * import { Effect } from "effect"
+ * import { Effect, Schema } from "effect"
  *
  * const UserSchema = Schema.Struct({
  *   name: Schema.String,
@@ -558,15 +552,12 @@ export const TypeId = ...
 /**
  * @example
  * ```ts
- * import { Effect, Layer } from "effect"
- * import { Console } from "effect/logging"
+ * import { Console, Effect } from "effect"
  *
  * const program = Effect.gen(function* () {
  *   yield* Console.log("Hello, World!")
  *   return "Done"
- * }).pipe(
- *   Effect.provide(Console.layer)
- * )
+ * })
  * ```
  */
 ````
@@ -586,4 +577,4 @@ export const TypeId = ...
 - [ ] Integration examples for advanced use cases
 - [ ] Real-world usage patterns demonstrated
 
-This comprehensive JSDoc approach ensures that Effect library documentation provides practical, reliable examples that help developers understand and correctly use the APIs.
+This JSDoc approach keeps the repo's docs practical, reliable, and aligned with the APIs we actually publish.

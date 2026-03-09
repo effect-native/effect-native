@@ -44,7 +44,7 @@ The documentation in `.patterns/*.md` is normative. Before writing or reviewing 
 
 - Maintain complete, compilable JSDoc examples; run `bun run docgen` after documentation changes.
 - Prefer multiple realistic examples over deleting content when fixing docgen failures.
-- Use canonical import forms (`import { Schema } from "effect/schema"`, etc.) and forbid unsafe type assertions in docs.
+- Use canonical Effect v4 import forms (`import { Schema } from "effect"`, `import { SqlClient } from "effect/unstable/sql"`, etc.) and forbid unsafe type assertions in docs.
 
 ### Testing (`.patterns/testing-patterns.md`)
 
@@ -125,23 +125,26 @@ Failing fast makes defects visible early, prevents silent regressions, and align
     ```
 - Agents MUST NOT self‑approve or forge approvals. Do not use the repository owner's name or identity; never impersonate a human reviewer.
 
-## Modern Effect Patterns (v3.17+)
+## Modern Effect Patterns (v4)
 
-This project uses the latest Effect `^3.17.11` which supports modern error handling patterns. Code reviews and agents should expect and accept these patterns:
+This repository targets the Effect v4 ecosystem. Code reviews and agents should expect and accept these patterns:
 
-- **Error Creation**: Effect v3.17+ supports direct yielding of Error constructors:
+- **Package layout**: Prefer core imports from `effect`, keep platform-specific integrations in `@effect/platform-*`, and use unstable modules from `effect/unstable/*` when an API has not graduated yet.
+- **Service definitions**: Prefer `ServiceMap.Service` over `Context.Tag` for new services and service-like references.
+- **Function constructors**: Prefer `Effect.fn("name")` for reusable public effectful functions, `Effect.gen` for inline composition, and `Effect.fnUntraced` only for internal or hot-path helpers.
+- **Error creation**: Effect v4 supports direct yielding of yieldable error constructors:
 
   ```ts
-  // ✅ Modern Effect v3.17+ (preferred)
+  // ✅ Modern Effect v4 (preferred)
   return yield * new SqliteClientError({ cause: "..." })
 
-  // ✅ Legacy syntax (technically valid but unnecessarily verbose)
+  // ✅ Legacy syntax (valid but unnecessarily verbose)
   return yield * Effect.fail(new SqliteClientError({ cause: "..." }))
   ```
 
-- **Rationale**: Modern Effect Error classes implement the necessary protocols to be yielded directly, making code more concise while maintaining full type safety and error propagation.
+- **Rationale**: Yieldable error classes keep generator code concise while preserving type safety and explicit failure channels.
 
-- **Review Expectation**: Contributors and automated reviews should NOT flag the modern `yield* new Error()` syntax as incorrect. It is the current standard for this project's Effect version.
+- **Review Expectation**: Contributors and automated reviews should NOT flag the modern `yield* new Error()` syntax as incorrect. It is a normal Effect v4 pattern.
 
 ## Tooling & Nix Development Environment
 
