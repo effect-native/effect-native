@@ -48,6 +48,7 @@ try {
 
 const isLazygitInstalled = lazygitPath !== null
 const canRunTests = isBun && isLazygitInstalled
+const lazygitStressTestsEnabled = false
 
 /**
  * Track if lazygit setup succeeded. If not, skip remaining stress assertions and
@@ -148,7 +149,7 @@ function normalizeSnapshot(screenshot: string): string {
 // - Snapshot output changes across lazygit versions (0.57 -> 0.59) create high churn.
 // - Help-menu rendering intermittently times out in PTY/Ghostty harness runs.
 // - Failures are environment/tooling-driven and not related to sqlite-graph/Bun/Zig goals.
-describe.skipIf(!canRunTests).skip("lazygit real TUI stress tests", () => {
+describe.skipIf(!canRunTests || !lazygitStressTestsEnabled)("lazygit real TUI stress tests", () => {
   let harness: GhosttyHarness
 
   beforeAll(async () => {
