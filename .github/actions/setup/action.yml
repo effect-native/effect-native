@@ -32,6 +32,7 @@ runs:
     - name: Install dependencies
       shell: bash
       env:
+        BUN_INSTALL_CACHE_DIR: "${{ runner.temp }}/bun-install-cache"
         NODE_OPTIONS: "--max-old-space-size=4096"
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
-      run: bun install --frozen-lockfile
+      run: mkdir -p "$BUN_INSTALL_CACHE_DIR" && bun install --frozen-lockfile
