@@ -13,6 +13,7 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         });
         legacyLib.linker_allow_shlib_undefined = true;
+        legacyLib.root_module.strip = true;
         break :blk legacyLib;
     } else blk: {
         const module = b.createModule(.{
@@ -28,6 +29,7 @@ pub fn build(b: *std.Build) void {
             .linkage = .dynamic,
         });
         sharedLib.linker_allow_shlib_undefined = true;
+        sharedLib.root_module.strip = true;
         break :blk sharedLib;
     };
 
