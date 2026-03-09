@@ -14,6 +14,8 @@ import * as FileSystem from "effect/FileSystem"
 import * as Match from "effect/Match"
 import * as Path from "effect/Path"
 import { Argument, Command } from "effect/unstable/cli"
+import { resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import packageJson from "../package.json" with { type: "json" }
 
 import { makeContent, makeFilename } from "./Note.js"
@@ -157,8 +159,10 @@ export const run = (args: ReadonlyArray<string>) =>
     version
   })(args)
 
+const isDirectExecution = process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
 // Run if executed directly (not when imported as module for testing)
-if (process.argv[1]?.includes("bin")) {
+if (isDirectExecution) {
   run(process.argv).pipe(
     Effect.provide(NodeServices.layer),
     NodeRuntime.runMain({ disableErrorReporting: true })

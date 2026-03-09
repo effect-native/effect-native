@@ -32,7 +32,11 @@ import * as Data from "effect/Data"
  */
 export class UnhexUnavailable extends Data.TaggedError("UnhexUnavailable")<{
   cause?: unknown
-}> {}
+}> {
+  constructor(args: { cause?: unknown } = {}) {
+    super(args)
+  }
+}
 
 /**
  * Error indicating that the CR-SQLite extension is not loaded or available.
@@ -47,4 +51,8 @@ export class UnhexUnavailable extends Data.TaggedError("UnhexUnavailable")<{
  */
 export class CrSqliteExtensionMissing extends Data.TaggedError("CrSqliteExtensionMissing")<{
   cause?: unknown
-}> {}
+}> {
+  constructor(args: { cause?: unknown } = {}) {
+    super(args)
+  }
+}
