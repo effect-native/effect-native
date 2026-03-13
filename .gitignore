@@ -25,3 +25,4 @@ packages/*/file:*
 .zig-cache/
 zig-out/
 .tmp/
+.pnpm-store
