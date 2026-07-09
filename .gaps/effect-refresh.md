@@ -39,8 +39,8 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - Replaced ad hoc `SqlError` message/cause construction with `SqlError.UnknownError` reasons.
 - Updated TSTyche to 7.2.1, migrated `tstyche.config.json` to `tstyche.json`, and encoded the classic TypeScript type-test matrix as `>=5.4 <7.0`.
 - Kept the native TypeScript line covered through `bun run check:tsgo`.
-- Rebuilt tracked sqlite-graph native artifacts with the current Nix/Zig toolchain.
-- Made sqlite-graph artifact rebuilds re-enter `nix develop` on Darwin when invoked from the host shell.
+- Verified sqlite-graph native artifact rebuilds with the current Nix/Zig toolchain.
+- Made sqlite-graph artifact rebuilds re-enter `nix develop` on Darwin when a Nix profile is active outside its dev shell.
 - Fast-forwarded `/Users/tom/Work/refs/effect-smol`.
 - Reconciled normative service examples and graph-db DotOK state to `Context.Service`.
 - Added live regression coverage for null-only schema inference and missing-extension causes.
@@ -53,7 +53,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - `bun install --frozen-lockfile`: PASS.
 - `bun run check`: PASS.
 - `bun run check:tsgo`: PASS.
-- `bun --filter @effect-native/crsql test`: PASS with all eight schema-inference tests active, including end-to-end schema recreation and change application.
+- `bun --filter @effect-native/crsql test`: PASS with all nine schema-inference tests active, including end-to-end schema recreation and change application.
 - `bun run test`: PASS.
 - `bun run docgen`: PASS.
 - `bun run lint-fix`: PASS.
