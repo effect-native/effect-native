@@ -30,6 +30,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - gap-effect-refresh-regression-001: the null-only inference and preserved-cause fixes had no live regression tests.
 - gap-effect-refresh-portability-001: the Darwin rebuild wrapper required Nix even when a standalone Zig installation was available.
 - gap-effect-refresh-crr-pk-001: generated schema DDL used a nullable BLOB primary key that CR-SQLite rejected when enabling replication.
+- gap-effect-refresh-pty-resize-001: the PTY resize test raced child-side `SIGWINCH` handling and timed out repeatedly under the full parallel suite.
 
 ## Gaps Closed In This Run
 
@@ -47,6 +48,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - Enabled the full schema-inference suite and fixed generated DDL to use `id BLOB NOT NULL PRIMARY KEY`.
 - Limited Darwin Nix re-entry to environments with an active Nix profile.
 - Removed unrelated sqlite-graph native binary churn from the refresh diff.
+- Made the PTY resize test wait for the child-observed width using an echo-free shell and a bounded, uniquely marked probe.
 
 ## Evidence
 
@@ -58,7 +60,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - `bun run docgen`: PASS.
 - `bun run lint-fix`: PASS.
 - `bun run test-types`: PASS across TypeScript 5.4.5, 5.5.4, 5.6.3, 5.7.3, 5.8.3, 5.9.3, and 6.0.3.
-- `bun test packages/tui-testing-library/test/Spawn.test.ts --test-name-pattern "can resize terminal" --rerun-each 10`: PASS after one full-suite timing failure was isolated.
+- `bun test packages/tui-testing-library/test/Spawn.test.ts --test-name-pattern "can resize terminal" --rerun-each 50`: PASS after synchronizing the child-side resize observation.
 - `bun --filter @effect-native/sqlite-graph build`: PASS from the host shell via Darwin Nix re-exec.
 - `bun run ok`: PASS.
 - `v4-refresh` push: PASS.

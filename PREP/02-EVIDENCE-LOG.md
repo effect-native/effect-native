@@ -11,3 +11,5 @@
 - [FALSIFIES] Enabling the skipped schema-inference suite showed that `id BLOB PRIMARY KEY` is nullable in SQLite and CR-SQLite rejects it as a replicated-table primary key.
 - [SUPPORTS] `id BLOB NOT NULL PRIMARY KEY` passes all nine schema-inference tests, including end-to-end schema recreation and change application.
 - [SUPPORTS] focused real-driver tests prove both `CrSqliteExtensionMissing` and `UnhexUnavailable` preserve their underlying `SqlError` causes.
+- [FALSIFIES] the original PTY resize test timed out twice under the full suite because it queried the width before the child had observed the resize.
+- [SUPPORTS] the synchronized resize probe passed 50 consecutive reruns and the subsequent full `bun run ok` gate.
