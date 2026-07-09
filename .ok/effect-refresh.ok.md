@@ -51,9 +51,10 @@ bun install --frozen-lockfile
 bun run lint-fix
 bun run docgen
 bun run ok
+! rg --hidden -n 'effect/ServiceM[a]p|ServiceM[a]p\.Service' AGENTS.md .patterns .ok packages
 ```
 
-Pass condition: all commands exit `0`; TypeScript edits are followed by `bun run lint-fix`; no test skip/fallback wrappers are introduced to hide failures.
+Pass condition: all commands exit `0`; active guidance and code contain no removed `ServiceMap` API references; TypeScript edits are followed by `bun run lint-fix`; no test skip/fallback wrappers are introduced to hide failures.
 
 Type-test intent: `tstyche.json` owns the classic TypeScript compiler matrix. It must cover supported classic compiler releases while `bun run check:tsgo` covers the native TypeScript line.
 

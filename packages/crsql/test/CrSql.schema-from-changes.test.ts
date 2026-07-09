@@ -1,23 +1,13 @@
-import { layer } from "@effect-native/bun-test"
+import { expect, layer } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
 import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect, Layer } from "effect"
-import * as Console from "effect/Console"
 import { Reactivity } from "effect/unstable/reactivity"
 import { SqlClient } from "effect/unstable/sql"
-import * as assert from "node:assert"
 import { createTodosCrr, ensureCrSqlLoaded } from "./_helpers.js"
 
-// TDD style: red test first for a feature we wish existed.
-// Goal: derive a schema from exported CR-SQLite changes, apply it via automigrate
-// to a fresh DB, then apply those changes successfully.
-//
-// NOTE: This test is intentionally skipped for v0.0.0 release.
-// The __experimental__schemaFromChanges feature is implemented but these integration
-// tests remain red/skipped until the feature is fully validated and stabilized.
-
 layer(Layer.mergeAll(Reactivity.layer))((it) => {
-  it.effect.skip("CrSql.schemaFromChanges -> automigrate -> applyChanges (RED): can recreate schema for exported changes and apply them", () =>
+  it.effect("CrSql.schemaFromChanges -> automigrate -> applyChanges recreates exported rows", () =>
     Effect.gen(function*() {
       // Stage 1: Produce realistic changes from an existing CRR table
       const exported = yield* Effect.gen(function*() {
@@ -32,10 +22,10 @@ layer(Layer.mergeAll(Reactivity.layer))((it) => {
         return yield* crsql.pullChanges("0")
       }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
-      assert.ok(exported.length > 0)
+      expect(exported.length).toBeGreaterThan(0)
       // Sanity: contains todos/content and todos/completed deltas
-      assert.ok(exported.some((c) => c.table === "todos" && c.cid === "content"))
-      assert.ok(exported.some((c) => c.table === "todos" && c.cid === "completed"))
+      expect(exported.some((c) => c.table === "todos" && c.cid === "content")).toBe(true)
+      expect(exported.some((c) => c.table === "todos" && c.cid === "completed")).toBe(true)
 
       // Stage 2: Derive schema from the exported changes
       const schema = yield* Effect.gen(function*() {
@@ -46,15 +36,14 @@ layer(Layer.mergeAll(Reactivity.layer))((it) => {
       }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" })))
 
       // The derived schema should target the todos table and enable CRR
-      assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS todos"))
-      assert.ok(schema.includes("SELECT crsql_as_crr('todos')"))
+      expect(schema).toContain("CREATE TABLE IF NOT EXISTS todos")
+      expect(schema).toContain("SELECT crsql_as_crr('todos')")
 
       // Stage 3: Apply the derived schema to a fresh DB, then apply the changes
       yield* Effect.gen(function*() {
         yield* ensureCrSqlLoaded
         const sql = yield* SqlClient.SqlClient
         const crsql = yield* CrSql.fromSqliteClient()
-        yield* Console.debug(schema)
         yield* crsql.automigrate(schema)
         yield* crsql.applyChanges(exported)
 
@@ -62,7 +51,7 @@ layer(Layer.mergeAll(Reactivity.layer))((it) => {
         const rows = yield* sql<{ content: string; completed: number }>`
           SELECT content, completed FROM todos ORDER BY content ASC
         `
-        assert.deepEqual(rows, [
+        expect(rows).toEqual([
           { content: "Alpha", completed: 0 },
           { content: "Beta", completed: 1 }
         ])

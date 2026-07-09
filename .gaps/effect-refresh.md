@@ -14,7 +14,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - `bun.lock` before refresh: Effect beta family at 4.0.0-beta.29 on `origin/v4`.
 - `bun.lock` after refresh: Effect beta family at 4.0.0-beta.94.
 - `effect-smol` before refresh: b5d068d4cb5ff7336e4d1cac2624d299246ba95a.
-- `effect-smol` after refresh: 2711e39af73c5d82f691658f0327e9966f43432f.
+- `effect-smol` after review reconciliation: 3f0ccc04711b0a187b973e20fc9c3010c2560da2.
 - `effect-smol` local untracked files preserved: `CLAUDE.md`.
 
 ## Gaps Found
@@ -26,6 +26,10 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - gap-effect-refresh-tstyche-001: TSTyche 4.3 could not run against the current TypeScript 7 native package shape, and its config file name/sentinel changed in current TSTyche.
 - gap-effect-refresh-sqlite-graph-001: host Darwin `zig build` failed to link libSystem from the Nix-profile Zig environment outside `nix develop`.
 - gap-effect-refresh-branch-001: `origin/v4-refresh` and a PR into `v4` did not exist before this run.
+- gap-effect-refresh-patterns-001: normative pattern and DotOK documents still referenced the removed `ServiceMap` API.
+- gap-effect-refresh-regression-001: the null-only inference and preserved-cause fixes had no live regression tests.
+- gap-effect-refresh-portability-001: the Darwin rebuild wrapper required Nix even when a standalone Zig installation was available.
+- gap-effect-refresh-crr-pk-001: generated schema DDL used a nullable BLOB primary key that CR-SQLite rejected when enabling replication.
 
 ## Gaps Closed In This Run
 
@@ -38,13 +42,18 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - Rebuilt tracked sqlite-graph native artifacts with the current Nix/Zig toolchain.
 - Made sqlite-graph artifact rebuilds re-enter `nix develop` on Darwin when invoked from the host shell.
 - Fast-forwarded `/Users/tom/Work/refs/effect-smol`.
+- Reconciled normative service examples and graph-db DotOK state to `Context.Service`.
+- Added live regression coverage for null-only schema inference and missing-extension causes.
+- Enabled the full schema-inference suite and fixed generated DDL to use `id BLOB NOT NULL PRIMARY KEY`.
+- Limited Darwin Nix re-entry to environments with an active Nix profile.
+- Removed unrelated sqlite-graph native binary churn from the refresh diff.
 
 ## Evidence
 
 - `bun install --frozen-lockfile`: PASS.
 - `bun run check`: PASS.
 - `bun run check:tsgo`: PASS.
-- `bun --filter @effect-native/crsql test`: PASS after schema constructor fix.
+- `bun --filter @effect-native/crsql test`: PASS with all eight schema-inference tests active, including end-to-end schema recreation and change application.
 - `bun run test`: PASS.
 - `bun run docgen`: PASS.
 - `bun run lint-fix`: PASS.

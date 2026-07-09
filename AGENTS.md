@@ -130,7 +130,7 @@ Failing fast makes defects visible early, prevents silent regressions, and align
 This repository targets the Effect v4 ecosystem. Code reviews and agents should expect and accept these patterns:
 
 - **Package layout**: Prefer core imports from `effect`, keep platform-specific integrations in `@effect/platform-*`, and use unstable modules from `effect/unstable/*` when an API has not graduated yet.
-- **Service definitions**: Prefer `ServiceMap.Service` over `Context.Tag` for new services and service-like references.
+- **Service definitions**: Prefer `Context.Service` over legacy `Context.Tag` for new services and service-like references.
 - **Function constructors**: Prefer `Effect.fn("name")` for reusable public effectful functions, `Effect.gen` for inline composition, and `Effect.fnUntraced` only for internal or hot-path helpers.
 - **Error creation**: Effect v4 supports direct yielding of yieldable error constructors:
 

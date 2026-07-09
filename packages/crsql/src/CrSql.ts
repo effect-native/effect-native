@@ -470,7 +470,7 @@ const makeCrSql = Effect.gen(function*() {
       const tables = Array.from(byTable.entries()).sort(([a], [b]) => a.localeCompare(b))
       for (const [table, cols] of tables) {
         // Deterministic order: id first, then other columns sorted by name
-        const parts: Array<string> = ["id BLOB PRIMARY KEY"]
+        const parts: Array<string> = ["id BLOB NOT NULL PRIMARY KEY"]
         const others = Array.from(cols.entries())
           .filter((entry): entry is [string, SqlType] => entry[0] !== "id" && entry[1] !== null)
           .sort((a, b) => a[0].localeCompare(b[0]))
@@ -1165,7 +1165,7 @@ const makeCrSql = Effect.gen(function*() {
      *
      * **Schema Generation Logic:**
      * - Creates `CREATE TABLE IF NOT EXISTS` statements for each referenced table
-     * - Assumes single-column `id BLOB PRIMARY KEY` (consistent with project patterns)
+     * - Assumes single-column `id BLOB NOT NULL PRIMARY KEY` (consistent with project patterns)
      * - Infers column types from `val_type` observations across changes:
      *   - `text` → `TEXT`, `integer` → `INTEGER`, `real` → `REAL`, `blob` → `BLOB`
      * - Appends `SELECT crsql_as_crr('table');` statements to enable replication

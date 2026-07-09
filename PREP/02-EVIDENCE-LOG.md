@@ -7,3 +7,6 @@
 - [SUPPORTS] `/Users/tom/Work/refs/effect-smol` contained `migration/services.md`, documenting `Context.Service` as the current service constructor.
 - [SUPPORTS] `/Users/tom/Work/refs/effect-smol/packages/effect/src/Schema.ts` documents schema `.makeEffect` for constructor-side validation.
 - [SUPPORTS] `bun run check`, `bun run check:tsgo`, `bun --filter @effect-native/crsql test`, `bun run test`, and `bun run docgen` passed after fixes.
+- [SUPPORTS] `/Users/tom/Work/refs/effect-smol` was fast-forwarded again to `3f0ccc04711b0a187b973e20fc9c3010c2560da2` during PR review reconciliation.
+- [FALSIFIES] Enabling the skipped schema-inference suite showed that `id BLOB PRIMARY KEY` is nullable in SQLite and CR-SQLite rejects it as a replicated-table primary key.
+- [SUPPORTS] `id BLOB NOT NULL PRIMARY KEY` passes all eight schema-inference tests, including end-to-end schema recreation and change application.

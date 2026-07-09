@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process"
 if (
   process.platform === "darwin" &&
   process.env.IN_NIX_SHELL == null &&
+  process.env.NIX_PROFILES != null &&
   process.env.EFFECT_NATIVE_SQLITE_GRAPH_NIX_REEXEC !== "1"
 ) {
   const result = spawnSync(

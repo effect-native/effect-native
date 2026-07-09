@@ -1,38 +1,67 @@
-import { it } from "@effect-native/bun-test"
+import { expect, it } from "@effect-native/bun-test"
 import { CrSql } from "@effect-native/crsql"
+import type * as CrSqlSchema from "@effect-native/crsql/CrSqlSchema"
 import * as BunSqlite from "@effect/sql-sqlite-bun"
 import { Effect } from "effect"
 import { SqlClient } from "effect/unstable/sql"
-import * as assert from "node:assert"
 import { ensureCrSqlLoaded } from "./_helpers.js"
 
-// TDD style: focused unit tests to narrow behavior
-//
-// NOTE: These tests are intentionally skipped for v0.0.0 release.
-// The __experimental__schemaFromChanges feature is implemented but these unit
-// tests remain red/skipped until the feature is fully validated and stabilized.
+const makeChange = (
+  overrides: Partial<CrSqlSchema.ChangeRowSerialized> = {}
+): CrSqlSchema.ChangeRowSerialized => ({
+  cid: "value",
+  cl: 0,
+  col_version: "1",
+  db_version: "1",
+  pk: "00112233445566778899AABBCCDDEEFF",
+  seq: 0,
+  site_id: "00112233445566778899AABBCCDDEEFF",
+  table: "items",
+  val: null,
+  val_type: "null",
+  ...overrides
+})
 
-it.effect.skip("schemaFromChanges: infers columns for todos", () =>
+it.effect("schemaFromChanges rejects a column observed only as null", () =>
+  Effect.gen(function*() {
+    const crsql = yield* ensureCrSqlLoaded
+    const error = yield* crsql.__experimental__schemaFromChanges([makeChange()]).pipe(Effect.flip)
+
+    expect(error.message).toContain("Unable to infer type for items.value")
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+
+it.effect("schemaFromChanges uses a concrete observation after null", () =>
+  Effect.gen(function*() {
+    const crsql = yield* ensureCrSqlLoaded
+    const schema = yield* crsql.__experimental__schemaFromChanges([
+      makeChange(),
+      makeChange({ seq: 1, val: "text", val_type: "text" })
+    ])
+
+    expect(schema).toContain("value TEXT")
+  }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
+
+it.effect("schemaFromChanges: infers columns for todos", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
     const crsql = yield* CrSql.fromSqliteClient()
 
     // Create a simple CRR and insert a row
-    yield* sql`CREATE TABLE IF NOT EXISTS todos (id BLOB PRIMARY KEY, content TEXT NOT NULL DEFAULT '', completed INTEGER NOT NULL DEFAULT 0)`
+    yield* sql`CREATE TABLE IF NOT EXISTS todos (id BLOB NOT NULL PRIMARY KEY, content TEXT NOT NULL DEFAULT '', completed INTEGER NOT NULL DEFAULT 0)`
     yield* crsql.asCrr("todos")
     yield* sql`INSERT INTO todos (id, content, completed) VALUES (unhex('00112233445566778899AABBCCDDEEFF'), 'Alpha', 0)`
 
     const changes = yield* crsql.pullChanges("0")
     const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
-    assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS todos"))
-    assert.ok(schema.includes("content TEXT"))
-    assert.ok(schema.includes("completed INTEGER"))
-    assert.ok(schema.includes("SELECT crsql_as_crr('todos')"))
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS todos")
+    expect(schema).toContain("content TEXT")
+    expect(schema).toContain("completed INTEGER")
+    expect(schema).toContain("SELECT crsql_as_crr('todos')")
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.effect.skip("schemaFromChanges: includes multiple tables present in changes", () =>
+it.effect("schemaFromChanges: includes multiple tables present in changes", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -40,9 +69,9 @@ it.effect.skip("schemaFromChanges: includes multiple tables present in changes",
 
     // Define two CRRs and insert into both
     yield* crsql.automigrate`
-      CREATE TABLE IF NOT EXISTS a (id BLOB PRIMARY KEY, x TEXT NOT NULL DEFAULT '');
+      CREATE TABLE IF NOT EXISTS a (id BLOB NOT NULL PRIMARY KEY, x TEXT NOT NULL DEFAULT '');
       SELECT crsql_as_crr('a');
-      CREATE TABLE IF NOT EXISTS b (id BLOB PRIMARY KEY, y INTEGER NOT NULL DEFAULT 0);
+      CREATE TABLE IF NOT EXISTS b (id BLOB NOT NULL PRIMARY KEY, y INTEGER NOT NULL DEFAULT 0);
       SELECT crsql_as_crr('b');
     `
     yield* sql`INSERT INTO a (id, x) VALUES (unhex('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'), 'v')`
@@ -51,13 +80,13 @@ it.effect.skip("schemaFromChanges: includes multiple tables present in changes",
     const changes = yield* crsql.pullChanges("0")
     const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
-    assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS a"))
-    assert.ok(schema.includes("CREATE TABLE IF NOT EXISTS b"))
-    assert.ok(schema.includes("SELECT crsql_as_crr('a')"))
-    assert.ok(schema.includes("SELECT crsql_as_crr('b')"))
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS a")
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS b")
+    expect(schema).toContain("SELECT crsql_as_crr('a')")
+    expect(schema).toContain("SELECT crsql_as_crr('b')")
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
+it.effect("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/REAL/BLOB", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -65,7 +94,7 @@ it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/R
 
     yield* crsql.automigrate`
       CREATE TABLE IF NOT EXISTS types (
-        id BLOB PRIMARY KEY,
+        id BLOB NOT NULL PRIMARY KEY,
         t TEXT NOT NULL DEFAULT '',
         i INTEGER NOT NULL DEFAULT 0,
         r REAL NOT NULL DEFAULT 0.0,
@@ -78,13 +107,13 @@ it.effect.skip("schemaFromChanges: maps text/integer/real/blob to TEXT/INTEGER/R
     const changes = yield* crsql.pullChanges("0")
     const schema = yield* crsql.__experimental__schemaFromChanges(changes)
 
-    assert.ok(schema.includes("t TEXT"))
-    assert.ok(schema.includes("i INTEGER"))
-    assert.ok(schema.includes("r REAL"))
-    assert.ok(schema.includes("b BLOB"))
+    expect(schema).toContain("t TEXT")
+    expect(schema).toContain("i INTEGER")
+    expect(schema).toContain("r REAL")
+    expect(schema).toContain("b BLOB")
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.effect.skip("schemaFromChanges: conflicting types for same column fails", () =>
+it.effect("schemaFromChanges: conflicting types for same column fails", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -92,7 +121,7 @@ it.effect.skip("schemaFromChanges: conflicting types for same column fails", () 
 
     yield* crsql.automigrate`
       CREATE TABLE IF NOT EXISTS mixed (
-        id BLOB PRIMARY KEY,
+        id BLOB NOT NULL PRIMARY KEY,
         v ANY
       );
       SELECT crsql_as_crr('mixed');
@@ -103,10 +132,10 @@ it.effect.skip("schemaFromChanges: conflicting types for same column fails", () 
 
     const changes = yield* crsql.pullChanges("0")
     const result = yield* crsql.__experimental__schemaFromChanges(changes).pipe(Effect.result)
-    assert.ok(result._tag === "Failure")
+    expect(result._tag).toBe("Failure")
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.effect.skip("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
+it.effect("schemaFromChanges: deterministic column order (id first, others sorted)", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -114,7 +143,7 @@ it.effect.skip("schemaFromChanges: deterministic column order (id first, others 
 
     yield* crsql.automigrate`
       CREATE TABLE IF NOT EXISTS ordercols (
-        id BLOB PRIMARY KEY,
+        id BLOB NOT NULL PRIMARY KEY,
         zeta TEXT NOT NULL DEFAULT '',
         alpha TEXT NOT NULL DEFAULT '',
         mid INTEGER NOT NULL DEFAULT 0
@@ -129,11 +158,12 @@ it.effect.skip("schemaFromChanges: deterministic column order (id first, others 
     const iAlpha = schema.indexOf(" alpha ")
     const iMid = schema.indexOf(" mid ")
     const iZeta = schema.indexOf(" zeta ")
-    assert.ok(iAlpha > -1 && iMid > -1 && iZeta > -1)
-    assert.ok(iAlpha < iMid && iMid < iZeta)
+    expect(iAlpha).toBeGreaterThan(-1)
+    expect(iMid).toBeGreaterThan(iAlpha)
+    expect(iZeta).toBeGreaterThan(iMid)
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
 
-it.effect.skip("schemaFromChanges: generated schema is idempotent under automigrate", () =>
+it.effect("schemaFromChanges: generated schema is idempotent under automigrate", () =>
   Effect.gen(function*() {
     yield* ensureCrSqlLoaded
     const sql = yield* SqlClient.SqlClient
@@ -141,7 +171,7 @@ it.effect.skip("schemaFromChanges: generated schema is idempotent under automigr
 
     yield* crsql.automigrate`
       CREATE TABLE IF NOT EXISTS idem (
-        id BLOB PRIMARY KEY,
+        id BLOB NOT NULL PRIMARY KEY,
         name TEXT NOT NULL DEFAULT ''
       );
       SELECT crsql_as_crr('idem');
@@ -153,5 +183,5 @@ it.effect.skip("schemaFromChanges: generated schema is idempotent under automigr
     // Apply twice without error
     yield* crsql.automigrate(schema)
     const res = yield* crsql.automigrate(schema).pipe(Effect.result)
-    assert.ok(res._tag === "Success")
+    expect(res._tag).toBe("Success")
   }).pipe(Effect.provide(BunSqlite.SqliteClient.layer({ filename: ":memory:" }))))
