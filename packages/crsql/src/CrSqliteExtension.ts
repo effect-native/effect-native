@@ -54,7 +54,7 @@ export const sqlExtInfo = Effect.gen(function*() {
   }
   return yield* CrSqlSchema.ExtInfoSql.makeEffect(info)
 }).pipe(
-  Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing())),
+  Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.sqlExtInfo")
 )
 
@@ -78,7 +78,7 @@ export const loadLibCrSql = Effect.gen(function*() {
   const loadedAt = yield* DateTime.now
   return yield* CrSqlSchema.ExtInfo.makeEffect({ ...info, path, loadedAt })
 }).pipe(
-  Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing())),
+  Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.loadLibCrSql")
 )
 

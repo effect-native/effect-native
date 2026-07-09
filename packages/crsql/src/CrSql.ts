@@ -147,7 +147,7 @@ const makeCrSql = Effect.gen(function*() {
 
   const finalize = Effect.fn("@effect-native/crsql/CrSql#finalize")(function* finalize() {
     yield* sql`SELECT crsql_finalize();`.pipe(
-      Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing()))
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
     )
   })()
 
@@ -336,7 +336,7 @@ const makeCrSql = Effect.gen(function*() {
   // NOTE: verifying unhex() presence as early as possible in layer creation
   // so that it'll be easier to know when there's a configuration issue
   yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
-    Effect["catch"](() => Effect.fail(new CrSqlErrors.UnhexUnavailable()))
+    Effect.mapError((cause) => new CrSqlErrors.UnhexUnavailable({ cause }))
   )
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized> | ReadonlyArray<CrSqlSchema.ChangeArray>
@@ -409,6 +409,7 @@ const makeCrSql = Effect.gen(function*() {
       changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
     ) {
       type SqlType = "TEXT" | "INTEGER" | "REAL" | "BLOB"
+      type ObservedSqlType = SqlType | null
       const mapType = (t: CrSqlSchema.ChangeRowSerialized["val_type"]): SqlType | null => {
         if (t === "null") return null
         const mapping: { readonly [K in Exclude<CrSqlSchema.SqlValueType, "null">]: SqlType } = {
@@ -421,7 +422,7 @@ const makeCrSql = Effect.gen(function*() {
       }
 
       // Collect per-table column type info from observed changes
-      const byTable = new Map<string, Map<string, SqlType>>()
+      const byTable = new Map<string, Map<string, ObservedSqlType>>()
       for (const c of changes) {
         let cols = byTable.get(c.table)
         if (!cols) {
@@ -431,11 +432,14 @@ const makeCrSql = Effect.gen(function*() {
         if (c.cid === "id") continue // we'll always declare `id` explicitly as PK first
         const observed = mapType(c.val_type)
         if (observed === null) {
-          // Skip null here; we will validate after aggregation to ensure at least one non-null sample per column
+          // Track null-only columns so the validation pass can fail fast instead of silently omitting them.
+          if (!cols.has(c.cid)) {
+            cols.set(c.cid, null)
+          }
           continue
         }
         const prev = cols.get(c.cid)
-        if (prev && prev !== observed) {
+        if (prev != null && prev !== observed) {
           // Conflicting type inference for the same column => fail fast
           return yield* new SqlError.SqlError({
             reason: new SqlError.UnknownError({
@@ -450,7 +454,7 @@ const makeCrSql = Effect.gen(function*() {
       // Validate columns that only had null observations (no concrete type seen)
       for (const [table, cols] of byTable) {
         for (const [cid, typ] of cols) {
-          if (!typ) {
+          if (typ === null) {
             return yield* new SqlError.SqlError({
               reason: new SqlError.UnknownError({
                 message: `Unable to infer type for ${table}.${cid} (only null values observed)`,
@@ -463,13 +467,12 @@ const makeCrSql = Effect.gen(function*() {
 
       // Build DDL
       const chunks: Array<string> = []
-      const tables = Array.from(byTable.keys()).sort()
-      for (const table of tables) {
-        const cols = byTable.get(table)!
+      const tables = Array.from(byTable.entries()).sort(([a], [b]) => a.localeCompare(b))
+      for (const [table, cols] of tables) {
         // Deterministic order: id first, then other columns sorted by name
         const parts: Array<string> = ["id BLOB PRIMARY KEY"]
         const others = Array.from(cols.entries())
-          .filter(([name]) => name !== "id")
+          .filter((entry): entry is [string, SqlType] => entry[0] !== "id" && entry[1] !== null)
           .sort((a, b) => a[0].localeCompare(b[0]))
         for (const [name, typ] of others) {
           parts.push(`${name} ${typ}`)
