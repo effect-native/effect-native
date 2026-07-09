@@ -43,7 +43,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - Made sqlite-graph artifact rebuilds re-enter `nix develop` on Darwin when a Nix profile is active outside its dev shell.
 - Fast-forwarded `/Users/tom/Work/refs/effect-smol`.
 - Reconciled normative service examples and graph-db DotOK state to `Context.Service`.
-- Added live regression coverage for null-only schema inference and missing-extension causes.
+- Added live regression coverage for null-only schema inference plus missing-extension and missing-`unhex()` causes.
 - Enabled the full schema-inference suite and fixed generated DDL to use `id BLOB NOT NULL PRIMARY KEY`.
 - Limited Darwin Nix re-entry to environments with an active Nix profile.
 - Removed unrelated sqlite-graph native binary churn from the refresh diff.
@@ -53,7 +53,7 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - `bun install --frozen-lockfile`: PASS.
 - `bun run check`: PASS.
 - `bun run check:tsgo`: PASS.
-- `bun --filter @effect-native/crsql test`: PASS with all nine schema-inference tests active, including end-to-end schema recreation and change application.
+- `bun --filter @effect-native/crsql test`: PASS with 43 tests, including both capability errors and all nine schema-inference scenarios; 0 failures.
 - `bun run test`: PASS.
 - `bun run docgen`: PASS.
 - `bun run lint-fix`: PASS.
