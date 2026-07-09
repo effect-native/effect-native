@@ -52,7 +52,9 @@ Base: origin/v4 @ 8e7cf3955d6645eacc4be6ed9024bd3cffb361c2
 - `bun test packages/tui-testing-library/test/Spawn.test.ts --test-name-pattern "can resize terminal" --rerun-each 10`: PASS after one full-suite timing failure was isolated.
 - `bun --filter @effect-native/sqlite-graph build`: PASS from the host shell via Darwin Nix re-exec.
 - `bun run ok`: PASS.
+- `v4-refresh` push: PASS.
+- PR into `v4`: https://github.com/effect-native/effect-native/pull/281.
 
 ## Remaining Work
 
-- Push `v4-refresh` and create the PR into `v4`.
+- None for this snapshot.
