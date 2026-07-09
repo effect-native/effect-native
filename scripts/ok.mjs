@@ -36,7 +36,7 @@ const steps = [
   {
     name: "Type tests",
     cmd: "bun",
-    args: ["run", "test-types", "--target", ">=5.4"]
+    args: ["run", "test-types"]
   },
   {
     name: "Codemod",

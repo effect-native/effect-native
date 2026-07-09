@@ -12,7 +12,7 @@
 
 import type { Effect } from "effect"
 import { Data } from "effect"
-import * as ServiceMap from "effect/ServiceMap"
+import * as Context from "effect/Context"
 
 // --- Element Reference (Locator Pattern) ---
 
@@ -252,7 +252,7 @@ export interface DOMAdapter {
  * ```
  */
 export class DOMAdapterService
-  extends ServiceMap.Service<DOMAdapterService, DOMAdapter>()("@effect-native/opentui-dom/DOMAdapterService")
+  extends Context.Service<DOMAdapterService, DOMAdapter>()("@effect-native/opentui-dom/DOMAdapterService")
 {}
 
 // --- Helper: Resolve ElementRef to Element ---

@@ -31,9 +31,9 @@
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
 import * as ConfigProvider from "effect/ConfigProvider"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 import { SqlClient, SqlError, Statement } from "effect/unstable/sql"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
@@ -437,12 +437,12 @@ const makeCrSql = Effect.gen(function*() {
         const prev = cols.get(c.cid)
         if (prev && prev !== observed) {
           // Conflicting type inference for the same column => fail fast
-          return yield* Effect.fail(
-            new SqlError.SqlError({
+          return yield* new SqlError.SqlError({
+            reason: new SqlError.UnknownError({
               message: `Conflicting types for ${c.table}.${c.cid}: ${prev} vs ${observed}`,
-              cause: undefined
+              cause: { table: c.table, column: c.cid, previous: prev, observed }
             })
-          )
+          })
         }
         cols.set(c.cid, observed)
       }
@@ -451,12 +451,12 @@ const makeCrSql = Effect.gen(function*() {
       for (const [table, cols] of byTable) {
         for (const [cid, typ] of cols) {
           if (!typ) {
-            return yield* Effect.fail(
-              new SqlError.SqlError({
+            return yield* new SqlError.SqlError({
+              reason: new SqlError.UnknownError({
                 message: `Unable to infer type for ${table}.${cid} (only null values observed)`,
-                cause: undefined
+                cause: { table, column: cid }
               })
-            )
+            })
           }
         }
       }
@@ -1555,12 +1555,15 @@ export const layerFromSqliteClient = <E = never, R = never>(_: MaybeEffect<FromS
 
     // proves that the extension has loaded
     const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
+    const extInfoLoaded = yield* CrSqlSchema.ExtInfo.makeEffect(Object.assign({}, loadInfo, dbInfo)).pipe(
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
+    )
 
     return Layer.mergeAll(
       layerSqlClient,
       Layer.succeed(
         CrSqliteExtension.ExtInfoLoaded,
-        CrSqlSchema.ExtInfo.makeUnsafe(Object.assign({}, loadInfo, dbInfo))
+        extInfoLoaded
       )
     )
   }))
@@ -1591,7 +1594,9 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
     )
 
     const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provideService(SqlClient.SqlClient, sql))
-    const extInfoLoaded = CrSqlSchema.ExtInfo.makeUnsafe(Object.assign({}, loadInfo, dbInfo))
+    const extInfoLoaded = yield* CrSqlSchema.ExtInfo.makeEffect(Object.assign({}, loadInfo, dbInfo)).pipe(
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
+    )
 
     // Run makeCrSql in the CALLER'S scope so that crsql_finalize() is deferred
     // until the caller's scope closes (e.g., when the test or enclosing Effect.scoped ends).
@@ -1701,7 +1706,7 @@ type _fromSqliteClient = {
  *
  * @since 0.1.0
  */
-export class CrSql extends ServiceMap.Service<CrSql>()("CrSql", {
+export class CrSql extends Context.Service<CrSql>()("CrSql", {
   make: makeCrSql
 }) {
   static Default = Layer.effect(
