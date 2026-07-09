@@ -14,10 +14,10 @@
  * @since 0.1.0
  */
 import * as Config from "effect/Config"
+import * as Context from "effect/Context"
 import * as DateTime from "effect/DateTime"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 import { SqlClient } from "effect/unstable/sql"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqlSchema from "./CrSqlSchema.js"
@@ -52,9 +52,9 @@ export const sqlExtInfo = Effect.gen(function*() {
   if (info == null) {
     return yield* Effect.fail("No rows returned from crsql_sha() / crsql_site_id()")
   }
-  return CrSqlSchema.ExtInfoSql.makeUnsafe(info)
+  return yield* CrSqlSchema.ExtInfoSql.makeEffect(info)
 }).pipe(
-  Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing())),
+  Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.sqlExtInfo")
 )
 
@@ -74,9 +74,11 @@ export const sqlExtInfo = Effect.gen(function*() {
 export const loadLibCrSql = Effect.gen(function*() {
   const path = yield* LibCrSqlPath
   yield* SqliteClient.loadExtension(path)
-  return CrSqlSchema.ExtInfo.makeUnsafe({ ...(yield* sqlExtInfo), path, loadedAt: yield* DateTime.now })
+  const info = yield* sqlExtInfo
+  const loadedAt = yield* DateTime.now
+  return yield* CrSqlSchema.ExtInfo.makeEffect({ ...info, path, loadedAt })
 }).pipe(
-  Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing())),
+  Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause })),
   Effect.withSpan("@effect-native/crsql/CrSqliteExtension.loadLibCrSql")
 )
 
@@ -90,7 +92,7 @@ export const loadLibCrSql = Effect.gen(function*() {
  * @since 0.1.0
  * @category Services
  */
-export class ExtInfoLoaded extends ServiceMap.Service<ExtInfoLoaded>()(
+export class ExtInfoLoaded extends Context.Service<ExtInfoLoaded>()(
   "@effect-native/crsql/CrSqliteExtension.ExtInfoLoaded",
   { make: loadLibCrSql }
 ) {

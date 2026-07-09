@@ -66,19 +66,23 @@ describe.skipIf(!isBun)("spawnTui", () => {
 
   BunTest.it.scoped("can resize terminal", () =>
     Effect.gen(function*() {
-      // Start with default 80 cols
-      const handle = yield* spawnTui(["bash"])
+      // Disable input echo so command text cannot satisfy output assertions.
+      const handle = yield* spawnTui(["bash", "-c", "stty -echo; exec bash --noprofile --norc -i"])
 
       // Check initial size
-      yield* sendLine(handle, "tput cols")
-      yield* waitForText(handle, "80", 2000)
+      yield* sendLine(handle, `printf 'INITIAL:%s\\n' "$(tput cols)"`)
+      yield* waitForText(handle, "INITIAL:80", 2000)
 
       // Resize
       handle.resize(100, 30)
 
-      // Check new size
-      yield* sendLine(handle, "tput cols")
-      yield* waitForText(handle, "100", 2000)
+      // Poll until the child observes SIGWINCH, then emit a unique marker.
+      yield* sendLine(
+        handle,
+        `for i in {1..200}; do cols="$(tput cols)"; [ "$cols" -eq $((50 + 50)) ] && break; sleep 0.01; done; printf 'RESIZED:%s\\n' "$cols"`
+      )
+      yield* waitForText(handle, "RESIZED:", 3000)
+      expect(getPlainOutput(handle)).toContain("RESIZED:100")
 
       // Exit bash
       yield* sendLine(handle, "exit")

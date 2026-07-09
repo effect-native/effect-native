@@ -23,8 +23,8 @@ packages/sqlite-graph-ext/lib/<platform>/...
 Expose only the capability the higher-level package actually needs.
 
 ```typescript
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as ServiceMap from "effect/ServiceMap"
 import type { SqlError } from "effect/unstable/sql"
 import { SqlClient } from "effect/unstable/sql"
 
@@ -32,7 +32,7 @@ export interface SqliteClient extends SqlClient.SqlClient {
   readonly loadExtension: (path: string) => Effect.Effect<void, SqlError.SqlError>
 }
 
-export const SqliteClient = ServiceMap.Service<SqliteClient>(
+export const SqliteClient = Context.Service<SqliteClient>(
   "@effect-native/crsql/SqliteClient"
 )
 ```
@@ -115,7 +115,7 @@ export const fromSqlClient = Effect.fn("@effect-native/crsql/SqlClient#from")(
 Compose the high-level package layer from its lower-level platform pieces.
 
 ```typescript
-export class CrSql extends ServiceMap.Service<CrSql>()("CrSql", {
+export class CrSql extends Context.Service<CrSql>()("CrSql", {
   make: makeCrSql
 }) {
   static Default = Layer.effect(CrSql, CrSql.make).pipe(

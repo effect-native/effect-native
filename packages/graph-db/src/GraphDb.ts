@@ -4,9 +4,9 @@
  * @since 0.1.0
  */
 
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 import * as SqlClient from "effect/unstable/sql/SqlClient"
 import { GraphEnsureError, GraphSqlDialectError } from "./errors.js"
 import { GraphDialect } from "./GraphDialect.js"
@@ -33,7 +33,7 @@ const nextGraphDbTagName = (name?: string): string => {
 }
 
 export const makeGraphDb = (spec: GraphSpec) => {
-  const GraphDb = ServiceMap.Service<GraphDbService>(nextGraphDbTagName(spec.name))
+  const GraphDb = Context.Service<GraphDbService>(nextGraphDbTagName(spec.name))
 
   const layer = Layer.effect(
     GraphDb,

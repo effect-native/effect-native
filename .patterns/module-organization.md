@@ -75,9 +75,9 @@ export function MaybeEffect<A, E = never, R = never>(self: MaybeEffect<A, E, R> 
 Prefer a shallow module structure: imports, exported types, exported errors/services, exported functions.
 
 ```typescript
+import * as Context from "effect/Context"
 import * as Data from "effect/Data"
 import * as Effect from "effect/Effect"
-import * as ServiceMap from "effect/ServiceMap"
 
 export class ExampleError extends Data.TaggedError("ExampleError")<{
   message: string
@@ -87,7 +87,7 @@ export interface ExampleService {
   readonly load: (id: string) => Effect.Effect<string, ExampleError>
 }
 
-export const Example = ServiceMap.Service<ExampleService>("@effect-native/example/Example")
+export const Example = Context.Service<ExampleService>("@effect-native/example/Example")
 
 export const load = Effect.fn("@effect-native/example/load")(function*(id: string) {
   if (id.length === 0) {
@@ -97,7 +97,7 @@ export const load = Effect.fn("@effect-native/example/load")(function*(id: strin
 })
 ```
 
-- Prefer `ServiceMap.Service` for services.
+- Prefer `Context.Service` for services.
 - Prefer `Effect.fn("name")` for reusable public effectful functions.
 - Prefer `Effect.fnUntraced` only for internal or hot-path helpers.
 - Keep control flow explicit with `return yield*` for terminal failures.

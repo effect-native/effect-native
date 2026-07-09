@@ -1,7 +1,8 @@
 {
   "$schema": "https://tstyche.org/schemas/config.json",
+  "target": ">=5.4 <7.0",
   "testFileMatch": [
     "packages/*/dtslint/**/*.tst.*"
   ],
-  "tsconfig": "ignore"
+  "tsconfig": "baseline"
 }

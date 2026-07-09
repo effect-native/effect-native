@@ -31,9 +31,9 @@
 // simple (some TS runners disallow `import.meta` in dependency graphs). We
 // dynamically import the path at runtime instead.
 import * as ConfigProvider from "effect/ConfigProvider"
+import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as ServiceMap from "effect/ServiceMap"
 import { SqlClient, SqlError, Statement } from "effect/unstable/sql"
 import * as CrSqlErrors from "./CrSqlErrors.js"
 import * as CrSqliteExtension from "./CrSqliteExtension.js"
@@ -147,7 +147,7 @@ const makeCrSql = Effect.gen(function*() {
 
   const finalize = Effect.fn("@effect-native/crsql/CrSql#finalize")(function* finalize() {
     yield* sql`SELECT crsql_finalize();`.pipe(
-      Effect["catch"](() => Effect.fail(new CrSqlErrors.CrSqliteExtensionMissing()))
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
     )
   })()
 
@@ -336,7 +336,7 @@ const makeCrSql = Effect.gen(function*() {
   // NOTE: verifying unhex() presence as early as possible in layer creation
   // so that it'll be easier to know when there's a configuration issue
   yield* sql`SELECT hex(unhex('00')) as ok`.pipe(
-    Effect["catch"](() => Effect.fail(new CrSqlErrors.UnhexUnavailable()))
+    Effect.mapError((cause) => new CrSqlErrors.UnhexUnavailable({ cause }))
   )
   const applyChanges = Effect.fn("@effect-native/crsql/CrSql#applyChanges")(function* applyChanges(
     changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized> | ReadonlyArray<CrSqlSchema.ChangeArray>
@@ -409,6 +409,7 @@ const makeCrSql = Effect.gen(function*() {
       changes: ReadonlyArray<CrSqlSchema.ChangeRowSerialized>
     ) {
       type SqlType = "TEXT" | "INTEGER" | "REAL" | "BLOB"
+      type ObservedSqlType = SqlType | null
       const mapType = (t: CrSqlSchema.ChangeRowSerialized["val_type"]): SqlType | null => {
         if (t === "null") return null
         const mapping: { readonly [K in Exclude<CrSqlSchema.SqlValueType, "null">]: SqlType } = {
@@ -421,7 +422,7 @@ const makeCrSql = Effect.gen(function*() {
       }
 
       // Collect per-table column type info from observed changes
-      const byTable = new Map<string, Map<string, SqlType>>()
+      const byTable = new Map<string, Map<string, ObservedSqlType>>()
       for (const c of changes) {
         let cols = byTable.get(c.table)
         if (!cols) {
@@ -431,18 +432,21 @@ const makeCrSql = Effect.gen(function*() {
         if (c.cid === "id") continue // we'll always declare `id` explicitly as PK first
         const observed = mapType(c.val_type)
         if (observed === null) {
-          // Skip null here; we will validate after aggregation to ensure at least one non-null sample per column
+          // Track null-only columns so the validation pass can fail fast instead of silently omitting them.
+          if (!cols.has(c.cid)) {
+            cols.set(c.cid, null)
+          }
           continue
         }
         const prev = cols.get(c.cid)
-        if (prev && prev !== observed) {
+        if (prev != null && prev !== observed) {
           // Conflicting type inference for the same column => fail fast
-          return yield* Effect.fail(
-            new SqlError.SqlError({
+          return yield* new SqlError.SqlError({
+            reason: new SqlError.UnknownError({
               message: `Conflicting types for ${c.table}.${c.cid}: ${prev} vs ${observed}`,
-              cause: undefined
+              cause: { table: c.table, column: c.cid, previous: prev, observed }
             })
-          )
+          })
         }
         cols.set(c.cid, observed)
       }
@@ -450,26 +454,25 @@ const makeCrSql = Effect.gen(function*() {
       // Validate columns that only had null observations (no concrete type seen)
       for (const [table, cols] of byTable) {
         for (const [cid, typ] of cols) {
-          if (!typ) {
-            return yield* Effect.fail(
-              new SqlError.SqlError({
+          if (typ === null) {
+            return yield* new SqlError.SqlError({
+              reason: new SqlError.UnknownError({
                 message: `Unable to infer type for ${table}.${cid} (only null values observed)`,
-                cause: undefined
+                cause: { table, column: cid }
               })
-            )
+            })
           }
         }
       }
 
       // Build DDL
       const chunks: Array<string> = []
-      const tables = Array.from(byTable.keys()).sort()
-      for (const table of tables) {
-        const cols = byTable.get(table)!
+      const tables = Array.from(byTable.entries()).sort(([a], [b]) => a.localeCompare(b))
+      for (const [table, cols] of tables) {
         // Deterministic order: id first, then other columns sorted by name
-        const parts: Array<string> = ["id BLOB PRIMARY KEY"]
+        const parts: Array<string> = ["id BLOB NOT NULL PRIMARY KEY"]
         const others = Array.from(cols.entries())
-          .filter(([name]) => name !== "id")
+          .filter((entry): entry is [string, SqlType] => entry[0] !== "id" && entry[1] !== null)
           .sort((a, b) => a[0].localeCompare(b[0]))
         for (const [name, typ] of others) {
           parts.push(`${name} ${typ}`)
@@ -1162,7 +1165,7 @@ const makeCrSql = Effect.gen(function*() {
      *
      * **Schema Generation Logic:**
      * - Creates `CREATE TABLE IF NOT EXISTS` statements for each referenced table
-     * - Assumes single-column `id BLOB PRIMARY KEY` (consistent with project patterns)
+     * - Assumes single-column `id BLOB NOT NULL PRIMARY KEY` (consistent with project patterns)
      * - Infers column types from `val_type` observations across changes:
      *   - `text` → `TEXT`, `integer` → `INTEGER`, `real` → `REAL`, `blob` → `BLOB`
      * - Appends `SELECT crsql_as_crr('table');` statements to enable replication
@@ -1555,12 +1558,15 @@ export const layerFromSqliteClient = <E = never, R = never>(_: MaybeEffect<FromS
 
     // proves that the extension has loaded
     const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provide(layerSqlClient))
+    const extInfoLoaded = yield* CrSqlSchema.ExtInfo.makeEffect(Object.assign({}, loadInfo, dbInfo)).pipe(
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
+    )
 
     return Layer.mergeAll(
       layerSqlClient,
       Layer.succeed(
         CrSqliteExtension.ExtInfoLoaded,
-        CrSqlSchema.ExtInfo.makeUnsafe(Object.assign({}, loadInfo, dbInfo))
+        extInfoLoaded
       )
     )
   }))
@@ -1591,7 +1597,9 @@ const _fromSqliteClient = Effect.fn("@effect-native/crsql/CrSql.fromSqliteClient
     )
 
     const dbInfo = yield* CrSqliteExtension.sqlExtInfo.pipe(Effect.provideService(SqlClient.SqlClient, sql))
-    const extInfoLoaded = CrSqlSchema.ExtInfo.makeUnsafe(Object.assign({}, loadInfo, dbInfo))
+    const extInfoLoaded = yield* CrSqlSchema.ExtInfo.makeEffect(Object.assign({}, loadInfo, dbInfo)).pipe(
+      Effect.mapError((cause) => new CrSqlErrors.CrSqliteExtensionMissing({ cause }))
+    )
 
     // Run makeCrSql in the CALLER'S scope so that crsql_finalize() is deferred
     // until the caller's scope closes (e.g., when the test or enclosing Effect.scoped ends).
@@ -1701,7 +1709,7 @@ type _fromSqliteClient = {
  *
  * @since 0.1.0
  */
-export class CrSql extends ServiceMap.Service<CrSql>()("CrSql", {
+export class CrSql extends Context.Service<CrSql>()("CrSql", {
   make: makeCrSql
 }) {
   static Default = Layer.effect(

@@ -230,20 +230,22 @@ const queryUser = (id: string) =>
 Build applications using layered architecture:
 
 ```typescript
-import { Effect, Layer, ServiceMap } from "effect"
+import { Context, Effect, Layer } from "effect"
 
-class DatabaseService extends ServiceMap.Service<DatabaseService>()("example/DatabaseService", {
-  effect: Effect.succeed({
+class DatabaseService extends Context.Service<DatabaseService>()("example/DatabaseService", {
+  make: Effect.succeed({
     query: (sql: string): Effect.Effect<ReadonlyArray<unknown>, DatabaseError> =>
       Effect.tryPromise({
         try: () => database.execute(sql),
         catch: (error) => new DatabaseError({ cause: error })
       })
   })
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
-class UserService extends ServiceMap.Service<UserService>()("example/UserService", {
-  effect: Effect.gen(function*() {
+class UserService extends Context.Service<UserService>()("example/UserService", {
+  make: Effect.gen(function*() {
     const db = yield* DatabaseService
 
     return UserService.of({
@@ -257,9 +259,11 @@ class UserService extends ServiceMap.Service<UserService>()("example/UserService
       })
     })
   })
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
-const AppLayer = UserService.Default.pipe(Layer.provide(DatabaseService.Default))
+const AppLayer = UserService.layer.pipe(Layer.provide(DatabaseService.layer))
 ```
 
 ## 🔧 DEVELOPMENT WORKFLOW PATTERNS

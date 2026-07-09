@@ -65,14 +65,14 @@ Pass when all are true:
 
 - Repository is Bun workspace with `packages/*`.
 - Effect v4 beta is in use (`effect` and `@effect/*` are aligned in this repo).
-- Existing code uses `ServiceMap.Service` and `effect/unstable/sql`.
+- Existing code uses `Context.Service` and `effect/unstable/sql`.
 - `@effect-native/bun-test` is the normative test harness in project patterns.
 - `@effect/sql-sqlite-bun` is already used by `packages/crsql` tests.
 
 ### Assumptions
 
 - `@effect/sql-sqlite-bun` can be used for `:memory:` tests in `graph-db`.
-- Effect v4 APIs in this workspace support planned `ServiceMap` and SQL imports.
+- Effect v4 APIs in this workspace support planned `Context.Service` and SQL imports.
 - CR-SQLite extension is optional for this package; CRR mode can be validated by plan-level tests if extension is absent.
 
 ---

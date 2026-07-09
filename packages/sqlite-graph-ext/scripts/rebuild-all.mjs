@@ -1,5 +1,31 @@
 import { spawnSync } from "node:child_process"
 
+if (
+  process.platform === "darwin" &&
+  process.env.IN_NIX_SHELL == null &&
+  process.env.NIX_PROFILES != null &&
+  process.env.EFFECT_NATIVE_SQLITE_GRAPH_NIX_REEXEC !== "1"
+) {
+  const result = spawnSync(
+    "nix",
+    ["develop", "--command", "bun", "./scripts/rebuild-all.mjs"],
+    {
+      cwd: import.meta.dirname + "/..",
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        EFFECT_NATIVE_SQLITE_GRAPH_NIX_REEXEC: "1"
+      }
+    }
+  )
+
+  if (result.error != null) {
+    console.error(`failed to re-run sqlite-graph rebuild under nix develop: ${result.error.message}`)
+  }
+
+  process.exit(result.status ?? 1)
+}
+
 const builds = [
   ["darwin-aarch64", "aarch64-macos"],
   ["darwin-x86_64", "x86_64-macos"],

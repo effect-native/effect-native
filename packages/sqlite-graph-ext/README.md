@@ -58,6 +58,9 @@ This runs:
 
 The build script is intended to be run in a dev shell that includes `zig`.
 `flake.nix` includes `zig` in the default `devShell` for that workflow.
+On Darwin, the all-platform rebuild script re-enters `nix develop` when a Nix
+profile is active but the dev shell is not. Standalone Zig installations run
+directly and do not require Nix.
 
 ## Zig unit tests
 
