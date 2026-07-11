@@ -11,8 +11,8 @@
   untracked `CLAUDE.md` is preserved.
 - Quality gates: `bun install --frozen-lockfile`, `bun run lint-fix`,
   `bun run docgen`, and `bun run ok` all exit `0`.
-- PR lifecycle: pending committed refresh.
+- PR lifecycle: ready PR #282 is open from `v4-refresh` into `v4`.
 
 ## Gaps
 
-1. Review, commit, push, and update or create the ready PR into `v4`.
+No active refresh gaps remain.

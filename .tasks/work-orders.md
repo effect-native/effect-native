@@ -1,4 +1,4 @@
 # Current Work Orders
 
-1. Publish the reviewed evergreen refresh branch and ready PR.
-   - done_when: `gh pr list --repo effect-native/effect-native --head v4-refresh --base v4 --state open --json url`
+No active work orders. The beta.97 refresh is validated, pushed, and represented
+by ready PR #282 into `v4`.
