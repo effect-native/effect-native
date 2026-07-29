@@ -73,7 +73,7 @@
     "@typescript/native-preview": "^7.0.0-dev",
     "ast-types": "^0.14.2",
     "babel-plugin-annotate-pure-calls": "^0.5.0",
-    "dependency-cruiser": "^16.10.4",
+    "dependency-cruiser": "^17.3.8",
     "dprint": "^0.51.1",
     "glob": "^11.0.3",
     "jscodeshift": "^17.3.0",
