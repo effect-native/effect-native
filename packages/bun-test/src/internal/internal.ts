@@ -150,21 +150,21 @@ const makeTester = <R>(
     const params = typeof options === "object" ? options.fastCheck : undefined
 
     B.test(name, async () => {
-      const arbs: Record<string, fc.Arbitrary<any>> = {}
+      const arbs: Record<string, fc.Arbitrary<unknown>> = {}
       const entries = Array.isArray(arbitraries)
         ? arbitraries.map((arb, i) => [i, arb])
         : Object.entries(arbitraries)
 
       for (const [key, arb] of entries) {
         if (Schema.isSchema(arb)) {
-          arbs[key] = Schema.toArbitrary(arb)
+          arbs[key] = Schema.toArbitrary(arb)(fc)
         } else {
           arbs[key] = arb
         }
       }
 
       const property = fc.property(
-        ...Object.values(arbs) as [fc.Arbitrary<any>, ...Array<fc.Arbitrary<any>>],
+        ...Object.values(arbs) as [fc.Arbitrary<unknown>, ...Array<fc.Arbitrary<unknown>>],
         (...values: Array<any>) => {
           const props = Array.isArray(arbitraries)
             ? values
@@ -326,21 +326,21 @@ export const layer = <R, E>(
 
       B.test(name, async () => {
         await Effect.runPromise(contextEffect) // Initialize the layer
-        const arbs: Record<string, fc.Arbitrary<any>> = {}
+        const arbs: Record<string, fc.Arbitrary<unknown>> = {}
         const entries = Array.isArray(arbitraries)
           ? arbitraries.map((arb: any, i: number) => [i, arb])
           : Object.entries(arbitraries)
 
         for (const [key, arb] of entries) {
           if (Schema.isSchema(arb)) {
-            arbs[key] = Schema.toArbitrary(arb)
+            arbs[key] = Schema.toArbitrary(arb)(fc)
           } else {
             arbs[key] = arb
           }
         }
 
         const property = fc.property(
-          ...Object.values(arbs) as [fc.Arbitrary<any>, ...Array<fc.Arbitrary<any>>],
+          ...Object.values(arbs) as [fc.Arbitrary<unknown>, ...Array<fc.Arbitrary<unknown>>],
           (...values: Array<any>) => {
             const props = Array.isArray(arbitraries)
               ? values
@@ -385,21 +385,21 @@ export const prop: any = (name: string, arbitraries: any, self: any, options?: a
   const params = typeof options === "object" ? options.fastCheck : undefined
 
   B.test(name, async () => {
-    const arbs: Record<string, fc.Arbitrary<any>> = {}
+    const arbs: Record<string, fc.Arbitrary<unknown>> = {}
     const entries = Array.isArray(arbitraries)
       ? arbitraries.map((arb: any, i: number) => [i, arb])
       : Object.entries(arbitraries)
 
     for (const [key, arb] of entries) {
       if (Schema.isSchema(arb)) {
-        arbs[key as string] = Schema.toArbitrary(arb)
+        arbs[key as string] = Schema.toArbitrary(arb)(fc)
       } else {
         arbs[key as string] = arb as fc.Arbitrary<any>
       }
     }
 
     const property = fc.property(
-      ...(Object.values(arbs) as [fc.Arbitrary<any>, ...Array<fc.Arbitrary<any>>]),
+      ...(Object.values(arbs) as [fc.Arbitrary<unknown>, ...Array<fc.Arbitrary<unknown>>]),
       (...values: Array<any>) => {
         const props = Array.isArray(arbitraries)
           ? values

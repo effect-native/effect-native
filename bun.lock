@@ -506,13 +506,13 @@
 
     "@effect/markdown-toc": ["@effect/markdown-toc@0.1.0", "", { "dependencies": { "concat-stream": "^1.5.2", "diacritics-map": "^0.1.0", "gray-matter": "^3.1.1", "lazy-cache": "^2.0.2", "list-item": "^1.1.1", "markdown-link": "^0.1.1", "minimist": "^1.2.0", "mixin-deep": "^1.1.3", "object.pick": "^1.2.0", "remarkable": "^1.7.1", "repeat-string": "^1.6.1", "strip-color": "^0.1.0" }, "bin": { "markdown-toc": "cli.js" } }, "sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A=="],
 
-    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.105", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.105", "mime": "^4.1.0", "undici": "^8.7.0" }, "peerDependencies": { "effect": "^4.0.0-beta.105", "ioredis": ">=5.7.0 <6.0.0" } }, "sha512-gOHtgE9PqCT8aiiM0W7ZSbu4M2/jPGfJOKWuyBCxofNV5Np36fFY55FSa1MtyG+vjOjlD5btNY2i6i/SPtRqTA=="],
+    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.107", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.107", "mime": "^4.1.0", "undici": "^8.7.0" }, "peerDependencies": { "effect": "^4.0.0-beta.107", "ioredis": ">=5.7.0 <6.0.0" } }, "sha512-k+6YNbV4Ck0L6YXtlgkvEnuP5tlxWD8EeWOrpn46PDqbGEwt4ONpRltTwm3tn2cyBXD0i+2P11cUH/6sdFagTA=="],
 
-    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.105", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.21.0" }, "peerDependencies": { "effect": "^4.0.0-beta.105" } }, "sha512-UfeC8cFm4sP+XW14OO66CcOGJ8PcD102hH0kLwj8xUVL6nYIDGE/SJvlfVmFx+9OWF6rnjfXjMV6vyl6mCdhCQ=="],
+    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-rc.109", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.21.0" }, "peerDependencies": { "effect": "^4.0.0-rc.109" } }, "sha512-jhZJnf81N7Z5+Z41Qr0cKT75WzGu6M1W05xrSdu/V8PK0kSFtU5hJMBxSGDWNlgWhBwK0WRZtnMHY8HLdONg1w=="],
 
-    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.105", "", { "peerDependencies": { "effect": "^4.0.0-beta.105" } }, "sha512-wKdkRWA6dYQmJL5YeSDxbvTRC6PUui+kfdpHpK36h96CwzXuWBx99MtZ97MzwfhjOVLgXBQDJE4OT7y9BD9FDA=="],
+    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-beta.107", "", { "peerDependencies": { "effect": "^4.0.0-beta.107" } }, "sha512-BuSSCUoXz6JSR30wT4Y0ukmJKvIFhm/gROwEeA0nLO5QYf33CdTunwX+q35+/MNOOLT8jL3xaDsz5R5aAF1vYQ=="],
 
-    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.105", "", { "peerDependencies": { "effect": "^4.0.0-beta.105" } }, "sha512-M4b2H/S53pe247GNvDRpBLHlpqehF3AWoDyHwtqjbZC8eS1H4ZtA4ID3s9aNNNETfzEeaIJXaZu6uk2UT0KN+A=="],
+    "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.107", "", { "peerDependencies": { "effect": "^4.0.0-beta.107" } }, "sha512-hfYptkItEs/AdEIPEDkziC1TbnC7FyGISowKIvaZtscoWyxPaUtWsxM8EYgfOJ61aZwGgKQxZlXIgJ0fw25Lng=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.3", "", { "os": "aix", "cpu": "ppc64" }, "sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg=="],
 
@@ -882,7 +882,7 @@
 
     "dprint": ["dprint@0.51.1", "", { "optionalDependencies": { "@dprint/darwin-arm64": "0.51.1", "@dprint/darwin-x64": "0.51.1", "@dprint/linux-arm64-glibc": "0.51.1", "@dprint/linux-arm64-musl": "0.51.1", "@dprint/linux-loong64-glibc": "0.51.1", "@dprint/linux-loong64-musl": "0.51.1", "@dprint/linux-riscv64-glibc": "0.51.1", "@dprint/linux-x64-glibc": "0.51.1", "@dprint/linux-x64-musl": "0.51.1", "@dprint/win32-arm64": "0.51.1", "@dprint/win32-x64": "0.51.1" }, "bin": { "dprint": "bin.js" } }, "sha512-CEx+wYARxLAe9o7RCZ77GKae6DF7qjn5Rd98xbWdA3hB4PFBr+kHwLANmNHscNumBAIrCg5ZJj/Kz+OYbJ+GBA=="],
 
-    "effect": ["effect@4.0.0-beta.105", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.9.0", "kubernetes-types": "^1.30.0", "msgpackr": "^2.0.4", "uuid": "^14.0.1" } }, "sha512-7U5OzWVNlpnZFvXiZfOeu8V+dCQUa3Om569HnYG2Dx8C8V6uoKS920kFJkIDEYVhlSGhzkRqaGKmYY9bPkBMMQ=="],
+    "effect": ["effect@4.0.0-beta.107", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.9.0", "kubernetes-types": "^1.30.0", "msgpackr": "^2.0.4", "uuid": "^14.0.1" } }, "sha512-OoBAv8eF+yanc+C6xhgEUnWeXUSHA6ynnscYqpkAY9GSnzZWystsIjBowVqCkLpHGlnRtdIqYT3wHwpOY6JDnQ=="],
 
     "effect-native": ["effect-native@workspace:packages/effect-native"],
 
