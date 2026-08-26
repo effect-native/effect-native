@@ -1,4 +1,4 @@
-# Effect Refresh Gap Snapshot — 2026-08-14
+# Effect Refresh Gap Snapshot — 2026-08-25
 
 ## Current evidence
 
@@ -12,11 +12,12 @@
   untracked `CLAUDE.md` is preserved.
 - Quality gates: `bun install --frozen-lockfile`, `bun run lint-fix`,
   `bun run docgen`, and `bun run ok` all exit `0`.
-- API reconciliation: beta.107 changed `Schema.toArbitrary` to return a
-  FastCheck-dependent factory. All three bun-test property adapters now invoke
-  the factory with Effect's FastCheck instance and retain `unknown` internally.
+- Lock reconciliation: the first frozen install detected stale wildcard
+  type-tooling resolutions. The lock now resolves workspace copies of
+  `@types/bun` / `bun-types` at `1.4.0` and `@types/node` at `26.3.0` where
+  permitted; the second frozen install and full gate pass without changes.
 - Removed ServiceMap scan: no matches in active guidance or package code.
-- Review: adversarial verdict `APPROVE`; Thing Golf score `-4`.
+- Review: adversarial verdict `APPROVE`; Thing Golf score `-2`.
 - Artifact hygiene: temporary PREP and code-review notes are removed after use.
 - PR lifecycle: the refreshed `v4-refresh` branch is pushed and represented by
   a ready PR into `v4`.

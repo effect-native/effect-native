@@ -1,4 +1,5 @@
 # Current Work Orders
 
-No active work orders. The beta.107 refresh is validated and reviewed; the
-evergreen `v4-refresh` branch is represented by ready PR #283 into `v4`.
+No active work orders. The beta.107 family remains current, the reconciled
+lockfile is validated and reviewed, and ready PR #283 represents the evergreen
+`v4-refresh` branch into `v4`.
