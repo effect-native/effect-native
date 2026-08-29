@@ -1,4 +1,4 @@
-# Effect Refresh Gap Snapshot — 2026-08-25
+# Effect Refresh Gap Snapshot — 2026-08-28
 
 ## Current evidence
 
@@ -13,9 +13,9 @@
 - Quality gates: `bun install --frozen-lockfile`, `bun run lint-fix`,
   `bun run docgen`, and `bun run ok` all exit `0`.
 - Lock reconciliation: the first frozen install detected stale wildcard
-  type-tooling resolutions. The lock now resolves workspace copies of
-  `@types/bun` / `bun-types` at `1.4.0` and `@types/node` at `26.3.0` where
-  permitted; the second frozen install and full gate pass without changes.
+  type-tooling resolutions. The examples and graph-db demo copies of
+  `@types/node` now resolve at `26.4.0`, with compatible nested `26.3.0`
+  resolutions retained for `bun-types`; frozen install and the full gate pass.
 - Removed ServiceMap scan: no matches in active guidance or package code.
 - Review: adversarial verdict `APPROVE`; Thing Golf score `-2`.
 - Artifact hygiene: temporary PREP and code-review notes are removed after use.
