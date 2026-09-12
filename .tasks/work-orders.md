@@ -1,4 +1,5 @@
 # Current Work Orders
 
-No active work orders. The beta.99 refresh is validated, reviewed, pushed, and
-represented by ready PR #282 into `v4`.
+No active work orders. The beta.107 family remains current, the September 11
+lockfile reconciliation is validated and reviewed, and ready PR #283 represents
+the evergreen `v4-refresh` branch into `v4`.
