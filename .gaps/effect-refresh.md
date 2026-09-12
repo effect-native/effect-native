@@ -1,4 +1,4 @@
-# Effect Refresh Gap Snapshot — 2026-09-04
+# Effect Refresh Gap Snapshot — 2026-09-11
 
 ## Current evidence
 
@@ -12,11 +12,10 @@
   untracked `CLAUDE.md` is preserved.
 - Quality gates: `bun install --frozen-lockfile`, `bun run lint-fix`,
   `bun run docgen`, and `bun run ok` all exit `0`.
-- Lock reconciliation: the first frozen install detected stale wildcard
-  type-tooling resolutions. The examples and graph-db demo copies of
-  `@types/node` now resolve at `26.4.1`; workspace copies of `@types/bun` and
-  `bun-types` now resolve at `1.4.1`, and redundant nested resolutions are
-  deduplicated; frozen install and the full gate pass.
+- Lock reconciliation: a pre-existing September 8 lock delta captured current
+  wildcard type-tooling releases. Eligible consumers now resolve `@types/bun`
+  and `bun-types` at `1.4.2`, `@types/node` at `26.5.0`, and `undici-types` at
+  `8.9.0`; frozen install and the full gate pass.
 - Removed ServiceMap scan: no matches in active guidance or package code.
 - Review: adversarial verdict `APPROVE`; Thing Golf score `-2`.
 - Artifact hygiene: temporary PREP and code-review notes are removed after use.
