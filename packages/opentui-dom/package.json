@@ -45,7 +45,7 @@
     "@effect-native/bun-test": "workspace:*",
     "@happy-dom/global-registrator": "^20.0.2",
     "effect": "beta",
-    "happy-dom": "^20.0.2",
+    "happy-dom": "^21.0.4",
     "@opentui/core": "^0.1.63",
     "react": "^19",
     "react-dom": "^19",
